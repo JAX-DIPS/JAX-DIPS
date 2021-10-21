@@ -1,5 +1,5 @@
 import jax
-from src.mesh import *
+from src.partition import *
 import pdb
 
 
