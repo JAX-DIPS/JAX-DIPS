@@ -19,7 +19,7 @@ from jax import custom_jvp
 import jax.numpy as np
 import numpy as onp
 
-from src import util, space
+from src import util, space, dataclasses
 
 
 # Types

@@ -61,7 +61,6 @@ def dataclass(clz):
   jax.tree_util.register_pytree_node(data_clz,
                                      iterate_clz,
                                      clz_from_iterable)
-
   return data_clz
 
 
