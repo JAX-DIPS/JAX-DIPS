@@ -5,10 +5,11 @@ from typing import Callable, TypeVar, Union, Tuple, Dict, Optional
 from jax import grad
 from jax import ops
 from jax import random
+from jax._src.dtypes import dtype
 import jax.numpy as jnp
 from jax import lax
 
-from src import util, space, dataclasses, partition, smap, quantity
+from src import util, space, dataclasses, interpolate, quantity
 
 static_cast = util.static_cast
 
@@ -27,30 +28,37 @@ ApplyFn = Callable[[T], T]
 Simulator = Tuple[InitFn, ApplyFn]
 
 
-
-def advect_one_step(force_fn: Callable[..., Array],
+def advect_one_step(velocity_fn: Callable[..., Array],
                     shift_fn: ShiftFn,
                     dt: float,
                     state: T,
                     **kwargs) -> T:
-  """Apply a single step of velocity verlet integration to a state."""
-  
-  dt = f32(dt)
-  dt_2 = f32(dt / 2)
-  dt2_2 = f32(dt ** 2 / 2)
+    """Apply a single step of semi-Lagrangian integration to a state."""
 
-  R, V, F, M = state.position, state.velocity, state.force, state.mass
+    dt = f32(dt)
+    dt_2 = f32(dt / 2)
 
-  Minv = 1 / M
+    R, U_n, V_nm1= state.grid, state.solution, state.velocity_nm1
+    V_n = velocity_fn(R, **kwargs)
+   
+    # Get interpolation functions
+    Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, R)
+    Vn_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(V_n, R)
+    Vnm1_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(V_nm1, R)
 
-  R = shift_fn(R, V * dt + F * dt2_2 * Minv, **kwargs)
+    # Find Departure Point
+    R_star = R - dt_2 * V_n
+    V_n_star = Vn_interp_fn(R_star)
+    V_nm1__star = Vnm1_interp_fn(R_star)
+    V_mid = 1.5 * V_n_star - 0.5 * V_nm1__star 
+    R_d = R - dt * V_mid
+    # substitute solution from departure point to arrival points (=grid points)
+    U_np1 = Un_interp_fn(R_d)
 
-  F_new = force_fn(R, **kwargs)
-  V += (F + F_new) * dt_2 * Minv
-  return dataclasses.replace(state,
-                             position=R,
-                             velocity=V,
-                             force=F_new)
+    return dataclasses.replace(state,
+                               grid=R,
+                               solution=U_np1,
+                               velocity_nm1=V_n)
 
 
 @dataclasses.dataclass
@@ -58,51 +66,43 @@ class SIMState:
     """A struct containing the state of the simulation.
 
     This tuple stores the state of a simulation.
-    
+
     Attributes:
-    position: An ndarray of shape [n, spatial_dimension] storing the position
-        of grid points.
-    velocity: An ndarray of shape [n, spatial_dimension] storing the velocity
-        of particles.
-    force: An ndarray of shape [n, spatial_dimension] storing the force acting
-        on particles from the previous step.
-    mass: A float or an ndarray of shape [n] containing the masses of the
-        particles.
+    u: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
     """
-    position: Array
-    velocity: Array
-    force: Array
-    mass: Array
+    grid: Array
+    solution: Array
+    velocity_nm1: Array
 
 
-
-def level_set(energy_or_force_fn: Callable[..., Array],
-        shift_fn: ShiftFn,
-        dt: float) -> Simulator:
+def level_set(velocity_or_energy_fn: Callable[..., Array],
+              shift_fn: ShiftFn,
+              dt: float) -> Simulator:
     """Simulates a system.
-    
+
     Args:
-    energy_or_force: A function that produces either an energy or a force from
-        a set of particle positions specified as an ndarray of shape
-        [n, spatial_dimension].
+    velocity_fn: A function that produces the velocity field on
+        a set of grid points specified as an ndarray of shape
+        [n, spatial_dimension]. 
+        velocity_fn = -grad(Energy_fn)
+
     shift_fn: A function that displaces positions, R, by an amount dR. Both R
         and dR should be ndarrays of shape [n, spatial_dimension].
     dt: Floating point number specifying the timescale (step size) of the
         simulation.
-    quant: Either a quantity.Energy or a quantity.Force specifying whether
-        energy_or_force is an energy or force respectively.
+
     Returns:
     See above.
     """
-    force_fn = quantity.canonicalize_force(energy_or_force_fn)
+    velocity_fn = quantity.canonicalize_force(velocity_or_energy_fn)
 
-    def init_fn(key, R, mass=f32(1.0), **kwargs):
-        mass = quantity.canonicalize_mass(mass)
-        V = random.normal(key, R.shape, dtype=R.dtype)
-        V = V - jnp.mean(V * mass, axis=0, keepdims=True) / mass
-        return SIMState(R, V, force_fn(R, **kwargs), mass)  # pytype: disable=wrong-arg-count
+    def init_fn(R, **kwargs):
+        V = jnp.zeros(R.shape, dtype=R.dtype)
+        U = jnp.zeros(R.shape[0], dtype=R.dtype)
+        U = U + jnp.dot(R, R) - f32(0.25)
+        return SIMState(R, U, V)  
 
     def step_fn(state, **kwargs):
-        return advect_one_step(force_fn, shift_fn, dt, state, **kwargs)
+        return advect_one_step(velocity_fn, shift_fn, dt, state, **kwargs)
 
     return init_fn, step_fn

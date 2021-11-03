@@ -36,8 +36,17 @@ R = jnp.column_stack((X, Y, Z))
 #---------------
 # Create helper functions to define a periodic box of some size.
 displacement_fn, shift_fn = space.periodic(box_size)
+
 neighbor_fn, energy_fn = energy.energy(displacement_fn, box_size)              # energy_fn is a function whose gradient gives velocity field.
-init_fn, apply_fn = simulate_particles.conservative(energy_fn, shift_fn, dt)
+"""
+This energy_fn is not what we need for velocity function!
+Our case is much simpler, probably a statically defined function is enough.
+This one is appropriate for particle based simulations where energy is based 
+of neighbors and their variable positions, and the energy function is a pairwise
+summation over these moving particles at the local neighborhood of each particle.
+"""
+init_fn, apply_fn = simulate_fields.level_set(energy_fn, shift_fn, dt)
+
 opt_nbrs = neighbor_fn(R)
 opt_state = init_fn(key, R, neighbor=opt_nbrs)
 
