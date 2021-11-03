@@ -6,36 +6,26 @@ from jax.config import config
 from src.quantity import EnergyFn
 config.update("jax_enable_x64", True)
 from src.util import f32, i32
-from src import partition, simulate
-from src import space
-from src import mesh
+from src import partition, space
+from src import simulate_fields
+from src import energy, simulate_particles
 from src import visualization
 import pdb
 
-
-key = random.PRNGKey(0)
-
-# Setup some variables describing the system.
-N = 500
-dimension = 2
-box_size = f32(25.0)
-dt = f32(0.001)
-
-
-# Create helper functions to define a periodic box of some size.
-displacement, shift = space.periodic(box_size)
-
-metric = space.metric(displacement)
-
 # Use JAX's random number generator to generate random initial positions.
-key, split = random.split(key)
+key = random.PRNGKey(0)
+#key, split = random.split(key)
 
-simulation_steps = 100
 
-xmin = ymin = zmin = -1
-xmax = ymax = zmax = 1
+xmin = ymin = zmin = f32(-1.0)
+xmax = ymax = zmax = f32(1.0)
 box_size = xmax - xmin
-Nx = Ny = Nz = 10
+Nx = Ny = Nz = i32(10)
+dimension = i32(2)
+dt = f32(0.001)
+simulation_steps = i32(1000)
+
+#--------- Grid nodes
 xc = jnp.linspace(xmin, xmax, Nx)
 yc = jnp.linspace(ymin, ymax, Ny)
 zc = jnp.linspace(zmin, zmax, Nz)
@@ -43,16 +33,11 @@ X, Y, Z = jnp.meshgrid(xc, yc, zc)
 X = X.flatten(); Y = Y.flatten(); Z = Z.flatten()
 R = jnp.column_stack((X, Y, Z))
 
-
-
-
-
+#---------------
+# Create helper functions to define a periodic box of some size.
 displacement_fn, shift_fn = space.periodic(box_size)
-neighbor_fn, energy_fn = mesh.mesh(displacement_fn, box_size)
-# energy_fn is a function whose gradient gives velocity field.
-key = random.PRNGKey(0)
-init_fn, apply_fn = simulate.level_set(energy_fn, shift_fn, dt)
-
+neighbor_fn, energy_fn = energy.energy(displacement_fn, box_size)              # energy_fn is a function whose gradient gives velocity field.
+init_fn, apply_fn = simulate_particles.conservative(energy_fn, shift_fn, dt)
 opt_nbrs = neighbor_fn(R)
 opt_state = init_fn(key, R, neighbor=opt_nbrs)
 
@@ -79,5 +64,6 @@ opt_state.position.block_until_ready()
 final_R = opt_state.position
 final_V = opt_state.velocity
 final_F = opt_state.force
+
 visualization.animate(log)
 pdb.set_trace()

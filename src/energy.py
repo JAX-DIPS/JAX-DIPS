@@ -31,8 +31,27 @@ NeighborList = partition.NeighborList
 
 
 
+def gravity(dr: Array,
+                  a: Array=0,
+                  b: Array=1,
+                  c: Array=0,
+                  **unused_kwargs) -> Array:
+  """ Expanding wave motion with conservative potential for velocity
+  Args:
+    dr: An ndarray of shape [n, m] of pairwise distances between grid points and a reference (e.g., center of grid).
+    a: Should either be a floating point scalar or an ndarray whose shape is [n, m].
+    b: Should either be a floating point scalar or an ndarray whose shape is [n, m].
+    c: Should either be a floating point scalar or an ndarray whose shape is [n, m].
+    unused_kwargs: Allows extra data (e.g. time) to be passed to the energy.
+  Returns:
+    Matrix of energies of shape [n, m].
+  """
+  dr_inv = 1./ (dr + 1.0e-7) 
+  return np.nan_to_num(  - b * dr_inv )
 
-def expansion(dr: Array,
+
+
+def oscillate(dr: Array,
                   a: Array=0,
                   b: Array=1,
                   c: Array=0,
@@ -55,7 +74,7 @@ def expansion(dr: Array,
 
 
 
-def mesh(displacement_or_metric: DisplacementOrMetricFn,
+def energy(displacement_or_metric: DisplacementOrMetricFn,
                                 box_size: Box,
                                 r_onset: float=2.0,
                                 r_cutoff: float=2.5,
@@ -73,7 +92,7 @@ def mesh(displacement_or_metric: DisplacementOrMetricFn,
                                             dr_threshold,
                                             fractional_coordinates=fractional_coordinates)
     energy_fn = smap.pair_neighbor_list(
-                    multiplicative_isotropic_cutoff(expansion, r_onset, r_cutoff),
+                    multiplicative_isotropic_cutoff(gravity, r_onset, r_cutoff),
                     space.canonicalize_displacement_or_metric(displacement_or_metric),
                     ignore_unused_parameters=True,
                     a=0,
