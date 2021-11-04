@@ -23,9 +23,9 @@ from __future__ import print_function
 
 import jax.numpy as np
 from scipy.interpolate import splrep, PPoly
-
+from scipy.interpolate import RegularGridInterpolator
 from src import util
-
+import pdb
 
 # Typing
 
@@ -96,10 +96,43 @@ def spline(y, dx, degree=3):
 def nonoscillatory_quadratic_interpolation(U, R):
     """
     Under development for semi-Lagrangian method
-    Min & Gibou 2007
+    Min & Gibou 2007: eqns (12, 13)
+    This should be used for solution interpolation
     """
     def interp_fn(R_star):
         result = 0
         return result
 
     return interp_fn
+
+
+
+def multilinear_interpolation(v, gstate):
+    """
+    Under development for semi-Lagrangian method
+    Min & Gibou 2007: eqns (11)
+    This is to be used for velocity interpolation
+    """
+    x = gstate.x; y = gstate.y; z = gstate.z
+
+    v_cube = v.reshape((x.shape[0], y.shape[0], z.shape[0]))
+    # fn = RegularGridInterpolator((x, y, z), v, method="linear")
+
+    def find_cell_fn(point):
+        x_p, y_p, z_p = point
+        pdb.set_trace()
+
+    def interp_fn(R_star):
+        for point in R_star:
+            x_p, y_p, z_p = point
+            ind_x = np.where(x_p >= gstate.x)
+            pdb.set_trace()
+            indx = find_cell_fn(point)
+
+        result =0
+        return result
+
+    return interp_fn
+
+
+

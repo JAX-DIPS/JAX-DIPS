@@ -10,6 +10,8 @@ import jax.numpy as jnp
 from jax import lax
 
 from src import util, space, dataclasses, interpolate, quantity
+import pdb
+
 
 static_cast = util.static_cast
 
@@ -24,39 +26,50 @@ ShiftFn = space.ShiftFn
 
 T = TypeVar('T')
 InitFn = Callable[..., T]
-ApplyFn = Callable[[T], T]
+ApplyFn = Callable[[T,T], T]
 Simulator = Tuple[InitFn, ApplyFn]
 
 
 def advect_one_step(velocity_fn: Callable[..., Array],
                     shift_fn: ShiftFn,
                     dt: float,
-                    state: T,
+                    sstate: T,
+                    gstate: T,
                     **kwargs) -> T:
     """Apply a single step of semi-Lagrangian integration to a state."""
 
     dt = f32(dt)
     dt_2 = f32(dt / 2)
 
-    R, U_n, V_nm1= state.grid, state.solution, state.velocity_nm1
+    R, U_n, V_nm1= gstate.R, sstate.solution, sstate.velocity_nm1
     V_n = velocity_fn(R, **kwargs)
    
     # Get interpolation functions
-    Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, R)
-    Vn_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(V_n, R)
-    Vnm1_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(V_nm1, R)
+    
+    vx_n = V_n[:,0]; vy_n = V_n[:,1]; vz_n = V_n[:,2]
+
+    Vxn_interp_fn = interpolate.multilinear_interpolation(vx_n, gstate)
+    
+    pdb.set_trace()
+    Vyn_interp_fn = interpolate.multilinear_interpolation(vy_n, gstate)
+    Vzn_interp_fn = interpolate.multilinear_interpolation(vz_n, gstate)
+  
+    pdb.set_trace()
+    """
+    Vnm1_interp_fn = interpolate.multilinear_interpolation(V_nm1, gstate)
+    Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
 
     # Find Departure Point
     R_star = R - dt_2 * V_n
     V_n_star = Vn_interp_fn(R_star)
     V_nm1__star = Vnm1_interp_fn(R_star)
-    V_mid = 1.5 * V_n_star - 0.5 * V_nm1__star 
+    V_mid = f32(1.5) * V_n_star - f32(0.5) * V_nm1__star 
     R_d = R - dt * V_mid
     # substitute solution from departure point to arrival points (=grid points)
     U_np1 = Un_interp_fn(R_d)
-
-    return dataclasses.replace(state,
-                               grid=R,
+    """
+    U_np1 = 0
+    return dataclasses.replace(sstate,
                                solution=U_np1,
                                velocity_nm1=V_n)
 
@@ -70,7 +83,6 @@ class SIMState:
     Attributes:
     u: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
     """
-    grid: Array
     solution: Array
     velocity_nm1: Array
 
@@ -99,10 +111,10 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
     def init_fn(R, **kwargs):
         V = jnp.zeros(R.shape, dtype=R.dtype)
         U = jnp.zeros(R.shape[0], dtype=R.dtype)
-        U = U + jnp.dot(R, R) - f32(0.25)
-        return SIMState(R, U, V)  
+        U = U + space.square_distance(R) - f32(0.25)
+        return SIMState(U, V)  
 
-    def step_fn(state, **kwargs):
-        return advect_one_step(velocity_fn, shift_fn, dt, state, **kwargs)
+    def step_fn(sim_state, grid_state, **kwargs):
+        return advect_one_step(velocity_fn, shift_fn, dt, sim_state, grid_state, **kwargs)
 
     return init_fn, step_fn
