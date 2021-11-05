@@ -22,6 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 import jax.numpy as np
+from jax import ops, lax, jit
 from scipy.interpolate import splrep, PPoly
 from scipy.interpolate import RegularGridInterpolator
 from src import util
@@ -31,6 +32,7 @@ import pdb
 
 f32 = util.f32
 f64 = util.f64
+i32 = util.i32
 
 #
 
@@ -107,30 +109,69 @@ def nonoscillatory_quadratic_interpolation(U, R):
 
 
 
-def multilinear_interpolation(v, gstate):
+def multilinear_interpolation(c, gstate):
     """
     Under development for semi-Lagrangian method
     Min & Gibou 2007: eqns (11)
     This is to be used for velocity interpolation
     """
     x = gstate.x; y = gstate.y; z = gstate.z
+    c_cube = c.reshape((x.shape[0], y.shape[0], z.shape[0]))
 
-    v_cube = v.reshape((x.shape[0], y.shape[0], z.shape[0]))
-    # fn = RegularGridInterpolator((x, y, z), v, method="linear")
-
-    def find_cell_fn(point):
+    def find_lower_left_cell_idx(point):
+        #find cell index (i,j,k) containing point
         x_p, y_p, z_p = point
-        pdb.set_trace()
+        i = np.asarray(x_p > x).nonzero()[0][-1]
+        j = np.asarray(y_p > y).nonzero()[0][-1]
+        k = np.asarray(z_p > z).nonzero()[0][-1]
+        return i, j, k
+
+    def single_cell_interp(point):
+        i,j,k = find_lower_left_cell_idx(point)
+        c_111 = c_cube[i+1, j+1, k+1]
+        c_110 = c_cube[i+1, j+1, k  ]
+        c_011 = c_cube[i  , j+1, k+1]
+        c_101 = c_cube[i+1, j  , k+1]
+        c_001 = c_cube[i  , j  , k+1]
+        c_010 = c_cube[i  , j+1, k  ]
+        c_100 = c_cube[i+1, j  , k  ]
+        c_000 = c_cube[i  , j  , k  ]
+
+        x_p, y_p, z_p = point
+        dx = x[i+1] - x[i]
+        dy = y[j+1] - y[j]
+        dz = z[k+1] - z[k]
+        x_d = (x_p - x[i]) / dx
+        y_d = (y_p - y[i]) / dy
+        z_d = (z_p - z[i]) / dz
+
+        c_00 = c_000 * (f32(1.0) - x_d) + c_100 * x_d
+        c_01 = c_001 * (f32(1.0) - x_d) + c_101 * x_d
+        c_10 = c_010 * (f32(1.0) - x_d) + c_110 * x_d
+        c_11 = c_011 * (f32(1.0) - x_d) + c_111 * x_d
+
+        c_0  = c_00  * (f32(1.0) - y_d) + c_10  * y_d
+        c_1  = c_01  * (f32(1.0) - y_d) + c_11  * y_d
+
+        c    = c_0   * (f32(1.0) - z_d) + c_1   * z_d
+
+        return c
 
     def interp_fn(R_star):
-        for point in R_star:
-            x_p, y_p, z_p = point
-            ind_x = np.where(x_p >= gstate.x)
-            pdb.set_trace()
-            indx = find_cell_fn(point)
+        num_interp = len(R_star)
 
-        result =0
-        return result
+        @jit
+        def step(i, log):
+            point = R_star[i]
+            c_p = single_cell_interp(point)
+            log['val'] = ops.index_update(log['val'], i, c_p)
+            return log
+
+        log = {'val' : np.zeros(num_interp)}
+        log = lax.fori_loop(i32(0), i32(num_interp), step, (log))
+
+        return log['val']
+
 
     return interp_fn
 

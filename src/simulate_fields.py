@@ -49,12 +49,11 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     vx_n = V_n[:,0]; vy_n = V_n[:,1]; vz_n = V_n[:,2]
 
     Vxn_interp_fn = interpolate.multilinear_interpolation(vx_n, gstate)
-    
     pdb.set_trace()
     Vyn_interp_fn = interpolate.multilinear_interpolation(vy_n, gstate)
     Vzn_interp_fn = interpolate.multilinear_interpolation(vz_n, gstate)
   
-    pdb.set_trace()
+    
     """
     Vnm1_interp_fn = interpolate.multilinear_interpolation(V_nm1, gstate)
     Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
