@@ -25,7 +25,7 @@ xmax = ymax = zmax = f32(1.0)
 box_size = xmax - xmin
 Nx = Ny = Nz = i32(10)
 dimension = i32(2)
-dt = f32(0.001)
+dt = f32(0.00001)
 simulation_steps = i32(100)
 
 
@@ -48,7 +48,7 @@ displacement_fn, shift_fn = space.periodic(box_size)
 
 #-- define velocity field as gradient of a scalar field
 def energy_fn(r):
-    engy =  0.5 * space.square_distance(r)
+    engy =  0.5 * space.square_distance(r) - r[0]
     return engy
 velocity_fn = grad(jit(energy_fn))
 
@@ -76,4 +76,6 @@ sim_state.solution.block_until_ready()
 
 final_U = sim_state.solution
 
+# visualization.plot3D_field(gstate, final_U)
+visualization.animate_field(gstate, log, contours=20, transparent=True, opacity=0.2, colormap="Spectral")
 pdb.set_trace()
