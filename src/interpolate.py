@@ -20,6 +20,7 @@ This code was adapted from the way learning rate schedules are are built in JAX.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from jax._src.api import vmap
 
 import jax.numpy as np
 from jax import ops, lax, jit
@@ -121,9 +122,9 @@ def multilinear_interpolation(c, gstate):
     def find_lower_left_cell_idx(point):
         #find cell index (i,j,k) containing point
         x_p, y_p, z_p = point
-        i = np.asarray(x_p > x).nonzero()[0][-1]
-        j = np.asarray(y_p > y).nonzero()[0][-1]
-        k = np.asarray(z_p > z).nonzero()[0][-1]
+        i = np.nonzero(np.asarray(x_p > x), size=1)[0]
+        j = np.nonzero(np.asarray(y_p > y), size=1)[0]
+        k = np.nonzero(np.asarray(z_p > z), size=1)[0]
         return i, j, k
 
     def single_cell_interp(point):
@@ -158,21 +159,19 @@ def multilinear_interpolation(c, gstate):
         return c
 
     def interp_fn(R_star):
-        num_interp = len(R_star)
+        return vmap(jit(single_cell_interp))(R_star)
+        # num_interp = len(R_star)
+        # def step(i, log):
+        #     point = R_star[i]
+        #     c_p = single_cell_interp(point)
+        #     log['val'] = ops.index_update(log['val'], i, c_p)
+        #     return log
 
-        @jit
-        def step(i, log):
-            point = R_star[i]
-            c_p = single_cell_interp(point)
-            log['val'] = ops.index_update(log['val'], i, c_p)
-            return log
+        # log = {'val' : np.zeros(num_interp,)}
+        # log = lax.fori_loop(i32(0), i32(num_interp), step, (log,))
 
-        log = {'val' : np.zeros(num_interp)}
-        log = lax.fori_loop(i32(0), i32(num_interp), step, (log))
-
-        return log['val']
-
-
+        # return log['val']
+        
     return interp_fn
 
 

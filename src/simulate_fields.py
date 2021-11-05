@@ -45,19 +45,29 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     V_n = velocity_fn(R, **kwargs)
    
     # Get interpolation functions
-    
-    vx_n = V_n[:,0]; vy_n = V_n[:,1]; vz_n = V_n[:,2]
 
-    Vxn_interp_fn = interpolate.multilinear_interpolation(vx_n, gstate)
-    pdb.set_trace()
-    Vyn_interp_fn = interpolate.multilinear_interpolation(vy_n, gstate)
-    Vzn_interp_fn = interpolate.multilinear_interpolation(vz_n, gstate)
-  
-    
-    """
-    Vnm1_interp_fn = interpolate.multilinear_interpolation(V_nm1, gstate)
-    Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
+    def vec_interp_fn(Vec, gstate):
+        vx = Vec[:,0]; vy = Vec[:,1]; vz = Vec[:,2]
 
+        def interp_fn(R_):
+            vx_interp_fn = interpolate.multilinear_interpolation(vx, gstate)
+            vy_interp_fn = interpolate.multilinear_interpolation(vy, gstate)
+            vz_interp_fn = interpolate.multilinear_interpolation(vz, gstate)
+            xvals = vx_interp_fn(R_)
+            yvals = vy_interp_fn(R_)
+            zvals = vz_interp_fn(R_)
+            return jnp.vstack((xvals, yvals, zvals))
+        
+        return interp_fn
+
+
+    Vn_interp_fn = vec_interp_fn(V_n, gstate)
+    Vnm1_interp_fn = vec_interp_fn(V_nm1, gstate)
+   
+    # FIX THIS:
+    Un_interp_fn = interpolate.multilinear_interpolation(U_n, gstate)
+    # Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
+    
     # Find Departure Point
     R_star = R - dt_2 * V_n
     V_n_star = Vn_interp_fn(R_star)
@@ -66,8 +76,7 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     R_d = R - dt * V_mid
     # substitute solution from departure point to arrival points (=grid points)
     U_np1 = Un_interp_fn(R_d)
-    """
-    U_np1 = 0
+    
     return dataclasses.replace(sstate,
                                solution=U_np1,
                                velocity_nm1=V_n)
