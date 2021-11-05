@@ -1,8 +1,9 @@
 import jax
-from jax import jit, random, lax, ops
+from jax import jit, random, lax, ops, grad
 import jax.numpy as jnp
 import numpy as onp
 from jax.config import config
+from src import quantity
 from src.quantity import EnergyFn
 config.update("jax_enable_x64", True)
 from src.util import f32, i32
@@ -11,6 +12,7 @@ from src import simulate_fields
 from src import energy, simulate_particles
 from src import visualization
 from src import mesh
+from src import util
 import pdb
 
 # Use JAX's random number generator to generate random initial positions.
@@ -44,18 +46,15 @@ sample_pnt = coord_at(gstate, [1,1,1])
 
 displacement_fn, shift_fn = space.periodic(box_size)
 
-neighbor_fn, energy_fn = energy.energy(displacement_fn, box_size)              # energy_fn is a function whose gradient gives velocity field.
-"""
-This energy_fn is not what we need for velocity function!
-Our case is much simpler, probably a statically defined function is enough.
-This one is appropriate for particle based simulations where energy is based 
-of neighbors and their variable positions, and the energy function is a pairwise
-summation over these moving particles at the local neighborhood of each particle.
-"""
-init_fn, apply_fn = simulate_fields.level_set(energy_fn, shift_fn, dt)
+#-- define velocity field as gradient of a scalar field
+def energy_fn(r):
+    engy =  0.5 * space.square_distance(r)
+    return engy
+velocity_fn = grad(jit(energy_fn))
 
-sim_nbrs = neighbor_fn(R)
-sim_state = init_fn(R, neighbor=sim_nbrs)
+init_fn, apply_fn = simulate_fields.level_set(velocity_fn, shift_fn, dt)
+
+sim_state = init_fn(R)
 
 @jit
 def step_func(i, state_and_nbrs):
@@ -64,14 +63,15 @@ def step_func(i, state_and_nbrs):
     log['t'] = ops.index_update(log['t'], i, t)
     sol = state.solution
     log['U'] = ops.index_update(log['U'], i, sol)
-    return apply_fn(state, gstate, neighbor=sim_nbrs), log
+    return apply_fn(state, gstate), log
 
-log = {'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape),
-       't' : jnp.zeros((simulation_steps,))
+log = {
+        'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape),
+        't' : jnp.zeros((simulation_steps,))
       }
 sim_state, log = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log))
 
-sim_state.grid.block_until_ready()
+sim_state.solution.block_until_ready()
 
 
 final_U = sim_state.solution

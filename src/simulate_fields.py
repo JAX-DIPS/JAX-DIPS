@@ -7,7 +7,7 @@ from jax import ops
 from jax import random
 from jax._src.dtypes import dtype
 import jax.numpy as jnp
-from jax import lax
+from jax import lax, vmap
 
 from src import util, space, dataclasses, interpolate, quantity
 import pdb
@@ -30,6 +30,9 @@ ApplyFn = Callable[[T,T], T]
 Simulator = Tuple[InitFn, ApplyFn]
 
 
+
+
+
 def advect_one_step(velocity_fn: Callable[..., Array],
                     shift_fn: ShiftFn,
                     dt: float,
@@ -45,24 +48,8 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     V_n = velocity_fn(R, **kwargs)
    
     # Get interpolation functions
-
-    def vec_interp_fn(Vec, gstate):
-        vx = Vec[:,0]; vy = Vec[:,1]; vz = Vec[:,2]
-
-        def interp_fn(R_):
-            vx_interp_fn = interpolate.multilinear_interpolation(vx, gstate)
-            vy_interp_fn = interpolate.multilinear_interpolation(vy, gstate)
-            vz_interp_fn = interpolate.multilinear_interpolation(vz, gstate)
-            xvals = vx_interp_fn(R_)
-            yvals = vy_interp_fn(R_)
-            zvals = vz_interp_fn(R_)
-            return jnp.vstack((xvals, yvals, zvals))
-        
-        return interp_fn
-
-
-    Vn_interp_fn = vec_interp_fn(V_n, gstate)
-    Vnm1_interp_fn = vec_interp_fn(V_nm1, gstate)
+    Vn_interp_fn = interpolate.vec_multilinear_interpolation(V_n, gstate)
+    Vnm1_interp_fn = interpolate.vec_multilinear_interpolation(V_nm1, gstate)
    
     # FIX THIS:
     Un_interp_fn = interpolate.multilinear_interpolation(U_n, gstate)
@@ -73,9 +60,9 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     V_n_star = Vn_interp_fn(R_star)
     V_nm1__star = Vnm1_interp_fn(R_star)
     V_mid = f32(1.5) * V_n_star - f32(0.5) * V_nm1__star 
-    R_d = R - dt * V_mid
+    R_d = R - dt * V_mid.reshape(R.shape)
     # substitute solution from departure point to arrival points (=grid points)
-    U_np1 = Un_interp_fn(R_d)
+    U_np1 = Un_interp_fn(R_d).flatten()
     
     return dataclasses.replace(sstate,
                                solution=U_np1,
@@ -98,7 +85,8 @@ class SIMState:
 def level_set(velocity_or_energy_fn: Callable[..., Array],
               shift_fn: ShiftFn,
               dt: float) -> Simulator:
-    """Simulates a system.
+    """
+    Simulates a system.
 
     Args:
     velocity_fn: A function that produces the velocity field on
@@ -114,7 +102,8 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
     Returns:
     See above.
     """
-    velocity_fn = quantity.canonicalize_force(velocity_or_energy_fn)
+    # velocity_fn = quantity.canonicalize_force(velocity_or_energy_fn)
+    velocity_fn = vmap(velocity_or_energy_fn)
 
     def init_fn(R, **kwargs):
         V = jnp.zeros(R.shape, dtype=R.dtype)

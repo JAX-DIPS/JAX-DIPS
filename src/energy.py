@@ -86,7 +86,7 @@ def energy(displacement_or_metric: DisplacementOrMetricFn,
         dr_threshold,
         fractional_coordinates=fractional_coordinates)
     energy_fn = smap.pair_neighbor_list(
-        multiplicative_isotropic_cutoff(gravity, r_onset, r_cutoff),
+        multiplicative_isotropic_cutoff(oscillate, r_onset, r_cutoff),
         space.canonicalize_displacement_or_metric(displacement_or_metric),
         ignore_unused_parameters=True,
         a=0,
