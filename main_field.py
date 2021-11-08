@@ -12,7 +12,7 @@ from src import simulate_fields
 from src import energy, simulate_particles
 from src import visualization
 from src import mesh
-from src import util
+from src import util, interpolate 
 import pdb
 
 # Use JAX's random number generator to generate random initial positions.
@@ -23,9 +23,11 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-1.0)
 xmax = ymax = zmax = f32(1.0)
 box_size = xmax - xmin
-Nx = Ny = Nz = i32(10)
-dimension = i32(2)
-dt = f32(0.00001)
+Nx = i32(16)
+Ny = i32(16)
+Nz = i32(16)
+dimension = i32(3)
+dt = f32(0.01)
 simulation_steps = i32(100)
 
 
@@ -48,7 +50,7 @@ displacement_fn, shift_fn = space.periodic(box_size)
 
 #-- define velocity field as gradient of a scalar field
 def energy_fn(r):
-    engy =  0.5 * space.square_distance(r) - r[0]
+    engy =  0.5 * space.square_distance(r)
     return engy
 velocity_fn = grad(jit(energy_fn))
 
@@ -63,10 +65,13 @@ def step_func(i, state_and_nbrs):
     log['t'] = ops.index_update(log['t'], i, t)
     sol = state.solution
     log['U'] = ops.index_update(log['U'], i, sol)
+    vel = state.velocity_nm1
+    log['V'] = ops.index_update(log['V'], i, vel)
     return apply_fn(state, gstate), log
 
 log = {
         'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape),
+        'V' : jnp.zeros((simulation_steps,) + sim_state.velocity_nm1.shape),
         't' : jnp.zeros((simulation_steps,))
       }
 sim_state, log = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log))
@@ -74,8 +79,20 @@ sim_state, log = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_st
 sim_state.solution.block_until_ready()
 
 
-final_U = sim_state.solution
+#--- VISUALIZATION
+# visualization.plot3D_field(gstate, log['U'][-1])
 
-# visualization.plot3D_field(gstate, final_U)
-visualization.animate_field(gstate, log, contours=20, transparent=True, opacity=0.2, colormap="Spectral")
+visualization.animate_field(gstate, log, contours=20, transparent=True) #, opacity=0.2) #, colormap="Spectral")
+
+# visualization.plot_3d_slice(gstate, log)
+
+
+
+#--- TEST INTERPOLATION
+# u1 = log['U'][0]
+# interp_fn = interpolate.multilinear_interpolation(u1, gstate)
+# u2 = interp_fn(R).flatten().reshape(Nx,Ny,Nz)
+# u1 = u1.reshape(Nx,Ny,Nz)
+# diff = (u2 - u1)
+#gstate.x[interpolate.which_cell_index(jnp.asarray(1>=gstate.x))]
 pdb.set_trace()

@@ -24,6 +24,7 @@ from jax._src.api import vmap
 
 import jax.numpy as np
 from jax import ops, lax, jit
+from numpy import where
 from scipy.interpolate import splrep, PPoly
 from scipy.interpolate import RegularGridInterpolator
 from src import util
@@ -110,6 +111,14 @@ def nonoscillatory_quadratic_interpolation(U, R):
 
 
 
+#  A USEFULE utility function to find the index of True in a list, 
+# for example cond = 0.1 < gstate.x provides a list of True's and False's
+# and thie function returns the first time True appears
+def which_cell_index(cond): 
+    cond = np.asarray(cond)
+    return (np.argwhere(~cond, size=1) - 1).flatten()
+
+
 def multilinear_interpolation(c, gstate):
     """
     Under development for semi-Lagrangian method
@@ -119,12 +128,17 @@ def multilinear_interpolation(c, gstate):
     x = gstate.x; y = gstate.y; z = gstate.z
     c_cube = c.reshape((x.shape[0], y.shape[0], z.shape[0]))
 
+    """
+    After reshape: c_cube[x-axis, y-axis, z-axis]
+    This object is periodic by default!
+    """
+
     def find_lower_left_cell_idx(point):
         #find cell index (i,j,k) containing point
         x_p, y_p, z_p = point
-        i = np.nonzero(np.asarray(x_p > x), size=1)[0]
-        j = np.nonzero(np.asarray(y_p > y), size=1)[0]
-        k = np.nonzero(np.asarray(z_p > z), size=1)[0]
+        i = which_cell_index(np.asarray(x_p >= x))
+        j = which_cell_index(np.asarray(y_p >= y))
+        k = which_cell_index(np.asarray(z_p >= z))
         return i, j, k
 
     def single_cell_interp(point):
@@ -143,8 +157,8 @@ def multilinear_interpolation(c, gstate):
         dy = y[j+1] - y[j]
         dz = z[k+1] - z[k]
         x_d = (x_p - x[i]) / dx
-        y_d = (y_p - y[i]) / dy
-        z_d = (z_p - z[i]) / dz
+        y_d = (y_p - y[j]) / dy
+        z_d = (z_p - z[k]) / dz
 
         c_00 = c_000 * (f32(1.0) - x_d) + c_100 * x_d
         c_01 = c_001 * (f32(1.0) - x_d) + c_101 * x_d
@@ -171,7 +185,7 @@ def multilinear_interpolation(c, gstate):
         # log = lax.fori_loop(i32(0), i32(num_interp), step, (log,))
 
         # return log['val']
-        
+
     return interp_fn
 
 

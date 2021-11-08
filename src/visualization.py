@@ -1,5 +1,8 @@
 from mayavi import mlab
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import numpy as onp
+# import moviepy.editor as mpy
 import pdb
 
 def plot(R):
@@ -51,22 +54,71 @@ def plot3D_field(gstate, U):
     mlab.contour3d(ff, contours=40, transparent=True)
     mlab.show()
 
+
 def animate_field(gstate, log, **kwargs):
+    
     X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z)
     U = log['U'][0]
     times = log['t']
 
-    fig = mlab.gcf()
+    # fig = mlab.gcf()
+    fig = mlab.figure(size=(800, 800), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
     ff = onp.array(U.reshape(X.shape))
     # p = mlab.points3d(X.flatten(), Y.flatten(), Z.flatten(), U, colormap="Spectral", scale_factor=scale_fac, vmin=-3.0, vmax=3.)
     p = mlab.contour3d(ff, **kwargs)
+
+
+    # def make_frame(t):
+    #     ff = onp.array(log['U'][t].reshape(X.shape))
+    #     p.mlab_source.set(scalars=ff)
+    #     return mlab.screenshot(antialiased=True)
+    # duration = 5
+    # animation = mpy.VideoClip(make_frame, duration=duration).resize(0.5)
+    # animation.write_gif("Rotated_sym_distri_static_Python.gif", fps=20)
+    # mlab.close(fig)
+
     @mlab.animate(delay=100)
     def anim():
         f = mlab.gcf()
         while True:
             for i in range(1, len(times)):
                 ff = onp.array(log['U'][i].reshape(X.shape))
-                p.mlab_source.set(s=ff)
+                p.mlab_source.set(scalars=ff)
                 yield
     anim()
     mlab.show()
+
+
+
+
+# def plot_3d_slice(gstate, log):
+
+#     X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z)
+#     U_block = onp.array(log['U'].reshape((-1,) + X.shape ))
+    # pdb.set_trace()
+    # dif = [abs(U_block[i+1] - U_block[i]).max() for i in range(99)]
+    # pdb.set_trace()
+    # slice = ":,:,5"
+    # s_x = slice[:slice.find(',')]
+    # s_y = slice[slice.find(',')+1:slice.rfind(',')]
+    # s_z = slice[slice.rfind(',')+1:]
+    # if s_x==":":
+    #     s_x = range(X.shape[0])
+    # else:
+    #     s_x = int(s_x)
+    # if s_y==":":
+    #     s_y = range(X.shape[1])
+    # else:
+    #     s_y = int(s_y)
+    # if s_z==":":
+    #     s_z = range(X.shape[2])
+    # else:
+    #     s_z = int(s_z)
+
+    # fig, ax = plt.subplots(figsize=(5,5))
+    # def update(i):
+    #     ax.clear()
+    #     ax.pcolor(X[:, :, 5], Y[:, :, 5], U_block[i, :, :, 5], cmap='Spectral_r')
+    #     ax.set_xlabel('x', fontsize=20); ax.set_ylabel('y', fontsize=20)
+    # ani = animation.FuncAnimation(fig, update, frames=10, interval=500)
+    # ani.save('advection.gif', writer='pillow')

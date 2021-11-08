@@ -42,7 +42,7 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     """Apply a single step of semi-Lagrangian integration to a state."""
 
     dt = f32(dt)
-    dt_2 = f32(dt / 2)
+    dt_2 = f32(dt / 2.0)
 
     R, U_n, V_nm1= gstate.R, sstate.solution, sstate.velocity_nm1
     V_n = velocity_fn(R, **kwargs)
@@ -63,7 +63,6 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     R_d = R - dt * V_mid.reshape(R.shape)
     # substitute solution from departure point to arrival points (=grid points)
     U_np1 = Un_interp_fn(R_d).flatten()
-    
     return dataclasses.replace(sstate,
                                solution=U_np1,
                                velocity_nm1=V_n)
