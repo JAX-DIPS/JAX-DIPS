@@ -101,12 +101,12 @@ def plot_slice(gstate, log, time_indx=0, z_indx=-1):
 def plot_slice_animation(gstate, log, **kwargs):
     X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z)
     U_block = onp.array(log['U'].reshape( ( (-1,) + gstate.shape() )))
+    zidx = len(gstate.z)//2
 
     fig, ax = plt.subplots(figsize=(5,5))
     def update(i):
         ax.clear()
-        # ax.pcolor(X[:, :, 5], Y[:, :, 5], U_block[i, :, :, 5], cmap='Spectral_r')
-        ax.contour(X[:, :, 5], Y[:, :, 5], U_block[i, :, :, 5], **kwargs)
+        ax.contour(X[:, :, zidx], Y[:, :, zidx], U_block[i, :, :, zidx], **kwargs)
         ax.set_xlabel('x', fontsize=20); ax.set_ylabel('y', fontsize=20)
     ani = animation.FuncAnimation(fig, update, frames=10, interval=500)
     ani.save('advection.gif', writer='pillow')
