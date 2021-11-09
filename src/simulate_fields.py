@@ -82,6 +82,7 @@ class SIMState:
 
 
 def level_set(velocity_or_energy_fn: Callable[..., Array],
+              level_set_fn: Callable[..., Array],
               shift_fn: ShiftFn,
               dt: float) -> Simulator:
     """
@@ -103,11 +104,14 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
     """
     # velocity_fn = quantity.canonicalize_force(velocity_or_energy_fn)
     velocity_fn = vmap(velocity_or_energy_fn)
+    phi_fn = vmap(level_set_fn)
 
     def init_fn(R, **kwargs):
-        V = jnp.zeros(R.shape, dtype=R.dtype)
-        U = jnp.zeros(R.shape[0], dtype=R.dtype)
-        U = U + space.square_distance(R) - f32(0.25)
+        # V = jnp.zeros(R.shape, dtype=R.dtype)
+        # U = jnp.zeros(R.shape[0], dtype=R.dtype)
+        # U = U + space.square_distance(R) - f32(0.25)
+        V = velocity_fn(R)
+        U = phi_fn(R)
         return SIMState(U, V)  
 
     def step_fn(sim_state, grid_state, **kwargs):
