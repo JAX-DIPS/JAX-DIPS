@@ -91,34 +91,22 @@ def animate_field(gstate, log, **kwargs):
 
 
 
-# def plot_3d_slice(gstate, log):
+def plot_slice(gstate, log, time_indx=0, z_indx=-1):
+    fig, ax = plt.subplots(figsize=(5,5))
+    ax.contour(onp.array(log['U'][time_indx].reshape(gstate.shape())[:,:,z_indx]))
+    plt.show()
 
-#     X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z)
-#     U_block = onp.array(log['U'].reshape((-1,) + X.shape ))
-    # pdb.set_trace()
-    # dif = [abs(U_block[i+1] - U_block[i]).max() for i in range(99)]
-    # pdb.set_trace()
-    # slice = ":,:,5"
-    # s_x = slice[:slice.find(',')]
-    # s_y = slice[slice.find(',')+1:slice.rfind(',')]
-    # s_z = slice[slice.rfind(',')+1:]
-    # if s_x==":":
-    #     s_x = range(X.shape[0])
-    # else:
-    #     s_x = int(s_x)
-    # if s_y==":":
-    #     s_y = range(X.shape[1])
-    # else:
-    #     s_y = int(s_y)
-    # if s_z==":":
-    #     s_z = range(X.shape[2])
-    # else:
-    #     s_z = int(s_z)
 
-    # fig, ax = plt.subplots(figsize=(5,5))
-    # def update(i):
-    #     ax.clear()
-    #     ax.pcolor(X[:, :, 5], Y[:, :, 5], U_block[i, :, :, 5], cmap='Spectral_r')
-    #     ax.set_xlabel('x', fontsize=20); ax.set_ylabel('y', fontsize=20)
-    # ani = animation.FuncAnimation(fig, update, frames=10, interval=500)
-    # ani.save('advection.gif', writer='pillow')
+
+def plot_slice_animation(gstate, log, **kwargs):
+    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z)
+    U_block = onp.array(log['U'].reshape( ( (-1,) + gstate.shape() )))
+
+    fig, ax = plt.subplots(figsize=(5,5))
+    def update(i):
+        ax.clear()
+        # ax.pcolor(X[:, :, 5], Y[:, :, 5], U_block[i, :, :, 5], cmap='Spectral_r')
+        ax.contour(X[:, :, 5], Y[:, :, 5], U_block[i, :, :, 5], **kwargs)
+        ax.set_xlabel('x', fontsize=20); ax.set_ylabel('y', fontsize=20)
+    ani = animation.FuncAnimation(fig, update, frames=10, interval=500)
+    ani.save('advection.gif', writer='pillow')

@@ -27,7 +27,7 @@ Mesher = Tuple[InitFn, PointFn]
 # Primitive Spatial Transforms
 
 @dataclasses.dataclass
-class GridState:
+class GridState(object):
     """A struct containing the state of the grid.
     
     Attributes:
@@ -41,6 +41,9 @@ class GridState:
     y: Array
     z: Array
     R: Array
+
+    def shape(self):
+        return self.x.shape + self.y.shape + self.z.shape
 
 
 

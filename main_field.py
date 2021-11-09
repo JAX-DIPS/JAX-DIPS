@@ -23,9 +23,9 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-1.0)
 xmax = ymax = zmax = f32(1.0)
 box_size = xmax - xmin
-Nx = i32(16)
-Ny = i32(16)
-Nz = i32(16)
+Nx = i32(20)
+Ny = i32(20)
+Nz = i32(20)
 dimension = i32(3)
 dt = f32(0.01)
 simulation_steps = i32(100)
@@ -80,11 +80,10 @@ sim_state.solution.block_until_ready()
 
 
 #--- VISUALIZATION
-# visualization.plot3D_field(gstate, log['U'][-1])
+# visualization.animate_field(gstate, log, contours=20, transparent=True, vmin=log['U'].min(), vmax=log['U'].max()) #, opacity=0.2) #, colormap="Spectral")
 
-visualization.animate_field(gstate, log, contours=20, transparent=True) #, opacity=0.2) #, colormap="Spectral")
-
-# visualization.plot_3d_slice(gstate, log)
+lvls = onp.linspace(log['U'].min(), log['U'].max(), 20)
+visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='Spectral_r')
 
 
 
