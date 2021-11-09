@@ -56,11 +56,11 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     # Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
     
     # Find Departure Point
-    R_star = R - dt_2 * V_n
+    R_star = shift_fn(R, -dt_2 * V_n)                               # R - dt_2 * V_n
     V_n_star = Vn_interp_fn(R_star)
     V_nm1_star = Vnm1_interp_fn(R_star)
     V_mid = f32(1.5) * V_n_star - f32(0.5) * V_nm1_star 
-    R_d = R - dt * V_mid
+    R_d =  R - dt * V_mid
     # substitute solution from departure point to arrival points (=grid points)
     U_np1 = Un_interp_fn(R_d).flatten()
     return dataclasses.replace(sstate,

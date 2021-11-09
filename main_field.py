@@ -28,7 +28,7 @@ Nx = i32(100)
 Ny = i32(100)
 Nz = i32(2)
 dimension = i32(3)
-dt = f32(0.001)
+dt = f32(0.01)
 simulation_steps = i32(100)
 
 
@@ -50,19 +50,19 @@ sample_pnt = coord_at(gstate, [1,1,1])
 displacement_fn, shift_fn = space.periodic(box_size)
 
 #-- define velocity field as gradient of a scalar field
-# def energy_fn(r):
-#     engy =  0.5 * space.square_distance(r)
-#     return engy
-# velocity_fn = grad(jit(energy_fn))
+def energy_fn(r):
+    engy =  0.5 * space.square_distance(r)
+    return engy
+velocity_fn = grad(jit(energy_fn))
 
-def velocity_fn(r):
-    return jnp.array([-r[1], r[0], 0.0])
+# def velocity_fn(r):
+#   return jnp.array([-r[1], r[0], 0.0])
 
 def phi_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    return (x**2 + (y-0.75)**2 + z**2 - 0.15**2)
+    return (x**2 + (y)**2 + z**2 - 0.15**2)
 
 
 init_fn, apply_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
@@ -91,7 +91,7 @@ sim_state.solution.block_until_ready()
 
 
 #--- VISUALIZATION
-# visualization.animate_field(gstate, log, contours=20, transparent=True, vmin=log['U'].min(), vmax=log['U'].max()) #, opacity=0.2) #, colormap="Spectral")
+visualization.animate_field(gstate, log, contours=20, transparent=True, vmin=log['U'].min(), vmax=log['U'].max()) #, opacity=0.2) #, colormap="Spectral")
 
 lvls = onp.linspace(log['U'].min(), log['U'].max(), 20)
 visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='Spectral_r')
