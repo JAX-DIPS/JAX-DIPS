@@ -200,6 +200,6 @@ def vec_multilinear_interpolation(Vec, gstate):
         xvals = vx_interp_fn(R_)
         yvals = vy_interp_fn(R_)
         zvals = vz_interp_fn(R_)
-        return np.vstack((xvals, yvals, zvals))
+        return np.column_stack((xvals, yvals, zvals))
     
     return interp_fn

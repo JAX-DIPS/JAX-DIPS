@@ -24,11 +24,11 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-1.0)
 xmax = ymax = zmax = f32(1.0)
 box_size = xmax - xmin
-Nx = i32(10)
-Ny = i32(10)
+Nx = i32(100)
+Ny = i32(100)
 Nz = i32(2)
 dimension = i32(3)
-dt = f32(0.01)
+dt = f32(0.001)
 simulation_steps = i32(100)
 
 
