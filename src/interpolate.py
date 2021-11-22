@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from jax._src.api import vmap
+from jax._src.dtypes import dtype
 
 import jax.numpy as np
 from jax import ops, lax, jit
@@ -97,17 +98,108 @@ def spline(y, dx, degree=3):
     return spline_fn
 
 
-def nonoscillatory_quadratic_interpolation(U, R):
+
+
+
+
+def nonoscillatory_quadratic_interpolation(c, gstate):
     """
     Under development for semi-Lagrangian method
     Min & Gibou 2007: eqns (12, 13)
     This should be used for solution interpolation
     """
+    xo = gstate.x; yo = gstate.y; zo = gstate.z
+    c_cube_ = c.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
+    cubex = np.zeros((8,3), dtype=i32)
+
+    def find_lower_left_cell_idx(point):
+        """
+        find cell index (i,j,k) containing point
+        """
+        x_p, y_p, z_p = point
+        i = which_cell_index(np.asarray(x_p >= x))
+        j = which_cell_index(np.asarray(y_p >= y))
+        k = which_cell_index(np.asarray(z_p >= z))
+        return i, j, k
+
+    @jit
+    def second_order_deriv(i, j, k, dd):
+        dx, dy, dz = dd
+        dxx = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) #/ dx / dx
+        dyy = (c_cube[i  , j+1, k  ] - 2*c_cube[i,j,k] + c_cube[i  ,j-1,k  ]) #/ dy / dy
+        dzz = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) #/ dz / dz
+        return np.array([dxx, dyy, dzz])
+
+
+    def single_cell_interp(point):
+        """
+        nonoscillatory quadratic interpolation
+        """
+        i,j,k = find_lower_left_cell_idx(point)
+        
+        c_111 = c_cube[i+1, j+1, k+1]
+        c_110 = c_cube[i+1, j+1, k  ]
+        c_011 = c_cube[i  , j+1, k+1]
+        c_101 = c_cube[i+1, j  , k+1]
+        c_001 = c_cube[i  , j  , k+1]
+        c_010 = c_cube[i  , j+1, k  ]
+        c_100 = c_cube[i+1, j  , k  ]
+        c_000 = c_cube[i  , j  , k  ]
+
+        x_p, y_p, z_p = point
+        dx = x[i+1] - x[i]
+        dy = y[j+1] - y[j]
+        dz = z[k+1] - z[k]
+        x_d = (x_p - x[i]) / dx
+        y_d = (y_p - y[j]) / dy
+        z_d = (z_p - z[k]) / dz
+
+        c_00 = c_000 * (f32(1.0) - x_d) + c_100 * x_d
+        c_01 = c_001 * (f32(1.0) - x_d) + c_101 * x_d
+        c_10 = c_010 * (f32(1.0) - x_d) + c_110 * x_d
+        c_11 = c_011 * (f32(1.0) - x_d) + c_111 * x_d
+
+        c_0  = c_00  * (f32(1.0) - y_d) + c_10  * y_d
+        c_1  = c_01  * (f32(1.0) - y_d) + c_11  * y_d
+
+        c    = c_0   * (f32(1.0) - z_d) + c_1   * z_d
+
+        # correcting for second derivatives:
+        dd = (dx, dy, dz)
+        
+        d2x_000, d2y_000, d2z_000 = second_order_deriv(i  , j  , k  , dd)
+        d2x_100, d2y_100, d2z_100 = second_order_deriv(i+1, j  , k  , dd)
+        d2x_010, d2y_010, d2z_010 = second_order_deriv(i  , j+1, k  , dd)
+        d2x_001, d2y_001, d2z_001 = second_order_deriv(i  , j  , k+1, dd)
+
+        d2x_101, d2y_101, d2z_101 = second_order_deriv(i+1, j  , k+1, dd)
+        d2x_011, d2y_011, d2z_011 = second_order_deriv(i  , j+1, k+1, dd)
+        d2x_110, d2y_110, d2z_110 = second_order_deriv(i+1, j+1, k  , dd)
+        d2x_111, d2y_111, d2z_111 = second_order_deriv(i+1, j+1, k+1, dd)
+        
+        d2c_dxx = np.min(np.array([abs(d2x_000), abs(d2x_100), abs(d2x_010), abs(d2x_001), abs(d2x_101), abs(d2x_011), abs(d2x_110), abs(d2x_111)]))
+        d2c_dyy = np.min(np.array([abs(d2y_000), abs(d2y_100), abs(d2y_010), abs(d2y_001), abs(d2y_101), abs(d2y_011), abs(d2y_110), abs(d2y_111)]))
+        d2c_dzz = np.min(np.array([abs(d2z_000), abs(d2z_100), abs(d2z_010), abs(d2z_001), abs(d2z_101), abs(d2z_011), abs(d2z_110), abs(d2z_111)]))
+
+        c  = c - d2c_dxx * f32(0.5) * x_d * (f32(1.0) - x_d) - d2c_dyy * f32(0.5) * y_d * (f32(1.0) - y_d) - d2c_dzz * f32(0.5) * z_d * (f32(1.0) - z_d) 
+
+        return c
+
+
     def interp_fn(R_star):
-        result = 0
-        return result
+        """
+        interpolate on all provided points
+        """
+        # update_ghost_layer_3d(c_cube)
+        return vmap(jit(single_cell_interp))(R_star)
 
     return interp_fn
+
+
+
+
+
 
 
 def which_cell_index(cond): 
@@ -117,6 +209,10 @@ def which_cell_index(cond):
     """
     cond = np.asarray(cond)
     return (np.argwhere(~cond, size=1) - 1).flatten()
+
+
+
+
 
 
 def add_ghost_layer_3d(x, y, z, c_cube):
@@ -142,6 +238,10 @@ def add_ghost_layer_3d(x, y, z, c_cube):
     zz = np.concatenate((np.array([z[0] - dz_b]) , z, np.array([z[-1] + dz_t])))
     return xx, yy, zz, c_cube_gh
 
+
+
+
+
 def update_ghost_layer_3d(c_cube):
     c_cube.at[ 0,:,:].set(2 * c_cube[ 1,:,:] - c_cube[ 2,:,:])
     c_cube.at[-1,:,:].set(2 * c_cube[-2,:,:] - c_cube[-3,:,:])
@@ -151,6 +251,10 @@ def update_ghost_layer_3d(c_cube):
 
     c_cube.at[:,:, 0].set(2 * c_cube[:,:, 1] - c_cube[:,:, 2])
     c_cube.at[:,:,-1].set(2 * c_cube[:,:,-2] - c_cube[:,:,-3])
+
+
+
+
 
 
 def multilinear_interpolation(c, gstate):

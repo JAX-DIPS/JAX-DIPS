@@ -53,8 +53,8 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     Vnm1_interp_fn = interpolate.vec_multilinear_interpolation(V_nm1, gstate)
    
     # FIX THIS:
-    Un_interp_fn = interpolate.multilinear_interpolation(U_n, gstate)
-    # Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
+    # Un_interp_fn = interpolate.multilinear_interpolation(U_n, gstate)
+    Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
     
     # Find Departure Point
     R_star = shift_fn(R, -dt_2 * V_n)                               # R - dt_2 * V_n
