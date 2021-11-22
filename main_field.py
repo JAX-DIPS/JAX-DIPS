@@ -58,7 +58,8 @@ displacement_fn, shift_fn = space.periodic(box_size)
 @jit
 def velocity_fn(r, time=0.0):
     x = r[0]; y = r[1]; z = r[2]
-    return lax.cond(time < 0.5, lambda p : jnp.array([-p[1], p[0], 0.0]), lambda p : jnp.array([p[1], -p[0], 0.0]), (x,y))
+    # return lax.cond(time < 0.5, lambda p : jnp.array([-p[1], p[0], 0.0]), lambda p : jnp.array([p[1], -p[0], 0.0]), (x,y,z))
+    return lax.cond(time < 0.5, lambda p : jnp.array([1.0, 1.0, 0.0]), lambda p : jnp.array([-1.0, -1.0, 0.0]), (x,y,z))
     # return jnp.array([-y, x, 0.0])
     # return jnp.array([1.0, 1.0, -1.0])
 
