@@ -110,13 +110,47 @@ def nonoscillatory_quadratic_interpolation(U, R):
     return interp_fn
 
 
-
-#  A USEFULE utility function to find the index of True in a list, 
-# for example cond = 0.1 < gstate.x provides a list of True's and False's
-# and thie function returns the first time True appears
 def which_cell_index(cond): 
+    """A USEFULE utility function to find the index of True in a list, 
+    for example cond = 0.1 < gstate.x provides a list of True's and False's
+    and thie function returns the first time True appears
+    """
     cond = np.asarray(cond)
     return (np.argwhere(~cond, size=1) - 1).flatten()
+
+
+def add_ghost_layer_3d(x, y, z, c_cube):
+    """
+    add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
+    """
+    dx_l = x[1] - x[0]; dx_r = x[-1] - x[-2]
+    x_layer_l = 2 * c_cube[ 0,:,:] - c_cube[ 1,:,:]; x_layer_l = np.expand_dims(x_layer_l, axis=0)
+    x_layer_r = 2 * c_cube[-1,:,:] - c_cube[-2,:,:]; x_layer_r = np.expand_dims(x_layer_r, axis=0)
+    c_cube_gh = np.concatenate((x_layer_l, c_cube, x_layer_r), axis=0)
+    xx = np.concatenate((np.array([x[0] - dx_l]) , x, np.array([x[-1] + dx_r])))
+
+    dy_b = y[1] - y[0]; dy_t = y[-1] - y[-2]
+    y_layer_b = 2 * c_cube_gh[:, 0,:] - c_cube_gh[:, 1,:]; y_layer_b = np.expand_dims(y_layer_b, axis=1)
+    y_layer_t = 2 * c_cube_gh[:,-1,:] - c_cube_gh[:,-2,:]; y_layer_t = np.expand_dims(y_layer_t, axis=1)
+    c_cube_gh = np.concatenate((y_layer_b, c_cube_gh, y_layer_t), axis=1)
+    yy = np.concatenate((np.array([y[0] - dy_b]) , y, np.array([y[-1] + dy_t])))
+
+    dz_b = z[1] - z[0]; dz_t = z[-1] - z[-2]
+    z_layer_b = 2 * c_cube_gh[:,:, 0] - c_cube_gh[:,:, 1]; z_layer_b = np.expand_dims(z_layer_b, axis=2)
+    z_layer_t = 2 * c_cube_gh[:,:,-1] - c_cube_gh[:,:,-2]; z_layer_t = np.expand_dims(z_layer_t, axis=2)
+    c_cube_gh = np.concatenate((z_layer_b, c_cube_gh, z_layer_t), axis=2)
+    zz = np.concatenate((np.array([z[0] - dz_b]) , z, np.array([z[-1] + dz_t])))
+    return xx, yy, zz, c_cube_gh
+
+def update_ghost_layer_3d(c_cube):
+    c_cube.at[ 0,:,:].set(2 * c_cube[ 1,:,:] - c_cube[ 2,:,:])
+    c_cube.at[-1,:,:].set(2 * c_cube[-2,:,:] - c_cube[-3,:,:])
+
+    c_cube.at[:, 0,:].set(2 * c_cube[:, 1,:] - c_cube[:, 2,:])
+    c_cube.at[:,-1,:].set(2 * c_cube[:,-2,:] - c_cube[:,-3,:])
+
+    c_cube.at[:,:, 0].set(2 * c_cube[:,:, 1] - c_cube[:,:, 2])
+    c_cube.at[:,:,-1].set(2 * c_cube[:,:,-2] - c_cube[:,:,-3])
 
 
 def multilinear_interpolation(c, gstate):
@@ -124,17 +158,22 @@ def multilinear_interpolation(c, gstate):
     Under development for semi-Lagrangian method
     Min & Gibou 2007: eqns (11)
     This is to be used for velocity interpolation
-    """
-    x = gstate.x; y = gstate.y; z = gstate.z
-    c_cube = c.reshape((x.shape[0], y.shape[0], z.shape[0]))
 
-    """
     After reshape: c_cube[x-axis, y-axis, z-axis]
     This object is periodic by default!
+
+    After adding ghost layer all points should be inside the ghosted cube.
+    This is equivalent to: add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
+    + shift indices of which_cell_index plus one
     """
+    xo = gstate.x; yo = gstate.y; zo = gstate.z
+    c_cube_ = c.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
 
     def find_lower_left_cell_idx(point):
-        #find cell index (i,j,k) containing point
+        """
+        find cell index (i,j,k) containing point
+        """
         x_p, y_p, z_p = point
         i = which_cell_index(np.asarray(x_p >= x))
         j = which_cell_index(np.asarray(y_p >= y))
@@ -142,7 +181,11 @@ def multilinear_interpolation(c, gstate):
         return i, j, k
 
     def single_cell_interp(point):
+        """
+        Trilinear interpolation
+        """
         i,j,k = find_lower_left_cell_idx(point)
+        
         c_111 = c_cube[i+1, j+1, k+1]
         c_110 = c_cube[i+1, j+1, k  ]
         c_011 = c_cube[i  , j+1, k+1]
@@ -172,19 +215,13 @@ def multilinear_interpolation(c, gstate):
 
         return c
 
+
     def interp_fn(R_star):
+        """
+        interpolate on all provided points
+        """
+        # update_ghost_layer_3d(c_cube)
         return vmap(jit(single_cell_interp))(R_star)
-        # num_interp = len(R_star)
-        # def step(i, log):
-        #     point = R_star[i]
-        #     c_p = single_cell_interp(point)
-        #     log['val'] = ops.index_update(log['val'], i, c_p)
-        #     return log
-
-        # log = {'val' : np.zeros(num_interp,)}
-        # log = lax.fori_loop(i32(0), i32(num_interp), step, (log,))
-
-        # return log['val']
 
     return interp_fn
 
