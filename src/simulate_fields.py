@@ -31,8 +31,6 @@ Simulator = Tuple[InitFn, ApplyFn]
 
 
 
-
-
 def advect_one_step(velocity_fn: Callable[..., Array],
                     shift_fn: ShiftFn,
                     dt: float,
@@ -66,6 +64,21 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     return dataclasses.replace(sstate,
                                solution=U_np1,
                                velocity_nm1=V_n)
+
+
+
+def reinitialize_level_set(sstate: T,
+                           gstate: T,
+                           **kwargs) -> T:
+    """
+    Sussman's reinitialization of the level set function
+    to retain its signed distance nature.
+    """
+
+    R, PHI = gstate.R, sstate.solution
+
+    return dataclasses.replace(sstate, solution=PHI)
+
 
 
 @dataclasses.dataclass
@@ -121,5 +134,3 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
 
 
 
-def reinitialize_level_set():
-    pass
