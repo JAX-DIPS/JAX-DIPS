@@ -191,7 +191,6 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         """
         interpolate on all provided points
         """
-        # update_ghost_layer_3d(c_cube)
         return vmap(jit(single_cell_interp))(R_star)
 
     return interp_fn

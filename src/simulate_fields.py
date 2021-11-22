@@ -51,13 +51,12 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     # Get interpolation functions
     Vn_interp_fn = interpolate.vec_multilinear_interpolation(V_n, gstate)
     Vnm1_interp_fn = interpolate.vec_multilinear_interpolation(V_nm1, gstate)
-   
-    # FIX THIS:
+
     # Un_interp_fn = interpolate.multilinear_interpolation(U_n, gstate)
     Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
     
     # Find Departure Point
-    R_star = shift_fn(R, -dt_2 * V_n)                               # R - dt_2 * V_n
+    R_star = shift_fn(R, -dt_2 * V_n)                              
     V_n_star = Vn_interp_fn(R_star)
     V_nm1_star = Vnm1_interp_fn(R_star)
     V_mid = f32(1.5) * V_n_star - f32(0.5) * V_nm1_star 
@@ -119,3 +118,8 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
         return advect_one_step(velocity_fn, shift_fn, dt, sim_state, grid_state, time, **kwargs)
 
     return init_fn, apply_fn
+
+
+
+def reinitialize_level_set():
+    pass
