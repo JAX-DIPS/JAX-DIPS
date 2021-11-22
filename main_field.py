@@ -24,9 +24,9 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-1.0)
 xmax = ymax = zmax = f32(1.0)
 box_size = xmax - xmin
-Nx = i32(10)
-Ny = i32(10)
-Nz = i32(10)
+Nx = i32(32)
+Ny = i32(32)
+Nz = i32(32)
 dimension = i32(3)
 dt = f32(0.01)
 simulation_steps = i32(100)
@@ -56,16 +56,15 @@ displacement_fn, shift_fn = space.periodic(box_size)
 #     return engy
 # velocity_fn = grad(jit(energy_fn))
 @jit
-def velocity_fn(r):
+def velocity_fn(r, time=0.0):
     x = r[0]; y = r[1]; z = r[2]
-    # return 0.01*jnp.array([-y, x, 0.0])
-    return jnp.array([1.0, 1.0, 1.0])
+    return lax.cond(time < 0.5, lambda p : jnp.array([-p[1], p[0], 0.0]), lambda p : jnp.array([p[1], -p[0], 0.0]), (x,y))
+    # return jnp.array([-y, x, 0.0])
+    # return jnp.array([1.0, 1.0, -1.0])
 
 def phi_fn(r):
-    x = r[0]
-    y = r[1]
-    z = r[2]
-    return (x**2 + (y - 0.1)**2 + z**2 - 0.15**2)
+    x = r[0]; y = r[1]; z = r[2]
+    return (x**2 + (y)**2 + z**2 - 0.05**2)
 
 
 init_fn, apply_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
@@ -76,13 +75,13 @@ sim_state = init_fn(R)
 @jit
 def step_func(i, state_and_nbrs):
     state, log = state_and_nbrs
-    t = i * dt
-    log['t'] = ops.index_update(log['t'], i, t)
+    time = i * dt
+    log['t'] = ops.index_update(log['t'], i, time)
     sol = state.solution
     log['U'] = ops.index_update(log['U'], i, sol)
     vel = state.velocity_nm1
     log['V'] = ops.index_update(log['V'], i, vel)
-    return apply_fn(state, gstate), log
+    return apply_fn(state, gstate, time), log
 
 log = {
         'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape),

@@ -38,6 +38,7 @@ def advect_one_step(velocity_fn: Callable[..., Array],
                     dt: float,
                     sstate: T,
                     gstate: T,
+                    time: float,
                     **kwargs) -> T:
     """Apply a single step of semi-Lagrangian integration to a state."""
 
@@ -45,7 +46,7 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     dt_2 = f32(dt / 2.0)
 
     R, U_n, V_nm1= gstate.R, sstate.solution, sstate.velocity_nm1
-    V_n = velocity_fn(R, **kwargs)
+    V_n = velocity_fn(R, time)
    
     # Get interpolation functions
     Vn_interp_fn = interpolate.vec_multilinear_interpolation(V_n, gstate)
@@ -103,18 +104,18 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
     See above.
     """
     # velocity_fn = quantity.canonicalize_force(velocity_or_energy_fn)
-    velocity_fn = vmap(velocity_or_energy_fn)
+    velocity_fn = vmap(velocity_or_energy_fn, (0,None))
     phi_fn = vmap(level_set_fn)
 
     def init_fn(R, **kwargs):
         # V = jnp.zeros(R.shape, dtype=R.dtype)
         # U = jnp.zeros(R.shape[0], dtype=R.dtype)
         # U = U + space.square_distance(R) - f32(0.25)
-        V = velocity_fn(R)
+        V = velocity_fn(R, 0.0) #,**kwargs)
         U = phi_fn(R)
         return SIMState(U, V)  
 
-    def step_fn(sim_state, grid_state, **kwargs):
-        return advect_one_step(velocity_fn, shift_fn, dt, sim_state, grid_state, **kwargs)
+    def apply_fn(sim_state, grid_state, time, **kwargs):
+        return advect_one_step(velocity_fn, shift_fn, dt, sim_state, grid_state, time, **kwargs)
 
-    return init_fn, step_fn
+    return init_fn, apply_fn

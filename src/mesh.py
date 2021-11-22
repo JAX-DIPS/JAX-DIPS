@@ -50,13 +50,18 @@ class GridState(object):
 def construct(dimension : int) -> Mesher:
 
     def init_fn_2d(x, y):
-        X, Y = jnp.meshgrid(x, y)
+        X, Y = jnp.meshgrid(x, y, indexing='ij')
+        # X = jnp.swapaxes(X, 0, 1)
+        # Y = jnp.swapaxes(Y, 0, 1)
         X = X.flatten(); Y = Y.flatten()
         R = jnp.column_stack((X, Y))
         return GridState(x, y, None, R)
 
     def init_fn_3d(x, y, z):
-        X, Y, Z = jnp.meshgrid(x, y, z)
+        X, Y, Z = jnp.meshgrid(x, y, z, indexing='ij')
+        # X = jnp.swapaxes(X, 0, 1)
+        # Y = jnp.swapaxes(Y, 0, 1)
+        # Z = jnp.swapaxes(Z, 0, 1)
         X = X.flatten(); Y = Y.flatten(); Z = Z.flatten()
         R = jnp.column_stack((X, Y, Z))
         return GridState(x, y, z, R)

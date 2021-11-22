@@ -168,7 +168,7 @@ def multilinear_interpolation(c, gstate):
     """
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = c.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    c_cube_ = np.swapaxes(c_cube_, 0, 1)
+    # c_cube_ = np.swapaxes(c_cube_, 0, 1)
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
 
     def find_lower_left_cell_idx(point):

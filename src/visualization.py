@@ -48,7 +48,7 @@ def animate(log, scale_fac=0.05):
 #--- FIELD DATA
 
 def plot3D_field(gstate, U):
-    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z)
+    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
     # mlab.points3d(X.flatten(), Y.flatten(), Z.flatten(), U, colormap="Spectral")
     ff = onp.array(U.reshape(X.shape))
     mlab.contour3d(ff, contours=40, transparent=True)
@@ -57,7 +57,7 @@ def plot3D_field(gstate, U):
 
 def animate_field(gstate, log, **kwargs):
     
-    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z)
+    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
     U = log['U'][0]
     times = log['t']
 
@@ -99,7 +99,10 @@ def plot_slice(gstate, log, time_indx=0, z_indx=-1):
 
 
 def plot_slice_animation(gstate, log, **kwargs):
-    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z)
+    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
+    # X = onp.swapaxes(X, 0, 1)
+    # Y = onp.swapaxes(Y, 0, 1)
+    # Z = onp.swapaxes(Z, 0, 1)
     U_block = onp.array(log['U'].reshape( ( (-1,) + gstate.shape() )))
     zidx = len(gstate.z)//2
 
