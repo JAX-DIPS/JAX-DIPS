@@ -72,7 +72,13 @@ def reinitialize_level_set(sstate: T,
                            **kwargs) -> T:
     """
     Sussman's reinitialization of the level set function
-    to retain its signed distance nature.
+    to retain its signed distance nature. 
+    
+    $ \partial_\tau \phi + sgn(\phi^0)(|\nabla \phi| - 1) = 0 $
+    where $\tau$ represents a fictitious time.
+
+    This function should be called every few iterations to maintain 
+    the level set function.
     """
 
     R, PHI = gstate.R, sstate.solution
