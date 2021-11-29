@@ -99,6 +99,26 @@ def spline(y, dx, degree=3):
 
 
 
+def godunov_hamiltonian(phi_n, gstate):
+    """
+    Godunov Hamiltonian given in equation 15 of Min & Gibou 2007
+    """
+    xo = gstate.x; yo = gstate.y; zo = gstate.z
+    c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
+    
+
+    Dp_x = ( c_cube[2:  , :, :] - c_cube[1:-1, :, :] ) / (x[2:  , :, :] - x[1:-1, :, :])
+    Dm_x = ( c_cube[1:-1, :, :] - c_cube[ :-2, :, :] ) / (x[1:-1, :, :] - x[ :-2, :, :])
+
+    Dp_y = ( c_cube[:, 2:  , :] - c_cube[:,1:-1, :] ) / (y[:, 2:  , :] - y[:, 1:-1, :])
+    Dm_y = ( c_cube[:, 1:-1, :] - c_cube[:, :-2, :] ) / (y[:, 1:-1, :] - y[:,  :-2, :])
+
+    Dp_z = ( c_cube[:, :, 2:  ] - c_cube[:, :, 1:-1] ) / (z[:, :, 2:  ] - z[:, :, 1:-1])
+    Dm_z = ( c_cube[:, :, 1:-1] - c_cube[:, :,  :-2] ) / (z[:, :, 1:-1] - z[:, :,  :-2])
+    pdb.set_trace()
+
+
 
 
 

@@ -8,6 +8,7 @@ from jax import random
 from jax._src.dtypes import dtype
 import jax.numpy as jnp
 from jax import lax, vmap
+from numpy import int32
 
 from src import util, space, dataclasses, interpolate, quantity
 import pdb
@@ -17,6 +18,7 @@ static_cast = util.static_cast
 
 
 Array = util.Array
+i32 = util.i32
 f32 = util.f32
 f64 = util.f64
 
@@ -27,7 +29,8 @@ ShiftFn = space.ShiftFn
 T = TypeVar('T')
 InitFn = Callable[..., T]
 ApplyFn = Callable[[T,T], T]
-Simulator = Tuple[InitFn, ApplyFn]
+ReinitializeFn = Callable[[T,T], T]
+Simulator = Tuple[InitFn, ApplyFn, ReinitializeFn]
 
 
 
@@ -80,10 +83,24 @@ def reinitialize_level_set(sstate: T,
     This function should be called every few iterations to maintain 
     the level set function.
     """
+    phi_0 = sstate.solution
+    sgn_0 = jnp.sign(phi_0)
+    phi_n = phi_0
+    
 
-    R, PHI = gstate.R, sstate.solution
+    def step_phi_fn(i, sgn_phi_n):
+        sgn_0, phi_n = sgn_phi_n
+        hg_n = interpolate.godunov_hamiltonian(phi_n, gstate)
+        dtau = f32(0.01)
+        phi_t_np1 = phi_n + dtau * jnp.multiply(sgn_0, hg_n)
+        hg_np1 = interpolate.godunov_hamiltonian(phi_t_np1, gstate)
+        phi_t_np2 = phi_t_np1 + dtau * jnp.multiply(sgn_0, hg_np1)
+        phi_n = f32(0.5) * (phi_n + phi_t_np2)
+        return sgn_0, phi_n
 
-    return dataclasses.replace(sstate, solution=PHI)
+    (sgn_0, phi_n) = lax.fori_loop(i32(0), i32(10), step_phi_fn, (sgn_0, phi_n))
+
+    return dataclasses.replace(sstate, solution=phi_n)
 
 
 
@@ -136,7 +153,10 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
     def apply_fn(sim_state, grid_state, time, **kwargs):
         return advect_one_step(velocity_fn, shift_fn, dt, sim_state, grid_state, time, **kwargs)
 
-    return init_fn, apply_fn
+    def reinitialize_fn(sim_state, grid_state, **kwargs):
+        return reinitialize_level_set(sim_state, grid_state, **kwargs)
+
+    return init_fn, apply_fn, reinitialize_fn
 
 
 

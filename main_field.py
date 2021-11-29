@@ -68,7 +68,7 @@ def phi_fn(r):
     return (x**2 + (y)**2 + z**2 - 0.05**2)
 
 
-init_fn, apply_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
+init_fn, apply_fn, reinitialize_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
 
 sim_state = init_fn(R)
 
@@ -82,6 +82,7 @@ def step_func(i, state_and_nbrs):
     log['U'] = ops.index_update(log['U'], i, sol)
     vel = state.velocity_nm1
     log['V'] = ops.index_update(log['V'], i, vel)
+    state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
     return apply_fn(state, gstate, time), log
 
 log = {
