@@ -106,16 +106,16 @@ def godunov_hamiltonian(phi_n, gstate):
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
-    
+    dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
-    Dp_x = ( c_cube[2:  , :, :] - c_cube[1:-1, :, :] ) / (x[2:  , :, :] - x[1:-1, :, :])
-    Dm_x = ( c_cube[1:-1, :, :] - c_cube[ :-2, :, :] ) / (x[1:-1, :, :] - x[ :-2, :, :])
+    Dp_x = ( c_cube[2:  , 1:-1, 1:-1] - c_cube[1:-1, 1:-1, 1:-1] ) / dx
+    Dm_x = ( c_cube[1:-1, 1:-1, 1:-1] - c_cube[ :-2, 1:-1, 1:-1] ) / dx
 
-    Dp_y = ( c_cube[:, 2:  , :] - c_cube[:, 1:-1, :] ) / (y[:, 2:  , :] - y[:, 1:-1, :])
-    Dm_y = ( c_cube[:, 1:-1, :] - c_cube[:,  :-2, :] ) / (y[:, 1:-1, :] - y[:,  :-2, :])
+    Dp_y = ( c_cube[1:-1, 2:  , 1:-1] - c_cube[1:-1, 1:-1, 1:-1] ) / dy
+    Dm_y = ( c_cube[1:-1, 1:-1, 1:-1] - c_cube[1:-1,  :-2, 1:-1] ) / dy
 
-    Dp_z = ( c_cube[:, :, 2:  ] - c_cube[:, :, 1:-1] ) / (z[:, :, 2:  ] - z[:, :, 1:-1])
-    Dm_z = ( c_cube[:, :, 1:-1] - c_cube[:, :,  :-2] ) / (z[:, :, 1:-1] - z[:, :,  :-2])
+    Dp_z = ( c_cube[1:-1, 1:-1, 2:  ] - c_cube[1:-1, 1:-1, 1:-1] ) / dz
+    Dm_z = ( c_cube[1:-1, 1:-1, 1:-1] - c_cube[1:-1, 1:-1,  :-2] ) / dz
     pdb.set_trace()
 
 
