@@ -128,7 +128,7 @@ def godunov_hamiltonian(phi_n, gstate):
     Dp_z = ( c_cube[1:-1, 1:-1, 2:  ] - c_cube[1:-1, 1:-1, 1:-1] ) / dz
     Dm_z = ( c_cube[1:-1, 1:-1, 1:-1] - c_cube[1:-1, 1:-1,  :-2] ) / dz
 
-    HG_fn = vmap(hamiltonian, 0)
+    HG_fn = vmap(jit(hamiltonian), 0)
     res = HG_fn(phi_n.reshape(-1,1), Dp_x.reshape(-1,1), Dm_x.reshape(-1,1), Dp_y.reshape(-1,1), Dm_y.reshape(-1,1), Dp_z.reshape(-1,1), Dm_z.reshape(-1,1))
     return res
 
