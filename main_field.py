@@ -90,8 +90,13 @@ log = {
         'V' : jnp.zeros((simulation_steps,) + sim_state.velocity_nm1.shape),
         't' : jnp.zeros((simulation_steps,))
       }
-sim_state, log = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log))
 
+import time
+t1 = time.time()
+sim_state, log = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log))
+t2 = time.time()
+
+print(f"time per timestepis {(t2 - t1)/simulation_steps}")
 sim_state.solution.block_until_ready()
 
 

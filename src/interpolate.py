@@ -103,6 +103,17 @@ def godunov_hamiltonian(phi_n, gstate):
     """
     Godunov Hamiltonian given in equation 15 of Min & Gibou 2007
     """
+
+    def hamiltonian(phi_ijk, a, b, c, d, e, f):
+        sgn = np.sign(phi_ijk)
+        a_m = np.min(sgn*a, 0)
+        b_p = np.max(sgn*b, 0)
+        c_m = np.min(sgn*c, 0)
+        d_p = np.max(sgn*d, 0)
+        e_m = np.min(sgn*e, 0)
+        f_p = np.max(sgn*f, 0)
+        return np.sqrt( np.max(np.array([a_m * a_m, b_p * b_p]), axis=0) + np.max(np.array([c_m * c_m , d_p * d_p]), axis=0) + np.max(np.array([e_m * e_m, f_p * f_p]), axis=0))
+
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
@@ -116,7 +127,12 @@ def godunov_hamiltonian(phi_n, gstate):
 
     Dp_z = ( c_cube[1:-1, 1:-1, 2:  ] - c_cube[1:-1, 1:-1, 1:-1] ) / dz
     Dm_z = ( c_cube[1:-1, 1:-1, 1:-1] - c_cube[1:-1, 1:-1,  :-2] ) / dz
-    pdb.set_trace()
+
+    HG_fn = vmap(hamiltonian, 0)
+    res = HG_fn(phi_n.reshape(-1,1), Dp_x.reshape(-1,1), Dm_x.reshape(-1,1), Dp_y.reshape(-1,1), Dm_y.reshape(-1,1), Dp_z.reshape(-1,1), Dm_z.reshape(-1,1))
+    return res
+
+    
 
 
 
