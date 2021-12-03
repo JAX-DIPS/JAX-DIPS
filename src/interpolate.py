@@ -103,7 +103,42 @@ def godunov_hamiltonian(phi_n, gstate):
     """
     Godunov Hamiltonian given in equation 15 of Min & Gibou 2007
     """
+    xo = gstate.x; yo = gstate.y; zo = gstate.z
+    c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
+    dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
+    def find_lower_left_cell_idx(point):
+        """
+        find cell index (i,j,k) containing point
+        """
+        x_p, y_p, z_p = point
+        i = which_cell_index(np.asarray(x_p >= x))
+        j = which_cell_index(np.asarray(y_p >= y))
+        k = which_cell_index(np.asarray(z_p >= z))
+        return i, j, k
+
+    @jit
+    def first_order_deriv(i, j, k):
+        dx_p = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx
+        dx_m = (c_cube[i  , j , k] - c_cube[i-1,j ,k]) / dx
+
+        dy_p = (c_cube[i, j+1, k] - c_cube[i, j  , k]) / dy
+        dy_m = (c_cube[i, j  , k] - c_cube[i, j-1, k]) / dy
+
+        dz_p = (c_cube[i, j, k+1] - c_cube[i, j, k  ]) / dz
+        dz_m = (c_cube[i, j, k  ] - c_cube[i, j, k-1]) / dz
+
+        return np.array([dx_p, dx_m, dy_p, dy_m, dz_p, dz_m])
+
+    @jit
+    def second_order_deriv(i, j, k):
+        dxx = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) / dx / dx
+        dyy = (c_cube[i  , j+1, k  ] - 2*c_cube[i,j,k] + c_cube[i  ,j-1,k  ]) / dy / dy
+        dzz = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) / dz / dz
+        return np.array([dxx, dyy, dzz])
+
+    @jit
     def hamiltonian(phi_ijk, a, b, c, d, e, f):
         sgn = np.sign(phi_ijk)
         a_m = np.min(sgn*a, 0)
@@ -114,28 +149,27 @@ def godunov_hamiltonian(phi_n, gstate):
         f_p = np.max(sgn*f, 0)
         return np.sqrt( np.max(np.array([a_m * a_m, b_p * b_p]), axis=0) + np.max(np.array([c_m * c_m , d_p * d_p]), axis=0) + np.max(np.array([e_m * e_m, f_p * f_p]), axis=0))
 
-    xo = gstate.x; yo = gstate.y; zo = gstate.z
-    c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
-    dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
+    @jit
+    def node_update(point):
+        i,j,k = find_lower_left_cell_idx(point)
+        d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m = first_order_deriv(i, j, k)
+        d2x, d2y, d2z = second_order_deriv(i, j, k)
+        phi_ijk = c_cube[i, j, k]
+        res = hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m)
+        return res
 
-    Dp_x = ( c_cube[2:  , 1:-1, 1:-1] - c_cube[1:-1, 1:-1, 1:-1] ) / dx
-    Dm_x = ( c_cube[1:-1, 1:-1, 1:-1] - c_cube[ :-2, 1:-1, 1:-1] ) / dx
-
-    Dp_y = ( c_cube[1:-1, 2:  , 1:-1] - c_cube[1:-1, 1:-1, 1:-1] ) / dy
-    Dm_y = ( c_cube[1:-1, 1:-1, 1:-1] - c_cube[1:-1,  :-2, 1:-1] ) / dy
-
-    Dp_z = ( c_cube[1:-1, 1:-1, 2:  ] - c_cube[1:-1, 1:-1, 1:-1] ) / dz
-    Dm_z = ( c_cube[1:-1, 1:-1, 1:-1] - c_cube[1:-1, 1:-1,  :-2] ) / dz
-
-    HG_fn = vmap(jit(hamiltonian), 0)
-    res = HG_fn(phi_n.reshape(-1,1), Dp_x.reshape(-1,1), Dm_x.reshape(-1,1), Dp_y.reshape(-1,1), Dm_y.reshape(-1,1), Dp_z.reshape(-1,1), Dm_z.reshape(-1,1))
-    return res
+    Nx = gstate.x.shape[0]
+    Ny = gstate.y.shape[0]
+    Nz = gstate.z.shape[0]
+    ii = np.arange(1, Nx+1)
+    jj = np.arange(1, Ny+1)
+    kk = np.arange(1, Nz+1)
+    I, J, K = np.meshgrid(ii, jj, kk, indexing='ij')
+    nodes = np.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
+    HG = vmap(node_update)(nodes)
+    return HG
 
     
-
-
-
 
 
 def nonoscillatory_quadratic_interpolation(c, gstate):
