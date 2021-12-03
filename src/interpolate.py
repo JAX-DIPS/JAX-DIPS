@@ -170,6 +170,7 @@ def godunov_hamiltonian(phi_n, gstate):
             return dx_p, dx_m
 
         dx_p, dx_m = lax.cond(c_cube[i+1, j , k] * c_cube[i  ,j ,k] > 0, lambda p: x_deriv_in_bulk(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
+        # FIX HERE...
 
         dy_p = (c_cube[i, j+1, k] - c_cube[i, j  , k]) / dy
         dy_m = (c_cube[i, j  , k] - c_cube[i, j-1, k]) / dy
