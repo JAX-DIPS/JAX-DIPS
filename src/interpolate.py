@@ -103,6 +103,7 @@ def godunov_hamiltonian(phi_n, gstate):
     """
     Godunov Hamiltonian given in equation 15 of Min & Gibou 2007
     """
+    EPS = f64(1e-10)
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
@@ -126,8 +127,49 @@ def godunov_hamiltonian(phi_n, gstate):
 
     @jit
     def first_order_deriv(i, j, k):
-        dx_p = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx
-        dx_m = (c_cube[i  , j , k] - c_cube[i-1,j ,k]) / dx
+        """
+        Check if node is adjacent to interface,
+        then add correction to derivatives such that
+        level set becomes 0 on the interface exactly.
+        """
+        @jit
+        def minmod(a, b):
+            coeff = np.sign(a)*(f64(1) + np.sign(a)*np.sign(b)) / f64(2.0)
+            return coeff * np.min(np.array([np.abs(a), np.abs(b)]))
+
+
+        def x_deriv_at_interface_p(i, j, k):
+            phi_ijk = c_cube[i, j, k]
+            d2x, d2y, d2z = second_order_deriv(i  , j, k)
+            d2x_p, d2y_p, d2z_p = second_order_deriv(i+1, j, k)
+            c2 = minmod(d2x, d2x_p) * f64(0.5)
+            c1 = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx
+            c0 = (c_cube[i+1, j , k] + c_cube[i  ,j ,k]) / f64(2.0) - c2 * dx * dx * 0.25
+            corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c0 - np.sign(p) * np.sqrt(c1*c1 - f64(4)*c2*c0))/(f64(2.0)*c2) , phi_ijk)
+            s_I = dx * f64(0.5) + corr_s
+            dx_p = -phi_ijk / s_I - s_I * c2
+            dx_m = (c_cube[i  , j , k] - c_cube[i-1,j ,k]) / dx
+            return dx_p, dx_m
+        
+        def x_deriv_at_interface_m(i, j, k):
+            phi_ijk = c_cube[i, j, k]
+            d2x, d2y, d2z = second_order_deriv(i  , j, k)
+            d2x_m, d2y_m, d2z_m = second_order_deriv(i-1, j, k)
+            c2 = minmod(d2x, d2x_m) * f64(0.5)
+            c1 = (c_cube[i-1, j , k] - c_cube[i  ,j ,k]) / dx
+            c0 = (c_cube[i-1, j , k] + c_cube[i  ,j ,k]) / f64(2.0) - c2 * dx * dx * 0.25
+            corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c0 - np.sign(p) * np.sqrt(c1*c1 - f64(4)*c2*c0))/(f64(2.0)*c2) , phi_ijk)
+            s_I = dx * f64(0.5) + corr_s
+            dx_m = -phi_ijk / s_I - s_I * c2
+            dx_p = (c_cube[i +1 , j , k] - c_cube[i,j ,k]) / dx
+            return dx_p, dx_m
+
+        def x_deriv_in_bulk(i, j, k):
+            dx_p = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx
+            dx_m = (c_cube[i  , j , k] - c_cube[i-1,j ,k]) / dx
+            return dx_p, dx_m
+
+        dx_p, dx_m = lax.cond(c_cube[i+1, j , k] * c_cube[i  ,j ,k] > 0, lambda p: x_deriv_in_bulk(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
 
         dy_p = (c_cube[i, j+1, k] - c_cube[i, j  , k]) / dy
         dy_m = (c_cube[i, j  , k] - c_cube[i, j-1, k]) / dy
@@ -159,7 +201,7 @@ def godunov_hamiltonian(phi_n, gstate):
     def node_update(node):
         i,j,k = find_cell_idx(node)
         d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m = first_order_deriv(i, j, k)
-        d2x, d2y, d2z = second_order_deriv(i, j, k)
+        
         phi_ijk = c_cube[i, j, k]
         res = hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m)
         return res
