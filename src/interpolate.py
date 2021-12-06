@@ -134,14 +134,16 @@ def godunov_hamiltonian(phi_n, gstate):
         """
         @jit
         def minmod(a, b):
-            coeff = np.sign(a)*(f64(1) + np.sign(a)*np.sign(b)) / f64(2.0)
+            coeff = np.sign(a)*(f64(1.0) + np.sign(a)*np.sign(b)) / f64(2.0)
             return coeff * np.min(np.array([np.abs(a), np.abs(b)]))
 
         @jit
         def x_deriv_at_interface_p(i, j, k):
             phi_ijk = c_cube[i, j, k]
-            d2x, d2y, d2z = second_order_deriv(i, j, k)
-            d2x_p, d2y_p, d2z_p = second_order_deriv(i+1, j, k)
+            d2x = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) / dx / dx
+            # d2x, d2y, d2z = second_order_deriv(i, j, k)
+            d2x_p = (c_cube[i+2, j  , k  ] - 2*c_cube[i+1,j,k] + c_cube[i,j  ,k  ]) / dx / dx
+            # d2x_p, d2y_p, d2z_p = second_order_deriv(i+1, j, k)
             c2 = minmod(d2x, d2x_p) * f64(0.5)
             c1 = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx
             c0 = (c_cube[i+1, j , k] + c_cube[i  ,j ,k]) / f64(2.0) - c2 * dx * dx * 0.25
@@ -153,8 +155,10 @@ def godunov_hamiltonian(phi_n, gstate):
         @jit
         def x_deriv_at_interface_m(i, j, k):
             phi_ijk = c_cube[i, j, k]
-            d2x, d2y, d2z = second_order_deriv(i  , j, k)
-            d2x_m, d2y_m, d2z_m = second_order_deriv(i-1, j, k)
+            d2x = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) / dx / dx
+            # d2x, d2y, d2z = second_order_deriv(i  , j, k)
+            d2x_m = (c_cube[i, j  , k  ] - 2*c_cube[i-1,j,k] + c_cube[i-2,j  ,k  ]) / dx / dx
+            # d2x_m, d2y_m, d2z_m = second_order_deriv(i-1, j, k)
             c2 = minmod(d2x, d2x_m) * f64(0.5)
             c1 = (c_cube[i, j , k] - c_cube[i-1 ,j ,k]) / dx
             c0 = (c_cube[i-1, j , k] + c_cube[i  ,j ,k]) / f64(2.0) - c2 * dx * dx * 0.25
@@ -166,8 +170,10 @@ def godunov_hamiltonian(phi_n, gstate):
         @jit
         def y_deriv_at_interface_p(i, j, k):
             phi_ijk = c_cube[i, j, k]
-            d2x, d2y, d2z = second_order_deriv(i, j, k)
-            d2x_p, d2y_p, d2z_p = second_order_deriv(i, j+1, k)
+            d2y = (c_cube[i  , j+1, k  ] - 2*c_cube[i,j,k] + c_cube[i  ,j-1,k  ]) / dy / dy
+            # d2x, d2y, d2z = second_order_deriv(i, j, k)
+            d2y_p = (c_cube[i  , j+2, k  ] - 2*c_cube[i,j+1,k] + c_cube[i  ,j,k  ]) / dy / dy
+            # d2x_p, d2y_p, d2z_p = second_order_deriv(i, j+1, k)
             c2 = minmod(d2y, d2y_p) * f64(0.5)
             c1 = (c_cube[i, j+1 , k] - c_cube[i  ,j ,k]) / dy
             c0 = (c_cube[i, j+1 , k] + c_cube[i  ,j ,k]) / f64(2.0) - c2 * dy * dy * 0.25
@@ -179,8 +185,10 @@ def godunov_hamiltonian(phi_n, gstate):
         @jit
         def y_deriv_at_interface_m(i, j, k):
             phi_ijk = c_cube[i, j, k]
-            d2x, d2y, d2z = second_order_deriv(i  , j, k)
-            d2x_m, d2y_m, d2z_m = second_order_deriv(i, j-1, k)
+            d2y = (c_cube[i  , j+1, k  ] - 2*c_cube[i,j,k] + c_cube[i  ,j-1,k  ]) / dy / dy
+            # d2x, d2y, d2z = second_order_deriv(i  , j, k)
+            d2y_m = (c_cube[i  , j, k  ] - 2*c_cube[i,j-1,k] + c_cube[i  ,j-2,k  ]) / dy / dy
+            # d2x_m, d2y_m, d2z_m = second_order_deriv(i, j-1, k)
             c2 = minmod(d2y, d2y_m) * f64(0.5)
             c1 = (c_cube[i, j , k] - c_cube[i  ,j-1,k]) / dy
             c0 = (c_cube[i, j-1, k] + c_cube[i  ,j ,k]) / f64(2.0) - c2 * dy * dy * 0.25
@@ -192,8 +200,10 @@ def godunov_hamiltonian(phi_n, gstate):
         @jit
         def z_deriv_at_interface_p(i, j, k):
             phi_ijk = c_cube[i, j, k]
-            d2x, d2y, d2z = second_order_deriv(i, j, k)
-            d2x_p, d2y_p, d2z_p = second_order_deriv(i, j, k+1)
+            d2z = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) / dz / dz
+            # d2x, d2y, d2z = second_order_deriv(i, j, k)
+            d2z_p = (c_cube[i  , j  , k+2] - 2*c_cube[i,j,k+1] + c_cube[i  ,j  ,k]) / dz / dz
+            # d2x_p, d2y_p, d2z_p = second_order_deriv(i, j, k+1)
             c2 = minmod(d2z, d2z_p) * f64(0.5)
             c1 = (c_cube[i, j , k+1] - c_cube[i  ,j ,k]) / dz
             c0 = (c_cube[i, j , k+1] + c_cube[i  ,j ,k]) / f64(2.0) - c2 * dz * dz * 0.25
@@ -205,8 +215,10 @@ def godunov_hamiltonian(phi_n, gstate):
         @jit
         def z_deriv_at_interface_m(i, j, k):
             phi_ijk = c_cube[i, j, k]
-            d2x, d2y, d2z = second_order_deriv(i  , j, k)
-            d2x_m, d2y_m, d2z_m = second_order_deriv(i, j, k-1)
+            d2z = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) / dz / dz
+            # d2x, d2y, d2z = second_order_deriv(i  , j, k)
+            d2z_m = (c_cube[i  , j  , k] - 2*c_cube[i,j,k-1] + c_cube[i  ,j  ,k-2]) / dz / dz
+            # d2x_m, d2y_m, d2z_m = second_order_deriv(i, j, k-1)
             c2 = minmod(d2z, d2z_m) * f64(0.5)
             c1 = (c_cube[i, j , k] - c_cube[i  ,j ,k-1]) / dy
             c0 = (c_cube[i, j , k] + c_cube[i  ,j ,k-1]) / f64(2.0) - c2 * dz * dz * 0.25
@@ -245,14 +257,21 @@ def godunov_hamiltonian(phi_n, gstate):
             dz_m = (c_cube[i, j, k  ] - c_cube[i, j, k-1]) / dz
             return dz_m
 
-        dx_p = lax.cond(c_cube[i+1, j , k] * c_cube[i  ,j ,k] > 0, lambda p: x_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
-        dx_m = lax.cond(c_cube[i  , j , k] * c_cube[i-1,j ,k] > 0, lambda p: x_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
+        # dx_p = lax.cond(c_cube[i+1, j , k] * c_cube[i  ,j ,k] > 0, lambda p: x_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
+        # dx_m = lax.cond(c_cube[i  , j , k] * c_cube[i-1,j ,k] > 0, lambda p: x_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
 
-        dy_p = lax.cond(c_cube[i  , j+1, k] * c_cube[i  ,j  ,k] > 0, lambda p: y_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: y_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
-        dy_m = lax.cond(c_cube[i  , j  , k] * c_cube[i  ,j-1,k] > 0, lambda p: y_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: y_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
+        # dy_p = lax.cond(c_cube[i  , j+1, k] * c_cube[i  ,j  ,k] > 0, lambda p: y_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: y_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
+        # dy_m = lax.cond(c_cube[i  , j  , k] * c_cube[i  ,j-1,k] > 0, lambda p: y_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: y_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
 
-        dz_p = lax.cond(c_cube[i  , j  , k+1] * c_cube[i  , j, k  ] > 0, lambda p: z_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: z_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
-        dz_m = lax.cond(c_cube[i  , j  , k  ] * c_cube[i  , j, k-1] > 0, lambda p: z_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: z_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
+        # dz_p = lax.cond(c_cube[i  , j  , k+1] * c_cube[i  , j, k  ] > 0, lambda p: z_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: z_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
+        # dz_m = lax.cond(c_cube[i  , j  , k  ] * c_cube[i  , j, k-1] > 0, lambda p: z_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: z_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
+
+        dx_p = x_deriv_at_interface_p(i, j, k) #x_deriv_in_bulk_p(i, j, k)
+        dx_m = x_deriv_at_interface_m(i, j, k) #x_deriv_in_bulk_m(i, j, k)
+        dy_p = y_deriv_at_interface_p(i, j, k) #y_deriv_in_bulk_p(i, j, k)
+        dy_m = y_deriv_at_interface_m(i, j, k) #y_deriv_in_bulk_m(i, j, k)
+        dz_p = z_deriv_at_interface_p(i, j, k) #z_deriv_in_bulk_p(i, j, k)
+        dz_m = z_deriv_at_interface_m(i, j, k) #z_deriv_in_bulk_m(i, j, k)
 
         return np.array([dx_p, dx_m, dy_p, dy_m, dz_p, dz_m])
 
