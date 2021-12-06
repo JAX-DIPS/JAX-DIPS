@@ -82,8 +82,8 @@ def step_func(i, state_and_nbrs):
     log['U'] = ops.index_update(log['U'], i, sol)
     vel = state.velocity_nm1
     log['V'] = ops.index_update(log['V'], i, vel)
-    state = reinitialize_fn(state, gstate)
-    # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
+    # state = reinitialize_fn(state, gstate)
+    state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
     return apply_fn(state, gstate, time), log
 
 log = {

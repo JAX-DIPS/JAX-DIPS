@@ -128,9 +128,9 @@ def godunov_hamiltonian(phi_n, gstate):
 
     @jit
     def minmod(a, b):
-        return 1.0e-3  # FIX THIS ..................................................
+        return np.median(np.array([0.0, a, b]))
         # coeff = np.sign(a)*(f64(1.0) + np.sign(a)*np.sign(b)) / f64(2.0)
-        # return coeff * np.min(np.array([np.abs(a), np.abs(b)]))
+        # return np.multiply(coeff , np.min(np.array([np.abs(a), np.abs(b)])) )
 
     @jit
     def x_deriv_at_interface_p(i, j, k):
