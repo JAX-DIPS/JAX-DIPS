@@ -24,9 +24,9 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-2.0)
 xmax = ymax = zmax = f32(2.0)
 box_size = xmax - xmin
-Nx = i32(32)
-Ny = i32(32)
-Nz = i32(32)
+Nx = i32(256)
+Ny = i32(256)
+Nz = i32(2)
 dimension = i32(3)
 
 tf = f32(2 * jnp.pi)
@@ -109,7 +109,7 @@ sim_state.solution.block_until_ready()
 visualization.animate_field(gstate, log, contours=20, transparent=True, vmin=log['U'].min(), vmax=log['U'].max()) #, opacity=0.2) #, colormap="Spectral")
 
 lvls = onp.linspace(log['U'].min(), log['U'].max(), 20)
-visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='Spectral_r')
+visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='turbo')
 
 
 
@@ -124,4 +124,23 @@ visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='Spectral_r')
 # u3 = interp_fn(R+0.1).flatten().reshape(gstate.shape())
 # import matplotlib.pyplot as plt
 # plt.contour(u3[:,:,gstate.shape()[2]//2]); plt.show()
+
+
+# X, Y, Z = jnp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
+# import matplotlib.pyplot as plt
+# vxyz = log['V'][0].reshape(Nx, Ny,Nz, 3)
+# plt.figure(figsize=(7,7))
+# plt.pcolor(X[:,:,0], Y[:,:,0],vxyz[:,:,0,1])
+# plt.ylabel('y')
+# plt.xlabel('x')
+# plt.show()
+
+# for i in range(len(log['U'])): 
+#     u_ = log['U'][i].reshape(Nx, Ny,Nz)
+#     plt.figure(figsize=(7,7))
+#     plt.pcolor(X[:,:,Nz//2], Y[:,:,Nz//2],u_[:,:,Nz//2])
+#     plt.ylabel('y')
+#     plt.xlabel('x')
+#     plt.show()
+
 pdb.set_trace()
