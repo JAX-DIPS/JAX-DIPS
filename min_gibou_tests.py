@@ -12,13 +12,14 @@ from src.util import f32, i32
 from src import partition, space
 from src import simulate_fields
 from src import energy, simulate_particles
-# from src import visualization
 from src import io
 from src import mesh
 from src import util, interpolate 
 import pdb
 import os
 import numpy as onp
+
+
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
@@ -70,10 +71,10 @@ displacement_fn, shift_fn = space.periodic(box_size)
 @jit
 def velocity_fn(r, time=0.0):
     x = r[0]; y = r[1]; z = r[2]
-    # return lax.cond(time < 0.5, lambda p : jnp.array([-p[1], p[0], 0.0]), lambda p : jnp.array([p[1], -p[0], 0.0]), (x,y,z))
-    # return lax.cond(time < 0.5, lambda p : jnp.array([1.0, 1.0, 0.0]), lambda p : jnp.array([-1.0, -1.0, 0.0]), (x,y,z))
-    return jnp.array([-y, x, 0.0])
-    # return jnp.array([1.0, 1.0, -1.0])
+    # return lax.cond(time < 0.5, lambda p : jnp.array([-p[1], p[0], 0.0], dtype=f32), lambda p : jnp.array([p[1], -p[0], 0.0], dtype=f32), (x,y,z))
+    # return lax.cond(time < 0.5, lambda p : jnp.array([1.0, 1.0, 0.0], dtype=f32), lambda p : jnp.array([-1.0, -1.0, 0.0], dtype=f32), (x,y,z))
+    return jnp.array([-y, x, 0.0], dtype=f32)
+    # return jnp.array([1.0, 1.0, -1.0], dtype=f32)
 
 def phi_fn(r):
     x = r[0]; y = r[1]; z = r[2]
@@ -99,9 +100,9 @@ def step_func(i, state_and_nbrs):
     return apply_fn(state, gstate, time), log
 
 log = {
-        'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape),
-        'V' : jnp.zeros((simulation_steps,) + sim_state.velocity_nm1.shape),
-        't' : jnp.zeros((simulation_steps,))
+        'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
+        'V' : jnp.zeros((simulation_steps,) + sim_state.velocity_nm1.shape, dtype=f32),
+        't' : jnp.zeros((simulation_steps,), dtype=f32)
       }
 
 import time
@@ -112,23 +113,12 @@ t2 = time.time()
 print(f"time per timestep is {(t2 - t1)/simulation_steps}")
 sim_state.solution.block_until_ready()
 
-
-#--- VISUALIZATION
-# visualization.animate_field(gstate, log, contours=20, transparent=True, vmin=log['U'].min(), vmax=log['U'].max()) #, opacity=0.2) #, colormap="Spectral")
-
-lvls = onp.linspace(log['U'].min(), log['U'].max(), 20)
-# visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='turbo')
-# from evtk.hl import rectilinearToVTK, imageToVTK, structuredToVTK
-
-
-
-pdb.set_trace()
-io.write_vtk(gstate, log['U'])
-
-
-
-# imageToVTK("solution", pointData = {"sol" : onp.array(log['U'][0].reshape(Nx, Ny, Nz))} )
 jax.profiler.save_device_memory_profile("memory.prof")
+
+io.write_vtk(gstate, log)
+
+
+
 
 #--- TEST INTERPOLATION
 # u1 = log['U'][0]
