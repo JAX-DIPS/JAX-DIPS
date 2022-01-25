@@ -50,8 +50,7 @@ zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 
 dx = xc[1] - xc[0]
 dt = f32(0.02) #f32(6.0)*dx
-simulation_steps = i32(tf / dt) + i32(1)
-last_dt = tf - (simulation_steps -i32(1)) * dt 
+simulation_steps = i32(tf / dt) 
 #---------------
 # Create helper functions to define a periodic box of some size.
 
@@ -108,8 +107,7 @@ log = {
 
 import time
 t1 = time.time()
-sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps - 1), step_func, (sim_state, log, dt))
-sim_state, log, last_dt = step_func(i32(simulation_steps), (sim_state, log, last_dt))
+sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log, dt))
 t2 = time.time()
 
 print(f"time per timestep is {(t2 - t1)/simulation_steps}")
