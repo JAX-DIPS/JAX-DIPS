@@ -1,0 +1,3 @@
+[submodule "submodules/PyEVTK"]
+	path = submodules/PyEVTK
+	url = https://github.com/paulo-herrera/PyEVTK.git

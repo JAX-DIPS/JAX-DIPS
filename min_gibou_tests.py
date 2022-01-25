@@ -1,4 +1,5 @@
 import jax
+import jax.profiler
 from jax import jit, random, lax, ops, grad
 from jax._src.api import vmap
 import jax.numpy as jnp
@@ -11,10 +12,17 @@ from src.util import f32, i32
 from src import partition, space
 from src import simulate_fields
 from src import energy, simulate_particles
-from src import visualization
+# from src import visualization
+from src import io
 from src import mesh
 from src import util, interpolate 
 import pdb
+import os
+import numpy as onp
+# os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
+os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
+# os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
+
 
 # Use JAX's random number generator to generate random initial positions.
 key = random.PRNGKey(0)
@@ -24,9 +32,9 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-2.0)
 xmax = ymax = zmax = f32(2.0)
 box_size = xmax - xmin
-Nx = i32(256)
-Ny = i32(256)
-Nz = i32(2)
+Nx = i32(128)
+Ny = i32(128)
+Nz = i32(64)
 dimension = i32(3)
 
 tf = f32(2 * jnp.pi)
@@ -35,9 +43,9 @@ tf = f32(2 * jnp.pi)
 
 
 #--------- Grid nodes
-xc = jnp.linspace(xmin, xmax, Nx)
-yc = jnp.linspace(ymin, ymax, Ny)
-zc = jnp.linspace(zmin, zmax, Nz)
+xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
+yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
+zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 
 dx = xc[1] - xc[0]
 dt = f32(0.02) #f32(6.0)*dx
@@ -106,12 +114,21 @@ sim_state.solution.block_until_ready()
 
 
 #--- VISUALIZATION
-visualization.animate_field(gstate, log, contours=20, transparent=True, vmin=log['U'].min(), vmax=log['U'].max()) #, opacity=0.2) #, colormap="Spectral")
+# visualization.animate_field(gstate, log, contours=20, transparent=True, vmin=log['U'].min(), vmax=log['U'].max()) #, opacity=0.2) #, colormap="Spectral")
 
 lvls = onp.linspace(log['U'].min(), log['U'].max(), 20)
-visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='turbo')
+# visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='turbo')
+# from evtk.hl import rectilinearToVTK, imageToVTK, structuredToVTK
 
 
+
+pdb.set_trace()
+io.write_vtk(gstate, log['U'])
+
+
+
+# imageToVTK("solution", pointData = {"sol" : onp.array(log['U'][0].reshape(Nx, Ny, Nz))} )
+jax.profiler.save_device_memory_profile("memory.prof")
 
 #--- TEST INTERPOLATION
 # u1 = log['U'][0]
