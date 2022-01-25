@@ -50,7 +50,8 @@ zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 
 dx = xc[1] - xc[0]
 dt = f32(0.02) #f32(6.0)*dx
-simulation_steps = i32(tf / dt)
+simulation_steps = i32(tf / dt) + i32(1)
+last_dt = tf - (simulation_steps -i32(1)) * dt 
 #---------------
 # Create helper functions to define a periodic box of some size.
 
@@ -88,16 +89,16 @@ sim_state = init_fn(R)
 
 @jit
 def step_func(i, state_and_nbrs):
-    state, log = state_and_nbrs
+    state, log, dt = state_and_nbrs
     time = i * dt
     log['t'] = ops.index_update(log['t'], i, time)
     sol = state.solution
     log['U'] = ops.index_update(log['U'], i, sol)
     vel = state.velocity_nm1
     log['V'] = ops.index_update(log['V'], i, vel)
-    state = reinitialize_fn(state, gstate)
+    # state = reinitialize_fn(state, gstate)
     # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
-    return apply_fn(state, gstate, time), log
+    return apply_fn(state, gstate, time), log, dt
 
 log = {
         'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
@@ -107,7 +108,8 @@ log = {
 
 import time
 t1 = time.time()
-sim_state, log = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log))
+sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps - 1), step_func, (sim_state, log, dt))
+sim_state, log, last_dt = step_func(i32(simulation_steps), (sim_state, log, last_dt))
 t2 = time.time()
 
 print(f"time per timestep is {(t2 - t1)/simulation_steps}")
