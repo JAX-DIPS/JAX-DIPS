@@ -102,7 +102,7 @@ def godunov_hamiltonian(phi_n, gstate):
     """
     Godunov Hamiltonian given in equation 15 of Min & Gibou 2007
     """
-    EPS = f32(1e-10)
+    EPS = f32(1e-7)
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
@@ -293,7 +293,8 @@ def godunov_hamiltonian(phi_n, gstate):
         (d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m), dtau = first_order_deriv(i, j, k)
         
         phi_ijk = c_cube[i, j, k]
-        res = (hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * dtau
+        sgn = np.sign(phi_ijk)
+        res = (hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * dtau * sgn
         return res
 
     return vmap(node_update)(nodes)
