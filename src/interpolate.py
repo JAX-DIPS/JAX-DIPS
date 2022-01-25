@@ -144,7 +144,7 @@ def godunov_hamiltonian(phi_n, gstate):
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
         dx_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dx_p
+        return dx_p, s_I /f32(3.0)
     
     @jit
     def x_deriv_at_interface_m(i, j, k):
@@ -159,7 +159,7 @@ def godunov_hamiltonian(phi_n, gstate):
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
         dx_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dx_m * f32(-1.0)
+        return dx_m*f32(-1.0), s_I /f32(3.0)
 
     @jit
     def y_deriv_at_interface_p(i, j, k):
@@ -174,7 +174,7 @@ def godunov_hamiltonian(phi_n, gstate):
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
         dy_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dy_p
+        return dy_p, s_I /f32(3.0)
 
     @jit
     def y_deriv_at_interface_m(i, j, k):
@@ -189,7 +189,7 @@ def godunov_hamiltonian(phi_n, gstate):
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
         dy_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dy_m * f32(-1.0)
+        return dy_m*f32(-1.0), s_I /f32(3.0)
 
     @jit
     def z_deriv_at_interface_p(i, j, k):
@@ -204,7 +204,7 @@ def godunov_hamiltonian(phi_n, gstate):
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
         dz_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dz_p
+        return dz_p, s_I /f32(3.0)
     
     @jit
     def z_deriv_at_interface_m(i, j, k):
@@ -219,37 +219,37 @@ def godunov_hamiltonian(phi_n, gstate):
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
         dz_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dz_m * f32(-1.0)
+        return dz_m*f32(-1.0), s_I /f32(3.0)
 
     @jit
     def x_deriv_in_bulk_p(i, j, k):
         dx_p = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx
-        return dx_p
+        return dx_p, dx / f32(3.0)
     
     @jit
     def x_deriv_in_bulk_m(i, j, k):
         dx_m = (c_cube[i  , j , k] - c_cube[i-1,j ,k]) / dx
-        return dx_m
+        return dx_m, dx / f32(3.0)
     
     @jit
     def y_deriv_in_bulk_p(i, j, k):
         dy_p = (c_cube[i, j+1, k] - c_cube[i, j  , k]) / dy
-        return dy_p
+        return dy_p, dy / f32(3.0)
     
     @jit
     def y_deriv_in_bulk_m(i, j, k):
         dy_m = (c_cube[i, j  , k] - c_cube[i, j-1, k]) / dy
-        return dy_m
+        return dy_m, dy / f32(3.0)
     
     @jit
     def z_deriv_in_bulk_p(i, j, k):
         dz_p = (c_cube[i, j, k+1] - c_cube[i, j, k  ]) / dz
-        return dz_p
+        return dz_p, dz / f32(3.0)
     
     @jit
     def z_deriv_in_bulk_m(i, j, k):
         dz_m = (c_cube[i, j, k  ] - c_cube[i, j, k-1]) / dz
-        return dz_m
+        return dz_m, dz / f32(3.0)
 
     @jit
     def first_order_deriv(i, j, k):
@@ -258,23 +258,16 @@ def godunov_hamiltonian(phi_n, gstate):
         then add correction to derivatives such that
         level set becomes 0 on the interface exactly.
         """
-        dx_p = lax.cond(c_cube[i+1, j , k] * c_cube[i  ,j ,k] > 0, lambda p: x_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
-        dx_m = lax.cond(c_cube[i  , j , k] * c_cube[i-1,j ,k] > 0, lambda p: x_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
+        dx_p, dtau_xp = lax.cond(c_cube[i+1, j , k] * c_cube[i  ,j ,k] > 0, lambda p: x_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
+        dx_m, dtau_xm = lax.cond(c_cube[i  , j , k] * c_cube[i-1,j ,k] > 0, lambda p: x_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: x_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
 
-        dy_p = lax.cond(c_cube[i  , j+1, k] * c_cube[i  ,j  ,k] > 0, lambda p: y_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: y_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
-        dy_m = lax.cond(c_cube[i  , j  , k] * c_cube[i  ,j-1,k] > 0, lambda p: y_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: y_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
+        dy_p, dtau_yp = lax.cond(c_cube[i  , j+1, k] * c_cube[i  ,j  ,k] > 0, lambda p: y_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: y_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
+        dy_m, dtau_ym = lax.cond(c_cube[i  , j  , k] * c_cube[i  ,j-1,k] > 0, lambda p: y_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: y_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
 
-        dz_p = lax.cond(c_cube[i  , j  , k+1] * c_cube[i  , j, k  ] > 0, lambda p: z_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: z_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
-        dz_m = lax.cond(c_cube[i  , j  , k  ] * c_cube[i  , j, k-1] > 0, lambda p: z_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: z_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
+        dz_p, dtau_zp = lax.cond(c_cube[i  , j  , k+1] * c_cube[i  , j, k  ] > 0, lambda p: z_deriv_in_bulk_p(p[0], p[1], p[2]), lambda p: z_deriv_at_interface_p(p[0], p[1], p[2]), (i, j, k))
+        dz_m, dtau_zm = lax.cond(c_cube[i  , j  , k  ] * c_cube[i  , j, k-1] > 0, lambda p: z_deriv_in_bulk_m(p[0], p[1], p[2]), lambda p: z_deriv_at_interface_m(p[0], p[1], p[2]), (i, j, k))
 
-        # dx_p = x_deriv_at_interface_p(i, j, k) #x_deriv_in_bulk_p(i, j, k)
-        # dx_m = x_deriv_at_interface_m(i, j, k) #x_deriv_in_bulk_m(i, j, k)
-        # dy_p = y_deriv_at_interface_p(i, j, k) #y_deriv_in_bulk_p(i, j, k)
-        # dy_m = y_deriv_at_interface_m(i, j, k) #y_deriv_in_bulk_m(i, j, k)
-        # dz_p = z_deriv_at_interface_p(i, j, k) #z_deriv_in_bulk_p(i, j, k)
-        # dz_m = z_deriv_at_interface_m(i, j, k) #z_deriv_in_bulk_m(i, j, k)
-
-        return np.array([dx_p, dx_m, dy_p, dy_m, dz_p, dz_m], dtype=f32)
+        return np.array([dx_p, dx_m, dy_p, dy_m, dz_p, dz_m], dtype=f32), np.min(np.array([dtau_xp, dtau_xm, dtau_yp, dtau_ym, dtau_zp, dtau_zm], dtype=f32))
 
     @jit
     def second_order_deriv(i, j, k):
@@ -297,10 +290,10 @@ def godunov_hamiltonian(phi_n, gstate):
     @jit
     def node_update(node):
         i,j,k = find_cell_idx(node)
-        d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m = first_order_deriv(i, j, k)
+        (d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m), dtau = first_order_deriv(i, j, k)
         
         phi_ijk = c_cube[i, j, k]
-        res = hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m)
+        res = (hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * dtau
         return res
 
     return vmap(node_update)(nodes)
