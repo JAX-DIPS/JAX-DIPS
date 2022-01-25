@@ -154,11 +154,11 @@ def godunov_hamiltonian(phi_n, gstate):
         d2x_m = (c_cube[i, j  , k  ] - 2*c_cube[i-1,j,k] + c_cube[i-2,j  ,k  ]) / dx / dx
         # d2x_m, d2y_m, d2z_m = second_order_deriv(i-1, j, k)
         c2 = minmod(d2x, d2x_m) * f32(0.5)
-        c1 = (c_cube[i, j , k] - c_cube[i-1 ,j ,k]) / dx
+        c1 = (c_cube[i, j , k] - c_cube[i-1 ,j ,k]) / dx 
         c0 = (c_cube[i-1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 + np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
-        dx_m = phi_ijk / s_I - s_I * c2 * f32(0.5) 
+        dx_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dx_m, s_I /f32(3.0)
 
     @jit
@@ -184,11 +184,11 @@ def godunov_hamiltonian(phi_n, gstate):
         d2y_m = (c_cube[i  , j, k  ] - 2*c_cube[i,j-1,k] + c_cube[i  ,j-2,k  ]) / dy / dy
         # d2x_m, d2y_m, d2z_m = second_order_deriv(i, j-1, k)
         c2 = minmod(d2y, d2y_m) * f32(0.5)
-        c1 = (c_cube[i, j , k] - c_cube[i  ,j-1,k]) / dy
+        c1 = (c_cube[i, j , k] - c_cube[i  ,j-1,k]) / dy 
         c0 = (c_cube[i, j-1, k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 + np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
-        dy_m = phi_ijk / s_I - s_I * c2 * f32(0.5) 
+        dy_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dy_m, s_I /f32(3.0)
 
     @jit
@@ -214,11 +214,11 @@ def godunov_hamiltonian(phi_n, gstate):
         d2z_m = (c_cube[i  , j  , k] - 2*c_cube[i,j,k-1] + c_cube[i  ,j  ,k-2]) / dz / dz
         # d2x_m, d2y_m, d2z_m = second_order_deriv(i, j, k-1)
         c2 = minmod(d2z, d2z_m) * f32(0.5)
-        c1 = (c_cube[i, j , k] - c_cube[i  ,j ,k-1]) / dy
+        c1 = (c_cube[i, j , k] - c_cube[i  ,j ,k-1]) / dz 
         c0 = (c_cube[i, j , k] + c_cube[i  ,j ,k-1]) / f32(2.0) - c2 * dz * dz * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 + np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
-        dz_m = phi_ijk / s_I - s_I * c2 * f32(0.5) 
+        dz_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dz_m, s_I /f32(3.0)
 
     @jit
@@ -294,7 +294,7 @@ def godunov_hamiltonian(phi_n, gstate):
         
         phi_ijk = c_cube[i, j, k]
         sgn_ijk = np.sign(phi_ijk)
-        res = (hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * dtau_ijk * sgn_ijk
+        res = (hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * sgn_ijk * dtau_ijk
         return res
 
     return vmap(node_update)(nodes)
