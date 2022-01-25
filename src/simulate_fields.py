@@ -57,7 +57,7 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
     
     # Find Departure Point
-    R_star = shift_fn(R, -dt_2 * V_n)                              
+    R_star = R - dt_2 * V_n                             
     V_n_star = Vn_interp_fn(R_star)
     V_nm1_star = Vnm1_interp_fn(R_star)
     V_mid = f32(1.5) * V_n_star - f32(0.5) * V_nm1_star 
@@ -85,7 +85,7 @@ def reinitialize_level_set(sstate: T,
     """
     x = gstate.x; y = gstate.y; z = gstate.z
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
-    dtau = jnp.min(jnp.array([dx, dy, dz])) / f64(30.0)
+    dtau = jnp.min(jnp.array([dx, dy, dz])) / f32(30.0)
 
     phi_0 = sstate.solution
     sgn_0 = jnp.sign(phi_0)
