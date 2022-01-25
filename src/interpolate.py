@@ -143,7 +143,7 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i+1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c0 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
-        dx_p = -phi_ijk / s_I - s_I * c2
+        dx_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dx_p
     
     @jit
@@ -158,7 +158,7 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i-1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c0 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
-        dx_m = -phi_ijk / s_I - s_I * c2
+        dx_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dx_m
 
     @jit
@@ -173,7 +173,7 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i, j+1 , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c0 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
-        dy_p = -phi_ijk / s_I - s_I * c2
+        dy_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dy_p
 
     @jit
@@ -188,7 +188,7 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i, j-1, k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c0 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
-        dy_m = -phi_ijk / s_I - s_I * c2
+        dy_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dy_m
 
     @jit
@@ -203,7 +203,7 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i, j , k+1] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dz * dz * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c0 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
-        dz_p = -phi_ijk / s_I - s_I * c2
+        dz_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dz_p
     
     @jit
@@ -218,7 +218,7 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i, j , k] + c_cube[i  ,j ,k-1]) / f32(2.0) - c2 * dz * dz * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c0 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
-        dz_m = -phi_ijk / s_I - s_I * c2
+        dz_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
         return dz_m
 
     @jit
@@ -286,13 +286,13 @@ def godunov_hamiltonian(phi_n, gstate):
     @jit
     def hamiltonian(phi_ijk, a, b, c, d, e, f):
         sgn = np.sign(phi_ijk)
-        a_m = np.min(np.array([sgn*a, 0]))
-        b_p = np.max(np.array([sgn*b, 0]))
-        c_m = np.min(np.array([sgn*c, 0]))
-        d_p = np.max(np.array([sgn*d, 0]))
-        e_m = np.min(np.array([sgn*e, 0]))
-        f_p = np.max(np.array([sgn*f, 0]))
-        return np.sqrt( np.max(np.array([a_m * a_m, b_p * b_p])) + np.max(np.array([c_m * c_m , d_p * d_p])) + np.max(np.array([e_m * e_m, f_p * f_p])))
+        a_m = np.min(np.array([sgn*a, 0], dtype=f32))
+        b_p = np.max(np.array([sgn*b, 0], dtype=f32))
+        c_m = np.min(np.array([sgn*c, 0], dtype=f32))
+        d_p = np.max(np.array([sgn*d, 0], dtype=f32))
+        e_m = np.min(np.array([sgn*e, 0], dtype=f32))
+        f_p = np.max(np.array([sgn*f, 0], dtype=f32))
+        return np.sqrt( np.max(np.array([a_m * a_m, b_p * b_p], dtype=f32)) + np.max(np.array([c_m * c_m , d_p * d_p], dtype=f32)) + np.max(np.array([e_m * e_m, f_p * f_p], dtype=f32)))
 
     @jit
     def node_update(node):

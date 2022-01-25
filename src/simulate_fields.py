@@ -95,9 +95,9 @@ def reinitialize_level_set(sstate: T,
     def step_phi_fn(i, sgn_phi_n):
         sgn_0, phi_n_ = sgn_phi_n
         hg_n = interpolate.godunov_hamiltonian(phi_n_, gstate)
-        phi_t_np1 = phi_n_ + dtau * jnp.multiply(sgn_0, hg_n)
+        phi_t_np1 = phi_n_ + dtau * (jnp.multiply(sgn_0, hg_n) - f32(1.0))
         hg_np1 = interpolate.godunov_hamiltonian(phi_t_np1, gstate)
-        phi_t_np2 = phi_t_np1 + dtau * jnp.multiply(sgn_0, hg_np1)
+        phi_t_np2 = phi_t_np1 + dtau * (jnp.multiply(sgn_0, hg_np1) - f32(1.0))
         phi_n_ = f32(0.5) * (phi_n_ + phi_t_np2)
         return sgn_0, phi_n_
 
