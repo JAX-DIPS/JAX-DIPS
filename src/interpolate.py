@@ -156,10 +156,10 @@ def godunov_hamiltonian(phi_n, gstate):
         c2 = minmod(d2x, d2x_m) * f32(0.5)
         c1 = (c_cube[i, j , k] - c_cube[i-1 ,j ,k]) / dx
         c0 = (c_cube[i-1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 + np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
-        dx_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dx_m*f32(-1.0), s_I /f32(3.0)
+        dx_m = phi_ijk / s_I - s_I * c2 * f32(0.5) 
+        return dx_m, s_I /f32(3.0)
 
     @jit
     def y_deriv_at_interface_p(i, j, k):
@@ -186,10 +186,10 @@ def godunov_hamiltonian(phi_n, gstate):
         c2 = minmod(d2y, d2y_m) * f32(0.5)
         c1 = (c_cube[i, j , k] - c_cube[i  ,j-1,k]) / dy
         c0 = (c_cube[i, j-1, k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 + np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
-        dy_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dy_m*f32(-1.0), s_I /f32(3.0)
+        dy_m = phi_ijk / s_I - s_I * c2 * f32(0.5) 
+        return dy_m, s_I /f32(3.0)
 
     @jit
     def z_deriv_at_interface_p(i, j, k):
@@ -216,10 +216,10 @@ def godunov_hamiltonian(phi_n, gstate):
         c2 = minmod(d2z, d2z_m) * f32(0.5)
         c1 = (c_cube[i, j , k] - c_cube[i  ,j ,k-1]) / dy
         c0 = (c_cube[i, j , k] + c_cube[i  ,j ,k-1]) / f32(2.0) - c2 * dz * dz * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 + np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
-        dz_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dz_m*f32(-1.0), s_I /f32(3.0)
+        dz_m = phi_ijk / s_I - s_I * c2 * f32(0.5) 
+        return dz_m, s_I /f32(3.0)
 
     @jit
     def x_deriv_in_bulk_p(i, j, k):
@@ -290,11 +290,11 @@ def godunov_hamiltonian(phi_n, gstate):
     @jit
     def node_update(node):
         i,j,k = find_cell_idx(node)
-        (d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m), dtau = first_order_deriv(i, j, k)
+        (d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m), dtau_ijk = first_order_deriv(i, j, k)
         
         phi_ijk = c_cube[i, j, k]
-        sgn = np.sign(phi_ijk)
-        res = (hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * dtau * sgn
+        sgn_ijk = np.sign(phi_ijk)
+        res = (hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * dtau_ijk * sgn_ijk
         return res
 
     return vmap(node_update)(nodes)

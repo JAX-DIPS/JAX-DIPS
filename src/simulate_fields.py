@@ -83,8 +83,8 @@ def reinitialize_level_set(sstate: T,
     This function should be called every few iterations to maintain 
     the level set function.
     """
-    x = gstate.x; y = gstate.y; z = gstate.z
-    dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
+    # x = gstate.x; y = gstate.y; z = gstate.z
+    # dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
     phi_0 = sstate.solution
     sgn_0 = jnp.sign(phi_0)
