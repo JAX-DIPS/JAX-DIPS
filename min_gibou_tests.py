@@ -38,7 +38,7 @@ Ny = i32(128)
 Nz = i32(64)
 dimension = i32(3)
 
-tf = f32(2 * jnp.pi)
+tf = f32(2 * jnp.pi) / 10.0
 
 
 
@@ -49,7 +49,7 @@ yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
 zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 
 dx = xc[1] - xc[0]
-dt = f32(0.02) #f32(6.0)*dx
+dt = f32(0.002) #f32(6.0)*dx
 simulation_steps = i32(tf / dt) 
 #---------------
 # Create helper functions to define a periodic box of some size.
@@ -91,11 +91,14 @@ def step_func(i, state_and_nbrs):
     state, log, dt = state_and_nbrs
     time = i * dt
     log['t'] = ops.index_update(log['t'], i, time)
+    
     sol = state.solution
     log['U'] = ops.index_update(log['U'], i, sol)
     vel = state.velocity_nm1
     log['V'] = ops.index_update(log['V'], i, vel)
-    # state = reinitialize_fn(state, gstate)
+    
+    
+    state = reinitialize_fn(state, gstate)
     # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
     return apply_fn(state, gstate, time), log, dt
 

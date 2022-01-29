@@ -98,16 +98,22 @@ def spline(y, dx, degree=3):
 
 
 
-def godunov_hamiltonian(phi_n, gstate):
+def godunov_hamiltonian(phi_n, sgn_0, gstate):
     """
     Godunov Hamiltonian given in equation 15 of Min & Gibou 2007
     """
-    EPS = f32(1e-7)
+    EPS = f32(1e-6)
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    sgn_0_ = sgn_0.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
     x, y, z, c_cube = add_ghost_layer_3d(x, y, z, c_cube)
+    
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
+
+    x, y, z, sgn_0_ = add_ghost_layer_3d(xo, yo, zo, sgn_0_)
+    x, y, z, sgn_0_ = add_ghost_layer_3d(x, y, z, sgn_0_)
 
     Nx = gstate.x.shape[0]
     Ny = gstate.y.shape[0]
@@ -140,11 +146,11 @@ def godunov_hamiltonian(phi_n, gstate):
         # d2x_p, d2y_p, d2z_p = second_order_deriv(i+1, j, k)
         c2 = minmod(d2x, d2x_p) * f32(0.5)
         c1 = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx
-        c0 = (c_cube[i+1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * 0.25
+        c0 = (c_cube[i+1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * f32(0.25)
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
-        dx_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dx_p, s_I /f32(3.0)
+        dx_p =  f32(-1.0) * phi_ijk / s_I - s_I * c2 
+        return dx_p, s_I /f32(10.0)
     
     @jit
     def x_deriv_at_interface_m(i, j, k):
@@ -158,8 +164,8 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i-1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
-        dx_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dx_m, s_I /f32(3.0)
+        dx_m = phi_ijk / s_I + s_I * c2 
+        return dx_m, s_I /f32(10.0)
 
     @jit
     def y_deriv_at_interface_p(i, j, k):
@@ -173,8 +179,8 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i, j+1 , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
-        dy_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dy_p, s_I /f32(3.0)
+        dy_p = f32(-1.0) * phi_ijk / s_I - s_I * c2 
+        return dy_p, s_I /f32(10.0)
 
     @jit
     def y_deriv_at_interface_m(i, j, k):
@@ -188,8 +194,8 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i, j-1, k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
-        dy_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dy_m, s_I /f32(3.0)
+        dy_m = phi_ijk / s_I + s_I * c2 
+        return dy_m, s_I /f32(10.0)
 
     @jit
     def z_deriv_at_interface_p(i, j, k):
@@ -203,8 +209,8 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i, j , k+1] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dz * dz * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
-        dz_p = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dz_p, s_I /f32(3.0)
+        dz_p = f32(-1.0) * phi_ijk / s_I - s_I * c2  
+        return dz_p, s_I /f32(10.0)
     
     @jit
     def z_deriv_at_interface_m(i, j, k):
@@ -218,37 +224,56 @@ def godunov_hamiltonian(phi_n, gstate):
         c0 = (c_cube[i, j , k] + c_cube[i  ,j ,k-1]) / f32(2.0) - c2 * dz * dz * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
-        dz_m = -phi_ijk / s_I - s_I * c2 * f32(0.5) 
-        return dz_m, s_I /f32(3.0)
+        dz_m = phi_ijk / s_I + s_I * c2 
+        return dz_m, s_I /f32(10.0)
 
     @jit
     def x_deriv_in_bulk_p(i, j, k):
-        dx_p = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx
-        return dx_p, dx / f32(3.0)
+        d2x   = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) / dx / dx
+        d2x_p = (c_cube[i+2, j  , k  ] - 2*c_cube[i+1,j,k] + c_cube[i,j  ,k  ]) / dx / dx
+        
+        dx_p = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx - f32(0.5) * dx * minmod(d2x, d2x_p)
+        
+        return dx_p, dx / f32(10.0)
     
     @jit
     def x_deriv_in_bulk_m(i, j, k):
-        dx_m = (c_cube[i  , j , k] - c_cube[i-1,j ,k]) / dx
-        return dx_m, dx / f32(3.0)
+        d2x   = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) / dx / dx
+        d2x_m = (c_cube[i, j  , k  ] - 2*c_cube[i-1,j,k] + c_cube[i-2,j  ,k  ]) / dx / dx
+ 
+        dx_m = (c_cube[i  , j , k] - c_cube[i-1,j ,k]) / dx + f32(0.5) * dx * minmod(d2x, d2x_m)
+        return dx_m, dx / f32(10.0)
     
     @jit
     def y_deriv_in_bulk_p(i, j, k):
-        dy_p = (c_cube[i, j+1, k] - c_cube[i, j  , k]) / dy
-        return dy_p, dy / f32(3.0)
+        d2y   = (c_cube[i  , j+1, k  ] - 2*c_cube[i,j,k] + c_cube[i  ,j-1,k  ]) / dy / dy
+        d2y_p = (c_cube[i  , j+2, k  ] - 2*c_cube[i,j+1,k] + c_cube[i  ,j,k  ]) / dy / dy
+
+        dy_p = (c_cube[i, j+1, k] - c_cube[i, j  , k]) / dy - f32(0.5) * dy * minmod(d2y, d2y_p)
+        return dy_p, dy / f32(10.0)
     
     @jit
     def y_deriv_in_bulk_m(i, j, k):
-        dy_m = (c_cube[i, j  , k] - c_cube[i, j-1, k]) / dy
-        return dy_m, dy / f32(3.0)
+        d2y = (c_cube[i  , j+1, k  ] - 2*c_cube[i,j,k] + c_cube[i  ,j-1,k  ]) / dy / dy
+        d2y_m = (c_cube[i  , j, k  ] - 2*c_cube[i,j-1,k] + c_cube[i  ,j-2,k  ]) / dy / dy
+
+        dy_m = (c_cube[i, j  , k] - c_cube[i, j-1, k]) / dy + f32(0.5) * dy * minmod(d2y, d2y_m)
+        return dy_m, dy / f32(10.0)
     
     @jit
     def z_deriv_in_bulk_p(i, j, k):
-        dz_p = (c_cube[i, j, k+1] - c_cube[i, j, k  ]) / dz
-        return dz_p, dz / f32(3.0)
+        d2z   = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) / dz / dz
+        d2z_p = (c_cube[i  , j  , k+2] - 2*c_cube[i,j,k+1] + c_cube[i  ,j  ,k]) / dz / dz
+        
+        dz_p = (c_cube[i, j, k+1] - c_cube[i, j, k  ]) / dz - f32(0.5) * dz *  minmod(d2z, d2z_p) 
+        return dz_p, dz / f32(10.0)
     
     @jit
     def z_deriv_in_bulk_m(i, j, k):
-        dz_m = (c_cube[i, j, k  ] - c_cube[i, j, k-1]) / dz
+        d2z = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) / dz / dz
+        d2z_m = (c_cube[i  , j  , k] - 2*c_cube[i,j,k-1] + c_cube[i  ,j  ,k-2]) / dz / dz
+
+        dz_m = (c_cube[i, j, k  ] - c_cube[i, j, k-1]) / dz + f32(0.5) * dz * minmod(d2z, d2z_m)
         return dz_m, dz / f32(3.0)
 
     @jit
@@ -277,27 +302,25 @@ def godunov_hamiltonian(phi_n, gstate):
         return np.array([dxx, dyy, dzz], dtype=f32)
 
     @jit
-    def hamiltonian(phi_ijk, a, b, c, d, e, f):
-        sgn = np.sign(phi_ijk)
-        a_m = np.min(np.array([sgn*a, 0], dtype=f32))
-        b_p = np.max(np.array([sgn*b, 0], dtype=f32))
-        c_m = np.min(np.array([sgn*c, 0], dtype=f32))
-        d_p = np.max(np.array([sgn*d, 0], dtype=f32))
-        e_m = np.min(np.array([sgn*e, 0], dtype=f32))
-        f_p = np.max(np.array([sgn*f, 0], dtype=f32))
+    def hamiltonian(sgn_ijk, a, b, c, d, e, f):
+        a_m = np.max(np.array([sgn_ijk*a, 0], dtype=f32))
+        b_p = np.max(np.array([sgn_ijk*b, 0], dtype=f32))
+        c_m = np.max(np.array([sgn_ijk*c, 0], dtype=f32))
+        d_p = np.max(np.array([sgn_ijk*d, 0], dtype=f32))
+        e_m = np.max(np.array([sgn_ijk*e, 0], dtype=f32))
+        f_p = np.max(np.array([sgn_ijk*f, 0], dtype=f32))
         return np.sqrt( np.max(np.array([a_m * a_m, b_p * b_p], dtype=f32)) + np.max(np.array([c_m * c_m , d_p * d_p], dtype=f32)) + np.max(np.array([e_m * e_m, f_p * f_p], dtype=f32)))
 
     @jit
-    def node_update(node):
+    def node_update(node, sgn_0_):
         i,j,k = find_cell_idx(node)
         (d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m), dtau_ijk = first_order_deriv(i, j, k)
-        
-        phi_ijk = c_cube[i, j, k]
-        sgn_ijk = np.sign(phi_ijk)
-        res = (hamiltonian(phi_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * sgn_ijk * dtau_ijk
+        sgn_ijk = sgn_0_[i,j,k] 
+
+        res = ( hamiltonian(sgn_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * sgn_ijk * dtau_ijk 
         return res
 
-    return vmap(node_update)(nodes)
+    return vmap(node_update, (0, None))(nodes, sgn_0_)
 
     
 
