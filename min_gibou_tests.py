@@ -91,18 +91,65 @@ lvlset = jax.vmap(phi_fn)(gstate.R)
 norm_gradPhi = jnp.linalg.norm(grad_lvlset, axis=1)
 
 time = 0
+phi_n = sim_state.solution
 
-advect_fn_atomic = simulate_fields.advect_level_set(gstate, sim_state, velocity_fn, time)
-grad_advect_phi_fn_atomic = jax.grad(advect_fn_atomic)
-advect_phi_fn_vec = jax.jit( jax.vmap(advect_fn_atomic, (0, 0, None)) )
-grad_advect_phi_fn_vec = jax.jit( jax.vmap(grad_advect_phi_fn_atomic, (0, 0, None)) )
+advect_phi_fn, grad_advect_phi_fn = simulate_fields.advect_level_set(gstate, sim_state.velocity_nm1, velocity_fn, time)
 
-# out = advect_fn_atomic(R[0], sim_state.solution[0], dt)
-# grad_out = grad_advect_phi_fn_atomic(R[0], sim_state.solution[0], dt)
-# phi_np1 = advect_phi_fn_vec(R, sim_state.solution, dt)
+phi_np1 = advect_phi_fn(R, phi_n, dt)
+grad_phi_np1 = grad_advect_phi_fn(R, phi_n, dt)
 
-grad_phi_np1 = grad_advect_phi_fn_vec(R, sim_state.solution, dt)
+norm_grad_phi_np1 = jnp.linalg.norm(grad_phi_np1, axis=1)
 
+pdb.set_trace()
+
+
+
+# change phi_1
+phi_np1_corr = phi_np1 - jnp.sign(phi_n) * 0.1 * (norm_grad_phi_np1 - 1.0)
+
+
+pdb.set_trace()
+
+
+
+
+
+
+
+
+def reinitialize_fn(grad_advect_phi_fn_vec, R, phi, dt, dtau=0.001):
+    def norm_grad_phi_fn(R, phi, dt):
+        grad_phi_np1 = grad_advect_phi_fn_vec(R, phi, dt)
+        norm_grad_phi = jnp.linalg.norm(grad_phi_np1, axis=1)
+        return norm_grad_phi
+    
+    norm_grad_phi_fn = jax.jit(norm_grad_phi_fn)
+
+    sgn_phi_0 = jnp.sign(phi)
+    phi_n = phi
+    norm_grad_phi_n = norm_grad_phi_fn(R, phi_n, dt)
+    
+    for i in range(10):
+        phi_t_np1 = phi_n - dtau * sgn_phi_0 * (norm_grad_phi_n - 1.0)
+
+        norm_grad_phi_t_np1 = norm_grad_phi_fn(R, phi_t_np1, dtau)
+
+        phi_t_np2 = phi_t_np1 - dtau * sgn_phi_0 * (norm_grad_phi_t_np1 - 1.0)
+        
+        phi_n = 0.5 * (phi_n + phi_t_np2)
+        
+        norm_grad_phi_n = norm_grad_phi_fn(R, phi_n, dtau)
+
+    return phi_n
+
+out = reinitialize_fn(grad_advect_phi_fn_vec, R, sim_state.solution, dt, dt)
+grad_out = grad_advect_phi_fn_vec(R, out, dt)
+norm_grad_out = jnp.linalg.norm(grad_out, axis=1)
+
+err1 = jnp.linalg.norm( norm_grad_phi - 1.0 )
+err2 = jnp.linalg.norm( norm_grad_out - 1.0 )
+print(f"2-norm error was {err1} and is now {err2}")
+print(f"infinity-norm error was {abs(norm_grad_phi - 1.0).max()} and is now {abs(norm_grad_out - 1.0).max()}" )
 pdb.set_trace()
 
 

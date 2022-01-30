@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from typing import Callable, TypeVar, Union, Tuple, Dict, Optional
 
-from jax import grad, vmap
+from jax import grad, vmap, jit
 from jax import ops
 from jax import random
 from jax._src.dtypes import dtype
@@ -32,52 +32,29 @@ ApplyFn = Callable[[T,T], T]
 ReinitializeFn = Callable[[T,T], T]
 Simulator = Tuple[InitFn, ApplyFn, ReinitializeFn]
 
-def which_cell_index(cond): 
-    """A USEFULE utility function to find the index of True in a list, 
-    for example cond = 0.1 < gstate.x provides a list of True's and False's
-    and thie function returns the first time True appears
-    """
-    cond = jnp.asarray(cond)
-    return (jnp.argwhere(~cond, size=1) - 1).flatten()
-
-def find_lower_left_cell_idx(point, gstate):
-    """
-    find cell index (i,j,k) containing point
-    """
-    x = gstate.x; y = gstate.y; z = gstate.z
-    x_p, y_p, z_p = point
-    i = which_cell_index(jnp.asarray(x_p >= x))
-    j = which_cell_index(jnp.asarray(y_p >= y))
-    k = which_cell_index(jnp.asarray(z_p >= z))
-    return i, j, k
-
 
 def advect_level_set(gstate: T,
-                     sstate: T,
+                     V_nm1: Array,
                      velocity_fn: Callable[..., Array], 
                      time: float):
     
-    R, U_n, V_nm1= gstate.R, sstate.solution, sstate.velocity_nm1
+    R = gstate.R
     V_n = vmap(velocity_fn, (0, None))(R, time)
 
     # Get interpolation functions
     Vn_interp_fn = interpolate.vec_multilinear_interpolation(V_n, gstate)
     Vnm1_interp_fn = interpolate.vec_multilinear_interpolation(V_nm1, gstate)
-    Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
-
+    
     def advect_one_step_at_node(point: Array,
-                                phi_point: float,                            
+                                U_n: Array,                           
                                 dt: float) -> T:
         """Apply a single step of semi-Lagrangian integration to a state."""
-
+        Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
         dt = f32(dt)
         dt_2 = f32(dt / 2.0)
 
-        vel_nm1_point = velocity_fn(point, time - dt)
+        # vel_nm1_point = velocity_fn(point, time - dt)
         vel_n_point = velocity_fn(point, time)
-        u_n_point = phi_point
-        
-        
         
         # Find Departure Point
         r_star = point - dt_2 * vel_n_point   
@@ -92,8 +69,24 @@ def advect_level_set(gstate: T,
         # substitute solution from departure point to arrival points (=grid points)
         u_np1_point = Un_interp_fn(point_d) #.flatten()
         return u_np1_point.reshape()
+
+    advect_level_set_one_step_grid_fn = jit( vmap(advect_one_step_at_node, (0, None, None) ))
+
+    grad_advect_level_set_one_step_at_node_fn = jit(grad(advect_one_step_at_node))  
+    grad_advect_level_set_one_step_grid_fn = jit(vmap(grad_advect_level_set_one_step_at_node_fn, (0, None, None)))
+
+    def advect_semi_lagrangian_one_step_grid(R: Array, U_n: Array, dt: float) -> T:
+        return advect_level_set_one_step_grid_fn(R, U_n, dt)
+
+        
+    def grad_semi_lagrangian_one_step_grid(R: Array, U_n: Array, dt: float) -> T:
+        return grad_advect_level_set_one_step_grid_fn(R, U_n, dt)
+
+
+    def reinitialize_fn():
+        pass
     
-    return advect_one_step_at_node
+    return advect_semi_lagrangian_one_step_grid, grad_semi_lagrangian_one_step_grid
 
 
 def advect_one_step(velocity_fn: Callable[..., Array],
