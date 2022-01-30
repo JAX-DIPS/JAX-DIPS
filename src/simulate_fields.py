@@ -148,7 +148,7 @@ def advect_level_set(gstate: T,
             return (phi_np1, grad_phi_np1, sign_phi_0, dtau), None
 
         # phi_np1, grad_phi_np1, sign_phi_0, dtau = Sussman_RK2_step(0, (phi_np1, grad_phi_np1, sign_phi_0, dtau))
-        iters = jnp.arange(0, 10)
+        iters = jnp.arange(0, 1)
         (phi_np1, grad_phi_np1, sign_phi_0, dtau), _ = lax.scan(Sussman_RK2_step, (phi_np1, grad_phi_np1, sign_phi_0, dtau), iters)
         
         return phi_np1
