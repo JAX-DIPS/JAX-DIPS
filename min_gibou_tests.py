@@ -80,51 +80,35 @@ def phi_fn(r):
     x = r[0]; y = r[1]; z = r[2]
     return jnp.sqrt(x**2 + (y-1.0)**2 + z**2) - 0.5
 
-init_fn, apply_fn, reinitialize_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
+init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
 sim_state = init_fn(R)
 
 
 
 #---
+# time = 0
+# advect_phi_fn, grad_advect_phi_fn, reinitialized_fn, grad_reinitialized_fn = simulate_fields.advect_level_set(gstate, sim_state.velocity_nm1, velocity_fn, time)
+
+# phi_n = sim_state.solution
+
+# phi_np1 = advect_phi_fn(R, phi_n, dt)
+# grad_phi_np1 = grad_advect_phi_fn(R, phi_n, dt)
+# norm_grad_phi_np1 = jnp.linalg.norm(grad_phi_np1, axis=1)
 
 
-time = 0
-phi_n = sim_state.solution
-
-advect_phi_fn, grad_advect_phi_fn, reinitialized_fn, grad_reinitialized_fn = simulate_fields.advect_level_set(gstate, sim_state.velocity_nm1, velocity_fn, time)
-
-phi_np1 = advect_phi_fn(R, phi_n, dt)
-grad_phi_np1 = grad_advect_phi_fn(R, phi_n, dt)
-
-norm_grad_phi_np1 = jnp.linalg.norm(grad_phi_np1, axis=1)
+# out = reinitialized_fn(R, phi_n, dt)
+# grad_out = grad_reinitialized_fn(R, phi_n, dt)
+# norm_grad_out = jnp.linalg.norm(grad_out, axis=1)
 
 
-out = reinitialized_fn(R, phi_n, dt)
-grad_out = grad_reinitialized_fn(R, phi_n, dt)
-norm_grad_out = jnp.linalg.norm(grad_out, axis=1)
+# err1 = jnp.linalg.norm( norm_grad_phi_np1 - 1.0 )
+# err2 = jnp.linalg.norm( norm_grad_out - 1.0 )
+# print(f"2-norm error was {err1} and is now {err2}")
+# print(f"infinity-norm error was {abs(norm_grad_phi_np1 - 1.0).max()} and is now {abs(norm_grad_out - 1.0).max()}" )
 
-
-err1 = jnp.linalg.norm( norm_grad_phi_np1 - 1.0 )
-err2 = jnp.linalg.norm( norm_grad_out - 1.0 )
-print(f"2-norm error was {err1} and is now {err2}")
-print(f"infinity-norm error was {abs(norm_grad_phi_np1 - 1.0).max()} and is now {abs(norm_grad_out - 1.0).max()}" )
-
-pdb.set_trace()
+# pdb.set_trace()
 
 #---
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @jit
 def step_func(i, state_and_nbrs):
@@ -139,7 +123,8 @@ def step_func(i, state_and_nbrs):
     
     # state = reinitialize_fn(state, gstate)
     # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
-    return apply_fn(state, gstate, time), log, dt
+    # return apply_fn(state, gstate, time), log, dt
+    return reinitialized_advect_fn(state, gstate, time), log, dt
 
 log = {
         'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),

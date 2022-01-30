@@ -9,6 +9,7 @@ from jax._src.dtypes import dtype
 import jax.numpy as jnp
 from jax import lax, vmap
 from numpy import int32
+# from min_gibou_tests import velocity_fn
 
 from src import util, space, dataclasses, interpolate, quantity
 import pdb
@@ -30,7 +31,8 @@ T = TypeVar('T')
 InitFn = Callable[..., T]
 ApplyFn = Callable[[T,T], T]
 ReinitializeFn = Callable[[T,T], T]
-Simulator = Tuple[InitFn, ApplyFn, ReinitializeFn]
+ReinitializedAdvectFn = Callable[[T,T], T]
+Simulator = Tuple[InitFn, ApplyFn, ReinitializeFn, ReinitializedAdvectFn]
 
 
 def advect_level_set(gstate: T,
@@ -292,7 +294,18 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
     def reinitialize_fn(sim_state, grid_state, **kwargs):
         return reinitialize_level_set(sim_state, grid_state, **kwargs)
 
-    return init_fn, apply_fn, reinitialize_fn
+    def reinitialized_advect_fn(sim_state, grid_state, time, **kwargs):
+        _, _, reinitialized_fn, _ = advect_level_set(grid_state, sim_state.velocity_nm1, velocity_or_energy_fn, time)
+        def wrapper(func):
+            def wrapped(sim_state, grid_state, time):
+                U_np1 = func(grid_state.R, sim_state.solution, dt)
+                V_n = velocity_fn(grid_state.R, time)
+                return dataclasses.replace(sim_state, solution=U_np1, velocity_nm1=V_n)
+            return wrapped
+
+        return wrapper(reinitialized_fn)(sim_state, grid_state, time)
+
+    return init_fn, apply_fn, reinitialize_fn , reinitialized_advect_fn
 
 
 
