@@ -75,30 +75,81 @@ def advect_level_set(gstate: T,
     grad_semi_lagrangian_one_step_grid_fn = jit(vmap(grad_advect_level_set_one_step_at_node_fn, (0, None, None)))
 
 
+    # def reinitialized_level_set_point_fn(point: Array, U_n: Array, dt: float) -> T:
+    #     dtau = 0.01
+        
+    #     #--- one semi Lagrangian step.
+    #     phi_np1 = advect_one_step_at_node(point, U_n, dt)
+    #     grad_phi_np1 = grad_advect_level_set_one_step_at_node_fn(point, U_n, dt)
+    #     sign_phi_0 = jnp.sign(phi_np1)
+    #     #---
+
+    #     def phi_tilde_np1_point(point: Array, U_n: Array, phi_np1: Array, sign_phi_0: float, dt: float, dtau: float):
+    #         # phi_np1 = advect_one_step_at_node(point, U_n, dt)
+    #         grad_phi_np1 = grad_advect_level_set_one_step_at_node_fn(point, U_n, dt)
+    #         norm_grad_phi_np1 = jnp.linalg.norm(grad_phi_np1)
+    #         phi_t_np1 = phi_np1 - dtau * sign_phi_0 * (norm_grad_phi_np1 - 1.0)
+    #         return phi_t_np1
+    #     grad_phi_tilde_np1_point_fn = jit(grad(phi_tilde_np1_point))
+
+    #     # phi_t_np1 = phi_tilde_np1_point(point, U_n, sign_phi_0, dt, dtau)
+    #     # grad_phi_t_np1 = grad_phi_tilde_np1_point_fn(point, U_n, sign_phi_0, dt, dtau)
+    #     # norm_grad_phi_t_np1 = jnp.linalg.norm(grad_phi_t_np1)
+
+    #     # phi_t_np2 = phi_t_np1 - dtau * sign_phi_0 * (norm_grad_phi_t_np1 - 1.0)
+    #     # phi_final = 0.5 * (phi_np1 + phi_t_np2)
+    #     #----
+        
+    #     # for i in range(10):
+    #     phi_t_np1 = phi_tilde_np1_point(point, U_n, phi_np1, sign_phi_0, dt, dtau)
+    #     grad_phi_t_np1 = grad_phi_tilde_np1_point_fn(point, U_n, phi_np1, sign_phi_0, dt, dtau)
+    #     norm_grad_phi_t_np1 = jnp.linalg.norm(grad_phi_t_np1)
+
+    #     phi_t_np2 = phi_t_np1 - dtau * sign_phi_0 * (norm_grad_phi_t_np1 - 1.0)
+    #     phi_np1 = 0.5 * (phi_np1 + phi_t_np2)
+
+    #     return phi_np1
+
     def reinitialized_level_set_point_fn(point: Array, U_n: Array, dt: float) -> T:
-        dtau = 0.01
+        dtau = f32(0.5 * dt)
+        dt = f32(dt)
+        
+        #--- one semi Lagrangian step.
         phi_np1 = advect_one_step_at_node(point, U_n, dt)
+        grad_phi_np1 = grad_advect_level_set_one_step_at_node_fn(point, U_n, dt)
         sign_phi_0 = jnp.sign(phi_np1)
+        #---
+        def Sussman_RK2_step(params, i):
+            phi_np1, grad_phi_np1, sign_phi_0, dtau = params
 
-        def phi_tilde_np1_point(point: Array, U_n: Array, sign_phi_0: float, dt: float, dtau: float):
-            phi_np1_ = advect_one_step_at_node(point, U_n, dt)
-            grad_phi_np1 = grad_advect_level_set_one_step_at_node_fn(point, U_n, dt)
-            norm_grad_phi_np1 = jnp.linalg.norm(grad_phi_np1)
-            phi_t_np1 = phi_np1_ - dtau * sign_phi_0 * (norm_grad_phi_np1 - 1.0)
-            return phi_t_np1
-        grad_phi_tilde_np1_point_fn = jit(grad(phi_tilde_np1_point))
+            def phi_tilde_np1_point_second_step(phi_np1: Array, grad_phi_np1: Array, sign_phi_0: float, dtau: float):
+                def phi_tilde_np1_point_first_step( phi_np1: Array, grad_phi_np1: Array, sign_phi_0: float, dtau: float):
+                    norm_grad_phi_np1 = jnp.linalg.norm(grad_phi_np1)
+                    phi_t_np1 = phi_np1 - dtau * sign_phi_0 * (norm_grad_phi_np1 - f32(1.0))
+                    return phi_t_np1
+                grad_phi_tilde_np1_point_first_step_fn = jit(grad(phi_tilde_np1_point_first_step))
+                phi_t_np1 = phi_tilde_np1_point_first_step(phi_np1, grad_phi_np1, sign_phi_0, dtau)
+                grad_phi_t_np1 = grad_phi_tilde_np1_point_first_step_fn(phi_np1, grad_phi_np1, sign_phi_0, dtau)
 
+                grad_phi_t_np1 *= grad_phi_np1
 
+                norm_grad_phi_t_np1 = jnp.linalg.norm(grad_phi_t_np1)
+                phi_t_np2 = phi_t_np1 - dtau * sign_phi_0 * (norm_grad_phi_t_np1 - f32(1.0))
+                return f32(0.5) * (phi_np1 + phi_t_np2)
+                
+            grad_phi_tilde_np1_point_second_step_fn = jit(grad(phi_tilde_np1_point_second_step))
+            phi_np1 = phi_tilde_np1_point_second_step(phi_np1, grad_phi_np1, sign_phi_0, dtau)
+            grad_phi_np1_ = grad_phi_tilde_np1_point_second_step_fn(phi_np1, grad_phi_np1, sign_phi_0, dtau)
+            
+            grad_phi_np1 *= grad_phi_np1_
+            
+            return (phi_np1, grad_phi_np1, sign_phi_0, dtau), None
 
-        phi_t_np1 = phi_tilde_np1_point(point, U_n, sign_phi_0, dt, dtau)
-        grad_phi_t_np1 = grad_phi_tilde_np1_point_fn(point, U_n, sign_phi_0, dt, dtau)
-        norm_grad_phi_t_np1 = jnp.linalg.norm(grad_phi_t_np1)
-
-        phi_t_np2 = phi_t_np1 - dtau * sign_phi_0 * (norm_grad_phi_t_np1 - 1.0)
-        phi_final = 0.5 * (phi_np1 + phi_t_np2)
-
-
-        return phi_final
+        # phi_np1, grad_phi_np1, sign_phi_0, dtau = Sussman_RK2_step(0, (phi_np1, grad_phi_np1, sign_phi_0, dtau))
+        iters = jnp.arange(0, 10)
+        (phi_np1, grad_phi_np1, sign_phi_0, dtau), _ = lax.scan(Sussman_RK2_step, (phi_np1, grad_phi_np1, sign_phi_0, dtau), iters)
+        
+        return phi_np1
     
     reinitialized_level_set_grid_fn = jit(vmap(reinitialized_level_set_point_fn, (0, None, None)))
     grad_reinitialized_level_set_grid_fn = jit(vmap(grad(reinitialized_level_set_point_fn), (0, None, None)))
