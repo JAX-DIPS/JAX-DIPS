@@ -86,9 +86,7 @@ sim_state = init_fn(R)
 
 
 #---
-grad_lvlset = jax.vmap(jax.grad(phi_fn))(gstate.R)
-lvlset = jax.vmap(phi_fn)(gstate.R)
-norm_gradPhi = jnp.linalg.norm(grad_lvlset, axis=1)
+
 
 time = 0
 phi_n = sim_state.solution
@@ -111,25 +109,6 @@ err2 = jnp.linalg.norm( norm_grad_out - 1.0 )
 print(f"2-norm error was {err1} and is now {err2}")
 print(f"infinity-norm error was {abs(norm_grad_phi_np1 - 1.0).max()} and is now {abs(norm_grad_out - 1.0).max()}" )
 
-pdb.set_trace()
-
-
-
-
-
-
-
-
-
-
-# grad_advect_phi_node_fn = jax.vmap(jax.grad(advect_phi_node_fn), (0, 0, None, None, None))
-# grad_advect_phi_node_fn(gstate, sim_state, velocity_fn, dt, time)
-# lvlset_np1 = simulate_fields.advect_one_step_pure(gstate, sim_state, velocity_fn, dt, time)
-
-
-
-jax.grad(apply_fn)(sim_state, gstate, time)
-apply_fn(sim_state, gstate, time)
 pdb.set_trace()
 
 #---
@@ -158,8 +137,7 @@ def step_func(i, state_and_nbrs):
     vel = state.velocity_nm1
     log['V'] = ops.index_update(log['V'], i, vel)
     
-    
-    state = reinitialize_fn(state, gstate)
+    # state = reinitialize_fn(state, gstate)
     # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
     return apply_fn(state, gstate, time), log, dt
 
