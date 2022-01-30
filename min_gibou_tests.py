@@ -78,12 +78,63 @@ def velocity_fn(r, time=0.0):
 
 def phi_fn(r):
     x = r[0]; y = r[1]; z = r[2]
-    return (x**2 + (y-1.0)**2 + z**2 - 0.5**2)
-
+    return jnp.sqrt(x**2 + (y-1.0)**2 + z**2) - 0.5
 
 init_fn, apply_fn, reinitialize_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
-
 sim_state = init_fn(R)
+
+
+
+#---
+grad_lvlset = jax.vmap(jax.grad(phi_fn))(gstate.R)
+lvlset = jax.vmap(phi_fn)(gstate.R)
+norm_gradPhi = jnp.linalg.norm(grad_lvlset, axis=1)
+
+time = 0
+
+advect_fn_atomic = simulate_fields.advect_level_set(gstate, sim_state, velocity_fn, time)
+grad_advect_phi_fn_atomic = jax.grad(advect_fn_atomic)
+advect_phi_fn_vec = jax.jit( jax.vmap(advect_fn_atomic, (0, 0, None)) )
+grad_advect_phi_fn_vec = jax.jit( jax.vmap(grad_advect_phi_fn_atomic, (0, 0, None)) )
+
+# out = advect_fn_atomic(R[0], sim_state.solution[0], dt)
+# grad_out = grad_advect_phi_fn_atomic(R[0], sim_state.solution[0], dt)
+# phi_np1 = advect_phi_fn_vec(R, sim_state.solution, dt)
+
+grad_phi_np1 = grad_advect_phi_fn_vec(R, sim_state.solution, dt)
+
+pdb.set_trace()
+
+
+
+
+
+# grad_advect_phi_node_fn = jax.vmap(jax.grad(advect_phi_node_fn), (0, 0, None, None, None))
+# grad_advect_phi_node_fn(gstate, sim_state, velocity_fn, dt, time)
+# lvlset_np1 = simulate_fields.advect_one_step_pure(gstate, sim_state, velocity_fn, dt, time)
+
+pdb.set_trace()
+
+
+
+
+jax.grad(apply_fn)(sim_state, gstate, time)
+apply_fn(sim_state, gstate, time)
+pdb.set_trace()
+
+#---
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @jit
