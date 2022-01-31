@@ -33,12 +33,12 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-2.0)
 xmax = ymax = zmax = f32(2.0)
 box_size = xmax - xmin
-Nx = i32(128)
-Ny = i32(128)
-Nz = i32(128)
+Nx = i32(200)
+Ny = i32(200)
+Nz = i32(200)
 dimension = i32(3)
 
-tf = f32(2 * jnp.pi) 
+tf = f32(2 * jnp.pi / 10) 
 
 
 
@@ -133,8 +133,8 @@ log = {
 def step_func(i, state_and_nbrs):
     state, log, dt = state_and_nbrs
     
-    time = i * dt
-    log['t'] = log['t'].at[i].set(time)
+    time_ = i * dt
+    log['t'] = log['t'].at[i].set(time_)
     log['U'] = log['U'].at[i].set(state.solution)
 
     # vel = state.velocity_nm1
@@ -142,8 +142,8 @@ def step_func(i, state_and_nbrs):
     
     state = reinitialize_fn(state, gstate)
     # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
-    return apply_fn(state, gstate, time), log, dt
-    # return reinitialized_advect_fn(state, gstate, time), log, dt
+    return apply_fn(state, gstate, time_), log, dt
+    # return reinitialized_advect_fn(state, gstate, time_), log, dt
 
 
 import time
