@@ -114,25 +114,6 @@ sim_state = init_fn(R)
 # g_phi_0 = vmap(grad(phi_fn))(gstate.R)
 
 
-@jit
-def step_func(i, state_and_nbrs):
-    state, log, dt = state_and_nbrs
-    time = i * dt
-    log['t'] = log['t'].at[i].add(time)
-    # log['t'] = ops.index_update(log['t'], i, time)
-    
-    sol = state.solution
-    # log['U'] = ops.index_update(log['U'], i, sol)
-
-    log['U'] = log['U'].at[i].set(sol)
-
-    # vel = state.velocity_nm1
-    # log['V'] = ops.index_update(log['V'], i, vel)
-    
-    # state = reinitialize_fn(state, gstate)
-    # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
-    # return apply_fn(state, gstate, time), log, dt
-    return reinitialized_advect_fn(state, gstate, time), log, dt
 
 log = {
         'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
@@ -140,13 +121,42 @@ log = {
         't' : jnp.zeros((simulation_steps,), dtype=f32)
       }
 
+# log = {
+#     'U' : jnp.zeros((2,) + sim_state.solution.shape, dtype=f32),
+#     't' : jnp.zeros((2,), dtype=f32)
+# }
+
+# log['U'] = log['U'].at[0].set(sim_state.solution)
+# log['t'] = log['t'].at[0].set(0.0)
+
+@jit
+def step_func(i, state_and_nbrs):
+    state, log, dt = state_and_nbrs
+    
+    time = i * dt
+    log['t'] = log['t'].at[i].set(time)
+    log['U'] = log['U'].at[i].set(state.solution)
+
+    # vel = state.velocity_nm1
+    # log['V'] = ops.index_update(log['V'], i, vel)
+    
+    state = reinitialize_fn(state, gstate)
+    # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
+    return apply_fn(state, gstate, time), log, dt
+    # return reinitialized_advect_fn(state, gstate, time), log, dt
+
+
 import time
 t1 = time.time()
 sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log, dt))
-t2 = time.time()
-
-print(f"time per timestep is {(t2 - t1)/simulation_steps}")
 sim_state.solution.block_until_ready()
+t2 = time.time()
+print(f"time per timestep is {(t2 - t1)/simulation_steps}")
+
+# pdb.set_trace()
+# log['U'] = log['U'].at[1].set(sim_state.solution)
+# log['t'] = log['t'].at[1].set(tf - dt)
+
 
 jax.profiler.save_device_memory_profile("memory.prof")
 

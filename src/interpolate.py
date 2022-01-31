@@ -114,6 +114,7 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
 
     x, y, z, sgn_0_ = add_ghost_layer_3d(xo, yo, zo, sgn_0_)
     x, y, z, sgn_0_ = add_ghost_layer_3d(x, y, z, sgn_0_)
+    # sgn_0_ = sgn_0.reshape(-1)
 
     Nx = gstate.x.shape[0]
     Ny = gstate.y.shape[0]
@@ -123,6 +124,8 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
     kk = np.arange(2, Nz+2)
     I, J, K = np.meshgrid(ii, jj, kk, indexing='ij')
     nodes = np.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
+    
+    
 
     def find_cell_idx(node):
         """
@@ -162,7 +165,7 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         c2 = minmod(d2x, d2x_m) * f32(0.5)
         c1 = (c_cube[i, j , k] - c_cube[i-1 ,j ,k]) / dx 
         c0 = (c_cube[i-1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p :  c0/c1, lambda p: (c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + corr_s
         dx_m = phi_ijk / s_I + s_I * c2 
         return dx_m, s_I /f32(10.0)
@@ -192,7 +195,7 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         c2 = minmod(d2y, d2y_m) * f32(0.5)
         c1 = (c_cube[i, j , k] - c_cube[i  ,j-1,k]) / dy 
         c0 = (c_cube[i, j-1, k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : c0/c1, lambda p: (c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + corr_s
         dy_m = phi_ijk / s_I + s_I * c2 
         return dy_m, s_I /f32(10.0)
@@ -222,7 +225,7 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         c2 = minmod(d2z, d2z_m) * f32(0.5)
         c1 = (c_cube[i, j , k] - c_cube[i  ,j ,k-1]) / dz 
         c0 = (c_cube[i, j , k] + c_cube[i  ,j ,k-1]) / f32(2.0) - c2 * dz * dz * 0.25
-        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
+        corr_s = lax.cond(np.abs(c2) < EPS, lambda p : c0/c1, lambda p: (c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + corr_s
         dz_m = phi_ijk / s_I + s_I * c2 
         return dz_m, s_I /f32(10.0)
@@ -303,16 +306,16 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
 
     @jit
     def hamiltonian(sgn_ijk, a, b, c, d, e, f):
-        a_m = np.max(np.array([sgn_ijk*a, 0], dtype=f32))
+        a_m = np.min(np.array([sgn_ijk*a, 0], dtype=f32))
         b_p = np.max(np.array([sgn_ijk*b, 0], dtype=f32))
-        c_m = np.max(np.array([sgn_ijk*c, 0], dtype=f32))
+        c_m = np.min(np.array([sgn_ijk*c, 0], dtype=f32))
         d_p = np.max(np.array([sgn_ijk*d, 0], dtype=f32))
-        e_m = np.max(np.array([sgn_ijk*e, 0], dtype=f32))
+        e_m = np.min(np.array([sgn_ijk*e, 0], dtype=f32))
         f_p = np.max(np.array([sgn_ijk*f, 0], dtype=f32))
         return np.sqrt( np.max(np.array([a_m * a_m, b_p * b_p], dtype=f32)) + np.max(np.array([c_m * c_m , d_p * d_p], dtype=f32)) + np.max(np.array([e_m * e_m, f_p * f_p], dtype=f32)))
 
     @jit
-    def node_update(node, sgn_0_):
+    def node_update(node, sgn_ijk):
         i,j,k = find_cell_idx(node)
         (d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m), dtau_ijk = first_order_deriv(i, j, k)
         sgn_ijk = sgn_0_[i,j,k] 
@@ -423,13 +426,13 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
 
 
 
-
+@jit
 def which_cell_index(cond): 
     """A USEFULE utility function to find the index of True in a list, 
     for example cond = 0.1 < gstate.x provides a list of True's and False's
     and thie function returns the first time True appears
     """
-    cond = np.asarray(cond)
+    # cond = np.asarray(cond)
     return (np.argwhere(~cond, size=1) - 1).flatten()
 
 
