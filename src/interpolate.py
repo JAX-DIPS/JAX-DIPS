@@ -356,12 +356,15 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         find cell index (i,j,k) containing point
         """
         x_p, y_p, z_p = point
-        i = i32((x_p - x[0]) / dx)  
-        j = i32((y_p - y[0]) / dy) 
-        k = i32((z_p - z[0]) / dz) 
-        i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(x.shape[0] - 2), lambda p: p, i)
-        j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(y.shape[0] - 2), lambda p: p, j)
-        k = lax.cond(k >= z.shape[0] - 1, lambda p: i32(z.shape[0] - 2), lambda p: p, k)
+        i = i32((x_p - x[0] ) / dx)  
+        j = i32((y_p - y[0] ) / dy) 
+        k = i32((z_p - z[0] ) / dz) 
+        i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(x.shape[0] - 2), lambda p: i32(p), i)
+        j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(y.shape[0] - 2), lambda p: i32(p), j)
+        k = lax.cond(k >= z.shape[0] - 1, lambda p: i32(z.shape[0] - 2), lambda p: i32(p), k)
+        i = lax.cond(i <= 1, lambda p: i32(2), lambda p: p, i)
+        j = lax.cond(j <= 1, lambda p: i32(2), lambda p: p, j)
+        k = lax.cond(k <= 1, lambda p: i32(2), lambda p: p, k)
         return i, j, k
 
     @jit
@@ -536,9 +539,13 @@ def multilinear_interpolation(c, gstate):
         j = i32((y_p - y[0]) / dy) 
         k = i32((z_p - z[0]) / dz) 
 
-        i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(x.shape[0] - 2), lambda p: p, i)
-        j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(y.shape[0] - 2), lambda p: p, j)
-        k = lax.cond(k >= z.shape[0] - 1, lambda p: i32(z.shape[0] - 2), lambda p: p, k)
+        i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(x.shape[0] - 2), lambda p: i32(p), i)
+        j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(y.shape[0] - 2), lambda p: i32(p), j)
+        k = lax.cond(k >= z.shape[0] - 1, lambda p: i32(z.shape[0] - 2), lambda p: i32(p), k)
+
+        i = lax.cond(i <= 1, lambda p: i32(2), lambda p: p, i)
+        j = lax.cond(j <= 1, lambda p: i32(2), lambda p: p, j)
+        k = lax.cond(k <= 1, lambda p: i32(2), lambda p: p, k)
 
         return i, j, k
 
