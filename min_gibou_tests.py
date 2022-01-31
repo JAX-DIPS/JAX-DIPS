@@ -73,12 +73,13 @@ def velocity_fn(r, time=0.0):
     x = r[0]; y = r[1]; z = r[2]
     # return lax.cond(time < 0.5, lambda p : jnp.array([-p[1], p[0], 0.0], dtype=f32), lambda p : jnp.array([p[1], -p[0], 0.0], dtype=f32), (x,y,z))
     # return lax.cond(time < 0.5, lambda p : jnp.array([1.0, 1.0, 0.0], dtype=f32), lambda p : jnp.array([-1.0, -1.0, 0.0], dtype=f32), (x,y,z))
-    return jnp.array([-y, x, jnp.cos(time)], dtype=f32)
-    # return jnp.array([1.0, 1.0, -1.0], dtype=f32)
+    return jnp.array([-y, x, 0.0*z], dtype=f32)
+    # return jnp.array([0.0*x, 0.0*y, 0.0*z], dtype=f32)
 
 def phi_fn(r):
     x = r[0]; y = r[1]; z = r[2]
     return jnp.sqrt(x**2 + (y-1.0)**2 + z**2) - 0.5
+    # return x**2 + (y-1.0)**2 + z**2 - 0.25
 
 init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
 sim_state = init_fn(R)
