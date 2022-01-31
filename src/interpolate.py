@@ -114,7 +114,6 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
 
     x, y, z, sgn_0_ = add_ghost_layer_3d(xo, yo, zo, sgn_0_)
     x, y, z, sgn_0_ = add_ghost_layer_3d(x, y, z, sgn_0_)
-    # sgn_0_ = sgn_0.reshape(-1)
 
     Nx = gstate.x.shape[0]
     Ny = gstate.y.shape[0]
@@ -338,8 +337,11 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
     c_cube_ = c.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
     cubex = np.zeros((8,3), dtype=i32)
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+    dz = z[1] - z[0]
 
-    def find_lower_left_cell_idx(point):
+    def find_lower_left_cell_idx_(point):
         """
         find cell index (i,j,k) containing point
         """
@@ -347,6 +349,19 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         i = which_cell_index(np.asarray(x_p >= x))
         j = which_cell_index(np.asarray(y_p >= y))
         k = which_cell_index(np.asarray(z_p >= z))
+        return i, j, k
+
+    def find_lower_left_cell_idx(point):
+        """
+        find cell index (i,j,k) containing point
+        """
+        x_p, y_p, z_p = point
+        i = i32((x_p - x[0]) / dx)  
+        j = i32((y_p - y[0]) / dy) 
+        k = i32((z_p - z[0]) / dz) 
+        i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(p - 1), lambda p: p, i)
+        j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(p - 1), lambda p: p, j)
+        k = lax.cond(k >= z.shape[0] - 1, lambda p: i32(p - 1), lambda p: p, k)
         return i, j, k
 
     @jit
@@ -438,8 +453,6 @@ def which_cell_index(cond):
 
 
 
-
-
 def add_ghost_layer_3d(x, y, z, c_cube):
     """
     add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
@@ -500,7 +513,11 @@ def multilinear_interpolation(c, gstate):
     # c_cube_ = np.swapaxes(c_cube_, 0, 1)
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
 
-    def find_lower_left_cell_idx(point):
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+    dz = z[1] - z[0]
+
+    def find_lower_left_cell_idx_(point):
         """
         find cell index (i,j,k) containing point
         """
@@ -508,6 +525,21 @@ def multilinear_interpolation(c, gstate):
         i = which_cell_index(np.asarray(x_p >= x))
         j = which_cell_index(np.asarray(y_p >= y))
         k = which_cell_index(np.asarray(z_p >= z))
+        return i, j, k
+
+    def find_lower_left_cell_idx(point):
+        """
+        find cell index (i,j,k) containing point
+        """
+        x_p, y_p, z_p = point
+        i = i32((x_p - x[0]) / dx)  
+        j = i32((y_p - y[0]) / dy) 
+        k = i32((z_p - z[0]) / dz) 
+
+        i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(p - 1), lambda p: p, i)
+        j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(p - 1), lambda p: p, j)
+        k = lax.cond(k >= z.shape[0] - 1, lambda p: i32(p - 1), lambda p: p, k)
+
         return i, j, k
 
     def single_cell_interp(point):
