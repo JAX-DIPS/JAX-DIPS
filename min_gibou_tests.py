@@ -35,10 +35,10 @@ xmax = ymax = zmax = f32(2.0)
 box_size = xmax - xmin
 Nx = i32(128)
 Ny = i32(128)
-Nz = i32(64)
+Nz = i32(128)
 dimension = i32(3)
 
-tf = f32(2 * jnp.pi) / 10.0
+tf = f32(2 * jnp.pi) 
 
 
 
@@ -49,7 +49,7 @@ yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
 zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 
 dx = xc[1] - xc[0]
-dt = f32(0.002) #f32(6.0)*dx
+dt = f32(0.02) #f32(6.0)*dx
 simulation_steps = i32(tf / dt) 
 #---------------
 # Create helper functions to define a periodic box of some size.
@@ -73,7 +73,7 @@ def velocity_fn(r, time=0.0):
     x = r[0]; y = r[1]; z = r[2]
     # return lax.cond(time < 0.5, lambda p : jnp.array([-p[1], p[0], 0.0], dtype=f32), lambda p : jnp.array([p[1], -p[0], 0.0], dtype=f32), (x,y,z))
     # return lax.cond(time < 0.5, lambda p : jnp.array([1.0, 1.0, 0.0], dtype=f32), lambda p : jnp.array([-1.0, -1.0, 0.0], dtype=f32), (x,y,z))
-    return jnp.array([-y, x, 0.0], dtype=f32)
+    return jnp.array([-y, x, jnp.cos(time)], dtype=f32)
     # return jnp.array([1.0, 1.0, -1.0], dtype=f32)
 
 def phi_fn(r):
@@ -109,17 +109,24 @@ sim_state = init_fn(R)
 # pdb.set_trace()
 
 #---
+# phi_0 = vmap(phi_fn)(gstate.R)
+# g_phi_0 = vmap(grad(phi_fn))(gstate.R)
+
 
 @jit
 def step_func(i, state_and_nbrs):
     state, log, dt = state_and_nbrs
     time = i * dt
-    log['t'] = ops.index_update(log['t'], i, time)
+    log['t'] = log['t'].at[i].add(time)
+    # log['t'] = ops.index_update(log['t'], i, time)
     
     sol = state.solution
-    log['U'] = ops.index_update(log['U'], i, sol)
-    vel = state.velocity_nm1
-    log['V'] = ops.index_update(log['V'], i, vel)
+    # log['U'] = ops.index_update(log['U'], i, sol)
+
+    log['U'] = log['U'].at[i].set(sol)
+
+    # vel = state.velocity_nm1
+    # log['V'] = ops.index_update(log['V'], i, vel)
     
     # state = reinitialize_fn(state, gstate)
     # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
@@ -128,7 +135,7 @@ def step_func(i, state_and_nbrs):
 
 log = {
         'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        'V' : jnp.zeros((simulation_steps,) + sim_state.velocity_nm1.shape, dtype=f32),
+        # 'V' : jnp.zeros((simulation_steps,) + sim_state.velocity_nm1.shape, dtype=f32),
         't' : jnp.zeros((simulation_steps,), dtype=f32)
       }
 
@@ -142,8 +149,8 @@ sim_state.solution.block_until_ready()
 
 jax.profiler.save_device_memory_profile("memory.prof")
 
-io.write_vtk(gstate, log)
-
+# io.write_vtk(gstate, log)
+io.write_vtk_solution(gstate, log)
 
 
 

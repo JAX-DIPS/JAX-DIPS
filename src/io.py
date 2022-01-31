@@ -30,3 +30,22 @@ def write_vtk(gstate, log, maxsteps=None):
         if maxsteps:
             if i >= maxsteps-1:
                 break
+
+
+def write_vtk_solution(gstate, log, maxsteps=None):
+
+    # imageToVTK("./image", cellData = {"pressure" : pressure}, pointData = {"temp" : temp} )
+    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
+    
+    # imageToVTK("./solution", pointData = {"sol" : } )
+    num_steps = len(log['U'])
+    for i in range(num_steps):
+        print(f'writing timestep {i}')
+        sol = log['U'][i]
+
+        ff = onp.array(sol.reshape(X.shape))
+
+        structuredToVTK('results/solution'+str(i).zfill(4), X, Y, Z, pointData={"sol" : ff})
+        if maxsteps:
+            if i >= maxsteps-1:
+                break
