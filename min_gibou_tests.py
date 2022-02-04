@@ -18,7 +18,7 @@ from src import util, interpolate
 import pdb
 import os
 import numpy as onp
-
+from functools import partial
 
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
@@ -89,13 +89,47 @@ grad_phi = grad_fn(gstate.R)
 
 
 
+#--------------------------------------
 
-lap_phi_fn = compositions.vec_laplacian_fn(phi_fn) 
-laplacian_phi_n =  lap_phi_fn(gstate.R)
+curve_phi_fn = compositions.vec_curvature_fn(phi_fn) 
+curvature_phi_n =  curve_phi_fn(gstate.R)
+io.write_vtk_manual(gstate, {"phi" : sim_state.solution, "curvature phi" : curvature_phi_n}, 'results/manual_dump_n')
 
-io.write_vtk_manual(gstate, {"phi" : sim_state.solution, "laplacian phi" : laplacian_phi_n})
+#--------------------------------------
+
+advect_fn = compositions.vec_advect_one_step_autodiff(phi_fn, velocity_fn)
+phi_np1 = advect_fn(dt, gstate.R)
+
+#--------------------------------------
+
+compose_fn = compositions.node_advect_step_autodiff
+
+phi_np1_node_fn = jit(partial(compose_fn(phi_fn, velocity_fn), dt))
+phi_np2_node_fn = jit(partial(compose_fn(phi_np1_node_fn, velocity_fn), dt))
+phi_np3_node_fn = jit(partial(compose_fn(phi_np2_node_fn, velocity_fn), dt))
+phi_np4_node_fn = jit(partial(compose_fn(phi_np3_node_fn, velocity_fn), dt))
+# phi_np5_node_fn = jit(partial(compose_fn(phi_np4_node_fn, velocity_fn), dt))
+# phi_np6_node_fn = jit(partial(compose_fn(phi_np5_node_fn, velocity_fn), dt))
+# phi_np7_node_fn = jit(partial(compose_fn(phi_np6_node_fn, velocity_fn), dt))
+
+print(phi_fn(gstate.R[0]))
+print(phi_np1_node_fn(gstate.R[0]))
+print(phi_np2_node_fn(gstate.R[0]))
+print(phi_np3_node_fn(gstate.R[0]))
+print(phi_np4_node_fn(gstate.R[0]))
+# print(phi_np5_node_fn(gstate.R[0]))
+# print(phi_np6_node_fn(gstate.R[0]))
+# print(phi_np7_node_fn(gstate.R[0]))
+
+phi_np2 = vmap(phi_np2_node_fn)(gstate.R)
+curve_phi_np2_fn = compositions.vec_curvature_fn(phi_np2_node_fn) 
+curvature_phi_np2 =  curve_phi_np2_fn(gstate.R)
+
+io.write_vtk_manual(gstate, {"phi" : phi_np2, "laplacian phi" : curvature_phi_np2}, 'results/manual_dump_np2')
 
 pdb.set_trace()
+
+
 
 #---
 # time = 0

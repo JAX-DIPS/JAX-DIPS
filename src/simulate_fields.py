@@ -36,6 +36,13 @@ ReinitializedAdvectFn = Callable[[T,T], T]
 Simulator = Tuple[InitFn, ApplyFn, ReinitializeFn, ReinitializedAdvectFn]
 
 
+
+
+
+
+
+
+
 def advect_level_set(gstate: T,
                      V_nm1: Array,
                      velocity_fn: Callable[..., Array], 

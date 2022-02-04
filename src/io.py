@@ -52,10 +52,10 @@ def write_vtk_solution(gstate, log, maxsteps=None):
                 break
 
 
-def write_vtk_manual(gstate, field_dict):
+def write_vtk_manual(gstate, field_dict, filename='results/manual_dump'):
     # field_dict = {name : value, ...}
     X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
     host_dict = {}
     for field_name in field_dict.keys():
         host_dict[field_name] = onp.array(field_dict[field_name])
-    structuredToVTK('results/manual_dump', X, Y, Z, pointData=host_dict)
+    structuredToVTK(filename, X, Y, Z, pointData=host_dict)
