@@ -2,6 +2,7 @@
 See https://vtk.org/Wiki/VTK/Writing_VTK_files_using_python
 """
 
+from dataclasses import field
 from evtk.hl import rectilinearToVTK, imageToVTK, structuredToVTK
 import numpy as onp
 import pdb
@@ -49,3 +50,12 @@ def write_vtk_solution(gstate, log, maxsteps=None):
         if maxsteps:
             if i >= maxsteps-1:
                 break
+
+
+def write_vtk_manual(gstate, field_dict):
+    # field_dict = {name : value, ...}
+    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
+    host_dict = {}
+    for field_name in field_dict.keys():
+        host_dict[field_name] = onp.array(field_dict[field_name])
+    structuredToVTK('results/manual_dump', X, Y, Z, pointData=host_dict)

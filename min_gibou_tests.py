@@ -9,7 +9,7 @@ from src import quantity
 from src.quantity import EnergyFn
 config.update("jax_enable_x64", True)
 from src.util import f32, i32
-from src import partition, space
+from src import partition, space, compositions
 from src import simulate_fields
 from src import energy, simulate_particles
 from src import io
@@ -33,12 +33,12 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-2.0)
 xmax = ymax = zmax = f32(2.0)
 box_size = xmax - xmin
-Nx = i32(200)
-Ny = i32(200)
-Nz = i32(200)
+Nx = i32(128)
+Ny = i32(128)
+Nz = i32(128)
 dimension = i32(3)
 
-tf = f32(2 * jnp.pi / 10) 
+tf = f32(2 * jnp.pi) 
 
 
 
@@ -84,7 +84,18 @@ def phi_fn(r):
 init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
 sim_state = init_fn(R)
 
+grad_fn = jax.vmap(jax.grad(phi_fn))
+grad_phi = grad_fn(gstate.R)
 
+
+
+
+lap_phi_fn = compositions.vec_laplacian_fn(phi_fn) 
+laplacian_phi_n =  lap_phi_fn(gstate.R)
+
+io.write_vtk_manual(gstate, {"phi" : sim_state.solution, "laplacian phi" : laplacian_phi_n})
+
+pdb.set_trace()
 
 #---
 # time = 0

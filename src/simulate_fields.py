@@ -163,19 +163,6 @@ def advect_level_set(gstate: T,
 
 
 
-        
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
