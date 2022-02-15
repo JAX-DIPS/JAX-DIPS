@@ -59,3 +59,23 @@ def write_vtk_manual(gstate, field_dict, filename='results/manual_dump'):
     for field_name in field_dict.keys():
         host_dict[field_name] = onp.array(field_dict[field_name])
     structuredToVTK(filename, X, Y, Z, pointData=host_dict)
+
+
+def write_vtk_log(gstate, log, address = 'results/', maxsteps=None):
+
+    X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
+    
+    num_steps = len(log['U'])
+    keys = log.keys() - 't'
+    host_dict = {}
+    for i in range(num_steps):
+        print(f'writing timestep {i}')
+        
+        for key in keys:
+            ff = onp.array(log[key][i].reshape(X.shape))
+            host_dict[key] = ff
+
+        structuredToVTK(address + '/solution'+str(i).zfill(4), X, Y, Z, pointData=host_dict)
+        if maxsteps:
+            if i >= maxsteps-1:
+                break

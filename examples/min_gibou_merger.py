@@ -74,7 +74,9 @@ normal, curve = normal_curve_fn(sim_state.solution, gstate)
 log = {
         'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
         'kappaM' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        'n' : jnp.zeros((simulation_steps,) + sim_state.solution.shape + (3,), dtype=f32),
+        'nx' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
+        'ny' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
+        'nz' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
         't' : jnp.zeros((simulation_steps,), dtype=f32)
       }
 @jit
@@ -86,7 +88,9 @@ def step_func(i, state_and_nbrs):
     log['t'] = log['t'].at[i].set(time_)
     log['U'] = log['U'].at[i].set(state.solution)
     log['kappaM'] = log['kappaM'].at[i].set(curve)
-    log['n'] = log['n'].at[i].set(normal)
+    log['nx'] = log['nx'].at[i].set(normal[:,0])
+    log['ny'] = log['ny'].at[i].set(normal[:,1])
+    log['nz'] = log['nz'].at[i].set(normal[:,2])
     
     
     state = reinitialize_fn(state, gstate)
@@ -102,9 +106,6 @@ print(f"time per timestep is {(t2 - t1)/simulation_steps}")
 jax.profiler.save_device_memory_profile("memory.prof")
 
 
-pdb.set_trace()
-# io.write_vtk(gstate, log)
-io.write_vtk_solution(gstate, log, '../results/')
-
+io.write_vtk_log(gstate, log)
 
 pdb.set_trace()
