@@ -137,7 +137,7 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
     def minmod(a, b):
         return np.median(np.array([0.0, a, b], dtype=f32))
         # coeff = np.sign(a)*(f32(1.0) + np.sign(a)*np.sign(b)) / f32(2.0)
-        # return np.multiply(coeff , np.min(np.array([np.abs(a), np.abs(b)])) )
+        # return np.multiply(coeff , np.min(np.array([np.abs(a), np.abs(b)], dtype=f32)) )
 
     @jit
     def x_deriv_at_interface_p(i, j, k):

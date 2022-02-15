@@ -33,7 +33,7 @@ def write_vtk(gstate, log, maxsteps=None):
                 break
 
 
-def write_vtk_solution(gstate, log, maxsteps=None):
+def write_vtk_solution(gstate, log, address = 'results/', maxsteps=None):
 
     # imageToVTK("./image", cellData = {"pressure" : pressure}, pointData = {"temp" : temp} )
     X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
@@ -46,7 +46,7 @@ def write_vtk_solution(gstate, log, maxsteps=None):
 
         ff = onp.array(sol.reshape(X.shape))
 
-        structuredToVTK('results/solution'+str(i).zfill(4), X, Y, Z, pointData={"sol" : ff})
+        structuredToVTK(address + '/solution'+str(i).zfill(4), X, Y, Z, pointData={"sol" : ff})
         if maxsteps:
             if i >= maxsteps-1:
                 break

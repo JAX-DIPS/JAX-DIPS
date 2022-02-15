@@ -33,12 +33,12 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-2.0)
 xmax = ymax = zmax = f32(2.0)
 box_size = xmax - xmin
-Nx = i32(128)
-Ny = i32(128)
-Nz = i32(128)
+Nx = i32(256)
+Ny = i32(256)
+Nz = i32(256)
 dimension = i32(3)
 
-tf = f32(2 * jnp.pi) 
+tf = f32(2 * jnp.pi / 30.0) 
 
 
 
@@ -49,8 +49,10 @@ yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
 zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 
 dx = xc[1] - xc[0]
-dt = f32(0.02) #f32(6.0)*dx
+# dt = f32(0.02) 
+dt = dx * f32(0.8)
 simulation_steps = i32(tf / dt) 
+
 #---------------
 # Create helper functions to define a periodic box of some size.
 
@@ -79,6 +81,7 @@ def velocity_fn(r, time=0.0):
 def phi_fn(r):
     x = r[0]; y = r[1]; z = r[2]
     return jnp.sqrt(x**2 + (y-1.0)**2 + z**2) - 0.5
+    
     # return x**2 + (y-1.0)**2 + z**2 - 0.25
 
 init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
@@ -88,7 +91,8 @@ grad_fn = jax.vmap(jax.grad(phi_fn))
 grad_phi = grad_fn(gstate.R)
 
 
-
+"""
+# This section is autodiff for the spatial gradients rather than discretizations
 #--------------------------------------
 
 curve_phi_fn = compositions.vec_curvature_fn(phi_fn) 
@@ -125,10 +129,10 @@ phi_np2 = vmap(phi_np2_node_fn)(gstate.R)
 curve_phi_np2_fn = compositions.vec_curvature_fn(phi_np2_node_fn) 
 curvature_phi_np2 =  curve_phi_np2_fn(gstate.R)
 
-io.write_vtk_manual(gstate, {"phi" : phi_np2, "laplacian phi" : curvature_phi_np2}, 'results/manual_dump_np2')
+# io.write_vtk_manual(gstate, {"phi" : phi_np2, "laplacian phi" : curvature_phi_np2}, 'results/manual_dump_np2')
 
 pdb.set_trace()
-
+"""
 
 
 #---
