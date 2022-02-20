@@ -612,3 +612,19 @@ def vec_multilinear_interpolation(Vec, gstate):
 
 
 
+def vec_nonoscillatory_quadratic_interpolation(Vec, gstate):
+    vx = Vec[:,0]; vy = Vec[:,1]; vz = Vec[:,2]
+
+    def interp_fn(R_):
+        vx_interp_fn = nonoscillatory_quadratic_interpolation(vx, gstate)
+        vy_interp_fn = nonoscillatory_quadratic_interpolation(vy, gstate)
+        vz_interp_fn = nonoscillatory_quadratic_interpolation(vz, gstate)
+        xvals = vx_interp_fn(R_)
+        yvals = vy_interp_fn(R_)
+        zvals = vz_interp_fn(R_)
+        return np.column_stack((xvals, yvals, zvals))
+    
+    return interp_fn
+
+
+

@@ -170,10 +170,6 @@ def advect_level_set(gstate: T,
 
 
 
-
-
-
-
 def advect_one_step(velocity_fn: Callable[..., Array],
                     shift_fn: ShiftFn,
                     dt: float,
@@ -204,6 +200,14 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     R_d =  R - dt * V_mid
     # substitute solution from departure point to arrival points (=grid points)
     U_np1 = Un_interp_fn(R_d).flatten()
+
+    # perturb
+    # EPS = 1e-9
+    # @vmap
+    # def perturb(u):
+    #     return lax.cond(jnp.sign(u)==0, lambda p: p + EPS, lambda p: p + EPS * jnp.sign(p), u) 
+    # U_np1 = perturb(U_np1)
+
     return dataclasses.replace(sstate,
                                solution=U_np1,
                                velocity_nm1=V_n)
@@ -257,8 +261,8 @@ class SIMState:
     velocity_nm1: Array
 
 
-def level_set(velocity_or_energy_fn: Callable[..., Array],
-              level_set_fn: Callable[..., Array],
+# def level_set(velocity_or_energy_fn: Callable[..., Array],
+def level_set(level_set_fn: Callable[..., Array],
               shift_fn: ShiftFn,
               dt: float) -> Simulator:
     """
@@ -278,11 +282,11 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
     Returns:
     See above.
     """
-    # velocity_fn = quantity.canonicalize_force(velocity_or_energy_fn)
-    velocity_fn = vmap(velocity_or_energy_fn, (0,None))
+  
+    # velocity_fn = vmap(velocity_or_energy_fn, (0,None))
     phi_fn = vmap(level_set_fn)
 
-    def init_fn(R, **kwargs):
+    def init_fn(velocity_fn, R, **kwargs):
         # V = jnp.zeros(R.shape, dtype=R.dtype)
         # U = jnp.zeros(R.shape[0], dtype=R.dtype)
         # U = U + space.square_distance(R) - f32(0.25)
@@ -290,14 +294,14 @@ def level_set(velocity_or_energy_fn: Callable[..., Array],
         U = phi_fn(R)
         return SIMState(U, V)  
 
-    def apply_fn(sim_state, grid_state, time, **kwargs):
+    def apply_fn(velocity_fn, sim_state, grid_state, time, **kwargs):
         return advect_one_step(velocity_fn, shift_fn, dt, sim_state, grid_state, time, **kwargs)
 
     def reinitialize_fn(sim_state, grid_state, **kwargs):
         return reinitialize_level_set(sim_state, grid_state, **kwargs)
 
-    def reinitialized_advect_fn(sim_state, grid_state, time, **kwargs):
-        _, _, reinitialized_fn, _ = advect_level_set(grid_state, sim_state.velocity_nm1, velocity_or_energy_fn, time)
+    def reinitialized_advect_fn(velocity_fn, sim_state, grid_state, time, **kwargs):
+        _, _, reinitialized_fn, _ = advect_level_set(grid_state, sim_state.velocity_nm1, velocity_fn, time)
         def wrapper(func):
             def wrapped(sim_state, grid_state, time):
                 U_np1 = func(grid_state.R, sim_state.solution, dt)
