@@ -66,7 +66,8 @@ def get_normal_vec_mean_curvature(phi_n, gstate):
                        (phi_xx + phi_yy)*phi_z*phi_z - \
                         f32(2.0) * phi_x * phi_y * phi_xy -\
                         f32(2.0) * phi_x * phi_z * phi_xz - \
-                        f32(2.0) * phi_y * phi_z * phi_yz) / norm_squared**1.5
+                        f32(2.0) * phi_y * phi_z * phi_yz) 
+        kappa_Mean = kappa_Mean / norm_squared**1.5
 
         return kappa_Mean
 

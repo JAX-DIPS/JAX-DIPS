@@ -2,20 +2,38 @@ import jax
 from jax import (jit, random, lax, ops, vmap, grad, numpy as jnp)
 from src.util import f32, i32
 from functools import partial
+import pdb
 
+
+def node_normal_fn(f):
+    def _normal_fn(x):
+        grad_f = jax.grad(f)
+        grad_f_closure = lambda y: grad_f(y) / jnp.linalg.norm(grad_f(y))
+        return grad_f_closure(x)
+    return _normal_fn
+
+def vec_normal_fn(phi_n):
+    return jax.jit(jax.vmap(node_normal_fn(phi_n)))
+
+#---------
 
 
 def node_curvature_fn(f):
-    def _lapl_over_f(x):
+    def _lapl_over_f_v1(x):
         n = x.shape[0]
         eye = jnp.eye(n, dtype=f32)
         grad_f = jax.grad(f)
         grad_f_closure = lambda y: grad_f(y) / jnp.linalg.norm(grad_f(y))
         def _body_fun(i, val):
-            primal, tangent = jax.jvp(grad_f_closure, (x,), (eye[i],))
-            return val + primal[i]**2 + tangent[i]
-        return -0.5 * lax.fori_loop(0, n, _body_fun, 0.0)
-    return _lapl_over_f
+            primal_out, tangent = jax.jvp(grad_f_closure, (x,), (eye[i],))
+            return val + tangent[i]
+        return lax.fori_loop(0, n, _body_fun, 0.0)
+
+    def _lapl_over_f_v2(x):
+        r_hessian_real = jax.hessian(lambda r_in: f(r_in), argnums=0, holomorphic=False)(x)
+        return ( jnp.diag(r_hessian_real)).sum()
+
+    return _lapl_over_f_v1
 
 
 def vec_curvature_fn(phi_fn):

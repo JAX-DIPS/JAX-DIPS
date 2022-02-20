@@ -62,7 +62,7 @@ velocity_fn = vmap(velocity_fn, (0,None))
 
 def phi_fn(r):
     x = r[0]; y = r[1]; z = r[2]
-    return jnp.min( jnp.array([jnp.sqrt(x**2 + (y-0.65)**2 + z**2) -0.5,  jnp.sqrt(x**2 + (y+0.65)**2 + z**2) - 0.5]) )
+    return jnp.min( jnp.array([jnp.sqrt(x**2 + (y-0.55)**2 + z**2) -0.5,  jnp.sqrt(x**2 + (y+0.55)**2 + z**2) - 0.5]) )
 
 init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, shift_fn, dt)
 sim_state = init_fn(velocity_fn, R)
@@ -101,7 +101,7 @@ def step_func(i, state_and_nbrs):
     time_ = i * dt
 
     normal, curve = normal_curve_fn(state.solution, gstate)
-    vel = f32(0.1) * curve.reshape(-1, 1) * normal
+    vel = f32(0.01) * curve.reshape(-1, 1) * normal
     velocity_fn = add_null_argument(interpolate.vec_nonoscillatory_quadratic_interpolation(vel, gstate))
 
     log['t'] = log['t'].at[i].set(time_)
