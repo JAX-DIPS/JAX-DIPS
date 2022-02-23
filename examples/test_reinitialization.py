@@ -18,6 +18,7 @@ from src import mesh, level_set
 from jax.config import config
 config.update("jax_enable_x64", True)
 
+os.environ["CUDA_VISIBLE_DEVICES"]="0"  # specify which GPU(s) to be used
 
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
@@ -33,7 +34,7 @@ Nx = i32(128)
 Ny = i32(128)
 Nz = i32(128)
 dimension = i32(3)
-tf = f32(2 * jnp.pi) 
+tf = f32( 2 * jnp.pi) 
 
 #--------- Grid nodes
 xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -42,7 +43,8 @@ zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 dx = xc[1] - xc[0]
 dy = yc[1] - yc[0]
 dz = zc[1] - zc[0]
-dt = dx * f32(0.9)
+
+dt = dx * f32(0.95)
 simulation_steps = i32(tf / dt) 
 
 #---------------

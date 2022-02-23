@@ -40,7 +40,7 @@ xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
 yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
 zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 dx = xc[1] - xc[0]
-dt = dx * f32(0.9)
+dt = dx * f32(0.75)
 simulation_steps = i32(tf / dt) 
 
 #---------------
@@ -63,12 +63,13 @@ velocity_fn = vmap(velocity_fn, (0,None))
 def phi_fn(r):
     x = r[0]; y = r[1]; z = r[2]
     return jnp.min( jnp.array([jnp.sqrt(x**2 + (y-0.55)**2 + z**2) -0.5,  jnp.sqrt(x**2 + (y+0.55)**2 + z**2) - 0.5]) )
+    # return jnp.sqrt(x**2 + (y-0.55)**2 + z**2) - 0.5
 
 init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, shift_fn, dt)
 sim_state = init_fn(velocity_fn, R)
 
 # get normal vector and mean curvature
-normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature) 
+normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature_4th_order) 
 
 
 
