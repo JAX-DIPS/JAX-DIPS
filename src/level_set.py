@@ -13,6 +13,35 @@ i32 = util.i32
 
 
 
+@jit
+def smooth_3D_cube(c_cube):
+    c_cube = c_cube[None,:,:,:,None]
+
+    kernel = jnp.ones((3, 3, 3), dtype=f32)
+    kernel /= kernel.sum()
+    kernel = kernel[:, :, :, jnp.newaxis, jnp.newaxis]
+
+    dn = lax.conv_dimension_numbers(c_cube.shape, kernel.shape, ('NHWDC', 'HWDIO', 'NHWDC'))
+    smoothed_c = lax.conv_general_dilated(c_cube,    # lhs = image tensor
+                                            kernel,  # rhs = conv kernel tensor
+                                            (1,1,1), # window strides
+                                            'SAME',  # padding mode
+                                            (1,1,1), # lhs/image dilation
+                                            (1,1,1), # rhs/kernel dilation
+                                            dn) 
+    return smoothed_c[0, :,:,:, 0]
+
+
+
+@jit
+def smooth_phi_n(phi_n, gstate):
+    xo = gstate.x; yo = gstate.y; zo = gstate.z
+    c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
+    x, y, z, c_cube = add_ghost_layer_3d(x, y, z, c_cube)
+    c_cube = smooth_3D_cube(c_cube)
+    return c_cube[2:-2, 2:-2, 2:-2].reshape(phi_n.shape)
+
 
 
 
@@ -20,11 +49,12 @@ def get_normal_vec_mean_curvature(phi_n, gstate):
     EPS = f32(1e-6)
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
     x, y, z, c_cube = add_ghost_layer_3d(x, y, z, c_cube)
-    
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
+
+
+    # c_cube = smooth_3D_cube(c_cube) # PAM
 
 
     Nx = gstate.x.shape[0]
@@ -44,6 +74,7 @@ def get_normal_vec_mean_curvature(phi_n, gstate):
         phi_z = (c_cube[i, j   , k+1] - c_cube[i  ,j  ,k-1]) / (f32(2) * dz) 
         norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
         return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm], dtype=f32)
+
 
     @jit
     def mean_curvature_fn(node):
@@ -74,5 +105,3 @@ def get_normal_vec_mean_curvature(phi_n, gstate):
     normal_vecs = vmap(normal_vec_fn)(nodes)
     curvatures = vmap(mean_curvature_fn)(nodes)
     return normal_vecs, curvatures
-
-    

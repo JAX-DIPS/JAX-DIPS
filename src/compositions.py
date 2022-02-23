@@ -58,8 +58,12 @@ def vec_laplacian_fn(phi_fn):
 
 
 #--------
+def advect_one_step_autodiff(f, vec_vel_fn):
+    def advect_one_fn(dt, x):
+        return vmap(f)(x) - dt * vmap(jnp.dot, (0,0))(vmap(grad(f))(x), vec_vel_fn(x))
+    return advect_one_fn
 
-def node_advect_step_autodiff(f, vel_fn):
+def node_advect_one_step_autodiff(f, vel_fn):
     def advect_one_fn(dt, x):
         return f(x) - dt * jnp.dot(grad(f)(x), vel_fn(x))
     return advect_one_fn

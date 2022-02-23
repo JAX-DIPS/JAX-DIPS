@@ -69,6 +69,9 @@ sim_state = init_fn(velocity_fn, R)
 
 # get normal vector and mean curvature
 normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature) 
+
+
+
 # def get_vel_merger_fn(normal_curve_fn, sim_state, gstate):
 #     normal, curve = normal_curve_fn(sim_state.solution, gstate)
 #     vel = curve.reshape(-1, 1) * normal

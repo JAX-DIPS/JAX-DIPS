@@ -12,7 +12,7 @@ from numpy import int32
 from torch import norm
 # from min_gibou_tests import velocity_fn
 
-from src import util, space, dataclasses, interpolate, quantity
+from src import (util, space, dataclasses, interpolate, quantity, level_set as ls)
 import pdb
 
 
@@ -243,7 +243,7 @@ def reinitialize_level_set(sstate: T,
         return sgn_0, phi_n_
 
     (sgn_0, phi_n) = lax.fori_loop(i32(0), i32(10), step_phi_fn, (sgn_0, phi_n))
-
+    ls.smooth_phi_n(phi_n, gstate)
     return dataclasses.replace(sstate, solution=phi_n)
 
 
