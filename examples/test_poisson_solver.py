@@ -1,4 +1,6 @@
 import os, sys
+
+from torch import solve
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path: # add parent dir to paths
@@ -70,10 +72,13 @@ def k_m_fn(r):
 def k_p_fn(r):
     return 1.0
 
+def initial_value_fn(r):
+    return 0.0
 
-init_fn, apply_fn = poisson_solver.setup(phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn)
+init_fn, solve_fn = poisson_solver.setup(initial_value_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn)
 sim_state = init_fn(R)
 
+sim_state = solve_fn(gstate, sim_state)
 
 pdb.set_trace()
 
