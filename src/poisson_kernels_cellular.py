@@ -4,19 +4,27 @@ import pdb
 
 f32 = util.f32
 
-def cell_geometrics(node):
+def cell_geometrics(node, phi_cube, u_cube):
     i, j, k = node
+    pdb.set_trace()
+    return 0.0
     
 
 
 def poisson_solver(gstate, sim_state):
     phi_n = sim_state.phi
+    u_n = sim_state.solution
+
     xo = gstate.x; yo = gstate.y; zo = gstate.z
 
-    c_cube = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    x, y, z, c_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, c_cube)
-    x, y, z, c_cube = interpolate.add_ghost_layer_3d(x, y, z, c_cube)
-    
+    phi_cube = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube)
+    x, y, z, phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
+
+    u_cube = u_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
+    _, _, _, u_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, u_cube)
+
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
     Nx = gstate.x.shape[0]
@@ -31,17 +39,12 @@ def poisson_solver(gstate, sim_state):
     
     nodes = jnp.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
 
-    def find_cell_idx(node):
-        """
-        find cell index (i,j,k) containing point
-        """
-        i, j, k = node
-        return i, j, k
 
     @jit
     def node_update(node):
-        i,j,k = find_cell_idx(node)
-        dd = cell_geometrics(i, j, k)
+        i, j, k = node
+    
+        dd = cell_geometrics(node, phi_cube, u_cube)
         res = 0
         return jnp.nan_to_num(res)
 
