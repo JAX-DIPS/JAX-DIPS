@@ -4,10 +4,7 @@ import pdb
 
 f32 = util.f32
 
-def cell_geometrics(node, phi_cube, u_cube):
-    i, j, k = node
-    pdb.set_trace()
-    return 0.0
+
     
 
 
@@ -39,12 +36,47 @@ def poisson_solver(gstate, sim_state):
     
     nodes = jnp.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
 
+    def get_X_ijk():
+        return jnp.array([[-dx, -dy, -dz],
+                          [0.0, -dy, -dz],
+                          [ dx, -dy, -dz],
+                          [-dx, 0.0, -dz],
+                          [0.0, 0.0, -dz],
+                          [ dx, 0.0, -dz],
+                          [-dx,  dy, -dz],
+                          [0.0,  dy, -dz],
+                          [ dx,  dy, -dz],
+                          [-dx, -dy, 0.0],
+                          [0.0, -dy, 0.0],
+                          [ dx, -dy, 0.0],
+                          [-dx, 0.0, 0.0],
+                          [0.0, 0.0, 0.0],
+                          [ dx, 0.0, 0.0],
+                          [-dx,  dy, 0.0],
+                          [0.0,  dy, 0.0],
+                          [ dx,  dy, 0.0],
+                          [-dx, -dy,  dz],
+                          [0.0, -dy,  dz],
+                          [ dx, -dy,  dz],
+                          [-dx, 0.0,  dz],
+                          [0.0, 0.0,  dz],
+                          [ dx, 0.0,  dz],
+                          [-dx,  dy,  dz],
+                          [0.0,  dy,  dz],
+                          [ dx,  dy,  dz] ], dtype=f32)
+
+
+    def get_W_neighborhood(node, phi_cube):
+        i, j, k = node
+        pdb.set_trace()
+        return 0.0
+
 
     @jit
     def node_update(node):
         i, j, k = node
-    
-        dd = cell_geometrics(node, phi_cube, u_cube)
+        Xijk = get_X_ijk()
+        dd = get_W_neighborhood(node, phi_cube)
         res = 0
         return jnp.nan_to_num(res)
 
