@@ -167,5 +167,13 @@ def poisson_solver(gstate, sim_state):
         return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm], dtype=f32)
     
     normal_vecs = vmap(normal_vec_fn)(nodes)
+
+
+    def get_c_ijk_pqm(normal_ijk, D_ijk):
+        return normal_ijk @ D_ijk
+    get_c_ijk_pqm_vec = jit(vmap(get_c_ijk_pqm, (0, 0)))
+
+    Cp_ijk_pqm = get_c_ijk_pqm_vec(normal_vecs, D_m_mat)
+    Cm_ijk_pqm = get_c_ijk_pqm_vec(normal_vecs, D_p_mat)
     
     pdb.set_trace()
