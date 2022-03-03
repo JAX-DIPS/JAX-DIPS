@@ -11,16 +11,21 @@ i32 = util.i32
 def poisson_solver(gstate, sim_state):
     phi_n = sim_state.phi
     u_n = sim_state.solution
+    mu_m = sim_state.mu_m
+    mu_p = sim_state.mu_p
 
     xo = gstate.x; yo = gstate.y; zo = gstate.z
 
-    phi_cube = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube)
+    phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
 
     u_cube = u_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
     _, _, _, u_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, u_cube)
+
+    
+
 
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
@@ -175,5 +180,26 @@ def poisson_solver(gstate, sim_state):
 
     Cp_ijk_pqm = get_c_ijk_pqm_vec(normal_vecs, D_m_mat)
     Cm_ijk_pqm = get_c_ijk_pqm_vec(normal_vecs, D_p_mat)
+
+
+
+    mu_m_cube = mu_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    mu_p_cube = mu_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    zeta_p = ((mu_p_cube - mu_m_cube) / mu_m_cube) * phi_cube_ 
+    zeta_p = zeta_p.reshape(zeta_p.shape + (-1,)) * Cp_ijk_pqm.reshape(phi_cube_.shape + (-1,))
+    zeta_m = ((mu_p_cube - mu_m_cube) / mu_p_cube) * phi_cube_ 
+    zeta_m = zeta_m.reshape(zeta_m.shape + (-1,)) * Cm_ijk_pqm.reshape(phi_cube_.shape + (-1,))
+    """
+    NOTE: zeta_m and zeta_p are the size of the original grid, not the ghost layers included!
+    for example: zeta_m[4,4,4][13] is the p=q=m=0 index, and zeta_m.shape = (128, 128, 128, 27)
+    """
+    pdb.set_trace() 
     
+    # x_, y_, z_, mu_m_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, mu_m_cube)
+    # _, _, _, mu_m_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, mu_m_cube)
+
+    # x_, y_, z_, mu_p_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, mu_p_cube)
+    # _, _, _, mu_p_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, mu_p_cube)
+
+
     pdb.set_trace()
