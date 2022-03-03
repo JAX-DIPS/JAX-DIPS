@@ -3,7 +3,7 @@ from src import (interpolate, util)
 import pdb
 
 f32 = util.f32
-
+i32 = util.i32
 
     
 
@@ -36,8 +36,9 @@ def poisson_solver(gstate, sim_state):
     
     nodes = jnp.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
 
+    @jit
     def get_X_ijk():
-        return jnp.array([[-dx, -dy, -dz],
+        Xijk = jnp.array([[-dx, -dy, -dz],
                           [0.0, -dy, -dz],
                           [ dx, -dy, -dz],
                           [-dx, 0.0, -dz],
@@ -65,19 +66,93 @@ def poisson_solver(gstate, sim_state):
                           [0.0,  dy,  dz],
                           [ dx,  dy,  dz] ], dtype=f32)
 
+        ngbs = jnp.array([[-1, -1, -1],
+                          [ 0, -1, -1],
+                          [ 1, -1, -1],
+                          [-1,  0, -1],
+                          [ 0,  0, -1],
+                          [ 1,  0, -1],
+                          [-1,  1, -1],
+                          [ 0,  1, -1],
+                          [ 1,  1, -1],
+                          [-1, -1,  0],
+                          [ 0, -1,  0],
+                          [ 1, -1,  0],
+                          [-1,  0,  0],
+                          [ 0,  0,  0],
+                          [ 1,  0,  0],
+                          [-1,  1,  0],
+                          [ 0,  1,  0],
+                          [ 1,  1,  0],
+                          [-1, -1,  1],
+                          [ 0, -1,  1],
+                          [ 1, -1,  1],
+                          [-1,  0,  1],
+                          [ 0,  0,  1],
+                          [ 1,  0,  1],
+                          [-1,  1,  1],
+                          [ 0,  1,  1],
+                          [ 1,  1,  1] ], dtype=i32)
+        
+        return Xijk, ngbs
 
-    def get_W_neighborhood(node, phi_cube):
-        i, j, k = node
-        pdb.set_trace()
-        return 0.0
+
+    
+     
 
 
     @jit
-    def node_update(node):
-        i, j, k = node
-        Xijk = get_X_ijk()
-        dd = get_W_neighborhood(node, phi_cube)
-        res = 0
-        return jnp.nan_to_num(res)
+    def sign_pm_fn(a):
+        sgn = jnp.sign(a)
+        return jnp.sign(sgn - 0.5)
 
-    return vmap(node_update)(nodes)
+    @jit
+    def sign_p_fn(a):
+        # returns 1 only if a>0, otherwise is 0
+        sgn = jnp.sign(a)
+        return jnp.floor(0.5 * sgn + 0.75)
+
+    @jit
+    def sign_m_fn(a):
+        # returns 1 only if a<0, otherwise is 0
+        sgn = jnp.sign(a)
+        return jnp.ceil(0.5 * sgn - 0.75) * (-1.0)
+
+
+
+    Xijk, ngbs = get_X_ijk()
+    
+    
+ 
+    def cube_at(cube, ind):
+        return cube[ ind[0], ind[1], ind[2] ]
+    cube_at_v = jit(vmap(cube_at, (None, 0)))   
+
+    @jit
+    def get_W_p_fn(cube, inds):
+        return jnp.diag( vmap(sign_p_fn) (cube_at_v(cube, inds)) )
+
+    @jit
+    def get_W_m_fn(cube, inds):
+        return jnp.diag( vmap(sign_m_fn) (cube_at_v(cube, inds)) ) 
+
+    @jit
+    def get_W_pm_matrices(node, phi_cube):
+        i, j, k = node
+        curr_ngbs = jnp.add(jnp.array([i, j, k]), ngbs)
+        Wp = get_W_p_fn(phi_cube, curr_ngbs)
+        Wm = get_W_m_fn(phi_cube, curr_ngbs)
+        return Wm, Wp
+
+    
+
+    @jit
+    def D_mp_node_update(node):    
+        Wijk_m, Wijk_p = get_W_pm_matrices(node, phi_cube)
+        Dp = jnp.linalg.inv(Xijk.T @ Wijk_p @ Xijk) @ (Wijk_p @ Xijk).T
+        Dm = jnp.linalg.inv(Xijk.T @ Wijk_m @ Xijk) @ (Wijk_m @ Xijk).T
+        return jnp.nan_to_num(Dm), jnp.nan_to_num(Dp)
+    D_mp_fn = jit(vmap(D_mp_node_update))
+    
+    D_m_mat, D_p_mat = D_mp_fn(nodes)
+    pdb.set_trace()
