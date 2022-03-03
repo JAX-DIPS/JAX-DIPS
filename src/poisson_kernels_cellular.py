@@ -204,17 +204,76 @@ def poisson_solver(gstate, sim_state):
     gamma_p_ijk = (gamma_p_ijk_pqm.sum(axis=3) - gamma_p_ijk_pqm[:,:,:,3] ) * f32(-1.0)
     gamma_m_ijk = (gamma_m_ijk_pqm.sum(axis=3) - gamma_m_ijk_pqm[:,:,:,3] ) * f32(-1.0)
 
-    def A_matmul_x_fn(x):
+    def A_matmul_x_fn(u):
         """
-        This function calculates  A @ x for a given vector of unknowns x
-        Note that this should return same shape and type as of x.
+        This function calculates  A @ u for a given vector of unknowns u
+        Note that this should return same shape and type as of u.
         This function is needed to be fed into jax sparse linalg solvers such as gmres:
 
         jax.scipy.sparse.linalg.gmres(A, b, x0=None, *, tol=1e-05, atol=0.0, restart=20, maxiter=None, M=None, solve_method='batched')
         
         A = this function!
+        
+        * PROCEDURE: 
+            first compute u = B:u + r for each node
+            then use the actual cell geometries (face areas and mu coeffs) to 
+            compute the rhs of the linear system given currently passed-in u vector
+            for solution estimate.
+        
         """
+        # index_to_ijk = (nodes - jnp.array([2,2,2]))
+        nodes 
+        ngbs
+        
+        gamma_m_ijk
+        gamma_p_ijk
+        
+        gamma_p_ijk_pqm
+        gamma_m_ijk_pqm
+
+        zeta_m_ijk
+        zeta_p_ijk
+
+        zeta_m_ijk_pqm
+        zeta_p_ijk_pqm
+
+        def u_p_coeffs_residual(node):
+            """
+            BIAS SLOW
+
+            For a given node in
+            
+            u_p = B_p : u + r_p 
+            
+            this function evaluates B_p and r_p
+            """
+            i, j, k = node
+            pdb.set_trace()
+            
+            B = 0
+            r = 0
+            return B, r
+
+        def u_m_coeffs_residual(node):
+            """
+            BIAS SLOW
+
+            For a given node in
+            
+            u_m = B_m : u + r_m 
+            
+            this function evaluates B_m and r_m
+            """
+            i, j, k = node
+            
+            B = 0
+            r = 0
+            return B, r
+        
+        B_p, R_p = vmap(u_p_coeffs_residual)(nodes)
         pdb.set_trace()
+
+        
         return
 
     x = jnp.ones(phi_n.shape[0], dtype=f32)
