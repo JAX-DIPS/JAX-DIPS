@@ -78,7 +78,7 @@ def initial_value_fn(r):
 init_fn, solve_fn = poisson_solver.setup(initial_value_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn)
 sim_state = init_fn(R)
 
-sim_state = solve_fn(gstate, sim_state)
+Ax_fn = solve_fn(gstate, sim_state)
 
 pdb.set_trace()
 

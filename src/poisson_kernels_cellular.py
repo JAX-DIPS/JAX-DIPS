@@ -24,8 +24,6 @@ def poisson_solver(gstate, sim_state):
     x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
     _, _, _, u_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, u_cube)
 
-    
-
 
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
@@ -206,5 +204,23 @@ def poisson_solver(gstate, sim_state):
     gamma_p_ijk = (gamma_p_ijk_pqm.sum(axis=3) - gamma_p_ijk_pqm[:,:,:,3] ) * f32(-1.0)
     gamma_m_ijk = (gamma_m_ijk_pqm.sum(axis=3) - gamma_m_ijk_pqm[:,:,:,3] ) * f32(-1.0)
 
+    def A_matmul_x_fn(x):
+        """
+        This function calculates  A @ x for a given vector of unknowns x
+        Note that this should return same shape and type as of x.
+        This function is needed to be fed into jax sparse linalg solvers such as gmres:
 
-    pdb.set_trace()
+        jax.scipy.sparse.linalg.gmres(A, b, x0=None, *, tol=1e-05, atol=0.0, restart=20, maxiter=None, M=None, solve_method='batched')
+        
+        A = this function!
+        """
+        pdb.set_trace()
+        return
+
+    x = jnp.ones(phi_n.shape[0], dtype=f32)
+    out = A_matmul_x_fn(x)
+
+    return jit(A_matmul_x_fn)
+    
+
+    
