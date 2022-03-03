@@ -153,6 +153,19 @@ def poisson_solver(gstate, sim_state):
         Dm = jnp.linalg.inv(Xijk.T @ Wijk_m @ Xijk) @ (Wijk_m @ Xijk).T
         return jnp.nan_to_num(Dm), jnp.nan_to_num(Dp)
     D_mp_fn = jit(vmap(D_mp_node_update))
-    
+
     D_m_mat, D_p_mat = D_mp_fn(nodes)
+    
+    
+    @jit
+    def normal_vec_fn(node):
+        i, j, k = node
+        phi_x = (phi_cube[i+1, j , k  ] - phi_cube[i-1,j  ,k  ]) / (f32(2) * dx)
+        phi_y = (phi_cube[i, j+1 , k  ] - phi_cube[i  ,j-1,k  ]) / (f32(2) * dy)
+        phi_z = (phi_cube[i, j   , k+1] - phi_cube[i  ,j  ,k-1]) / (f32(2) * dz) 
+        norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
+        return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm], dtype=f32)
+    
+    normal_vecs = vmap(normal_vec_fn)(nodes)
+    
     pdb.set_trace()
