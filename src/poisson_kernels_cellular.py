@@ -206,7 +206,14 @@ def poisson_solver(gstate, sim_state):
 
     def A_matmul_x_fn(u):
         """
-        This function calculates  A @ u for a given vector of unknowns u
+        This function calculates  A @ u for a given vector of unknowns u.
+        This evaluates the rhs in Au^k=b given estimate u^k.
+        The purpose would be to define an optimization problem with:
+
+        min || u^k - b ||^2 
+
+        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
+
         Note that this should return same shape and type as of u.
         This function is needed to be fed into jax sparse linalg solvers such as gmres:
 
