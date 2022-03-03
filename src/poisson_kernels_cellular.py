@@ -185,21 +185,26 @@ def poisson_solver(gstate, sim_state):
 
     mu_m_cube = mu_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     mu_p_cube = mu_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    zeta_p = ((mu_p_cube - mu_m_cube) / mu_m_cube) * phi_cube_ 
-    zeta_p = zeta_p.reshape(zeta_p.shape + (-1,)) * Cp_ijk_pqm.reshape(phi_cube_.shape + (-1,))
-    zeta_m = ((mu_p_cube - mu_m_cube) / mu_p_cube) * phi_cube_ 
-    zeta_m = zeta_m.reshape(zeta_m.shape + (-1,)) * Cm_ijk_pqm.reshape(phi_cube_.shape + (-1,))
-    """
-    NOTE: zeta_m and zeta_p are the size of the original grid, not the ghost layers included!
-    for example: zeta_m[4,4,4][13] is the p=q=m=0 index, and zeta_m.shape = (128, 128, 128, 27)
-    """
-    pdb.set_trace() 
     
-    # x_, y_, z_, mu_m_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, mu_m_cube)
-    # _, _, _, mu_m_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, mu_m_cube)
+    zeta_p_ijk_pqm = ((mu_p_cube - mu_m_cube) / mu_m_cube) * phi_cube_ 
+    zeta_p_ijk_pqm = zeta_p_ijk_pqm.reshape(zeta_p_ijk_pqm.shape + (-1,)) * Cp_ijk_pqm.reshape(phi_cube_.shape + (-1,))
+    
+    zeta_m_ijk_pqm = ((mu_p_cube - mu_m_cube) / mu_p_cube) * phi_cube_ 
+    zeta_m_ijk_pqm = zeta_m_ijk_pqm.reshape(zeta_m_ijk_pqm.shape + (-1,)) * Cm_ijk_pqm.reshape(phi_cube_.shape + (-1,))
+    
+    """
+    NOTE: zeta_m_ijk_pqm and zeta_p_ijk_pqm are the size of the original grid, not the ghost layers included!
+    for example: zeta_m_ijk_pqm[4,4,4][13] is the p=q=m=0 index, and zeta_m_ijk_pqm.shape = (128, 128, 128, 27)
+    """
+    zeta_p_ijk = ( zeta_p_ijk_pqm.sum(axis=3) - zeta_p_ijk_pqm[:,:,:,13] ) * f32(-1.0)
+    zeta_m_ijk = ( zeta_m_ijk_pqm.sum(axis=3) - zeta_m_ijk_pqm[:,:,:,13] ) * f32(-1.0)
+    
+    
+    gamma_p_ijk_pqm = zeta_p_ijk_pqm / (1.0 + zeta_p_ijk[:,:,:,jnp.newaxis])
+    gamma_m_ijk_pqm = zeta_m_ijk_pqm / (1.0 - zeta_m_ijk[:,:,:,jnp.newaxis])
 
-    # x_, y_, z_, mu_p_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, mu_p_cube)
-    # _, _, _, mu_p_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, mu_p_cube)
+    gamma_p_ijk = (gamma_p_ijk_pqm.sum(axis=3) - gamma_p_ijk_pqm[:,:,:,3] ) * f32(-1.0)
+    gamma_m_ijk = (gamma_m_ijk_pqm.sum(axis=3) - gamma_m_ijk_pqm[:,:,:,3] ) * f32(-1.0)
 
 
     pdb.set_trace()
