@@ -1,3 +1,4 @@
+import os
 import time
 import uuid
 import pickle
@@ -14,17 +15,22 @@ class StateData:
 
     def __init__(self,
                  q,
-                 db_url=None,
+                 content_dir=None,
                  cols=['t', 'U', 'kappaM', 'nx', 'ny', 'nz']) -> None:
         self._q = q
         self._cols = set(cols)
-
-        if db_url is None:
-            self._db_url = f'/tmp/dips_{str(uuid.uuid1())}.db'
-        else:
-            self._db_url = db_url
-
         self._listen = None
+
+        self._run_id = str(uuid.uuid1())
+
+        if content_dir is None:
+            content_dir = '/tmp/dips'
+        self._content_dir = os.path.join(content_dir, self._run_id)
+        self._db_url = os.path.join(self._content_dir, 'state.db')
+        self._state_dir = os.path.join(self._content_dir, 'state')
+
+        os.makedirs(self._state_dir, exist_ok=True)
+
         self._initialize_db()
 
     def _initialize_db(self):
@@ -64,8 +70,18 @@ class StateData:
         while True:
             try:
                 data = self._q.get()
+                t = float(data['t'])
+                rec_path = os.path.join(self._state_dir, str(t))
+                os.mkdir(rec_path)
+                locs = {}
+                for k in self._cols:
+                    d = os.path.join(rec_path, f'{k}.pkl')
+                    f = open(d, 'wb')
+                    pickle.dump(data[k], f)
+                    locs[k] = d
+
                 conn.execute(insert_stmt,
-                             [pickle.dumps(data[k]) for k in self._cols])
+                             [locs[k] for k in self._cols])
                 conn.commit()
             except queue.Empty:
                 if not self._listen:
@@ -82,9 +98,8 @@ class StateData:
                                uri=True,
                                check_same_thread=False)
 
-        res = conn.execute(
-            f'SELECT {key} FROM state_log WHERE ID = ?', [index + 1])
-        return pickle.loads(res.fetchone()[0])
+        res = conn.execute(f'SELECT {key} FROM state_log WHERE ID = ?', [index + 1])
+        return pickle.load(open(res.fetchone()[0], 'rb'))
 
     def start(self):
         worker = threading.Thread(target=self._start)

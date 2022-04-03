@@ -108,10 +108,6 @@ def step_func(state_cb_fn, i, state_and_nbrs):
 
 
 q = queue.Queue()
-def queue_state(state):
-    q.put(state)
-
-
 state_data = StateData(q, cols = ['t', 'U', 'kappaM', 'nx', 'ny', 'nz'])
 state_data.start()
 
