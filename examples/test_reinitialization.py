@@ -115,7 +115,7 @@ def queue_state(state):
 state_data = StateData(q, cols = ['t', 'U', 'kappaM', 'nx', 'ny', 'nz'])
 state_data.start()
 
-partial_step_func = partial(step_func, queue_state)
+partial_step_func = partial(step_func, state_data.queue_state)
 
 t1 = time.time()
 sim_state, dt = lax.fori_loop(i32(0), i32(simulation_steps), partial_step_func, (sim_state, dt))

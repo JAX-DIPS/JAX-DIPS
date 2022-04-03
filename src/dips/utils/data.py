@@ -1,26 +1,30 @@
-import pdb
-import itertools
+import time
+import uuid
+import pickle
 import queue
 import sqlite3
-
-from contextlib import closing
+import itertools
 import threading
-import pickle
 
-import time
 
 class StateData:
+    '''
+    To manage data streamed from state and store offline.
+    '''
 
     def __init__(self,
                  q,
-                 db_url='/tmp/dips.db',
-                 cols = ['t', 'U', 'kappaM', 'nx', 'ny', 'nz']) -> None:
-        self._db_url = db_url
+                 db_url=None,
+                 cols=['t', 'U', 'kappaM', 'nx', 'ny', 'nz']) -> None:
         self._q = q
         self._cols = set(cols)
 
-        self._listen = None
+        if db_url is None:
+            self._db_url = f'/tmp/dips_{str(uuid.uuid1())}.db'
+        else:
+            self._db_url = db_url
 
+        self._listen = None
         self._initialize_db()
 
     def _initialize_db(self):
@@ -28,8 +32,8 @@ class StateData:
         Create a new database and initialize the table.
         '''
         conn = sqlite3.connect(self._db_url,
-                                     uri=True,
-                                     check_same_thread=False)
+                               uri=True,
+                               check_same_thread=False)
         ddl_stmt = f'''
                     CREATE TABLE IF NOT EXISTS state_log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,8 +44,8 @@ class StateData:
 
     def __len__(self):
         conn = sqlite3.connect(self._db_url,
-                                uri=True,
-                                check_same_thread=False)
+                               uri=True,
+                               check_same_thread=False)
         res = conn.execute('SELECT count(*) FROM state_log')
         return res.fetchone()[0]
 
@@ -50,19 +54,18 @@ class StateData:
         Listen for incoming data and write it to the database.
         '''
         conn = sqlite3.connect(self._db_url,
-                                uri=True,
-                                check_same_thread=False)
+                               uri=True,
+                               check_same_thread=False)
         insert_stmt =\
             f'''
-            INSERT INTO state_log({', '.join(self._cols)})
-            VALUES({', '.join(list(itertools.repeat('?', len(self._cols))))})
-            '''
+             INSERT INTO state_log({', '.join(self._cols)})
+             VALUES({', '.join(list(itertools.repeat('?', len(self._cols))))})
+             '''
         while True:
             try:
                 data = self._q.get()
-                conn.execute(
-                   insert_stmt,
-                   [pickle.dumps(data[k]) for k in self._cols])
+                conn.execute(insert_stmt,
+                             [pickle.dumps(data[k]) for k in self._cols])
                 conn.commit()
             except queue.Empty:
                 if not self._listen:
@@ -76,10 +79,11 @@ class StateData:
 
     def get(self, key, index):
         conn = sqlite3.connect(self._db_url,
-                                uri=True,
-                                check_same_thread=False)
-        # print(f'SELECT {key} FROM state_log WHERE ID = ?', index)
-        res = conn.execute(f'SELECT {key} FROM state_log WHERE ID = ?', [index + 1])
+                               uri=True,
+                               check_same_thread=False)
+
+        res = conn.execute(
+            f'SELECT {key} FROM state_log WHERE ID = ?', [index + 1])
         return pickle.loads(res.fetchone()[0])
 
     def start(self):
