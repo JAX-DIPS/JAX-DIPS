@@ -79,7 +79,7 @@ def write_vtk_log(gstate, log, address = 'results/', maxsteps=None):
             ff = onp.array(log.get(key, i).reshape(X.shape))
             host_dict[key] = ff
 
-        structuredToVTK(address + '/solution'+str(i).zfill(4), X, Y, Z, pointData=host_dict)
+        structuredToVTK(address + '/solution' + str(i).zfill(4), X, Y, Z, pointData=host_dict)
         if maxsteps:
             if i >= maxsteps-1:
                 break

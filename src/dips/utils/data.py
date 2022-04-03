@@ -71,6 +71,8 @@ class StateData:
             try:
                 data = self._q.get()
                 t = float(data['t'])
+                if t == -1 and not self._listen:
+                    break
                 rec_path = os.path.join(self._state_dir, str(t))
                 os.mkdir(rec_path)
                 locs = {}
@@ -83,6 +85,7 @@ class StateData:
                 conn.execute(insert_stmt,
                              [locs[k] for k in self._cols])
                 conn.commit()
+                self._q.task_done()
             except queue.Empty:
                 if not self._listen:
                     break
@@ -97,14 +100,18 @@ class StateData:
         conn = sqlite3.connect(self._db_url,
                                uri=True,
                                check_same_thread=False)
-
-        res = conn.execute(f'SELECT {key} FROM state_log WHERE ID = ?', [index + 1])
-        return pickle.load(open(res.fetchone()[0], 'rb'))
+        try:
+            res = conn.execute(f'SELECT {key} FROM state_log WHERE id = ?', [index + 1])
+            return pickle.load(open(res.fetchone()[0], 'rb'))
+        except Exception as e:
+            print(e)
+        finally:
+            conn.close()
 
     def start(self):
-        worker = threading.Thread(target=self._start)
+        self._worker = threading.Thread(target=self._start)
         print('Starting state msg listener...')
-        worker.start()
+        self._worker.start()
 
     def queue_state(self, state):
         self._q.put(state)
@@ -113,3 +120,4 @@ class StateData:
         self._listen = False
         while not self._q.empty():
             time.sleep(1)
+        self.queue_state({'t': -1})

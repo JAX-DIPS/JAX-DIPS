@@ -37,9 +37,9 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-2.0)
 xmax = ymax = zmax = f32(2.0)
 box_size = xmax - xmin
-Nx = i32(128)
-Ny = i32(128)
-Nz = i32(128)
+Nx = i32(512)
+Ny = i32(512)
+Nz = i32(512)
 dimension = i32(3)
 tf = f32( 2 * jnp.pi)
 
