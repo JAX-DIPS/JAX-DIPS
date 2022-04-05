@@ -1,4 +1,6 @@
 import os, sys
+import queue
+
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path: # add parent dir to paths
@@ -10,13 +12,18 @@ from functools import partial
 import jax
 import jax.profiler
 from jax import (jit, random, lax, numpy as jnp, vmap)
+from jax.experimental import host_callback
 from src.util import f32, i32
 from src import space
 from src import simulate_fields, interpolate
 from src import io
 from src import mesh, level_set
+from src.dips.utils.data import StateData
+
 from jax.config import config
 config.update("jax_enable_x64", True)
+
+jax.profiler.start_trace("./tensorboard")
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"  # specify which GPU(s) to be used
 
@@ -30,11 +37,11 @@ dim = i32(3)
 xmin = ymin = zmin = f32(-2.0)
 xmax = ymax = zmax = f32(2.0)
 box_size = xmax - xmin
-Nx = i32(128)
-Ny = i32(128)
-Nz = i32(128)
+Nx = i32(512)
+Ny = i32(512)
+Nz = i32(512)
 dimension = i32(3)
-tf = f32( 2 * jnp.pi) 
+tf = f32( 2 * jnp.pi)
 
 #--------- Grid nodes
 xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -45,7 +52,7 @@ dy = yc[1] - yc[0]
 dz = zc[1] - zc[0]
 
 dt = dx * f32(0.95)
-simulation_steps = i32(tf / dt) 
+simulation_steps = i32(tf / dt)
 
 #---------------
 # Create helper functions to define a periodic box of some size.
@@ -66,12 +73,12 @@ velocity_fn = vmap(velocity_fn, (0,None))
 def phi_fn(r):
     x = r[0]; y = r[1]; z = r[2]
     return lax.cond(r[0]*r[0] + r[1]*r[1] + r[2]*r[2] > 0.25, lambda p: f32(1.0), lambda p: f32(-1.0), r)
-    
+
 init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, shift_fn, dt)
 sim_state = init_fn(velocity_fn, R)
 
 # get normal vector and mean curvature
-normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature) 
+normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature)
 
 
 def add_null_argument(func):
@@ -80,40 +87,43 @@ def add_null_argument(func):
     return func_
 
 
-log = {
-        'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        'kappaM' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        'nx' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        'ny' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        'nz' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        't' : jnp.zeros((simulation_steps,), dtype=f32)
-      }
-@jit
-def step_func(i, state_and_nbrs):
-    state, log, dt = state_and_nbrs
+
+@partial(jit, static_argnums=0)
+def step_func(state_cb_fn, i, state_and_nbrs):
+    state, dt = state_and_nbrs
     time_ = i * dt
 
     normal, curve = normal_curve_fn(state.solution, gstate)
 
-    log['t'] = log['t'].at[i].set(time_)
-    log['U'] = log['U'].at[i].set(state.solution)
-    log['kappaM'] = log['kappaM'].at[i].set(curve)
-    log['nx'] = log['nx'].at[i].set(normal[:,0])
-    log['ny'] = log['ny'].at[i].set(normal[:,1])
-    log['nz'] = log['nz'].at[i].set(normal[:,2])
-    
+    host_callback.call(state_cb_fn,
+                         ({'t': time_,
+                           'U': state.solution,
+                           'kappaM': curve,
+                           'nx': normal[:,0],
+                           'ny': normal[:,1],
+                           'nz': normal[:,2]
+                           }))
     state = reinitialize_fn(state, gstate)
-    return state, log, dt
+    return state, dt
+
+
+q = queue.Queue()
+state_data = StateData(q, cols = ['t', 'U', 'kappaM', 'nx', 'ny', 'nz'])
+state_data.start()
+
+partial_step_func = partial(step_func, state_data.queue_state)
 
 t1 = time.time()
-sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log, dt))
+sim_state, dt = lax.fori_loop(i32(0), i32(simulation_steps), partial_step_func, (sim_state, dt))
 sim_state.solution.block_until_ready()
 t2 = time.time()
-print(f"time per timestep is {(t2 - t1)/simulation_steps}")
+print(f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}")
+
+state_data.stop()
 
 jax.profiler.save_device_memory_profile("memory.prof")
+jax.profiler.stop_trace()
 
+io.write_vtk_log(gstate, state_data)
 
-io.write_vtk_log(gstate, log)
-
-pdb.set_trace()
+# pdb.set_trace()
