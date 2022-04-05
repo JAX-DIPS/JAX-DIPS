@@ -15,10 +15,13 @@ def poisson_solver(gstate, sim_state):
     mu_p = sim_state.mu_p
 
     xo = gstate.x; yo = gstate.y; zo = gstate.z
+    
+    phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(phi_n, gstate)
 
     phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
+    
 
     u_cube = u_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
@@ -203,6 +206,62 @@ def poisson_solver(gstate, sim_state):
 
     gamma_p_ijk = (gamma_p_ijk_pqm.sum(axis=3) - gamma_p_ijk_pqm[:,:,:,3] ) * f32(-1.0)
     gamma_m_ijk = (gamma_m_ijk_pqm.sum(axis=3) - gamma_m_ijk_pqm[:,:,:,3] ) * f32(-1.0)
+
+
+    
+
+    # def get_simplices_of_cell(node):
+    i, j, k = nodes[10000]
+    # Get corners of the control volume    
+    dXcorners = 0.5*jnp.array([  
+        [-dx, -dy, -dz],
+        [ dx, -dy, -dz],
+        [ dx, -dy,  dz],
+        [-dx, -dy,  dz],
+        [-dx,  dy, -dz],
+        [ dx,  dy, -dz],
+        [-dx,  dy,  dz],
+        [ dx,  dy,  dz] ], dtype=f32)
+    
+    R_cell_corners = dXcorners + jnp.array([x[i], y[j], z[k]])
+    phi_cell_corners = phi_interp_fn(R_cell_corners)
+
+    P_000 = R_cell_corners[0]
+    P_100 = R_cell_corners[1]
+    P_101 = R_cell_corners[2]
+    P_001 = R_cell_corners[3]
+    P_010 = R_cell_corners[4]
+    P_110 = R_cell_corners[5]
+    P_011 = R_cell_corners[6]
+    P_111 = R_cell_corners[7]
+
+    phi_P_000 = phi_cell_corners[0]
+    phi_P_100 = phi_cell_corners[1]
+    phi_P_101 = phi_cell_corners[2]
+    phi_P_001 = phi_cell_corners[3]
+    phi_P_010 = phi_cell_corners[4]
+    phi_P_110 = phi_cell_corners[5]
+    phi_P_011 = phi_cell_corners[6]
+    phi_P_111 = phi_cell_corners[7]
+
+    # there are 5 simplices
+    S_1 = jnp.array([P_000, P_100, P_010, P_001], dtype=f32)
+    S_2 = jnp.array([P_110, P_100, P_010, P_111], dtype=f32)
+    S_3 = jnp.array([P_101, P_100, P_111, P_001], dtype=f32)
+    S_4 = jnp.array([P_011, P_111, P_010, P_001], dtype=f32)
+    S_5 = jnp.array([P_111, P_100, P_010, P_001], dtype=f32)
+
+    phi_S_1 = jnp.array([phi_P_000, phi_P_100, phi_P_010, phi_P_001], dtype=f32)
+    phi_S_2 = jnp.array([phi_P_110, phi_P_100, phi_P_010, phi_P_111], dtype=f32)
+    phi_S_3 = jnp.array([phi_P_101, phi_P_100, phi_P_111, phi_P_001], dtype=f32)
+    phi_S_4 = jnp.array([phi_P_011, phi_P_111, phi_P_010, phi_P_001], dtype=f32)
+    phi_S_5 = jnp.array([phi_P_111, phi_P_100, phi_P_010, phi_P_001], dtype=f32)
+    pdb.set_trace()
+
+
+    
+    # get_simplices_of_cell(nodes[100000])
+
 
     def A_matmul_x_fn(u):
         """
