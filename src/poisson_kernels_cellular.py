@@ -211,6 +211,10 @@ def poisson_solver(gstate, sim_state):
     
 
     # def get_simplices_of_cell(node):
+    """
+    Based on Min & Gibou 2007: Geometric integration over irregular domains
+    with application to level-set methods
+    """
     i, j, k = nodes[10000]
     # Get corners of the control volume    
     dXcorners = 0.5*jnp.array([  
@@ -256,6 +260,13 @@ def poisson_solver(gstate, sim_state):
     phi_S_3 = jnp.array([phi_P_101, phi_P_100, phi_P_111, phi_P_001], dtype=f32)
     phi_S_4 = jnp.array([phi_P_011, phi_P_111, phi_P_010, phi_P_001], dtype=f32)
     phi_S_5 = jnp.array([phi_P_111, phi_P_100, phi_P_010, phi_P_001], dtype=f32)
+
+    eta_S_1 = sign_m_fn(phi_S_1).sum()
+    eta_S_2 = sign_m_fn(phi_S_2).sum()
+    eta_S_3 = sign_m_fn(phi_S_3).sum()
+    eta_S_4 = sign_m_fn(phi_S_4).sum()
+    eta_S_5 = sign_m_fn(phi_S_5).sum()
+
     pdb.set_trace()
 
 
