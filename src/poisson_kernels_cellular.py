@@ -261,12 +261,13 @@ def poisson_solver(gstate, sim_state):
         phi_S_4 = jnp.array([phi_P_011, phi_P_111, phi_P_010, phi_P_001], dtype=f32)
         phi_S_5 = jnp.array([phi_P_111, phi_P_100, phi_P_010, phi_P_001], dtype=f32)
 
-        eta_S_1 = sign_m_fn(phi_S_1).sum()
-        eta_S_2 = sign_m_fn(phi_S_2).sum()
-        eta_S_3 = sign_m_fn(phi_S_3).sum()
-        eta_S_4 = sign_m_fn(phi_S_4).sum()
-        eta_S_5 = sign_m_fn(phi_S_5).sum()
+        eta_S_1 = (sign_m_fn(phi_S_1).sum()).astype(int)
+        eta_S_2 = (sign_m_fn(phi_S_2).sum()).astype(int)
+        eta_S_3 = (sign_m_fn(phi_S_3).sum()).astype(int)
+        eta_S_4 = (sign_m_fn(phi_S_4).sum()).astype(int)
+        eta_S_5 = (sign_m_fn(phi_S_5).sum()).astype(int)
 
+        
         
         def get_vertices_S_intersect_Gamma(S, phi_S, eta_S):
             """
@@ -284,11 +285,11 @@ def poisson_solver(gstate, sim_state):
                 Q_0 =  ( phi_S_sorted[0] * S_sorted[1] - phi_S_sorted[1] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[1])
                 Q_1 =  ( phi_S_sorted[0] * S_sorted[2] - phi_S_sorted[2] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[2])
                 Q_2 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,0], Q_0)
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,1], Q_1)
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,2], Q_2)
-                return zeros_gamma
-                # return jnp.array([[Q_0, Q_1, Q_2], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,0], Q_0)
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,1], Q_1)
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,2], Q_2)
+                # return zeros_gamma
+                return jnp.array([[Q_0, Q_1, Q_2], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
             
             def eta_3_fn(arg):
                 S, phi_S, zeros_gamma = arg
@@ -302,29 +303,30 @@ def poisson_solver(gstate, sim_state):
                 Q_1 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
                 Q_2 =  ( phi_S_sorted[1] * S_sorted[3] - phi_S_sorted[3] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[3])
                 Q_5 =  ( phi_S_sorted[1] * S_sorted[2] - phi_S_sorted[2] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[2])
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,0], Q_0)
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,1], Q_1)
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,2], Q_2)
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[1,0], Q_0)
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[1,1], Q_5)
-                zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[1,2], Q_2)
-                # return jnp.array([[Q_0, Q_1, Q_2], [Q_0, Q_5, Q_2]], dtype=f32)
-                return zeros_gamma
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,0], Q_0)
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,1], Q_1)
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,2], Q_2)
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[1,0], Q_0)
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[1,1], Q_5)
+                # zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[1,2], Q_2)
+                # return zeros_gamma
+                return jnp.array([[Q_0, Q_1, Q_2], [Q_0, Q_5, Q_2]], dtype=f32)
+                
             
             def eta_2_3_fn(arg):
-                return lax.cond(eta_S - 2, eta_2_fn, eta_3_fn, arg)
-                # return lax.cond(eta_S == 2, eta_2_fn, eta_3_fn, arg)
+                # return lax.cond(eta_S - 2, eta_2_fn, eta_3_fn, arg)
+                return jnp.where(eta_S==2, eta_2_fn(arg), eta_3_fn(arg))
         
             def eta_1_2_3_fn(arg):
-                return lax.cond(eta_S - 1, eta_1_fn, eta_2_3_fn, arg)
-                # return lax.cond(eta_S == 1, eta_1_fn, eta_2_3_fn, arg)
+                # return lax.cond(eta_S - 1, eta_1_fn, eta_2_3_fn, arg)
+                return jnp.where(eta_S==1, eta_1_fn(arg), eta_2_3_fn(arg))
             
             def eta_0_4_fn(arg):
                 S, phi_S, zeros_gamma = arg
                 return zeros_gamma
 
-            # shared_vertices = lax.cond(eta_S == 0 or eta_S == 4, eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_gamma))
-            shared_vertices = lax.cond(eta_S*(eta_S - 4), eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_gamma))
+            # shared_vertices = lax.cond(eta_S*(eta_S - 4), eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_gamma))
+            shared_vertices = jnp.where(eta_S*(eta_S - 4)==0, eta_0_4_fn((S, phi_S, zeros_gamma)), eta_1_2_3_fn((S, phi_S, zeros_gamma)))
             return shared_vertices
 
         
@@ -349,14 +351,14 @@ def poisson_solver(gstate, sim_state):
                 Q_1 =  ( phi_S_sorted[0] * S_sorted[1] - phi_S_sorted[1] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[1])
                 Q_2 =  ( phi_S_sorted[0] * S_sorted[2] - phi_S_sorted[2] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[2])
                 Q_3 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,0], Q_0)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,1], Q_1)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,2], Q_2)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,3], Q_3)
-                return zeros_
-                # return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
-                #                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
-                #                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,0], Q_0)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,1], Q_1)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,2], Q_2)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,3], Q_3)
+                # return zeros_
+                return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
+                                [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+                                [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
             
             def eta_2_fn(arg):
                 S, phi_S, zeros_, ones_ = arg
@@ -368,25 +370,25 @@ def poisson_solver(gstate, sim_state):
                 Q_3 =  ( phi_S_sorted[1] * S_sorted[3] - phi_S_sorted[3] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[3])
                 Q_4 =  ( phi_S_sorted[1] * S_sorted[2] - phi_S_sorted[2] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[2])
                 Q_5 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,0], Q_0)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,1], Q_1)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,2], Q_2)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,3], Q_3)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,0], Q_0)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,1], Q_1)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,2], Q_2)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,3], Q_3)
                 
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[1,0], Q_4)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[1,1], Q_1)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[1,2], Q_2)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[1,3], Q_3)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[1,0], Q_4)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[1,1], Q_1)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[1,2], Q_2)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[1,3], Q_3)
 
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[2,0], Q_0)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[2,1], Q_5)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[2,2], Q_2)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[2,3], Q_3)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[2,0], Q_0)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[2,1], Q_5)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[2,2], Q_2)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[2,3], Q_3)
                 
-                return zeros_
-                # return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
-                #                 [Q_4, Q_1, Q_2, Q_3],\
-                #                 [Q_0, Q_5, Q_2, Q_3]], dtype=f32)
+                # return zeros_
+                return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
+                                [Q_4, Q_1, Q_2, Q_3],\
+                                [Q_0, Q_5, Q_2, Q_3]], dtype=f32)
             
             def eta_3_fn(arg):
                 S, phi_S, zeros_, ones_ = arg
@@ -399,41 +401,41 @@ def poisson_solver(gstate, sim_state):
                 Q_4 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
                 Q_5 =  ( phi_S_sorted[2] * S_sorted[3] - phi_S_sorted[3] * S_sorted[2] ) / (phi_S_sorted[2] - phi_S_sorted[3])
 
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,0], Q_0)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,1], Q_1)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,2], Q_2)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[0,3], Q_3)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,0], Q_0)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,1], Q_1)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,2], Q_2)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[0,3], Q_3)
                 
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[1,0], Q_0)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[1,1], Q_4)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[1,2], Q_2)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[1,3], Q_3)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[1,0], Q_0)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[1,1], Q_4)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[1,2], Q_2)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[1,3], Q_3)
 
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[2,0], Q_5)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[2,1], Q_4)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[2,2], Q_2)
-                zeros_ = ops.index_update(zeros_, jnp.index_exp[2,3], Q_3)
-                return zeros_
-                # return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
-                #                 [Q_0, Q_4, Q_2, Q_3],\
-                #                 [Q_5, Q_4, Q_2, Q_3]], dtype=f32)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[2,0], Q_5)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[2,1], Q_4)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[2,2], Q_2)
+                # zeros_ = ops.index_update(zeros_, jnp.index_exp[2,3], Q_3)
+                # return zeros_
+                return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
+                                [Q_0, Q_4, Q_2, Q_3],\
+                                [Q_5, Q_4, Q_2, Q_3]], dtype=f32)
             
             def eta_2_3_fn(arg):
-                return lax.cond(eta_S - 2, eta_2_fn, eta_3_fn, arg)
-                # return lax.cond(eta_S == 2, eta_2_fn, eta_3_fn, arg)
+                return jnp.where(eta_S == 2, eta_2_fn(arg), eta_3_fn(arg))
+                # return lax.cond(eta_S - 2, eta_2_fn, eta_3_fn, arg)
             
             def eta_1_2_3_fn(arg):
-                return lax.cond(eta_S - 1, eta_1_fn, eta_2_3_fn, arg)
-                # return lax.cond(eta_S == 1, eta_1_fn, eta_2_3_fn, arg)
+                return jnp.where(eta_S==1, eta_1_fn(arg), eta_2_3_fn(arg))
+                # return lax.cond(eta_S - 1, eta_1_fn, eta_2_3_fn, arg)
 
             def eta_0_4_fn(arg):
                 S, phi_S, zeros_, ones_ = arg
                 ones_ = ops.index_update(ones_, jnp.index_exp[0,:], S)
-                return lax.cond(eta_S, lambda p: zeros_, lambda p: ones_, S)
-                # return lax.cond(eta_S == 0, lambda p: zeros_, lambda p: ones_, S)
+                return jnp.where(eta_S==0, zeros_, ones_)
+                # return lax.cond(eta_S, lambda p: zeros_, lambda p: ones_, S)
 
-            # shared_vertices = lax.cond(eta_S == 0 or eta_S == 4, eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_, ones_))
-            shared_vertices = lax.cond(eta_S * (eta_S - 4), eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_, ones_))
+            # shared_vertices = lax.cond(eta_S * (eta_S - 4), eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_, ones_))
+            shared_vertices = jnp.where(eta_S * (eta_S - 4)==0, eta_0_4_fn((S, phi_S, zeros_, ones_)), eta_1_2_3_fn((S, phi_S, zeros_, ones_)))
             
             return shared_vertices
 
@@ -455,7 +457,8 @@ def poisson_solver(gstate, sim_state):
         return sv_gamma_s1, sv_gamma_s2, sv_gamma_s3, sv_gamma_s4, sv_gamma_s5,\
                sv_omega_s1, sv_omega_s2, sv_omega_s3, sv_omega_s4, sv_omega_s5
 
-    get_vertices_of_cell_intersection_with_interface_at_node(nodes[794302])
+    pieces = get_vertices_of_cell_intersection_with_interface_at_node(nodes[0])
+    # pieces = vmap(get_vertices_of_cell_intersection_with_interface_at_node)(nodes)
     pdb.set_trace()
 
     def A_matmul_x_fn(u):
