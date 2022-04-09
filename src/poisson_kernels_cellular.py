@@ -210,7 +210,7 @@ def poisson_solver(gstate, sim_state):
 
 
     
-
+    @jit
     def get_vertices_of_cell_intersection_with_interface_at_node(node):
         """
         Based on Min & Gibou 2007: Geometric integration over irregular domains
@@ -267,6 +267,7 @@ def poisson_solver(gstate, sim_state):
         eta_S_4 = sign_m_fn(phi_S_4).sum()
         eta_S_5 = sign_m_fn(phi_S_5).sum()
 
+        
         def get_vertices_S_intersect_Gamma(S, phi_S, eta_S):
             """
             This function returns the vertices splitted by the level set.
@@ -275,7 +276,7 @@ def poisson_solver(gstate, sim_state):
             zeros_gamma = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                                   [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
 
-            @jit
+            
             def eta_1_fn(arg):
                 S, phi_S, zeros_gamma = arg
                 S_sorted = S[jnp.argsort(phi_S)]
@@ -288,11 +289,11 @@ def poisson_solver(gstate, sim_state):
                 zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[0,2], Q_2)
                 return zeros_gamma
                 # return jnp.array([[Q_0, Q_1, Q_2], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
-            @jit
+            
             def eta_3_fn(arg):
                 S, phi_S, zeros_gamma = arg
                 return eta_1_fn((S, -1.0 * phi_S, zeros_gamma))
-            @jit
+            
             def eta_2_fn(arg):
                 S, phi_S, zeros_gamma = arg
                 S_sorted = S[jnp.argsort(phi_S)]
@@ -309,22 +310,25 @@ def poisson_solver(gstate, sim_state):
                 zeros_gamma = ops.index_update(zeros_gamma, jnp.index_exp[1,2], Q_2)
                 # return jnp.array([[Q_0, Q_1, Q_2], [Q_0, Q_5, Q_2]], dtype=f32)
                 return zeros_gamma
-            @jit
+            
             def eta_2_3_fn(arg):
-                return lax.cond(eta_S == 2, eta_2_fn, eta_3_fn, arg)
-            @jit
+                return lax.cond(eta_S - 2, eta_2_fn, eta_3_fn, arg)
+                # return lax.cond(eta_S == 2, eta_2_fn, eta_3_fn, arg)
+        
             def eta_1_2_3_fn(arg):
-                return lax.cond(eta_S == 1, eta_1_fn, eta_2_3_fn, arg)
-            @jit
+                return lax.cond(eta_S - 1, eta_1_fn, eta_2_3_fn, arg)
+                # return lax.cond(eta_S == 1, eta_1_fn, eta_2_3_fn, arg)
+            
             def eta_0_4_fn(arg):
                 S, phi_S, zeros_gamma = arg
                 return zeros_gamma
 
-            shared_vertices = lax.cond(eta_S == 0 or eta_S == 4, eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_gamma))
+            # shared_vertices = lax.cond(eta_S == 0 or eta_S == 4, eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_gamma))
+            shared_vertices = lax.cond(eta_S*(eta_S - 4), eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_gamma))
             return shared_vertices
 
-
-        def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S):
+        
+        def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
             """
             This function returns the tetrahedra vertices splitted by the level set.
             The intersection of the mesh-cell volume crossed by the level-set function. 
@@ -336,7 +340,7 @@ def poisson_solver(gstate, sim_state):
             ones_ = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
-            @jit
+            
             def eta_1_fn(arg):
                 S, phi_S, zeros_, ones_ = arg
                 S_sorted = S[jnp.argsort(phi_S)]
@@ -353,7 +357,7 @@ def poisson_solver(gstate, sim_state):
                 # return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
                 #                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                 #                 [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
-            @jit
+            
             def eta_2_fn(arg):
                 S, phi_S, zeros_, ones_ = arg
                 S_sorted = S[jnp.argsort(phi_S)]
@@ -383,7 +387,7 @@ def poisson_solver(gstate, sim_state):
                 # return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
                 #                 [Q_4, Q_1, Q_2, Q_3],\
                 #                 [Q_0, Q_5, Q_2, Q_3]], dtype=f32)
-            @jit
+            
             def eta_3_fn(arg):
                 S, phi_S, zeros_, ones_ = arg
                 S_sorted = S[jnp.argsort(phi_S)]
@@ -413,19 +417,23 @@ def poisson_solver(gstate, sim_state):
                 # return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
                 #                 [Q_0, Q_4, Q_2, Q_3],\
                 #                 [Q_5, Q_4, Q_2, Q_3]], dtype=f32)
-            @jit
+            
             def eta_2_3_fn(arg):
-                return lax.cond(eta_S == 2, eta_2_fn, eta_3_fn, arg)
-            @jit
+                return lax.cond(eta_S - 2, eta_2_fn, eta_3_fn, arg)
+                # return lax.cond(eta_S == 2, eta_2_fn, eta_3_fn, arg)
+            
             def eta_1_2_3_fn(arg):
-                return lax.cond(eta_S == 1, eta_1_fn, eta_2_3_fn, arg)
-            @jit
+                return lax.cond(eta_S - 1, eta_1_fn, eta_2_3_fn, arg)
+                # return lax.cond(eta_S == 1, eta_1_fn, eta_2_3_fn, arg)
+
             def eta_0_4_fn(arg):
                 S, phi_S, zeros_, ones_ = arg
                 ones_ = ops.index_update(ones_, jnp.index_exp[0,:], S)
-                return lax.cond(eta_S == 0, lambda p: zeros_, lambda p: ones_, S)
+                return lax.cond(eta_S, lambda p: zeros_, lambda p: ones_, S)
+                # return lax.cond(eta_S == 0, lambda p: zeros_, lambda p: ones_, S)
 
-            shared_vertices = lax.cond(eta_S == 0 or eta_S == 4, eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_, ones_))
+            # shared_vertices = lax.cond(eta_S == 0 or eta_S == 4, eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_, ones_))
+            shared_vertices = lax.cond(eta_S * (eta_S - 4), eta_0_4_fn, eta_1_2_3_fn, (S, phi_S, zeros_, ones_))
             
             return shared_vertices
 
