@@ -211,21 +211,27 @@ def poisson_solver(gstate, sim_state):
 
     
     """
+    BEGIN geometric integration functions intiation
     Getting simplices of the grid: intersection points 
     """
     get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
-    # pieces = vmap(get_vertices_of_cell_intersection_with_interface_at_node)(nodes)
-    
     u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(u_n, gstate)
     integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
     
     # u_dGamma = integrate_over_interface_at_node(nodes[794302])
     # u_dGammas = vmap(integrate_over_interface_at_node)(nodes)
-    # print(f"Pi is computed to be {u_dGammas.sum()} ~~ must be ~~ {jnp.pi}")
+    # print("\n\n\n")
+    # print(f"Surface area is computed to be {u_dGammas.sum()} ~~ must be ~~ {jnp.pi}")
+    # print("\n\n\n")
+    # u_dOmega = integrate_in_negative_domain_at_node(nodes[794302])
+    # u_dOmegas = vmap(integrate_in_negative_domain_at_node)(nodes)
+    # print(f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
+    # print("\n\n\n")
+    """
+    END Geometric integration functions initiated
+    """
+    
 
-    u_dOmega = integrate_in_negative_domain_at_node(nodes[794302])
-    u_dOmegas = vmap(integrate_in_negative_domain_at_node)(nodes)
-    print(f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
     pdb.set_trace()
 
 

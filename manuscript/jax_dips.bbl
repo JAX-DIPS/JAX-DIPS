@@ -1,0 +1,26 @@
+\begin{thebibliography}{1}
+
+\bibitem{bochkov2020solving}
+D.~Bochkov and F.~Gibou.
+\newblock Solving elliptic interface problems with jump conditions on cartesian
+  grids.
+\newblock {\em Journal of Computational Physics}, 407:109269, 2020.
+
+\bibitem{min2007geometric}
+C.~Min and F.~Gibou.
+\newblock Geometric integration over irregular domains with application to
+  level-set methods.
+\newblock {\em Journal of Computational Physics}, 226(2):1432--1443, 2007.
+
+\bibitem{pakravan2021solving}
+S.~Pakravan, P.~A. Mistani, M.~A. Aragon-Calvo, and F.~Gibou.
+\newblock Solving inverse-pde problems with physics-aware neural networks.
+\newblock {\em Journal of Computational Physics}, 440:110414, 2021.
+
+\bibitem{sallee1984middle}
+J.~F. Sallee.
+\newblock The middle-cut triangulations of the n-cube.
+\newblock {\em SIAM Journal on Algebraic Discrete Methods}, 5(3):407--419,
+  1984.
+
+\end{thebibliography}
