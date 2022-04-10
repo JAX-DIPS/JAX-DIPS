@@ -221,7 +221,7 @@ def poisson_solver(gstate, sim_state):
     
     # u_dGamma = integrate_over_interface_at_node(nodes[794302])
     u_dGammas = vmap(integrate_over_interface_at_node)(nodes)
-    print(f"{u_dGammas.sum()} ~~ 3.14")
+    print(f"Pi is computed to be {u_dGammas.sum()} ~~ must be ~~ {jnp.pi}")
     pdb.set_trace()
 
 
