@@ -341,5 +341,47 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
         return jnp.where(is_interface==1, compute_interface_integral(node), 0.0)
        
     
+    @jit
+    def compute_negative_bulk_integral(node):
+        pieces = get_vertices_fn(node)  
+        
+        # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
+        S1_Omega_m = pieces[5]
+        S2_Omega_m = pieces[6]
+        S3_Omega_m = pieces[7]
+        S4_Omega_m = pieces[8]
+        S5_Omega_m = pieces[9]
 
-    return integrate_over_interface_at_node
+        vol_fn = lambda A: (1.0 / 6.0) * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
+
+        integral  = vol_fn(S1_Omega_m[0]) * u_interp_fn(S1_Omega_m[0]).mean()
+        integral += vol_fn(S1_Omega_m[1]) * u_interp_fn(S1_Omega_m[1]).mean()
+        integral += vol_fn(S1_Omega_m[2]) * u_interp_fn(S1_Omega_m[2]).mean()
+
+        integral += vol_fn(S2_Omega_m[0]) * u_interp_fn(S2_Omega_m[0]).mean()
+        integral += vol_fn(S2_Omega_m[1]) * u_interp_fn(S2_Omega_m[1]).mean()
+        integral += vol_fn(S2_Omega_m[2]) * u_interp_fn(S2_Omega_m[2]).mean()
+
+        integral += vol_fn(S3_Omega_m[0]) * u_interp_fn(S3_Omega_m[0]).mean()
+        integral += vol_fn(S3_Omega_m[1]) * u_interp_fn(S3_Omega_m[1]).mean()
+        integral += vol_fn(S3_Omega_m[2]) * u_interp_fn(S3_Omega_m[2]).mean()
+
+        integral += vol_fn(S4_Omega_m[0]) * u_interp_fn(S4_Omega_m[0]).mean()
+        integral += vol_fn(S4_Omega_m[1]) * u_interp_fn(S4_Omega_m[1]).mean()
+        integral += vol_fn(S4_Omega_m[2]) * u_interp_fn(S4_Omega_m[2]).mean()
+
+        integral += vol_fn(S5_Omega_m[0]) * u_interp_fn(S5_Omega_m[0]).mean()
+        integral += vol_fn(S5_Omega_m[1]) * u_interp_fn(S5_Omega_m[1]).mean()
+        integral += vol_fn(S5_Omega_m[2]) * u_interp_fn(S5_Omega_m[2]).mean()
+
+        return integral
+        
+
+
+    @jit
+    def integrate_in_negative_domain_at_node(node):
+        return compute_negative_bulk_integral(node)
+
+
+
+    return integrate_over_interface_at_node, integrate_in_negative_domain_at_node
