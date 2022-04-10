@@ -312,21 +312,22 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
         S4_Gamma = pieces[3]
         S5_Gamma = pieces[4]
         
+        vol_fn = lambda A: 0.5 * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
         
-        integral  = (1.0/6.0) * jnp.linalg.det((S1_Gamma[0] - S1_Gamma[0][0]).T) * u_interp_fn(S1_Gamma[0]).mean()
-        integral += (1.0/6.0) * jnp.linalg.det((S1_Gamma[1] - S1_Gamma[1][0]).T) * u_interp_fn(S1_Gamma[1]).mean()
+        integral  = vol_fn(S1_Gamma[0]) * u_interp_fn(S1_Gamma[0]).mean()
+        integral += vol_fn(S1_Gamma[1]) * u_interp_fn(S1_Gamma[1]).mean()
 
-        integral += (1.0/6.0) * jnp.linalg.det((S2_Gamma[0] - S2_Gamma[0][0]).T) * u_interp_fn(S2_Gamma[0]).mean()
-        integral += (1.0/6.0) * jnp.linalg.det((S2_Gamma[1] - S2_Gamma[1][0]).T) * u_interp_fn(S2_Gamma[1]).mean()
+        integral += vol_fn(S2_Gamma[0]) * u_interp_fn(S2_Gamma[0]).mean()
+        integral += vol_fn(S2_Gamma[1]) * u_interp_fn(S2_Gamma[1]).mean()
 
-        integral += (1.0/6.0) * jnp.linalg.det((S3_Gamma[0] - S3_Gamma[0][0]).T) * u_interp_fn(S3_Gamma[0]).mean()
-        integral += (1.0/6.0) * jnp.linalg.det((S3_Gamma[1] - S3_Gamma[1][0]).T) * u_interp_fn(S3_Gamma[1]).mean()
+        integral += vol_fn(S3_Gamma[0]) * u_interp_fn(S3_Gamma[0]).mean()
+        integral += vol_fn(S3_Gamma[1]) * u_interp_fn(S3_Gamma[1]).mean()
 
-        integral += (1.0/6.0) * jnp.linalg.det((S4_Gamma[0] - S4_Gamma[0][0]).T) * u_interp_fn(S4_Gamma[0]).mean()
-        integral += (1.0/6.0) * jnp.linalg.det((S4_Gamma[1] - S4_Gamma[1][0]).T) * u_interp_fn(S4_Gamma[1]).mean()
+        integral += vol_fn(S4_Gamma[0]) * u_interp_fn(S4_Gamma[0]).mean()
+        integral += vol_fn(S4_Gamma[1]) * u_interp_fn(S4_Gamma[1]).mean()
 
-        integral += (1.0/6.0) * jnp.linalg.det((S5_Gamma[0] - S5_Gamma[0][0]).T) * u_interp_fn(S5_Gamma[0]).mean()
-        integral += (1.0/6.0) * jnp.linalg.det((S5_Gamma[1] - S5_Gamma[1][0]).T) * u_interp_fn(S5_Gamma[1]).mean()
+        integral += vol_fn(S5_Gamma[0]) * u_interp_fn(S5_Gamma[0]).mean()
+        integral += vol_fn(S5_Gamma[1]) * u_interp_fn(S5_Gamma[1]).mean()
 
         return integral
     
@@ -334,7 +335,6 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
     @jit
     def integrate_over_interface_at_node(node):
         """
-        u_cube: is a Nx x Ny x Nz array with two ghost layers.
         node: cube indices in the range [2:Nx+2, 2:Ny+2, 2:Nz+2], excluding ghost layers
         """
         is_interface = is_node_crossed_by_interface(node)

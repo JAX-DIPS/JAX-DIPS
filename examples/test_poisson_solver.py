@@ -72,7 +72,8 @@ def k_p_fn(r):
     return 1.0
 
 def initial_value_fn(r):
-    return 0.0
+    x = r[0]; y = r[1]; z = r[2]
+    return 1.0
 
 init_fn, solve_fn = poisson_solver.setup(initial_value_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn)
 sim_state = init_fn(R)

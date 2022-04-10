@@ -219,8 +219,9 @@ def poisson_solver(gstate, sim_state):
     u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(u_n, gstate)
     integrate_over_interface_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
     
-    u_dGamma = integrate_over_interface_at_node(nodes[0])
+    # u_dGamma = integrate_over_interface_at_node(nodes[794302])
     u_dGammas = vmap(integrate_over_interface_at_node)(nodes)
+    print(f"{u_dGammas.sum()} ~~ 3.14")
     pdb.set_trace()
 
 
