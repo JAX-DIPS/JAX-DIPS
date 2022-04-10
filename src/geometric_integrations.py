@@ -1,0 +1,268 @@
+from functools import partial
+from jax import (numpy as jnp, vmap, jit, lax, ops)
+from src import (interpolate, util)
+import pdb
+
+f32 = util.f32
+i32 = util.i32
+
+
+
+@jit
+def sign_pm_fn(a):
+    sgn = jnp.sign(a)
+    return jnp.sign(sgn - 0.5)
+
+@jit
+def sign_p_fn(a):
+    # returns 1 only if a>0, otherwise is 0
+    sgn = jnp.sign(a)
+    return jnp.floor(0.5 * sgn + 0.75)
+
+@jit
+def sign_m_fn(a):
+    # returns 1 only if a<0, otherwise is 0
+    sgn = jnp.sign(a)
+    return jnp.ceil(0.5 * sgn - 0.75) * (-1.0)
+
+
+@jit
+def get_vertices_S_intersect_Gamma(S, phi_S, eta_S):
+    """
+    This function returns the vertices splitted by the level set.
+    The intersection of the mesh-cell simplex S crossed by the level-set function. 
+    """
+    zeros_gamma = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+                            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
+
+    
+    def eta_1_fn(arg):
+        S, phi_S, zeros_gamma = arg
+        S_sorted = S[jnp.argsort(phi_S)]
+        phi_S_sorted = jnp.sort(phi_S)
+        Q_0 =  ( phi_S_sorted[0] * S_sorted[1] - phi_S_sorted[1] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[1])
+        Q_1 =  ( phi_S_sorted[0] * S_sorted[2] - phi_S_sorted[2] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[2])
+        Q_2 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
+        return jnp.array([[Q_0, Q_1, Q_2], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
+    
+    def eta_3_fn(arg):
+        S, phi_S, zeros_gamma = arg
+        return eta_1_fn((S, -1.0 * phi_S, zeros_gamma))
+    
+    def eta_2_fn(arg):
+        S, phi_S, zeros_gamma = arg
+        S_sorted = S[jnp.argsort(phi_S)]
+        phi_S_sorted = jnp.sort(phi_S)
+        Q_0 =  ( phi_S_sorted[0] * S_sorted[2] - phi_S_sorted[2] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[2])
+        Q_1 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
+        Q_2 =  ( phi_S_sorted[1] * S_sorted[3] - phi_S_sorted[3] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[3])
+        Q_5 =  ( phi_S_sorted[1] * S_sorted[2] - phi_S_sorted[2] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[2])
+        return jnp.array([[Q_0, Q_1, Q_2], [Q_0, Q_5, Q_2]], dtype=f32)
+        
+    
+    def eta_2_3_fn(arg):
+        return jnp.where(eta_S==2, eta_2_fn(arg), eta_3_fn(arg))
+
+    def eta_1_2_3_fn(arg):
+        return jnp.where(eta_S==1, eta_1_fn(arg), eta_2_3_fn(arg))
+    
+    def eta_0_4_fn(arg):
+        S, phi_S, zeros_gamma = arg
+        return zeros_gamma
+
+    shared_vertices = jnp.where(eta_S*(eta_S - 4)==0, eta_0_4_fn((S, phi_S, zeros_gamma)), eta_1_2_3_fn((S, phi_S, zeros_gamma)))
+    return shared_vertices
+
+@jit
+def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
+    """
+    This function returns the tetrahedra vertices splitted by the level set.
+    The intersection of the mesh-cell volume crossed by the level-set function. 
+    """            
+    zeros_ = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+                        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+                        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
+
+    ones_ = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+                        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+                        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
+    
+    def eta_1_fn(arg):
+        S, phi_S, zeros_, ones_ = arg
+        S_sorted = S[jnp.argsort(phi_S)]
+        phi_S_sorted = jnp.sort(phi_S)
+        Q_0 = S_sorted[0]
+        Q_1 =  ( phi_S_sorted[0] * S_sorted[1] - phi_S_sorted[1] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[1])
+        Q_2 =  ( phi_S_sorted[0] * S_sorted[2] - phi_S_sorted[2] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[2])
+        Q_3 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
+        return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
+                        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+                        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
+    
+    def eta_2_fn(arg):
+        S, phi_S, zeros_, ones_ = arg
+        S_sorted = S[jnp.argsort(phi_S)]
+        phi_S_sorted = jnp.sort(phi_S)
+        Q_0 = S_sorted[0]
+        Q_1 = S_sorted[1]
+        Q_2 =  ( phi_S_sorted[0] * S_sorted[2] - phi_S_sorted[2] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[2])
+        Q_3 =  ( phi_S_sorted[1] * S_sorted[3] - phi_S_sorted[3] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[3])
+        Q_4 =  ( phi_S_sorted[1] * S_sorted[2] - phi_S_sorted[2] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[2])
+        Q_5 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
+        return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
+                        [Q_4, Q_1, Q_2, Q_3],\
+                        [Q_0, Q_5, Q_2, Q_3]], dtype=f32)
+    
+    def eta_3_fn(arg):
+        S, phi_S, zeros_, ones_ = arg
+        S_sorted = S[jnp.argsort(phi_S)]
+        phi_S_sorted = jnp.sort(phi_S)
+        Q_0 = S_sorted[0]
+        Q_1 = S_sorted[1]
+        Q_2 = S_sorted[2]
+        Q_3 =  ( phi_S_sorted[1] * S_sorted[3] - phi_S_sorted[3] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[3])
+        Q_4 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
+        Q_5 =  ( phi_S_sorted[2] * S_sorted[3] - phi_S_sorted[3] * S_sorted[2] ) / (phi_S_sorted[2] - phi_S_sorted[3])
+        return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
+                        [Q_0, Q_4, Q_2, Q_3],\
+                        [Q_5, Q_4, Q_2, Q_3]], dtype=f32)
+    
+    def eta_2_3_fn(arg):
+        return jnp.where(eta_S == 2, eta_2_fn(arg), eta_3_fn(arg))
+    
+    def eta_1_2_3_fn(arg):
+        return jnp.where(eta_S==1, eta_1_fn(arg), eta_2_3_fn(arg))
+
+    def eta_0_4_fn(arg):
+        S, phi_S, zeros_, ones_ = arg
+        ones_ = ops.index_update(ones_, jnp.index_exp[0,:], S)
+        return jnp.where(eta_S==0, zeros_, ones_)
+
+    shared_vertices = jnp.where(eta_S * (eta_S - 4)==0, eta_0_4_fn((S, phi_S, zeros_, ones_)), eta_1_2_3_fn((S, phi_S, zeros_, ones_)))
+    
+    return shared_vertices
+
+
+def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
+    phi_n = sim_state.phi
+
+    xo = gstate.x; yo = gstate.y; zo = gstate.z
+    
+    phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(phi_n, gstate)
+    phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
+    x, y, z, phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
+    
+    dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
+
+    Nx = gstate.x.shape[0]
+    Ny = gstate.y.shape[0]
+    Nz = gstate.z.shape[0]
+
+    ii = jnp.arange(2, Nx+2)
+    jj = jnp.arange(2, Ny+2)
+    kk = jnp.arange(2, Nz+2)
+    
+    I, J, K = jnp.meshgrid(ii, jj, kk, indexing='ij')
+    
+    nodes = jnp.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
+
+
+
+    @jit
+    def get_vertices_of_cell_intersection_with_interface_at_node(node):
+        """
+        Based on Min & Gibou 2007: Geometric integration over irregular domains
+        with application to level-set methods
+        """
+        i, j, k = node
+        # Get corners of the control volume    
+        dXcorners = 0.5 * jnp.array([   [-dx, -dy, -dz],
+                                        [ dx, -dy, -dz],
+                                        [ dx, -dy,  dz],
+                                        [-dx, -dy,  dz],
+                                        [-dx,  dy, -dz],
+                                        [ dx,  dy, -dz],
+                                        [-dx,  dy,  dz],
+                                        [ dx,  dy,  dz] ], dtype=f32)
+        
+        R_cell_corners = dXcorners + jnp.array([x[i], y[j], z[k]])
+        phi_cell_corners = phi_interp_fn(R_cell_corners)
+
+        P_000 = R_cell_corners[0]
+        P_100 = R_cell_corners[1]
+        P_101 = R_cell_corners[2]
+        P_001 = R_cell_corners[3]
+        P_010 = R_cell_corners[4]
+        P_110 = R_cell_corners[5]
+        P_011 = R_cell_corners[6]
+        P_111 = R_cell_corners[7]
+
+        phi_P_000 = phi_cell_corners[0]
+        phi_P_100 = phi_cell_corners[1]
+        phi_P_101 = phi_cell_corners[2]
+        phi_P_001 = phi_cell_corners[3]
+        phi_P_010 = phi_cell_corners[4]
+        phi_P_110 = phi_cell_corners[5]
+        phi_P_011 = phi_cell_corners[6]
+        phi_P_111 = phi_cell_corners[7]
+
+        # there are 5 simplices
+        S_1 = jnp.array([P_000, P_100, P_010, P_001], dtype=f32)
+        S_2 = jnp.array([P_110, P_100, P_010, P_111], dtype=f32)
+        S_3 = jnp.array([P_101, P_100, P_111, P_001], dtype=f32)
+        S_4 = jnp.array([P_011, P_111, P_010, P_001], dtype=f32)
+        S_5 = jnp.array([P_111, P_100, P_010, P_001], dtype=f32)
+
+        phi_S_1 = jnp.array([phi_P_000, phi_P_100, phi_P_010, phi_P_001], dtype=f32)
+        phi_S_2 = jnp.array([phi_P_110, phi_P_100, phi_P_010, phi_P_111], dtype=f32)
+        phi_S_3 = jnp.array([phi_P_101, phi_P_100, phi_P_111, phi_P_001], dtype=f32)
+        phi_S_4 = jnp.array([phi_P_011, phi_P_111, phi_P_010, phi_P_001], dtype=f32)
+        phi_S_5 = jnp.array([phi_P_111, phi_P_100, phi_P_010, phi_P_001], dtype=f32)
+
+        eta_S_1 = (sign_m_fn(phi_S_1).sum()).astype(int)
+        eta_S_2 = (sign_m_fn(phi_S_2).sum()).astype(int)
+        eta_S_3 = (sign_m_fn(phi_S_3).sum()).astype(int)
+        eta_S_4 = (sign_m_fn(phi_S_4).sum()).astype(int)
+        eta_S_5 = (sign_m_fn(phi_S_5).sum()).astype(int)
+
+
+
+        sv_gamma_s1 = get_vertices_S_intersect_Gamma(S_1, phi_S_1, eta_S_1)
+        sv_omega_s1 = get_vertices_S_intersect_Omega_m(S_1, phi_S_1, eta_S_1)
+
+        sv_gamma_s2 = get_vertices_S_intersect_Gamma(S_2, phi_S_2, eta_S_2)
+        sv_omega_s2 = get_vertices_S_intersect_Omega_m(S_2, phi_S_2, eta_S_2)
+
+        sv_gamma_s3 = get_vertices_S_intersect_Gamma(S_3, phi_S_3, eta_S_3)
+        sv_omega_s3 = get_vertices_S_intersect_Omega_m(S_3, phi_S_3, eta_S_3)
+
+        sv_gamma_s4 = get_vertices_S_intersect_Gamma(S_4, phi_S_4, eta_S_4)
+        sv_omega_s4 = get_vertices_S_intersect_Omega_m(S_4, phi_S_4, eta_S_4)
+
+        sv_gamma_s5 = get_vertices_S_intersect_Gamma(S_5, phi_S_5, eta_S_5)
+        sv_omega_s5 = get_vertices_S_intersect_Omega_m(S_5, phi_S_5, eta_S_5)
+
+        return sv_gamma_s1, sv_gamma_s2, sv_gamma_s3, sv_gamma_s4, sv_gamma_s5,\
+               sv_omega_s1, sv_omega_s2, sv_omega_s3, sv_omega_s4, sv_omega_s5,\
+               S_1, S_2, S_3, S_4, S_5 
+
+    # pieces = get_vertices_of_cell_intersection_with_interface_at_node(nodes[0])
+    # pieces = vmap(get_vertices_of_cell_intersection_with_interface_at_node)(nodes)
+   
+    return get_vertices_of_cell_intersection_with_interface_at_node
+
+
+
+
+
+# def integrate_over_gamma_and_omega(gstate, sim_state):
+#     get_vertices_fn = get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
+
+def integrate_over_gamma_and_omega(get_vertices_fn):
+    def integrate_over_interface_at_node(u_cube, node):
+        pieces = get_vertices_fn(node)
+
+        pdb.set_trace()
+
+    return integrate_over_interface_at_node
