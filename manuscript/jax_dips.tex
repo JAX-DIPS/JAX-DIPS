@@ -143,7 +143,7 @@ Here we use a finite volume discretization equation uniformly for all grid point
 \begin{align*}
 &\sum_{s=-,+}\int_{\Omega^s \cap \mathcal{V}_{i,j}}  k^{s} u^{s} d\Omega -\sum_{s=-,+} \int_{\Omega^s\cap \partial\mathcal{V}_{i,j}} \mu^{s}\partial_{\mathbf{n}^s} u^s  d\Gamma = \sum_{s=-,+}\int_{\Omega^s \cap \mathcal{V}_{i,j}}  f^{s} d\Omega + \int_{\Gamma \cap \mathcal{V}_{i,j}}[\mu\partial_{\mathbf{n}}u]d\Gamma \\
 \intertext{following standard treatment of volumetric integrals and using central differencing for derivatives we obtain in 2D (with trivial 3D extension)}
-& \sum_{s=-,+} k^s u_{i,j}^{s} |\mathcal{V}_{i,j}^s| - \sum_{s=-,+}\bigg( \mu_{i-\frac{1}{2},j}^s A_{i-\frac{1}{2},j}^s\frac{u_{i-1,j}^s - u_{i,j}^s}{\Delta x}     +   \mu_{i+\frac{1}{2},j}^s A_{i+\frac{1}{2},j}^s\frac{u_{i+1,j}^s - u_{i,j}^s}{\Delta x} + \\
+& \sum_{s=-,+} k_{i,j}^s u_{i,j}^{s} |\mathcal{V}_{i,j}^s| - \sum_{s=-,+}\bigg( \mu_{i-\frac{1}{2},j}^s A_{i-\frac{1}{2},j}^s\frac{u_{i-1,j}^s - u_{i,j}^s}{\Delta x}     +   \mu_{i+\frac{1}{2},j}^s A_{i+\frac{1}{2},j}^s\frac{u_{i+1,j}^s - u_{i,j}^s}{\Delta x} + \\
 & \mu_{i, j-\frac{1}{2}}^s A_{i, j-\frac{1}{2}}^s\frac{u_{i,j-1}^s - u_{i,j}^s}{\Delta y} + \mu_{i, j+\frac{1}{2}}^s A_{i, j+\frac{1}{2}}^s\frac{u_{i,j+1}^s - u_{i,j}^s}{\Delta y} \bigg)  \\
 &=  \sum_{s=-,+} f_{i,j}^{s} |\mathcal{V}_{i,j}^s| + \int_{\Gamma\cap \mathcal{V}_{i,j}} \beta d\Gamma + \mathcal{O}(\max(\Delta x, \Delta y)^\mathcal{D})
 \end{align*}
