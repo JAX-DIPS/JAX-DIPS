@@ -213,11 +213,14 @@ def poisson_solver(gstate, sim_state):
     """
     Getting simplices of the grid: intersection points 
     """
-    get_vertices_of_cell_intersection_with_interface_at_node = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
+    get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
     # pieces = vmap(get_vertices_of_cell_intersection_with_interface_at_node)(nodes)
-
-    integrate_over_interface_at_node = geometric_integrations.integrate_over_gamma_and_omega(get_vertices_of_cell_intersection_with_interface_at_node)
-    integrate_over_interface_at_node(u_cube, nodes[0])
+    
+    u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(u_n, gstate)
+    integrate_over_interface_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
+    
+    u_dGamma = integrate_over_interface_at_node(nodes[0])
+    u_dGammas = vmap(integrate_over_interface_at_node)(nodes)
     pdb.set_trace()
 
 

@@ -144,10 +144,10 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
 
 
 def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
-    phi_n = sim_state.phi
 
     xo = gstate.x; yo = gstate.y; zo = gstate.z
-    
+
+    phi_n = sim_state.phi
     phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(phi_n, gstate)
     phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
@@ -155,25 +155,64 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
     
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
-    Nx = gstate.x.shape[0]
-    Ny = gstate.y.shape[0]
-    Nz = gstate.z.shape[0]
+    # Nx = gstate.x.shape[0]
+    # Ny = gstate.y.shape[0]
+    # Nz = gstate.z.shape[0]
+    # ii = jnp.arange(2, Nx+2)
+    # jj = jnp.arange(2, Ny+2)
+    # kk = jnp.arange(2, Nz+2)
+    # I, J, K = jnp.meshgrid(ii, jj, kk, indexing='ij')
+    # nodes = jnp.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
 
-    ii = jnp.arange(2, Nx+2)
-    jj = jnp.arange(2, Ny+2)
-    kk = jnp.arange(2, Nz+2)
-    
-    I, J, K = jnp.meshgrid(ii, jj, kk, indexing='ij')
-    
-    nodes = jnp.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
+    @jit
+    def is_node_crossed_by_interface(node):
+        """
+        If the control volume around node is crossed, it returns 1 (crossed), otherwise this returns 0 (not crossed).
+        """
+        i, j, k = node
+        # Get corners of the control volume    
+        dXcorners = 0.5 * jnp.array([   [-dx, -dy, -dz],
+                                        [ dx, -dy, -dz],
+                                        [ dx, -dy,  dz],
+                                        [-dx, -dy,  dz],
+                                        [-dx,  dy, -dz],
+                                        [ dx,  dy, -dz],
+                                        [-dx,  dy,  dz],
+                                        [ dx,  dy,  dz] ], dtype=f32)
+        
+        R_cell_corners = dXcorners + jnp.array([x[i], y[j], z[k]])
+        phi_cell_corners = phi_interp_fn(R_cell_corners)
 
+        P_000 = R_cell_corners[0]
+        P_100 = R_cell_corners[1]
+        P_101 = R_cell_corners[2]
+        P_001 = R_cell_corners[3]
+        P_010 = R_cell_corners[4]
+        P_110 = R_cell_corners[5]
+        P_011 = R_cell_corners[6]
+        P_111 = R_cell_corners[7]
 
+        phi_P_000 = phi_cell_corners[0]
+        phi_P_100 = phi_cell_corners[1]
+        phi_P_101 = phi_cell_corners[2]
+        phi_P_001 = phi_cell_corners[3]
+        phi_P_010 = phi_cell_corners[4]
+        phi_P_110 = phi_cell_corners[5]
+        phi_P_011 = phi_cell_corners[6]
+        phi_P_111 = phi_cell_corners[7]
+
+        phis = jnp.array([phi_P_000, phi_P_100, phi_P_101, phi_P_001, phi_P_010, phi_P_110, phi_P_011, phi_P_111])
+        eta_S = (sign_m_fn(phis).sum()).astype(int)
+      
+        return jnp.where(eta_S * (eta_S - 8)==0, 0, 1)
 
     @jit
     def get_vertices_of_cell_intersection_with_interface_at_node(node):
         """
         Based on Min & Gibou 2007: Geometric integration over irregular domains
         with application to level-set methods
+
+        Returns a tuple with: ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
         """
         i, j, k = node
         # Get corners of the control volume    
@@ -243,6 +282,7 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
         sv_gamma_s5 = get_vertices_S_intersect_Gamma(S_5, phi_S_5, eta_S_5)
         sv_omega_s5 = get_vertices_S_intersect_Omega_m(S_5, phi_S_5, eta_S_5)
 
+        # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
         return sv_gamma_s1, sv_gamma_s2, sv_gamma_s3, sv_gamma_s4, sv_gamma_s5,\
                sv_omega_s1, sv_omega_s2, sv_omega_s3, sv_omega_s4, sv_omega_s5,\
                S_1, S_2, S_3, S_4, S_5 
@@ -250,7 +290,7 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
     # pieces = get_vertices_of_cell_intersection_with_interface_at_node(nodes[0])
     # pieces = vmap(get_vertices_of_cell_intersection_with_interface_at_node)(nodes)
    
-    return get_vertices_of_cell_intersection_with_interface_at_node
+    return get_vertices_of_cell_intersection_with_interface_at_node, is_node_crossed_by_interface
 
 
 
@@ -259,10 +299,47 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
 # def integrate_over_gamma_and_omega(gstate, sim_state):
 #     get_vertices_fn = get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
 
-def integrate_over_gamma_and_omega(get_vertices_fn):
-    def integrate_over_interface_at_node(u_cube, node):
-        pieces = get_vertices_fn(node)
+def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interface, u_interp_fn):
+    
+    @jit
+    def compute_interface_integral(node):
+        pieces = get_vertices_fn(node)  
+        
+        # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
+        S1_Gamma = pieces[0]
+        S2_Gamma = pieces[1]
+        S3_Gamma = pieces[2]
+        S4_Gamma = pieces[3]
+        S5_Gamma = pieces[4]
+        
+        
+        integral  = (1.0/6.0) * jnp.linalg.det((S1_Gamma[0] - S1_Gamma[0][0]).T) * u_interp_fn(S1_Gamma[0]).mean()
+        integral += (1.0/6.0) * jnp.linalg.det((S1_Gamma[1] - S1_Gamma[1][0]).T) * u_interp_fn(S1_Gamma[1]).mean()
 
-        pdb.set_trace()
+        integral += (1.0/6.0) * jnp.linalg.det((S2_Gamma[0] - S2_Gamma[0][0]).T) * u_interp_fn(S2_Gamma[0]).mean()
+        integral += (1.0/6.0) * jnp.linalg.det((S2_Gamma[1] - S2_Gamma[1][0]).T) * u_interp_fn(S2_Gamma[1]).mean()
+
+        integral += (1.0/6.0) * jnp.linalg.det((S3_Gamma[0] - S3_Gamma[0][0]).T) * u_interp_fn(S3_Gamma[0]).mean()
+        integral += (1.0/6.0) * jnp.linalg.det((S3_Gamma[1] - S3_Gamma[1][0]).T) * u_interp_fn(S3_Gamma[1]).mean()
+
+        integral += (1.0/6.0) * jnp.linalg.det((S4_Gamma[0] - S4_Gamma[0][0]).T) * u_interp_fn(S4_Gamma[0]).mean()
+        integral += (1.0/6.0) * jnp.linalg.det((S4_Gamma[1] - S4_Gamma[1][0]).T) * u_interp_fn(S4_Gamma[1]).mean()
+
+        integral += (1.0/6.0) * jnp.linalg.det((S5_Gamma[0] - S5_Gamma[0][0]).T) * u_interp_fn(S5_Gamma[0]).mean()
+        integral += (1.0/6.0) * jnp.linalg.det((S5_Gamma[1] - S5_Gamma[1][0]).T) * u_interp_fn(S5_Gamma[1]).mean()
+
+        return integral
+    
+    
+    @jit
+    def integrate_over_interface_at_node(node):
+        """
+        u_cube: is a Nx x Ny x Nz array with two ghost layers.
+        node: cube indices in the range [2:Nx+2, 2:Ny+2, 2:Nz+2], excluding ghost layers
+        """
+        is_interface = is_node_crossed_by_interface(node)
+        return jnp.where(is_interface==1, compute_interface_integral(node), 0.0)
+       
+    
 
     return integrate_over_interface_at_node
