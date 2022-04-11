@@ -23,9 +23,7 @@ def poisson_solver(gstate, sim_state):
     u_interp_fn    = interpolate.nonoscillatory_quadratic_interpolation(u_n, gstate)
     mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
     mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
-    k_m_interp_fn  = interpolate.nonoscillatory_quadratic_interpolation(k_m, gstate)
-    k_p_interp_fn  = interpolate.nonoscillatory_quadratic_interpolation(k_p, gstate)
-
+    
     phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
@@ -225,7 +223,11 @@ def poisson_solver(gstate, sim_state):
     
     integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
     
-    compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn, k_m_interp_fn, k_p_interp_fn)
+    compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn)
+    
+    poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(nodes[794302])
+    # vmap(compute_face_centroids_values_plus_minus_at_node(nodes))
+    
     # u_dGamma = integrate_over_interface_at_node(nodes[794302])
     # u_dGammas = vmap(integrate_over_interface_at_node)(nodes)
     # print("\n\n\n")

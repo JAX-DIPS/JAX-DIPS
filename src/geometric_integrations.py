@@ -1,5 +1,8 @@
 from functools import partial
+from multiprocessing import dummy
 from jax import (numpy as jnp, vmap, jit, lax, ops)
+from numpy import extract
+from torch import dtype
 from src import (interpolate, util)
 import pdb
 
@@ -397,7 +400,7 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
 
 
 
-def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn, k_m_interp_fn, k_p_interp_fn):
+def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn):
     """
     This function identifies centroids of each face in the positive and negative domain and on the interface,
     and evaluates values of some coefficient (diffusion coefficient, etc) on those centroids. 
@@ -414,26 +417,155 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         get_vertices_fn: returns the triangulation of the grid cell
         is_node_crossed_by_interface: checks whether or not queried cell centered on the node is crossed by interface.
         mu_interp_fn: an interpolant to report function values on the centroids of the positive/negative segments on each face.
+
+    Returns:
+        An array with all cell specific information for the Poisson solver:
+                [mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
+                 mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+                 mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+                 vol_m, vol_p]
+
     """
     xo = gstate.x; yo = gstate.y; zo = gstate.z    
     dx = xo[2] - xo[1]; dy = yo[2] - yo[1]; dz = zo[2] - zo[1]
 
+    vol = dx * dy * dz
+    area_x = dy * dz
+    area_y = dx * dz
+    area_z = dx * dy
+
+    
+    vol_fn = lambda A: (1.0 / 6.0) * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
+    area_fn = lambda A: 0.5 * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
+
+    
+
+    # @jit
     def compute_interface_faces(node):
         pieces = get_vertices_fn(node)  
         
         # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
+        # vertices of decomposed tetrahedra enclosed in \Omega^m
         S1_Omega_m = pieces[5]
         S2_Omega_m = pieces[6]
         S3_Omega_m = pieces[7]
         S4_Omega_m = pieces[8]
         S5_Omega_m = pieces[9]
-
-
-        f_z0 = 0
         
 
-        return 0
+        i, j, k = (node - 2)
+        # Get face centers of the control volume centered on node    
+        dXfaces = 0.5 * jnp.array([ [-dx, 0.0, 0.0],
+                                    [ dx, 0.0, 0.0],
+                                    [0.0, -dy, 0.0],
+                                    [0.0,  dy, 0.0],
+                                    [0.0, 0.0, -dz],
+                                    [0.0, 0.0,  dz]  ], dtype=f32)
+        
+        R_cell_faces = dXfaces + jnp.array([xo[i], yo[j], zo[k]])
 
+        mu_m_faces = mu_m_interp_fn(R_cell_faces) 
+        mu_p_faces = mu_p_interp_fn(R_cell_faces) 
+
+        #---- compute volumes of minus/plus of the cell
+        vol_m  = vol_fn(S1_Omega_m[0]) 
+        vol_m += vol_fn(S1_Omega_m[1]) 
+        vol_m += vol_fn(S1_Omega_m[2]) 
+        vol_m += vol_fn(S2_Omega_m[0]) 
+        vol_m += vol_fn(S2_Omega_m[1]) 
+        vol_m += vol_fn(S2_Omega_m[2]) 
+        vol_m += vol_fn(S3_Omega_m[0]) 
+        vol_m += vol_fn(S3_Omega_m[1]) 
+        vol_m += vol_fn(S3_Omega_m[2]) 
+        vol_m += vol_fn(S4_Omega_m[0]) 
+        vol_m += vol_fn(S4_Omega_m[1]) 
+        vol_m += vol_fn(S4_Omega_m[2]) 
+        vol_m += vol_fn(S5_Omega_m[0]) 
+        vol_m += vol_fn(S5_Omega_m[1]) 
+        vol_m += vol_fn(S5_Omega_m[2]) 
+        vol_p = vol - vol_m
+        #----
+
+        #---- compute areas of minus/plus on each face
+        x_m_face = xo[i] - 0.5 * dx
+        x_p_face = xo[i] + 0.5 * dx
+
+        y_m_face = yo[j] - 0.5 * dy
+        y_p_face = yo[i] + 0.5 * dy   
+        
+        z_m_face = zo[j] - 0.5 * dz
+        z_p_face = zo[i] + 0.5 * dz   
+        
+        
+
+        def extract_area_minus_x_face(s_omega_m_partition_1, s_omega_m_partition_2, x_face):
+            on_face_partition_1 = s_omega_m_partition_1[:,:,0] == x_face
+            on_face_partition_2 = s_omega_m_partition_2[:,:,0] == x_face
+            points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=s_omega_m_partition_1[0,0])
+            points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=s_omega_m_partition_2[0,0])
+            area_partition_1 = area_fn(points_on_face_partition_1)
+            area_partition_2 = area_fn(points_on_face_partition_2)
+            return area_partition_1  + area_partition_2
+        
+        def extract_area_minus_y_face(s_omega_m_partition_1, s_omega_m_partition_2, y_face):
+            on_face_partition_1 = s_omega_m_partition_1[:,:,1] == y_face
+            on_face_partition_2 = s_omega_m_partition_2[:,:,1] == y_face
+            points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=s_omega_m_partition_1[0,0])
+            points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=s_omega_m_partition_2[0,0])
+            area_partition_1 = area_fn(points_on_face_partition_1)
+            area_partition_2 = area_fn(points_on_face_partition_2)
+            return area_partition_1  + area_partition_2
+        
+        def extract_area_minus_z_face(s_omega_m_partition_1, s_omega_m_partition_2, z_face):
+            on_face_partition_1 = s_omega_m_partition_1[:,:,2] == z_face
+            on_face_partition_2 = s_omega_m_partition_2[:,:,2] == z_face
+            points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=s_omega_m_partition_1[0,0])
+            points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=s_omega_m_partition_2[0,0])
+            area_partition_1 = area_fn(points_on_face_partition_1)
+            area_partition_2 = area_fn(points_on_face_partition_2)
+            return area_partition_1  + area_partition_2
+        
+        area_imh_m = extract_area_minus_x_face(S1_Omega_m, S4_Omega_m, x_m_face)
+        area_iph_m = extract_area_minus_x_face(S2_Omega_m, S3_Omega_m, x_p_face)
+        area_imh_p = area_x - area_imh_m
+        area_iph_p = area_x - area_iph_m
+
+        area_jmh_m = extract_area_minus_y_face(S1_Omega_m, S3_Omega_m, y_m_face)
+        area_jph_m = extract_area_minus_y_face(S2_Omega_m, S4_Omega_m, y_p_face)
+        area_jmh_p = area_y - area_jmh_m
+        area_jph_p = area_y - area_jph_m
+
+        area_kmh_m = extract_area_minus_z_face(S1_Omega_m, S2_Omega_m, z_m_face)
+        area_kph_m = extract_area_minus_z_face(S3_Omega_m, S4_Omega_m, z_p_face)
+        area_kmh_p = area_z - area_kmh_m
+        area_kph_p = area_z - area_kph_m
+        #----
+
+
+        mu_A_dx_imh_m = area_imh_m * mu_m_faces[0] / dx
+        mu_A_dx_iph_m = area_iph_m * mu_m_faces[1] / dx
+        mu_A_dx_imh_p = area_imh_p * mu_p_faces[0] / dx
+        mu_A_dx_iph_p = area_iph_p * mu_p_faces[1] / dx
+
+        mu_A_dy_jmh_m = area_jmh_m * mu_m_faces[2] / dy
+        mu_A_dy_jph_m = area_jph_m * mu_m_faces[3] / dy
+        mu_A_dy_jmh_p = area_jmh_p * mu_p_faces[2] / dy
+        mu_A_dy_jph_p = area_jph_p * mu_p_faces[3] / dy
+
+        mu_A_dz_kmh_m = area_kmh_m * mu_m_faces[4] / dz
+        mu_A_dz_kph_m = area_kph_m * mu_m_faces[5] / dz
+        mu_A_dz_kmh_p = area_kmh_p * mu_p_faces[4] / dz
+        mu_A_dz_kph_p = area_kph_p * mu_p_faces[5] / dz
+
+        node_coeff_times_area_divided_size_and_volumes = jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
+                                                                    mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+                                                                    mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+                                                                    vol_m, vol_p], dtype=f32)
+        return node_coeff_times_area_divided_size_and_volumes
+
+        
+
+    @jit
     def compute_domain_faces(node, is_interface):
         """
         A domain face is not crossed by the interface, therefore plus/minus centroids overlap
@@ -441,19 +573,45 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         depending on sign of the level-set function at the node.
         """
         i, j, k = (node - 2)
-        # Get corners of the control volume    
-        dXfaces = 0.5 * jnp.array([   [-dx, 0.0, 0.0],
-                                        [ dx, 0.0, 0.0],
-                                        [0.0, -dy, 0.0],
-                                        [0.0,  dy, 0.0],
-                                        [0.0, 0.0, -dz],
-                                        [0.0, 0.0, -dz]  ], dtype=f32)
+        # Get face centers of the control volume centered on node    
+        dXfaces = 0.5 * jnp.array([ [-dx, 0.0, 0.0],
+                                    [ dx, 0.0, 0.0],
+                                    [0.0, -dy, 0.0],
+                                    [0.0,  dy, 0.0],
+                                    [0.0, 0.0, -dz],
+                                    [0.0, 0.0,  dz]  ], dtype=f32)
         
         R_cell_faces = dXfaces + jnp.array([xo[i], yo[j], zo[k]])
-        pdb.set_trace()
-        return 0
 
+        mu_m_faces = mu_m_interp_fn(R_cell_faces) * sign_m_fn(is_interface)
+        mu_p_faces = mu_p_interp_fn(R_cell_faces) * sign_p_fn(is_interface)
+        
+        
+        vol_m = vol * sign_m_fn(is_interface)
+        vol_p = vol * sign_p_fn(is_interface)
 
+        mu_A_dx_imh_m = area_x * mu_m_faces[0] / dx
+        mu_A_dx_iph_m = area_x * mu_m_faces[1] / dx
+        mu_A_dx_imh_p = area_x * mu_p_faces[0] / dx
+        mu_A_dx_iph_p = area_x * mu_p_faces[1] / dx
+
+        mu_A_dy_jmh_m = area_y * mu_m_faces[2] / dy
+        mu_A_dy_jph_m = area_y * mu_m_faces[3] / dy
+        mu_A_dy_jmh_p = area_y * mu_p_faces[2] / dy
+        mu_A_dy_jph_p = area_y * mu_p_faces[3] / dy
+
+        mu_A_dz_kmh_m = area_z * mu_m_faces[4] / dz
+        mu_A_dz_kph_m = area_z * mu_m_faces[5] / dz
+        mu_A_dz_kmh_p = area_z * mu_p_faces[4] / dz
+        mu_A_dz_kph_p = area_z * mu_p_faces[5] / dz
+
+        node_coeff_times_area_divided_size_and_volumes = jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
+                                                                    mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+                                                                    mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+                                                                    vol_m, vol_p], dtype=f32)
+        return node_coeff_times_area_divided_size_and_volumes
+
+    # @jit
     def compute_face_centroids_values_plus_minus_at_node(node):
         """
         Main driver, differentiating between domain cells and interface cells.
