@@ -440,7 +440,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
     
 
-    # @jit
+    @jit
     def compute_interface_faces(node):
         pieces = get_vertices_fn(node)  
         
@@ -496,34 +496,75 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         z_m_face = zo[j] - 0.5 * dz
         z_p_face = zo[i] + 0.5 * dz   
         
-        
+        def compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2):
+            def comp(partition):
+                points_on_face_partition = jnp.unique(partition.reshape(-1,3), axis=0, size=3) #, fill_value=part)
+                return area_fn(points_on_face_partition)
+            partition_1 = jnp.zeros_like(s_omega_m_partition_1)
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[0,0], jnp.where(on_face_partition_1[0,0], s_omega_m_partition_1[0,0], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[0,1], jnp.where(on_face_partition_1[0,1], s_omega_m_partition_1[0,1], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[0,2], jnp.where(on_face_partition_1[0,2], s_omega_m_partition_1[0,2], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[0,3], jnp.where(on_face_partition_1[0,3], s_omega_m_partition_1[0,3], 0.0))
 
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[1,0], jnp.where(on_face_partition_1[1,0], s_omega_m_partition_1[1,0], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[1,1], jnp.where(on_face_partition_1[1,1], s_omega_m_partition_1[1,1], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[1,2], jnp.where(on_face_partition_1[1,2], s_omega_m_partition_1[1,2], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[1,3], jnp.where(on_face_partition_1[1,3], s_omega_m_partition_1[1,3], 0.0))
+
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[2,0], jnp.where(on_face_partition_1[2,0], s_omega_m_partition_1[2,0], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[2,1], jnp.where(on_face_partition_1[2,1], s_omega_m_partition_1[2,1], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[2,2], jnp.where(on_face_partition_1[2,2], s_omega_m_partition_1[2,2], 0.0))
+            partition_1 = ops.index_update(partition_1, jnp.index_exp[2,3], jnp.where(on_face_partition_1[2,3], s_omega_m_partition_1[2,3], 0.0))
+
+            partition_2 = jnp.zeros_like(s_omega_m_partition_2)
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[0,0], jnp.where(on_face_partition_2[0,0], s_omega_m_partition_2[0,0], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[0,1], jnp.where(on_face_partition_2[0,1], s_omega_m_partition_2[0,1], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[0,2], jnp.where(on_face_partition_2[0,2], s_omega_m_partition_2[0,2], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[0,3], jnp.where(on_face_partition_2[0,3], s_omega_m_partition_2[0,3], 0.0))
+
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[1,0], jnp.where(on_face_partition_2[1,0], s_omega_m_partition_2[1,0], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[1,1], jnp.where(on_face_partition_2[1,1], s_omega_m_partition_2[1,1], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[1,2], jnp.where(on_face_partition_2[1,2], s_omega_m_partition_2[1,2], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[1,3], jnp.where(on_face_partition_2[1,3], s_omega_m_partition_2[1,3], 0.0))
+
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[2,0], jnp.where(on_face_partition_2[2,0], s_omega_m_partition_2[2,0], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[2,1], jnp.where(on_face_partition_2[2,1], s_omega_m_partition_2[2,1], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[2,2], jnp.where(on_face_partition_2[2,2], s_omega_m_partition_2[2,2], 0.0))
+            partition_2 = ops.index_update(partition_2, jnp.index_exp[2,3], jnp.where(on_face_partition_2[2,3], s_omega_m_partition_2[2,3], 0.0))
+            
+            area_partition_1 = comp(partition_1) 
+            area_partition_2 = comp(partition_2) 
+            return area_partition_1  + area_partition_2
+        
         def extract_area_minus_x_face(s_omega_m_partition_1, s_omega_m_partition_2, x_face):
             on_face_partition_1 = s_omega_m_partition_1[:,:,0] == x_face
             on_face_partition_2 = s_omega_m_partition_2[:,:,0] == x_face
-            points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=s_omega_m_partition_1[0,0])
-            points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=s_omega_m_partition_2[0,0])
-            area_partition_1 = area_fn(points_on_face_partition_1)
-            area_partition_2 = area_fn(points_on_face_partition_2)
-            return area_partition_1  + area_partition_2
-        
+            return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
+            # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
+            # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])
+            # area_partition_1 = area_fn(points_on_face_partition_1)
+            # area_partition_2 = area_fn(points_on_face_partition_2)
+            # return area_partition_1  + area_partition_2
+
         def extract_area_minus_y_face(s_omega_m_partition_1, s_omega_m_partition_2, y_face):
             on_face_partition_1 = s_omega_m_partition_1[:,:,1] == y_face
             on_face_partition_2 = s_omega_m_partition_2[:,:,1] == y_face
-            points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=s_omega_m_partition_1[0,0])
-            points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=s_omega_m_partition_2[0,0])
-            area_partition_1 = area_fn(points_on_face_partition_1)
-            area_partition_2 = area_fn(points_on_face_partition_2)
-            return area_partition_1  + area_partition_2
+            return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
+            # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
+            # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])
+            # area_partition_1 = area_fn(points_on_face_partition_1)
+            # area_partition_2 = area_fn(points_on_face_partition_2)
+            # return area_partition_1  + area_partition_2
         
         def extract_area_minus_z_face(s_omega_m_partition_1, s_omega_m_partition_2, z_face):
             on_face_partition_1 = s_omega_m_partition_1[:,:,2] == z_face
             on_face_partition_2 = s_omega_m_partition_2[:,:,2] == z_face
-            points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=s_omega_m_partition_1[0,0])
-            points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=s_omega_m_partition_2[0,0])
-            area_partition_1 = area_fn(points_on_face_partition_1)
-            area_partition_2 = area_fn(points_on_face_partition_2)
-            return area_partition_1  + area_partition_2
+            return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
+            # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
+            # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])
+            # area_partition_1 = area_fn(points_on_face_partition_1)
+            # area_partition_2 = area_fn(points_on_face_partition_2)
+            # return area_partition_1  + area_partition_2
         
         area_imh_m = extract_area_minus_x_face(S1_Omega_m, S4_Omega_m, x_m_face)
         area_iph_m = extract_area_minus_x_face(S2_Omega_m, S3_Omega_m, x_p_face)
@@ -611,7 +652,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
                                                                     vol_m, vol_p], dtype=f32)
         return node_coeff_times_area_divided_size_and_volumes
 
-    # @jit
+    @jit
     def compute_face_centroids_values_plus_minus_at_node(node):
         """
         Main driver, differentiating between domain cells and interface cells.
