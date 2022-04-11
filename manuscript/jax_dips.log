@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.3.2)  10 APR 2022 16:04
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.3.2)  10 APR 2022 18:10
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -587,6 +587,12 @@ Configuring pdfsync
 **** pdfsync.sty: Synchronizing at \everyvbox
 \PDFSYNCeveryvb@x=\toks42
 **** pdfsync.sty: started
+
+Overfull \hbox (8.08415pt too wide) in paragraph at lines 101--103
+\OT1/cmr/m/n/10 level-set method. We im-ple-mented this frame-work us-ing JAX, 
+ex-tend-ing sup-port for CPU/GPU/TPU
+ []
+
 LaTeX Font Info:    Trying to load font information for U+msa on input line 111
 .
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
@@ -648,12 +654,12 @@ Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
 
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-<./figures/grids_full.png, id=65, 770.88pt x 770.88pt>
+<./figures/grids_full.png, id=63, 770.88pt x 770.88pt>
 File: ./figures/grids_full.png Graphic file (type png)
 <use ./figures/grids_full.png>
 Package pdftex.def Info: ./figures/grids_full.png  used on input line 154.
 (pdftex.def)             Requested size: 193.50076pt x 193.49586pt.
-<./figures/grids.png, id=67, 770.88pt x 770.88pt>
+<./figures/grids.png, id=65, 770.88pt x 770.88pt>
 File: ./figures/grids.png Graphic file (type png)
 <use ./figures/grids.png>
 Package pdftex.def Info: ./figures/grids.png  used on input line 155.
@@ -667,21 +673,21 @@ LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
 Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
 put line 334.
  [4] [5] [6] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 456.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 460.
  [7]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 456.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 460.
 
 (./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 456.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 456.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 460.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 460.
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
 (rerunfilecheck)             Checksum: C587C83A8E053F648BD69635652C0C3A;515.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 456.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 460.
  ) 
 Here is how much of TeX's memory you used:
  9901 strings out of 483065
  146884 string characters out of 5963551
- 440860 words of memory out of 5000000
+ 442860 words of memory out of 5000000
  24673 multiletter control sequences out of 15000+600000
  543431 words of font info for 68 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
@@ -710,7 +716,7 @@ sfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
 i7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb>
 
-Output written on jax_dips.pdf (7 pages, 385910 bytes).
+Output written on jax_dips.pdf (7 pages, 385043 bytes).
 PDF statistics:
  210 PDF objects out of 1000 (max. 8388607)
  170 compressed objects within 2 object streams

@@ -167,7 +167,12 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
     @jit
     def is_node_crossed_by_interface(node):
         """
-        If the control volume around node is crossed, it returns 1 (crossed), otherwise this returns 0 (not crossed).
+        If the control volume around node is crossed, it returns 0 (crossed), otherwise this returns +-1 (not crossed).
+        
+        Returns:
+            +1: in Omega^+
+             0: on interface (crossed)
+            -1: in Omega^-
         """
         i, j, k = node
         # Get corners of the control volume    
@@ -204,7 +209,8 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
         phis = jnp.array([phi_P_000, phi_P_100, phi_P_101, phi_P_001, phi_P_010, phi_P_110, phi_P_011, phi_P_111])
         eta_S = (sign_m_fn(phis).sum()).astype(int)
       
-        return jnp.where(eta_S * (eta_S - 8)==0, 0, 1)
+        
+        return jnp.where(eta_S * (eta_S - 8)==0, jnp.sign(phi_P_000), 0)
 
     @jit
     def get_vertices_of_cell_intersection_with_interface_at_node(node):
@@ -338,7 +344,7 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
         node: cube indices in the range [2:Nx+2, 2:Ny+2, 2:Nz+2], excluding ghost layers
         """
         is_interface = is_node_crossed_by_interface(node)
-        return jnp.where(is_interface==1, compute_interface_integral(node), 0.0)
+        return jnp.where(is_interface==0, compute_interface_integral(node), 0.0)
        
     
     @jit
@@ -385,3 +391,75 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
 
 
     return integrate_over_interface_at_node, integrate_in_negative_domain_at_node
+
+
+
+
+
+
+def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn, k_m_interp_fn, k_p_interp_fn):
+    """
+    This function identifies centroids of each face in the positive and negative domain and on the interface,
+    and evaluates values of some coefficient (diffusion coefficient, etc) on those centroids. 
+
+    This is done by the middle-cut triangulation (cf. Min & Gibou 2007), where the grid cells crossed by the 
+    interface are decomposed to five tetrahedra given by:
+        S1: conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) -> z = 0 plane, x = 0 plane, y = 0 plane
+        S2: conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) -> z = 0 plane, x = 1 plane, y = 1 plane
+        S3: conv(P_{101} ; P_{100} ; P_{111} ; P_{001}) -> z = 1 plane, x = 1 plane, y = 0 plane
+        S4: conv(P_{011} ; P_{111} ; P_{010} ; P_{001}) -> z = 1 plane, x = 0 plane, y = 1 plane
+        S5: conv(P_{111} ; P_{100} ; P_{010} ; P_{001}) -> no face exposure
+
+    Args:
+        get_vertices_fn: returns the triangulation of the grid cell
+        is_node_crossed_by_interface: checks whether or not queried cell centered on the node is crossed by interface.
+        mu_interp_fn: an interpolant to report function values on the centroids of the positive/negative segments on each face.
+    """
+    xo = gstate.x; yo = gstate.y; zo = gstate.z    
+    dx = xo[2] - xo[1]; dy = yo[2] - yo[1]; dz = zo[2] - zo[1]
+
+    def compute_interface_faces(node):
+        pieces = get_vertices_fn(node)  
+        
+        # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
+        S1_Omega_m = pieces[5]
+        S2_Omega_m = pieces[6]
+        S3_Omega_m = pieces[7]
+        S4_Omega_m = pieces[8]
+        S5_Omega_m = pieces[9]
+
+
+        f_z0 = 0
+        
+
+        return 0
+
+    def compute_domain_faces(node, is_interface):
+        """
+        A domain face is not crossed by the interface, therefore plus/minus centroids overlap
+        and either plus (in \Omega^+) or minus (in \Omega^-) surface areas are nonzero
+        depending on sign of the level-set function at the node.
+        """
+        i, j, k = (node - 2)
+        # Get corners of the control volume    
+        dXfaces = 0.5 * jnp.array([   [-dx, 0.0, 0.0],
+                                        [ dx, 0.0, 0.0],
+                                        [0.0, -dy, 0.0],
+                                        [0.0,  dy, 0.0],
+                                        [0.0, 0.0, -dz],
+                                        [0.0, 0.0, -dz]  ], dtype=f32)
+        
+        R_cell_faces = dXfaces + jnp.array([xo[i], yo[j], zo[k]])
+        pdb.set_trace()
+        return 0
+
+
+    def compute_face_centroids_values_plus_minus_at_node(node):
+        """
+        Main driver, differentiating between domain cells and interface cells.
+        """
+        is_interface = is_node_crossed_by_interface(node)
+        return jnp.where(is_interface==0, compute_interface_faces(node), compute_domain_faces(node, is_interface))
+        
+
+    return compute_face_centroids_values_plus_minus_at_node

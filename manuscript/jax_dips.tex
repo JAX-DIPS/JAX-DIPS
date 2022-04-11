@@ -85,7 +85,7 @@
 
 
 \begin{document}
-\title{JAX-DIPS: Differentiable Inverse Free Boundary PDE Solver}
+\title{JAX-DIPS: Differentiable Inverse PDE Solver}
 
 \cortext[cor]{Corresponding author: p.a.mistani@gmail.com}
 
@@ -96,10 +96,10 @@
 \author[2]{Frederic G. Gibou}
 
 \address[1]{NVIDIA Corporation, Santa Clara, CA 95051, USA}
-\address[2]{Department of Mechanical Engineering, University of California, Santa Barbara, CA 93106-5070, USA}
+\address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-We present an end-to-end differentiable free boundary PDE solver based on the level-set method. We implemented this framework using JAX, offering support for CPU/GPU/TPU platforms. Algorithmically, our proposed framework builds on the blended inverse PDE solver architecure (BiPDE) that authors have proposed earlier \cite{pakravan2021solving}. JAX-DIPS is an open-source software package published under MIT license and is available at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
+We present an end-to-end differentiable PDE solver supporting free boundary problems using the level-set method. We implemented this framework using JAX, extending support for CPU/GPU/TPU platforms. Algorithmically, our proposed framework builds on the blended inverse PDE solver architecure (BiPDE) that authors have proposed earlier \cite{pakravan2021solving}. JAX-DIPS is an open-source software package published under MIT license and is available at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
 
 \end{abstract}
 
@@ -120,7 +120,7 @@ level-set method \sep free boundary problems \sep inverse problems \sep jump con
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 \label{sec::introduction}
-
+Differentiable programming ...
 
 \section{Numerical Scheme for Free Boundary Problems}
 Consider a closed irregular interface ($\rm \Gamma$) that partitions the computational domain ($\rm \Omega$) into interior ($\rm \Omega^-$) and exterior ($\rm \Omega^+$) subdomains; \textit{i.e.}, $\rm \Omega=\Omega^- \cup \Gamma \cup \Omega^+$. We are interested in the solutions $\rm u^\pm\in \Omega^\pm$ to the following class of linear elliptic problems in  $\rm \mathbf{x}\in\Omega^\pm$:
@@ -426,10 +426,14 @@ in matrix notation we have
 
 
 \subsection{3D geometric integrations}
-We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007) \cite{min2007geometric}. In this scheme each grid cell is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle}. 
-
-
-
+We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007) \cite{min2007geometric}. In this scheme each grid cell is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle} where each grid cell crossed by the interface is decomposed to five tetrahedra given by (each cell is rescaled to $[0,1]^3$):
+\begin{align*}
+        &\rm T_1 \equiv conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) &\rm{ x = 0\ face,\ y = 0\ face,\ z = 0\ face} \\
+        &\rm T_2 \equiv conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) &\rm{ x = 1\ face,\ y = 1\ face,\ z = 0\ face} \\
+        &\rm T_3 \equiv conv(P_{101} ; P_{100} ; P_{111} ; P_{001}) &\rm{ x = 1\ face,\ y = 0\ face,\ z = 1\ face} \\
+        &\rm T_4 \equiv conv(P_{011} ; P_{111} ; P_{010} ; P_{001}) &\rm{ x = 0\ face,\ y = 1\ face,\ z = 1\ face} \\
+        &\rm T_5\equiv conv(P_{111} ; P_{100} ; P_{010} ; P_{001}) &\rm{ no\ face\ exposure}
+\end{align*}
 
 \section{Numerical Examples}
 \subsection{Stationary linear case}
