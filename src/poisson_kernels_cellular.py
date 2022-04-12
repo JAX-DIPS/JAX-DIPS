@@ -24,8 +24,8 @@ def poisson_solver(gstate, sim_state):
 
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     
-    phi_interp_fn  = interpolate.nonoscillatory_quadratic_interpolation(phi_n, gstate)
-    u_interp_fn    = interpolate.nonoscillatory_quadratic_interpolation(u_n, gstate)
+    # phi_interp_fn  = interpolate.nonoscillatory_quadratic_interpolation(phi_n, gstate)
+    # u_interp_fn    = interpolate.nonoscillatory_quadratic_interpolation(u_n, gstate)
     mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
     mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
     alpha_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(alpha, gstate)
@@ -233,8 +233,8 @@ def poisson_solver(gstate, sim_state):
     """
     get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
     
-    integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
-    alpha_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, alpha_interp_fn)
+    # integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
+    # alpha_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, alpha_interp_fn)
     beta_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, beta_interp_fn)
     
     compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn)
@@ -254,8 +254,8 @@ def poisson_solver(gstate, sim_state):
     """
     END Geometric integration functions initiated
     """
-
-    def A_matmul_x_fn(u):
+    @jit
+    def compute_Ax_and_b_fn(u):
         """
         This function calculates  A @ u for a given vector of unknowns u.
         This evaluates the rhs in Au^k=b given estimate u^k.
@@ -279,6 +279,10 @@ def poisson_solver(gstate, sim_state):
             for solution estimate.
         
         """
+        u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+        x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
+        _, _, _, u_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, u_cube)
+
         @jit
         def u_mp_at_node(i, j, k):
             """
@@ -354,7 +358,7 @@ def poisson_solver(gstate, sim_state):
             return u_mp
             
 
-        @jit
+        # @jit
         def evaluate_discretization_lhs_rhs_at_node(node):
             
             i, j, k = node
@@ -397,20 +401,36 @@ def poisson_solver(gstate, sim_state):
             rhs += beta_integrate_over_interface_at_node(node)
 
             return jnp.array([lhs, rhs])
-
-        lhs_rhs = evaluate_discretization_lhs_rhs_at_node(nodes[794302])
-        pdb.set_trace()
-
+        # lhs_rhs = evaluate_discretization_lhs_rhs_at_node(nodes[794302])
+        # lhs_rhs = jit(vmap(evaluate_discretization_lhs_rhs_at_node))(nodes)
+        evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
+        lhs_rhs = evaluate_on_nodes_fn(nodes)
+        # lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         # def loss_fn(node):
         #     lhs, rhs = evaluate_discretization_lhs_rhs_at_node(node)
         #     jnp.linalg.norm()
-        
         return lhs_rhs
 
-    x = jnp.ones(phi_n.shape[0], dtype=f32)
-    out = A_matmul_x_fn(x)
+     
+    @jit
+    def compute_Ax(x):
+        lhs_rhs = compute_Ax_and_b_fn(x)
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        return lhs
 
-    return jit(A_matmul_x_fn)
+    @jit
+    def compute_b(x):
+        lhs_rhs = compute_Ax_and_b_fn(x)
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        return rhs
+
+    x = jnp.ones(phi_n.shape[0], dtype=f32)
+    lhs_rhs = compute_Ax_and_b_fn(x)
+    
+    pdb.set_trace()
+   
+
+   
     
 
     
