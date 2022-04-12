@@ -415,13 +415,13 @@ def poisson_solver(gstate, sim_state):
     @jit
     def compute_Ax(x):
         lhs_rhs = compute_Ax_and_b_fn(x)
-        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        lhs, _ = jnp.split(lhs_rhs, [1], axis=1)
         return lhs
 
     @jit
     def compute_b(x):
         lhs_rhs = compute_Ax_and_b_fn(x)
-        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        _, rhs = jnp.split(lhs_rhs, [1], axis=1)
         return rhs
 
     x = jnp.ones(phi_n.shape[0], dtype=f32)
