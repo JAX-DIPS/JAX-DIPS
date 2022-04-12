@@ -33,32 +33,48 @@ class SState:
     mu_p: Array
     k_m: Array
     k_p: Array
+    f_m: Array
+    f_p: Array
+    alpha: Array
+    beta: Array
 
 
 
-def setup(initial_value_fn:  Callable[..., Array], 
-          lvl_set_fn:  Callable[..., Array], 
-          mu_m_fn_  : Callable[..., Array], 
-          mu_p_fn_  : Callable[..., Array], 
-          k_m_fn_   :  Callable[..., Array], 
-          k_p_fn_   :  Callable[..., Array]
+def setup(initial_value_fn :  Callable[..., Array], 
+          lvl_set_fn       :  Callable[..., Array], 
+          mu_m_fn_         :  Callable[..., Array], 
+          mu_p_fn_         :  Callable[..., Array], 
+          k_m_fn_          :  Callable[..., Array], 
+          k_p_fn_          :  Callable[..., Array],
+          f_m_fn_          :  Callable[..., Array],
+          f_p_fn_          :  Callable[..., Array],
+          alpha_fn_        :  Callable[..., Array],
+          beta_fn_         :  Callable[..., Array]
           ) -> Simulator:
 
-    u_0_fn  = vmap(initial_value_fn)
-    phi_fn  = vmap(lvl_set_fn)
-    mu_m_fn = vmap(mu_m_fn_)
-    mu_p_fn = vmap(mu_p_fn_)
-    k_m_fn  = vmap(k_m_fn_)
-    k_p_fn  = vmap(k_p_fn_)
+    u_0_fn   = vmap(initial_value_fn)
+    phi_fn   = vmap(lvl_set_fn)
+    mu_m_fn  = vmap(mu_m_fn_)
+    mu_p_fn  = vmap(mu_p_fn_)
+    k_m_fn   = vmap(k_m_fn_)
+    k_p_fn   = vmap(k_p_fn_)
+    f_m_fn   = vmap(f_m_fn_)
+    f_p_fn   = vmap(f_p_fn_)
+    alpha_fn = vmap(alpha_fn_)
+    beta_fn  = vmap(beta_fn_)
     
     def init_fn(R):
-        PHI  = phi_fn(R)
-        U    = u_0_fn(R)
-        MU_M = mu_m_fn(R)
-        MU_P = mu_p_fn(R)
-        K_M  = k_m_fn(R)
-        K_P  = k_p_fn(R)
-        return SState(PHI, U, MU_M, MU_P, K_M, K_P) 
+        PHI   = phi_fn(R)
+        U     = u_0_fn(R)
+        MU_M  = mu_m_fn(R)
+        MU_P  = mu_p_fn(R)
+        K_M   = k_m_fn(R)
+        K_P   = k_p_fn(R)
+        F_M   = f_m_fn(R)
+        F_P   = f_p_fn(R)
+        ALPHA = alpha_fn(R)
+        BETA  = beta_fn(R)
+        return SState(PHI, U, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA) 
 
     def solve_fn(gstate, sim_state):
         U_sol = poisson_kernels_cellular.poisson_solver(gstate, sim_state)

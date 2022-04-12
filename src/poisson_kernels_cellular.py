@@ -16,6 +16,11 @@ def poisson_solver(gstate, sim_state):
     mu_p = sim_state.mu_p
     k_m = sim_state.k_m
     k_p = sim_state.k_p
+    f_m = sim_state.f_m
+    f_p = sim_state.f_p
+
+    alpha = sim_state.alpha
+    beta = sim_state.beta
 
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     
@@ -23,6 +28,8 @@ def poisson_solver(gstate, sim_state):
     u_interp_fn    = interpolate.nonoscillatory_quadratic_interpolation(u_n, gstate)
     mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
     mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
+    alpha_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(alpha, gstate)
+    beta_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(beta, gstate)
     
     phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
@@ -30,8 +37,13 @@ def poisson_solver(gstate, sim_state):
     
 
     u_cube = u_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    k_m_cube_internal = k_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    k_p_cube_internal = k_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    f_m_cube_internal = f_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    f_p_cube_internal = f_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
     _, _, _, u_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, u_cube)
+
 
 
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
@@ -190,13 +202,13 @@ def poisson_solver(gstate, sim_state):
 
 
 
-    mu_m_cube = mu_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    mu_p_cube = mu_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    mu_m_cube_internal = mu_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    mu_p_cube_internal = mu_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     
-    zeta_p_ijk_pqm = ((mu_p_cube - mu_m_cube) / mu_m_cube) * phi_cube_ 
+    zeta_p_ijk_pqm = ((mu_p_cube_internal - mu_m_cube_internal) / mu_m_cube_internal) * phi_cube_ 
     zeta_p_ijk_pqm = zeta_p_ijk_pqm.reshape(zeta_p_ijk_pqm.shape + (-1,)) * Cp_ijk_pqm.reshape(phi_cube_.shape + (-1,))
     
-    zeta_m_ijk_pqm = ((mu_p_cube - mu_m_cube) / mu_p_cube) * phi_cube_ 
+    zeta_m_ijk_pqm = ((mu_p_cube_internal - mu_m_cube_internal) / mu_p_cube_internal) * phi_cube_ 
     zeta_m_ijk_pqm = zeta_m_ijk_pqm.reshape(zeta_m_ijk_pqm.shape + (-1,)) * Cm_ijk_pqm.reshape(phi_cube_.shape + (-1,))
     
     """
@@ -222,10 +234,12 @@ def poisson_solver(gstate, sim_state):
     get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
     
     integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
+    alpha_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, alpha_interp_fn)
+    beta_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, beta_interp_fn)
     
     compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn)
     
-    poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(nodes[794302])
+    # poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(nodes[794302])
     # vmap(compute_face_centroids_values_plus_minus_at_node(nodes))
     
     # u_dGamma = integrate_over_interface_at_node(nodes[794302])
@@ -240,12 +254,6 @@ def poisson_solver(gstate, sim_state):
     """
     END Geometric integration functions initiated
     """
-
-
-    pdb.set_trace()
-
-
-
 
     def A_matmul_x_fn(u):
         """
@@ -287,44 +295,110 @@ def poisson_solver(gstate, sim_state):
         zeta_m_ijk_pqm
         zeta_p_ijk_pqm
 
-        def u_p_coeffs_residual(node):
+        def u_mp_at_node(i, j, k):
             """
-            BIAS SLOW
+            BIAS SLOW:
+                This function evaluates 
+                    u_m = B_m : u + r_m 
+                and 
+                    u_p = B_p : u + r_p
+            """
+            def bulk_node(is_interface_, u_ijk_):
+                return jnp.where(is_interface_==-1, u_ijk_, 0.0), jnp.where(is_interface_==1, u_ijk_, 0.0)
 
-            For a given node in
-            
-            u_p = B_p : u + r_p 
-            
-            this function evaluates B_p and r_p
-            """
-            i, j, k = node
-            pdb.set_trace()
-            
-            B = 0
-            r = 0
-            return B, r
+            def interface_node(i, j, k):
+                B_ijk_m = jnp.array([ [0.0, 0.0, 0.0],\
+                                      [0.0, 1.0, 0.0],\
+                                      [0.0, 0.0, 0.0] ], dtype=f32)
 
-        def u_m_coeffs_residual(node):
-            """
-            BIAS SLOW
+                B_ijk_p = jnp.array([ [0.0, 0.0, 0.0],\
+                                      [0.0, 1.0, 0.0],\
+                                      [0.0, 0.0, 0.0] ], dtype=f32)
+                
+                r_ijk_m = 0.0
+                r_ijk_p = 0.0
 
-            For a given node in
+                phi_ijk = phi_cube[i, j, k]
+                mu_m_ijk = mu_m_cube_internal[i-2, j-2, k-2]
+                mu_p_ijk = mu_p_cube_internal[i-2, j-2, k-2]
+                
+                gamma_m_ijk
+                gamma_p_ijk
+                
+                gamma_p_ijk_pqm
+                gamma_m_ijk_pqm
+
+                zeta_m_ijk
+                zeta_p_ijk
+
+                zeta_m_ijk_pqm
+                zeta_p_ijk_pqm
+                pdb.set_trace()
+
+                u_m = 0.0
+                u_p = 0.0
+                return u_m, u_p
+
+            u_ijk = u_cube[i, j, k]
+            is_interface = is_cell_crossed_by_interface((i, j, k)) # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
+            u_m, u_p = jnp.where(is_interface==0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
+            return u_m, u_p
             
-            u_m = B_m : u + r_m 
             
-            this function evaluates B_m and r_m
-            """
-            i, j, k = node
-            
-            B = 0
-            r = 0
-            return B, r
+  
+
         
-        B_p, R_p = vmap(u_p_coeffs_residual)(nodes)
+
+        def evaluate_discretization_lhs_rhs_at_node(node):
+            
+            i, j, k = node
+            
+            poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(node)
+            coeffs, vols = jnp.split(poisson_scheme_coeffs, [12], axis=0)
+            V_m_ijk = vols[0]
+            V_p_ijk = vols[1]
+            
+            #--- LHS
+            k_m_ijk = k_m_cube_internal[i-2, j-2, k-2]  # k_cube's don't have ghost layers
+            k_p_ijk = k_p_cube_internal[i-2, j-2, k-2]
+            
+            u_m_ijk, u_p_ijk = u_mp_at_node(i, j, k)
+            lhs  = k_m_ijk * V_m_ijk * u_m_ijk
+            lhs += k_p_ijk * V_p_ijk * u_p_ijk
+            lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6]) * u_m_ijk + (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7]) * u_p_ijk
+
+            u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j, k)
+            lhs += -1.0 * coeffs[0] * u_m_imjk - coeffs[1] * u_p_imjk
+
+            u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j, k)
+            lhs += -1.0 * coeffs[2] * u_m_ipjk - coeffs[3] * u_p_ipjk
+
+            u_m_ijmk, u_p_ijmk = u_mp_at_node(i, j-1, k)
+            lhs += -1.0 * coeffs[4] * u_m_ijmk - coeffs[5] * u_p_ijmk
+
+            u_m_ijpk, u_p_ijpk = u_mp_at_node(i, j+1, k)
+            lhs += -1.0 * coeffs[6] * u_m_ijpk - coeffs[7] * u_p_ijpk
+
+            u_m_ijkm, u_p_ijkm = u_mp_at_node(i, j, k-1)
+            lhs += -1.0 * coeffs[8] * u_m_ijkm - coeffs[9] * u_p_ijkm
+
+            u_m_ijkp, u_p_ijkp = u_mp_at_node(i, j, k+1)
+            lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
+
+            #--- RHS
+            rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
+            rhs += beta_integrate_over_interface_at_node(node)
+
+            return lhs, rhs
+
+        lhs, rhs = evaluate_discretization_lhs_rhs_at_node(nodes[794302])
         pdb.set_trace()
 
+        # def loss_fn(node):
+        #     lhs, rhs = evaluate_discretization_lhs_rhs_at_node(node)
+        #     jnp.linalg.norm()
         
-        return
+        return lhs
 
     x = jnp.ones(phi_n.shape[0], dtype=f32)
     out = A_matmul_x_fn(x)
