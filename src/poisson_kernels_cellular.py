@@ -396,16 +396,16 @@ def poisson_solver(gstate, sim_state):
             rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
             rhs += beta_integrate_over_interface_at_node(node)
 
-            return lhs, rhs
+            return jnp.array([lhs, rhs])
 
-        lhs, rhs = evaluate_discretization_lhs_rhs_at_node(nodes[794302])
+        lhs_rhs = evaluate_discretization_lhs_rhs_at_node(nodes[794302])
         pdb.set_trace()
 
         # def loss_fn(node):
         #     lhs, rhs = evaluate_discretization_lhs_rhs_at_node(node)
         #     jnp.linalg.norm()
         
-        return lhs
+        return lhs_rhs
 
     x = jnp.ones(phi_n.shape[0], dtype=f32)
     out = A_matmul_x_fn(x)
