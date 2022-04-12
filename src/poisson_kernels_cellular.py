@@ -279,22 +279,7 @@ def poisson_solver(gstate, sim_state):
             for solution estimate.
         
         """
-        # index_to_ijk = (nodes - jnp.array([2,2,2]))
-        nodes 
-        ngbs
-        
-        gamma_m_ijk
-        gamma_p_ijk
-        
-        gamma_p_ijk_pqm
-        gamma_m_ijk_pqm
-
-        zeta_m_ijk
-        zeta_p_ijk
-
-        zeta_m_ijk_pqm
-        zeta_p_ijk_pqm
-
+        @jit
         def u_mp_at_node(i, j, k):
             """
             BIAS SLOW:
@@ -304,51 +289,72 @@ def poisson_solver(gstate, sim_state):
                     u_p = B_p : u + r_p
             """
             def bulk_node(is_interface_, u_ijk_):
-                return jnp.where(is_interface_==-1, u_ijk_, 0.0), jnp.where(is_interface_==1, u_ijk_, 0.0)
+                return jnp.array([ jnp.where(is_interface_==-1, u_ijk_, 0.0), jnp.where(is_interface_==1, u_ijk_, 0.0) ])
 
             def interface_node(i, j, k):
-                B_ijk_m = jnp.array([ [0.0, 0.0, 0.0],\
-                                      [0.0, 1.0, 0.0],\
-                                      [0.0, 0.0, 0.0] ], dtype=f32)
-
-                B_ijk_p = jnp.array([ [0.0, 0.0, 0.0],\
-                                      [0.0, 1.0, 0.0],\
-                                      [0.0, 0.0, 0.0] ], dtype=f32)
+                def mu_minus_bigger_fn(i, j, k):
+                    def extrapolate_u_m_from_negative_domain(i, j, k):
+                        delta_ijk = phi_cube[i, j, k]
+                        r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                        r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
+                        r_m_proj = r_m_proj[jnp.newaxis]
+                        curr_ngbs = jnp.add(jnp.array([i, j, k]), ngbs)
+                        u_m  = -1.0 * jnp.dot(gamma_m_ijk_pqm[i-2,j-2,k-2], cube_at_v(u_cube, curr_ngbs) ) 
+                        u_m += (1.0 - gamma_m_ijk[i-2, j-2, k-2] + gamma_m_ijk_pqm[i-2,j-2,k-1,13]) * u_cube[i,j,k] 
+                        u_m += -1.0 * (1.0 - gamma_m_ijk[i-2, j-2, k-2]) * ( alpha_interp_fn(r_m_proj) + delta_ijk * beta_interp_fn(r_m_proj) / mu_p_interp_fn(r_m_proj) )
+                        return u_m
+                    def extrapolate_u_p_from_positive_domain(i, j, k):
+                        delta_ijk = phi_cube[i, j, k]
+                        r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                        r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
+                        r_p_proj = r_p_proj[jnp.newaxis]
+                        curr_ngbs = jnp.add(jnp.array([i, j, k]), ngbs)
+                        u_p  = -1.0 * jnp.dot(zeta_m_ijk_pqm[i-2,j-2,k-2], cube_at_v(u_cube, curr_ngbs) )
+                        u_p += (1.0 - zeta_m_ijk[i-2, j-2, k-2] + zeta_m_ijk_pqm[i-2,j-2,k-1,13]) * u_cube[i,j,k] 
+                        u_p += alpha_interp_fn(r_p_proj) + delta_ijk * beta_interp_fn(r_p_proj) / mu_p_interp_fn(r_p_proj)
+                        return u_p
+                    phi_ijk = phi_cube[i, j, k]
+                    u_m = jnp.where(phi_ijk>0, extrapolate_u_m_from_negative_domain(i, j, k), u_cube[i, j, k])[0]
+                    u_p = jnp.where(phi_ijk>0, u_cube[i, j, k], extrapolate_u_p_from_positive_domain(i, j, k))[0]
+                    return jnp.array([u_m, u_p])
                 
-                r_ijk_m = 0.0
-                r_ijk_p = 0.0
+                def mu_plus_bigger_fn(i, j, k):
+                    def extrapolate_u_m_from_negative_domain_(i, j, k):
+                        delta_ijk = phi_cube[i, j, k]
+                        r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                        r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
+                        r_m_proj = r_m_proj[jnp.newaxis]
+                        curr_ngbs = jnp.add(jnp.array([i, j, k]), ngbs)
+                        u_m  = -1.0 * jnp.dot(zeta_p_ijk_pqm[i-2,j-2,k-2], cube_at_v(u_cube, curr_ngbs) )
+                        u_m += (1.0 - zeta_p_ijk[i-2, j-2, k-2] + zeta_p_ijk_pqm[i-2,j-2,k-1,13]) * u_cube[i,j,k] 
+                        u_m += alpha_interp_fn(r_m_proj) + delta_ijk * beta_interp_fn(r_m_proj) / mu_m_interp_fn(r_m_proj)
+                        return u_m
+                    def extrapolate_u_p_from_positive_domain_(i, j, k):
+                        delta_ijk = phi_cube[i, j, k]
+                        r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                        r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
+                        r_p_proj = r_p_proj[jnp.newaxis]
+                        curr_ngbs = jnp.add(jnp.array([i, j, k]), ngbs)
+                        u_p  = -1.0 * jnp.dot(gamma_p_ijk_pqm[i-2,j-2,k-2], cube_at_v(u_cube, curr_ngbs) )
+                        u_p += (1.0 - gamma_p_ijk[i-2, j-2, k-2] + gamma_p_ijk_pqm[i-2,j-2,k-1,13]) * u_cube[i,j,k]
+                        u_p += (1.0 - gamma_p_ijk[i-2, j-2, k-2]) * (alpha_interp_fn(r_p_proj) + delta_ijk * beta_interp_fn(r_p_proj) / mu_m_interp_fn(r_p_proj))
+                        return u_p
+                    phi_ijk = phi_cube[i, j, k]
+                    u_m = jnp.where(phi_ijk>0, extrapolate_u_m_from_negative_domain_(i, j, k), u_cube[i, j, k])[0]
+                    u_p = jnp.where(phi_ijk>0, u_cube[i, j, k], extrapolate_u_p_from_positive_domain_(i, j, k))[0]
+                    return jnp.array([u_m, u_p])
 
-                phi_ijk = phi_cube[i, j, k]
                 mu_m_ijk = mu_m_cube_internal[i-2, j-2, k-2]
                 mu_p_ijk = mu_p_cube_internal[i-2, j-2, k-2]
+                return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
                 
-                gamma_m_ijk
-                gamma_p_ijk
-                
-                gamma_p_ijk_pqm
-                gamma_m_ijk_pqm
-
-                zeta_m_ijk
-                zeta_p_ijk
-
-                zeta_m_ijk_pqm
-                zeta_p_ijk_pqm
-                pdb.set_trace()
-
-                u_m = 0.0
-                u_p = 0.0
-                return u_m, u_p
-
             u_ijk = u_cube[i, j, k]
             is_interface = is_cell_crossed_by_interface((i, j, k)) # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
-            u_m, u_p = jnp.where(is_interface==0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
-            return u_m, u_p
+            u_mp = jnp.where(is_interface==0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
+            return u_mp
             
-            
-  
 
-        
-
+        @jit
         def evaluate_discretization_lhs_rhs_at_node(node):
             
             i, j, k = node
@@ -362,6 +368,7 @@ def poisson_solver(gstate, sim_state):
             k_m_ijk = k_m_cube_internal[i-2, j-2, k-2]  # k_cube's don't have ghost layers
             k_p_ijk = k_p_cube_internal[i-2, j-2, k-2]
             
+
             u_m_ijk, u_p_ijk = u_mp_at_node(i, j, k)
             lhs  = k_m_ijk * V_m_ijk * u_m_ijk
             lhs += k_p_ijk * V_p_ijk * u_p_ijk
