@@ -121,37 +121,27 @@ def beta_fn(r):
 init_fn, solve_fn = poisson_solver.setup(initial_value_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
 sim_state = init_fn(R)
 
-Ax_fn = solve_fn(gstate, sim_state)
-
-pdb.set_trace()
 
 # get normal vector and mean curvature
 normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature_4th_order) 
+normal, curve = normal_curve_fn(sim_state.phi, gstate)
 
-
-def add_null_argument(func):
-    def func_(x, y):
-        return func(x)
-    return func_
-
-simulation_steps = int(1)
-log = {
-        'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        'kappaM' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-      }
 
 t1 = time.time()
-
-normal, curve = normal_curve_fn(sim_state.solution, gstate)
-
-
-
-
+sim_state = solve_fn(gstate, sim_state)
 sim_state.solution.block_until_ready()
 t2 = time.time()
 
-print(f"time per timestep is {(t2 - t1)/simulation_steps}")
+
+
+print(f"time per timestep is {(t2 - t1)}")
 jax.profiler.save_device_memory_profile("memory.prof")
-io.write_vtk_log(gstate, log)
+
+log = {
+        'U' : sim_state.solution,
+        'kappaM' :curve,
+        'phi': sim_state.phi
+      }
+io.write_vtk_manual(gstate, log)
 
 pdb.set_trace()

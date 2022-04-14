@@ -1,5 +1,7 @@
 from functools import partial
-from jax import (numpy as jnp, vmap, jit, lax, ops)
+from jax import (numpy as jnp, vmap, jit, grad, lax, ops)
+from jax.scipy.sparse.linalg import gmres, bicgstab, cg
+import optax
 from src import (interpolate, util, geometric_integrations)
 import pdb
 
@@ -261,7 +263,7 @@ def poisson_solver(gstate, sim_state):
         This evaluates the rhs in Au^k=b given estimate u^k.
         The purpose would be to define an optimization problem with:
 
-        min || u^k - b ||^2 
+        min || A u^k - b ||^2 
 
         using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
 
@@ -282,6 +284,12 @@ def poisson_solver(gstate, sim_state):
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
         x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
         _, _, _, u_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, u_cube)
+
+        """
+        Impose boundary conditions:
+            Dirichlet: update 
+        """
+
 
         @jit
         def u_mp_at_node(i, j, k):
@@ -411,7 +419,8 @@ def poisson_solver(gstate, sim_state):
         #     jnp.linalg.norm()
         return lhs_rhs
 
-     
+    
+
     @jit
     def compute_Ax(x):
         lhs_rhs = compute_Ax_and_b_fn(x)
@@ -424,10 +433,67 @@ def poisson_solver(gstate, sim_state):
         _, rhs = jnp.split(lhs_rhs, [1], axis=1)
         return rhs
 
+
+    # 
     x = jnp.ones(phi_n.shape[0], dtype=f32)
-    lhs_rhs = compute_Ax_and_b_fn(x)
+
+
     
-    pdb.set_trace()
+    @jit
+    def compute_residual(x):
+        lhs_rhs = compute_Ax_and_b_fn(x)
+        # lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        # return lhs - rhs
+        return jnp.square(lhs_rhs[:,0] - lhs_rhs[:,1]).mean()
+
+
+
+    # # Exponential decay of the learning rate.
+    # scheduler = optax.exponential_decay(
+    #     init_value=1e-2, 
+    #     transition_steps=1000,
+    #     decay_rate=0.99)
+
+    # # Combining gradient transforms using `optax.chain`.
+    # gradient_transform = optax.chain(
+    #     optax.clip_by_global_norm(1.0),  # Clip by the gradient by the global norm.
+    #     optax.scale_by_adam(),  # Use the updates from adam.
+    #     optax.scale_by_schedule(scheduler),  # Use the learning rate from the scheduler.
+    #     # Scale updates by -1 since optax.apply_updates is additive and we want to descend on the loss.
+    #     optax.scale(-1.0)
+    # )
+    # optimizer = gradient_transform
+
+    learning_rate = 1e-2
+    optimizer = optax.adam(learning_rate)
+    params = {'u' : x}
+    opt_state = optimizer.init(params)
+    
+    compute_loss = lambda params: jit(compute_residual)(params['u'])
+    # A simple update loop.
+    grad_fn = jit(grad(compute_loss))
+
+    loss_store = []
+    for _ in range(100):
+        grads = grad_fn(params)
+        updates, opt_state = optimizer.update(grads, opt_state)
+        params = optax.apply_updates(params, updates)
+        
+        loss_ = compute_loss(params)
+        loss_store.append(loss_)
+        print(f"iteration {_} loss = {loss_}")
+
+    # pdb.set_trace()
+    return params['u']
+    
+
+
+
+    # lhs_rhs = compute_Ax_and_b_fn(x)
+    # rhs = lhs_rhs[:,1].reshape(-1,1)
+    # sol = gmres(compute_Ax, rhs)
+
+    # pdb.set_trace()
    
 
    

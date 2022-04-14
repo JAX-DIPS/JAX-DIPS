@@ -68,7 +68,11 @@ def write_vtk_log(gstate, log, address = 'results/', maxsteps=None):
 
     num_steps = len(log)
     keys = log.keys()
-    keys.remove('t')
+    try:
+        keys.remove('t')
+    except:
+        pass
+
     host_dict = {}
 
     os.makedirs(address, exist_ok=True)
