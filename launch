@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+IMAGE_NAME="jax_dip"
+DOCKER_CMD="docker run \
+    --network host \
+    --gpus all \
+    -p ${JUPYTER_PORT}:8888 \
+    -v $(pwd):/workspace \
+    -w /workspace"
+
+
+usage() {
+    echo "Please read README."
+}
+
+
+build() {
+    set -x
+    DOCKER_FILE="docker/Dockerfile"
+
+    echo -e "Building ${DOCKER_FILE}..."
+    docker build \
+        -t ${IMAGE_NAME}:0.0.1 \
+        -t ${IMAGE_NAME}:latest \
+        -f ${DOCKER_FILE} .
+}
+
+
+dev() {
+    set -x
+    local DEV_IMG=${IMAGE_NAME}
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -i|--image)
+                DEV_IMG="$2"
+                shift
+                shift
+                ;;
+            *)
+                echo "Unknown option $1"
+                exit 1
+                ;;
+        esac
+    done
+
+    $DOCKER_CMD -it ${DEV_IMG} bash
+}
+
+
+case $1 in
+    build)
+        "$@"
+        ;;
+    dev)
+        "$@"
+        ;;
+    *)
+        usage
+        ;;
+esac
