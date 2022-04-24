@@ -6,6 +6,11 @@ DOCKER_CMD="docker run \
     --gpus all \
     -p ${JUPYTER_PORT}:8888 \
     -v $(pwd):/workspace \
+    -e HOME=/workspace \
+    -e TF_CPP_MIN_LOG_LEVEL=0 \
+    -v /etc/passwd:/etc/passwd:ro \
+    -v /etc/group:/etc/group:ro \
+    -v /etc/shadow:/etc/shadow:ro \
     -w /workspace"
 
 
@@ -27,7 +32,6 @@ build() {
 
 
 dev() {
-    set -x
     local DEV_IMG=${IMAGE_NAME}
 
     while [[ $# -gt 0 ]]; do
@@ -44,7 +48,7 @@ dev() {
         esac
     done
 
-    $DOCKER_CMD -it ${DEV_IMG} bash
+    $DOCKER_CMD -u $(id -u):$(id -u) -it ${DEV_IMG} bash
 }
 
 
