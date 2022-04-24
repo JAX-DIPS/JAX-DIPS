@@ -1,6 +1,6 @@
-FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-devel
+FROM nvidia/cuda:11.4.2-devel-ubuntu20.04
 
-RUN apt update && apt install -y git vim
+RUN apt update && apt install -y git vim sudo python3 python3-pip
 
 COPY ./requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
@@ -8,4 +8,4 @@ RUN pip3 install -r /tmp/requirements.txt
 RUN cd /tmp \
     && git clone https://github.com/paulo-herrera/PyEVTK.git \
     && cd PyEVTK/ \
-    && python setup.py install
+    && python3 setup.py install
