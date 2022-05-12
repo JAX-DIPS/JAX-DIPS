@@ -469,6 +469,31 @@ def add_ghost_layer_3d(x, y, z, c_cube):
 
 
 
+def add_ghost_layer_3d_Dirichlet_extension(x, y, z, c_cube):
+    """
+    add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
+    """
+    dx_l = x[1] - x[0]; dx_r = x[-1] - x[-2]
+    x_layer_l = c_cube[ 0,:,:]; x_layer_l = np.expand_dims(x_layer_l, axis=0)
+    x_layer_r = c_cube[-1,:,:]; x_layer_r = np.expand_dims(x_layer_r, axis=0)
+    c_cube_gh = np.concatenate((x_layer_l, c_cube, x_layer_r), axis=0)
+    xx = np.concatenate((np.array([x[0] - dx_l]) , x, np.array([x[-1] + dx_r])))
+
+    dy_b = y[1] - y[0]; dy_t = y[-1] - y[-2]
+    y_layer_b = c_cube_gh[:, 0,:]; y_layer_b = np.expand_dims(y_layer_b, axis=1)
+    y_layer_t = c_cube_gh[:,-1,:]; y_layer_t = np.expand_dims(y_layer_t, axis=1)
+    c_cube_gh = np.concatenate((y_layer_b, c_cube_gh, y_layer_t), axis=1)
+    yy = np.concatenate((np.array([y[0] - dy_b]) , y, np.array([y[-1] + dy_t])))
+
+    dz_b = z[1] - z[0]; dz_t = z[-1] - z[-2]
+    z_layer_b = c_cube_gh[:,:, 0]; z_layer_b = np.expand_dims(z_layer_b, axis=2)
+    z_layer_t = c_cube_gh[:,:,-1]; z_layer_t = np.expand_dims(z_layer_t, axis=2)
+    c_cube_gh = np.concatenate((z_layer_b, c_cube_gh, z_layer_t), axis=2)
+    zz = np.concatenate((np.array([z[0] - dz_b]) , z, np.array([z[-1] + dz_t])))
+    return xx, yy, zz, c_cube_gh
+
+
+
 
 
 def update_ghost_layer_3d(c_cube):

@@ -110,13 +110,13 @@ def alpha_fn(r):
     """
     Jump in solution at interface
     """
-    return 0.0
+    return 0.10
 
 def beta_fn(r):
     """
     Jump in flux at interface
     """
-    return 0.0
+    return 0.01
 
 init_fn, solve_fn = poisson_solver.setup(initial_value_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
 sim_state = init_fn(R)

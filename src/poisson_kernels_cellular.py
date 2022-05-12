@@ -282,15 +282,23 @@ def poisson_solver(gstate, sim_state):
         
         """
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-        x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
-        _, _, _, u_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, u_cube)
+        u_cube = u_cube.at[0,:,:].set(0.0)
+        u_cube = u_cube.at[-1,:,:].set(0.0)
+        u_cube = u_cube.at[:,0,:].set(0.0)
+        u_cube = u_cube.at[:,-1,:].set(0.0)
+        u_cube = u_cube.at[:,:,0].set(0.0)
+        u_cube = u_cube.at[:,:,-1].set(0.0)
+        x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(xo, yo, zo, u_cube)
+        _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
 
+        
         """
         Impose boundary conditions:
             Dirichlet: update 
         """
 
-
+        # pdb.set_trace()
+        
         @jit
         def u_mp_at_node(i, j, k):
             """
