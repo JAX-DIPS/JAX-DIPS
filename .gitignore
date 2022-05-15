@@ -4,3 +4,4 @@ src/__pycache__
 *.pyc
 .bash_history
 memory.prof
+workspace.code-workspace
