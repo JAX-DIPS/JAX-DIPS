@@ -45,11 +45,11 @@ opt_state = init_fn(key, R, neighbor=opt_nbrs)
 def step_func(i, state_and_nbrs):
     state, nbrs, log = state_and_nbrs
     t = i * dt
-    log['t'] = ops.index_update(log['t'], i, t)
+    log['t'] = log['t'].at[i].set(t) 
     pos = state.position
-    log['R'] = ops.index_update(log['R'], i, pos)
+    log['R'] = log['R'].at[i].set(pos) 
     vel = state.velocity
-    log['V'] = ops.index_update(log['V'], i, vel)
+    log['V'] = log['V'].at[i].set(vel) 
     nbrs = neighbor_fn(state.position, nbrs)
     return apply_fn(state, neighbor=nbrs), nbrs, log
 

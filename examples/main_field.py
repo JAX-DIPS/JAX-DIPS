@@ -77,11 +77,11 @@ sim_state = init_fn(R)
 def step_func(i, state_and_nbrs):
     state, log = state_and_nbrs
     time = i * dt
-    log['t'] = ops.index_update(log['t'], i, time)
+    log['t'] = log['t'].at[i].set(time) 
     sol = state.solution
-    log['U'] = ops.index_update(log['U'], i, sol)
+    log['U'] = log['U'].at[i].set(sol) 
     vel = state.velocity_nm1
-    log['V'] = ops.index_update(log['V'], i, vel)
+    log['V'] = log['V'].at[i].set(vel) 
     # state = reinitialize_fn(state, gstate)
     state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
     return apply_fn(state, gstate, time), log

@@ -289,17 +289,16 @@ def cell_list(box_size: Box,
         sorted_cell_id = np.mod(lax.iota(np.int64, N), cell_capacity)
         sorted_cell_id = sorted_hash * cell_capacity + sorted_cell_id
 
-        cell_R = ops.index_update(cell_R, sorted_cell_id, sorted_R)
+        cell_R = cell_R.at[sorted_cell_id].set(sorted_R) #ops.index_update(cell_R, sorted_cell_id, sorted_R)
         sorted_id = np.reshape(sorted_id, (N, 1))
-        cell_id = ops.index_update(
-            cell_id, sorted_cell_id, sorted_id)
+        cell_id = cell_id.at[sorted_cell_id].set(sorted_id) #ops.index_update(cell_id, sorted_cell_id, sorted_id)
         cell_R = _unflatten_cell_buffer(cell_R, cells_per_side, dim)
         cell_id = _unflatten_cell_buffer(cell_id, cells_per_side, dim)
 
         for k, v in sorted_kwargs.items():
             if v.ndim == 1:
                 v = np.reshape(v, v.shape + (1,))
-            cell_kwargs[k] = ops.index_update(cell_kwargs[k], sorted_cell_id, v)
+            cell_kwargs[k] = cell_kwargs[k].at[sorted_cell_id].set(v) #ops.index_update(cell_kwargs[k], sorted_cell_id, v)
             cell_kwargs[k] = _unflatten_cell_buffer(
                             cell_kwargs[k], cells_per_side, dim)
 
@@ -480,7 +479,8 @@ def neighbor_list(displacement_or_metric: DisplacementOrMetricFn,
     def copy_values_from_cell(value, cell_value, cell_id):
       scatter_indices = np.reshape(cell_id, (-1,))
       cell_value = np.reshape(cell_value, (-1,) + cell_value.shape[-2:])
-      return ops.index_update(value, scatter_indices, cell_value)
+      # return ops.index_update(value, scatter_indices, cell_value)
+      return value.at[scatter_indices].set(cell_value)
 
     # NOTE(schsam): Currently, this makes a verlet list that is larger than
     # needed since the idx buffer inherets its size from the cell-list. In
@@ -508,7 +508,7 @@ def neighbor_list(displacement_or_metric: DisplacementOrMetricFn,
     cumsum = np.cumsum(mask, axis=1)
     index = np.where(mask, cumsum - 1, idx.shape[1] - 1)
     p_index = np.arange(idx.shape[0])[:, None]
-    out_idx = ops.index_update(out_idx, ops.index[p_index, index], idx)
+    out_idx = out_idx.at[ops.index[p_index, index]].set(idx)  #ops.index_update(out_idx, ops.index[p_index, index], idx)
     max_occupancy = np.max(cumsum[:, -1])
 
     return out_idx, max_occupancy
