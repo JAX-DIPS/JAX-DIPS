@@ -9,5 +9,5 @@ database_tmp/
 
 *.pyc
 .bash_history
-memory.prof
+memory*
 workspace.code-workspace
