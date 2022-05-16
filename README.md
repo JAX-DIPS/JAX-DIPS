@@ -1,5 +1,5 @@
 # JAX-DIPS
-JAX implementation of a differentiable inverse PDE solver with irregular interface.
+JAX implementation of a differentiable inverse PDE solver with jump conditions over irregular interfaces.
 
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/sample_adv_semi_lagrangian.gif)
 

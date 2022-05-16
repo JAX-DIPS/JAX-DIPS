@@ -123,7 +123,7 @@ def test_spinning_sphere():
     print(f"L2 error in 2\pi advected sphere of radius 0.5 is equal to {difference_l2} \t should ideally be \t 0.0")
     assert jnp.isclose(difference_l2, 0.0, atol=1e-4)
     #--- to save snapshots uncomment below line
-    # io.write_vtk_solution(gstate, log, 'results/')
+    io.write_vtk_solution(gstate, log, 'results/')
 
 
 
