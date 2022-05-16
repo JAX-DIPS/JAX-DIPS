@@ -84,7 +84,7 @@ def phi_fn(r):
     
     # return x**2 + (y-1.0)**2 + z**2 - 0.25
 
-init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(velocity_fn, phi_fn, shift_fn, dt)
+init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, shift_fn, dt)
 sim_state = init_fn(R)
 
 grad_fn = jax.vmap(jax.grad(phi_fn))
