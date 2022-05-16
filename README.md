@@ -1,7 +1,7 @@
 # JAX-DIPS
 JAX implementation of a differentiable inverse PDE solver with jump conditions over irregular interfaces.
 
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/sample_adv_semi_lagrangian.gif)
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/animated_spinning.gif)
 
 # Testing
 Do `pytest tests` from parent directory and a suite of tests will run:
