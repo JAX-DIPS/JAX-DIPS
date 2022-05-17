@@ -485,7 +485,7 @@ def poisson_solver(gstate, sim_state):
     grad_fn = jit(grad(compute_loss))
 
     loss_store = []
-    for _ in range(50):
+    for _ in range(100):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
         params = optax.apply_updates(params, updates)
@@ -494,7 +494,14 @@ def poisson_solver(gstate, sim_state):
         loss_store.append(loss_.tolist())
         print(f"iteration {_} loss = {loss_}")
     
-    pdb.set_trace()
+
+    plt.figure(figsize=(8,8))
+    plt.plot(loss_store)
+    plt.xlabel('epoch', fontsize=20)
+    plt.ylabel('loss', fontsize=20)
+    plt.savefig('tests/poisson_solver_loss.png')
+    plt.close()
+
     return params['u']
     
     
