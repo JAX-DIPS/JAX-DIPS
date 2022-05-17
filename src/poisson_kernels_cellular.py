@@ -4,6 +4,9 @@ from jax.scipy.sparse.linalg import gmres, bicgstab, cg
 import optax
 from src import (interpolate, util, geometric_integrations)
 import pdb
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 f32 = util.f32
 i32 = util.i32
@@ -13,7 +16,6 @@ i32 = util.i32
 
 def poisson_solver(gstate, sim_state):
     phi_n = sim_state.phi
-    u_n = sim_state.solution
     mu_m = sim_state.mu_m
     mu_p = sim_state.mu_p
     k_m = sim_state.k_m
@@ -25,27 +27,20 @@ def poisson_solver(gstate, sim_state):
     beta = sim_state.beta
 
     xo = gstate.x; yo = gstate.y; zo = gstate.z
-    
-    # phi_interp_fn  = interpolate.nonoscillatory_quadratic_interpolation(phi_n, gstate)
-    # u_interp_fn    = interpolate.nonoscillatory_quadratic_interpolation(u_n, gstate)
-    mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
-    mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
+
+    mu_m_interp_fn  = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
+    mu_p_interp_fn  = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
     alpha_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(alpha, gstate)
-    beta_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(beta, gstate)
+    beta_interp_fn  = interpolate.nonoscillatory_quadratic_interpolation(beta, gstate)
     
     phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
-    
 
-    u_cube = u_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     k_m_cube_internal = k_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     k_p_cube_internal = k_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     f_m_cube_internal = f_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     f_p_cube_internal = f_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, u_cube)
-    _, _, _, u_cube = interpolate.add_ghost_layer_3d(x_, y_, z_, u_cube)
-
 
 
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
@@ -234,25 +229,11 @@ def poisson_solver(gstate, sim_state):
     Getting simplices of the grid: intersection points 
     """
     get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
-    
     # integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
     # alpha_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, alpha_interp_fn)
     beta_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, beta_interp_fn)
-    
     compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn)
     
-    # poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(nodes[794302])
-    # vmap(compute_face_centroids_values_plus_minus_at_node(nodes))
-    
-    # u_dGamma = integrate_over_interface_at_node(nodes[794302])
-    # u_dGammas = vmap(integrate_over_interface_at_node)(nodes)
-    # print("\n\n\n")
-    # print(f"Surface area is computed to be {u_dGammas.sum()} ~~ must be ~~ {jnp.pi}")
-    # print("\n\n\n")
-    # u_dOmega = integrate_in_negative_domain_at_node(nodes[794302])
-    # u_dOmegas = vmap(integrate_in_negative_domain_at_node)(nodes)
-    # print(f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
-    # print("\n\n\n")
     """
     END Geometric integration functions initiated
     """
@@ -288,19 +269,34 @@ def poisson_solver(gstate, sim_state):
         u_cube = u_cube.at[:,-1,:].set(0.0)
         u_cube = u_cube.at[:,:,0].set(0.0)
         u_cube = u_cube.at[:,:,-1].set(0.0)
-        x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(xo, yo, zo, u_cube)
-        _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
-
-        
         """
         Impose boundary conditions:
             Dirichlet: update 
         """
+        x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(xo, yo, zo, u_cube)
+        _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
 
-        # pdb.set_trace()
-        
+
         @jit
-        def u_mp_at_node(i, j, k):
+        def is_box_boundary_node(i, j, k):
+            """
+            Check if current node is on the boundary of box
+            """
+            return jnp.where((i-2)*(i-Nx-2)*(j-2)*(j-Ny-2)*(k-2)*(k-Nz-2)==0, True, False)
+
+
+        @jit 
+        def u_mp_dirichlet_boundary_at_node(i, j, k):
+            """
+            Dirichlet boundary condition around the box
+            """
+            u_m = 0.0
+            u_p = 0.0
+            return jnp.array([u_m, u_p])
+
+
+        @jit
+        def u_mp_at_interior_node(i, j, k):
             """
             BIAS SLOW:
                 This function evaluates 
@@ -374,6 +370,14 @@ def poisson_solver(gstate, sim_state):
             return u_mp
             
 
+        @jit
+        def u_mp_at_node(i, j, k):
+            """
+            Main u_minus/plus evaluator, takes care if node is on box boundary or is an interior node.
+            """
+            return jnp.where(is_box_boundary_node(i, j, k), u_mp_dirichlet_boundary_at_node(i, j, k), u_mp_at_interior_node(i, j, k))
+
+
         # @jit
         def evaluate_discretization_lhs_rhs_at_node(node):
             
@@ -442,7 +446,6 @@ def poisson_solver(gstate, sim_state):
         return rhs
 
 
-    # 
     x = jnp.ones(phi_n.shape[0], dtype=f32)
 
 
@@ -471,37 +474,39 @@ def poisson_solver(gstate, sim_state):
     #     optax.scale(-1.0)
     # )
     # optimizer = gradient_transform
-
-    learning_rate = 1e-2
+    
+    learning_rate = 1e-1
     optimizer = optax.adam(learning_rate)
     params = {'u' : x}
     opt_state = optimizer.init(params)
     
     compute_loss = lambda params: jit(compute_residual)(params['u'])
-    # A simple update loop.
+
     grad_fn = jit(grad(compute_loss))
 
     loss_store = []
-    for _ in range(100):
+    for _ in range(50):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
         params = optax.apply_updates(params, updates)
         
         loss_ = compute_loss(params)
-        loss_store.append(loss_)
+        loss_store.append(loss_.tolist())
         print(f"iteration {_} loss = {loss_}")
-
-    # pdb.set_trace()
+    
+    pdb.set_trace()
     return params['u']
     
-
-
+    
+    
 
     # lhs_rhs = compute_Ax_and_b_fn(x)
-    # rhs = lhs_rhs[:,1].reshape(-1,1)
+    # Amat = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
+    # rhs = lhs_rhs[:,1].reshape((xo.shape+yo.shape+zo.shape))
+    # pdb.set_trace()
     # sol = gmres(compute_Ax, rhs)
 
-    # pdb.set_trace()
+    
    
 
    
