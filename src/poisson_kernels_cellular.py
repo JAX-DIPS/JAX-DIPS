@@ -237,7 +237,7 @@ def poisson_solver(gstate, sim_state):
     """
     END Geometric integration functions initiated
     """
-    @jit
+    # @jit
     def compute_Ax_and_b_fn(u):
         """
         This function calculates  A @ u for a given vector of unknowns u.
@@ -282,7 +282,10 @@ def poisson_solver(gstate, sim_state):
             """
             Check if current node is on the boundary of box
             """
-            return jnp.where((i-2)*(i-Nx-2)*(j-2)*(j-Ny-2)*(k-2)*(k-Nz-2)==0, True, False)
+            boundary = (i-2)*(i-Nx-1)*(j-2)*(j-Ny-1)*(k-2)*(k-Nz-1)
+            boundary_p1 = (i-1)*(i-Nx-2)*(j-1)*(j-Ny-2)*(k-1)*(k-Nz-2)
+            boundary_p2 = (i)*(i-Nx-3)*(j)*(j-Ny-3)*(k)*(k-Nz-3)
+            return jnp.where(boundary*boundary_p1*boundary_p2==0, True, False)
 
 
         @jit 
@@ -378,6 +381,7 @@ def poisson_solver(gstate, sim_state):
             return jnp.where(is_box_boundary_node(i, j, k), u_mp_dirichlet_boundary_at_node(i, j, k), u_mp_at_interior_node(i, j, k))
 
 
+
         # @jit
         def evaluate_discretization_lhs_rhs_at_node(node):
             
@@ -417,10 +421,19 @@ def poisson_solver(gstate, sim_state):
             lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
 
             #--- RHS
-            rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
-            rhs += beta_integrate_over_interface_at_node(node)
+            def get_rhs_at_interior_node(node):
+                i, j, k = node
+                rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
+                rhs += beta_integrate_over_interface_at_node(node)
+                return rhs
+
+            def get_rhs_on_box_boundary(node):
+                return lhs  # this is the case for dirichlet bc only
+
+            rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
 
             return jnp.array([lhs, rhs])
+
         # lhs_rhs = evaluate_discretization_lhs_rhs_at_node(nodes[794302])
         # lhs_rhs = jit(vmap(evaluate_discretization_lhs_rhs_at_node))(nodes)
         evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
@@ -458,7 +471,16 @@ def poisson_solver(gstate, sim_state):
         return jnp.square(lhs_rhs[:,0] - lhs_rhs[:,1]).mean()
 
 
+    ''' For testing only '''
+    # lhs_rhs = compute_Ax_and_b_fn(x)
+    # Amat = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
+    # rhs = lhs_rhs[:,1].reshape((xo.shape+yo.shape+zo.shape))
+    # pdb.set_trace()
+    # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
+    # pdb.set_trace()
 
+
+    ''' Actual optimization '''
     # # Exponential decay of the learning rate.
     # scheduler = optax.exponential_decay(
     #     init_value=1e-2, 
@@ -507,11 +529,7 @@ def poisson_solver(gstate, sim_state):
     
     
 
-    # lhs_rhs = compute_Ax_and_b_fn(x)
-    # Amat = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
-    # rhs = lhs_rhs[:,1].reshape((xo.shape+yo.shape+zo.shape))
-    # pdb.set_trace()
-    # sol = gmres(compute_Ax, rhs)
+    
 
     
    

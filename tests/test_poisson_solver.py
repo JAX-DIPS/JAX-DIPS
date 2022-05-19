@@ -29,9 +29,9 @@ def test_poisson_solver():
     xmin = ymin = zmin = f32(-2.0)
     xmax = ymax = zmax = f32(2.0)
     box_size = xmax - xmin
-    Nx = i32(128)
-    Ny = i32(128)
-    Nz = i32(128)
+    Nx = i32(8)
+    Ny = i32(8)
+    Nz = i32(8)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -47,18 +47,6 @@ def test_poisson_solver():
 
     # -- define velocity field as gradient of a scalar field
 
-    @jit
-    def velocity_fn(r, time_=0.0):
-        """
-        Velocity field to advect the level-set function
-        """
-        x = r[0]
-        y = r[1]
-        z = r[2]
-        return jnp.array([0.0, 0.0, 0.0], dtype=f32)
-
-    velocity_fn = vmap(velocity_fn, (0, None))
-
     def phi_fn(r):
         """
         Level-set function for the interface
@@ -66,7 +54,7 @@ def test_poisson_solver():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sqrt(x**2 + (y)**2 + z**2) - 0.5
+        return jnp.sqrt(x**2 + (y)**2 + z**2) #- 0.5
 
     def mu_m_fn(r):
         """
@@ -96,7 +84,7 @@ def test_poisson_solver():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 1.0
+        return 0.0
 
     def f_m_fn(r):
         """
@@ -108,13 +96,13 @@ def test_poisson_solver():
         """
         Source function in $\Omega^+$
         """
-        return 0.0
+        return 1.0
 
     def alpha_fn(r):
         """
         Jump in solution at interface
         """
-        return 0.50
+        return 0.0
 
     def beta_fn(r):
         """
