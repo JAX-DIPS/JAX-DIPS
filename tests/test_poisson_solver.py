@@ -1,6 +1,6 @@
 
 from jax.config import config
-from src import io, poisson_solver, mesh
+from src import io, poisson_solver, mesh, level_set
 from src.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad)
 import jax
@@ -65,7 +65,7 @@ def test_poisson_solver():
         return exact_sol_p_fn(r)
     
     @jit
-    def phi_fn(r):
+    def unperturbed_phi_fn(r):
         """
         Level-set function for the interface
         """
@@ -73,6 +73,8 @@ def test_poisson_solver():
         y = r[1]
         z = r[2]
         return jnp.sqrt(x**2 + y**2 + z**2) - 0.5
+    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
+
     @jit
     def mu_m_fn(r):
         """

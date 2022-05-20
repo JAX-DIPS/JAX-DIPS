@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 f32 = util.f32
 i32 = util.i32
 
-    
-
+from jax import config
+config.update("jax_debug_nans", True)
 
 def poisson_solver(gstate, sim_state):
     phi_n = sim_state.phi
@@ -392,6 +392,7 @@ def poisson_solver(gstate, sim_state):
             i, j, k = node
             
             poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(node)
+
             coeffs, vols = jnp.split(poisson_scheme_coeffs, [12], axis=0)
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
@@ -432,20 +433,14 @@ def poisson_solver(gstate, sim_state):
                 return rhs
 
             def get_rhs_on_box_boundary(node):
-                return 0  # this is the case for dirichlet bc only
+                return 0.0  # this is the case for dirichlet bc only
 
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
             
             return jnp.array([lhs, rhs])
 
-        # lhs_rhs = evaluate_discretization_lhs_rhs_at_node(nodes[794302])
-        # lhs_rhs = jit(vmap(evaluate_discretization_lhs_rhs_at_node))(nodes)
         evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
         lhs_rhs = evaluate_on_nodes_fn(nodes)
-        # lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        # def loss_fn(node):
-        #     lhs, rhs = evaluate_discretization_lhs_rhs_at_node(node)
-        #     jnp.linalg.norm()
         return lhs_rhs
 
     @jit

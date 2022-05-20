@@ -435,8 +435,8 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
     area_z = dx * dy
 
     
-    vol_fn = lambda A: (1.0 / 6.0) * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
-    area_fn = lambda A: 0.5 * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
+    vol_fn = lambda A: jnp.nan_to_num( (1.0 / 6.0) * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) )
+    area_fn = lambda A: jnp.nan_to_num( 0.5 * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) )
 
     
 

@@ -12,6 +12,20 @@ f32 = util.f32
 i32 = util.i32
 
 
+def perturb_level_set_fn(phi_fn):
+    EPS = 1.0e-10
+    @jit
+    def sign_pm_fn(a):
+        sgn = jnp.sign(a)
+        return jnp.sign(sgn - 0.5)
+    @jit
+    def perturbed_phi_fn(x):
+        lvl = phi_fn(x)
+        lvl_ = lvl + sign_pm_fn(lvl)*EPS
+        return lvl_
+    return perturbed_phi_fn
+
+
 
 @jit
 def smooth_3D_cube(c_cube):
