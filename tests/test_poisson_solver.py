@@ -76,6 +76,10 @@ def test_poisson_solver():
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     @jit
+    def evaluate_exact_solution_fn(r):
+        return jnp.where(phi_fn(r)>=0, exact_sol_p_fn(r), exact_sol_m_fn(r))
+
+    @jit
     def mu_m_fn(r):
         """
         Diffusion coefficient function in $\Omega^-$
@@ -153,8 +157,8 @@ def test_poisson_solver():
         z = r[2]
         return 0.0
 
+    exact_sol = vmap(evaluate_exact_solution_fn)(R)
     
-
     init_fn, solve_fn = poisson_solver.setup(
         initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
@@ -170,13 +174,18 @@ def test_poisson_solver():
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver.prof")
 
+    
+    
     log = {
         'U': sim_state.solution,
-        'phi': sim_state.phi
+        'phi': sim_state.phi,
+        'U exact': exact_sol
     }
     io.write_vtk_manual(gstate, log)
 
-    # L2_err = sim_state.solution.reshape((Nx,Ny,Nz)) - 
+    L_inf_err = abs(sim_state.solution - exact_sol).max()
+    print(f"L_inf error = {L_inf_err}")
+   
     pdb.set_trace()
 
 
