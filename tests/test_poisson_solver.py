@@ -29,9 +29,9 @@ def test_poisson_solver():
     xmin = ymin = zmin = f32(-2.0)
     xmax = ymax = zmax = f32(2.0)
     box_size = xmax - xmin
-    Nx = i32(8)
-    Ny = i32(8)
-    Nz = i32(8)
+    Nx = i32(128)
+    Ny = i32(128)
+    Nz = i32(128)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -84,7 +84,7 @@ def test_poisson_solver():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 0.0
+        return x*x*x
 
     def f_m_fn(r):
         """

@@ -276,7 +276,6 @@ def poisson_solver(gstate, sim_state):
         x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(xo, yo, zo, u_cube)
         _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
 
-
         @jit
         def is_box_boundary_node(i, j, k):
             """
@@ -428,10 +427,10 @@ def poisson_solver(gstate, sim_state):
                 return rhs
 
             def get_rhs_on_box_boundary(node):
-                return lhs  # this is the case for dirichlet bc only
+                return 0  # this is the case for dirichlet bc only
 
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
-
+            
             return jnp.array([lhs, rhs])
 
         # lhs_rhs = evaluate_discretization_lhs_rhs_at_node(nodes[794302])
@@ -444,8 +443,6 @@ def poisson_solver(gstate, sim_state):
         #     jnp.linalg.norm()
         return lhs_rhs
 
-    
-
     @jit
     def compute_Ax(x):
         lhs_rhs = compute_Ax_and_b_fn(x)
@@ -457,11 +454,6 @@ def poisson_solver(gstate, sim_state):
         lhs_rhs = compute_Ax_and_b_fn(x)
         _, rhs = jnp.split(lhs_rhs, [1], axis=1)
         return rhs
-
-
-    x = jnp.ones(phi_n.shape[0], dtype=f32)
-
-
     
     @jit
     def compute_residual(x):
@@ -470,6 +462,7 @@ def poisson_solver(gstate, sim_state):
         # return lhs - rhs
         return jnp.square(lhs_rhs[:,0] - lhs_rhs[:,1]).mean()
 
+    x = sim_state.solution
 
     ''' For testing only '''
     # lhs_rhs = compute_Ax_and_b_fn(x)
