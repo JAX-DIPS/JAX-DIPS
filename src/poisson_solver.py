@@ -29,6 +29,7 @@ class SState:
     """
     phi: Array
     solution: Array
+    dirichlet_bc: Array
     mu_m: Array
     mu_p: Array
     k_m: Array
@@ -41,6 +42,7 @@ class SState:
 
 
 def setup(initial_value_fn :  Callable[..., Array], 
+          dirichlet_bc_fn  :  Callable[..., Array],
           lvl_set_fn       :  Callable[..., Array], 
           mu_m_fn_         :  Callable[..., Array], 
           mu_p_fn_         :  Callable[..., Array], 
@@ -53,6 +55,7 @@ def setup(initial_value_fn :  Callable[..., Array],
           ) -> Simulator:
 
     u_0_fn   = vmap(initial_value_fn)
+    dir_bc_fn= vmap(dirichlet_bc_fn)
     phi_fn   = vmap(lvl_set_fn)
     mu_m_fn  = vmap(mu_m_fn_)
     mu_p_fn  = vmap(mu_p_fn_)
@@ -65,6 +68,7 @@ def setup(initial_value_fn :  Callable[..., Array],
     
     def init_fn(R):
         PHI   = phi_fn(R)
+        DIRBC = dir_bc_fn(R)
         U     = u_0_fn(R)
         MU_M  = mu_m_fn(R)
         MU_P  = mu_p_fn(R)
@@ -74,7 +78,7 @@ def setup(initial_value_fn :  Callable[..., Array],
         F_P   = f_p_fn(R)
         ALPHA = alpha_fn(R)
         BETA  = beta_fn(R)
-        return SState(PHI, U, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA) 
+        return SState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA) 
 
     def solve_fn(gstate, sim_state):
         U_sol = poisson_kernels_cellular.poisson_solver(gstate, sim_state)

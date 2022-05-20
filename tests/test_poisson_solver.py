@@ -2,7 +2,7 @@
 from jax.config import config
 from src import io, poisson_solver, mesh
 from src.util import f32, i32
-from jax import (jit, numpy as jnp, vmap)
+from jax import (jit, numpy as jnp, vmap, grad)
 import jax
 import jax.profiler
 import pdb
@@ -26,8 +26,8 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 def test_poisson_solver():
 
     dim = i32(3)
-    xmin = ymin = zmin = f32(-2.0)
-    xmax = ymax = zmax = f32(2.0)
+    xmin = ymin = zmin = f32(-1.0)
+    xmax = ymax = zmax = f32(1.0)
     box_size = xmax - xmin
     Nx = i32(128)
     Ny = i32(128)
@@ -45,8 +45,26 @@ def test_poisson_solver():
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
 
-    # -- define velocity field as gradient of a scalar field
-
+    # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper
+    @jit
+    def exact_sol_m_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        return jnp.exp(z)
+    
+    @jit
+    def exact_sol_p_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        return jnp.sin(y)*jnp.cos(x)
+    
+    @jit
+    def dirichlet_bc_fn(r):
+        return exact_sol_p_fn(r)
+    
+    @jit
     def phi_fn(r):
         """
         Level-set function for the interface
@@ -54,64 +72,89 @@ def test_poisson_solver():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sqrt(x**2 + (y)**2 + z**2) #- 0.5
-
+        return jnp.sqrt(x**2 + y**2 + z**2) - 0.5
+    @jit
     def mu_m_fn(r):
         """
         Diffusion coefficient function in $\Omega^-$
         """
-        return 1.0
-
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        return y*y*jnp.log(x+2.0)+4.0
+    @jit
     def mu_p_fn(r):
         """
         Diffusion coefficient function in $\Omega^+$
         """
-        return 1.0
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        return jnp.exp(-1.0*z)
 
+    @jit
+    def alpha_fn(r):
+        """
+        Jump in solution at interface
+        """
+        return exact_sol_p_fn(r) - exact_sol_m_fn(r)
+
+    @jit
+    def beta_fn(r):
+        """
+        Jump in flux at interface
+        """
+        normal_fn = grad(phi_fn)
+        grad_u_p_fn = grad(exact_sol_p_fn)
+        grad_u_m_fn = grad(exact_sol_m_fn)   
+        
+        vec_1 = mu_p_fn(r)*grad_u_p_fn(r)
+        vec_2 = mu_m_fn(r)*grad_u_m_fn(r)
+        n_vec = normal_fn(r)
+        return jnp.dot(vec_1 - vec_2, n_vec) 
+
+    @jit
     def k_m_fn(r):
         """
         Linear term function in $\Omega^-$
         """
         return 0.0
-
+    
+    @jit
     def k_p_fn(r):
         """
         Linear term function in $\Omega^+$
         """
         return 0.0
-
+    
+    @jit
     def initial_value_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return x*x*x
-
+        return x*x
+    
+    @jit
     def f_m_fn(r):
         """
         Source function in $\Omega^-$
         """
-        return 1.0
+        return 0.0
 
+    @jit
     def f_p_fn(r):
         """
         Source function in $\Omega^+$
         """
-        return 1.0
-
-    def alpha_fn(r):
-        """
-        Jump in solution at interface
-        """
+        x = r[0]
+        y = r[1]
+        z = r[2]
         return 0.0
 
-    def beta_fn(r):
-        """
-        Jump in flux at interface
-        """
-        return 0.0
+    
 
     init_fn, solve_fn = poisson_solver.setup(
-        initial_value_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
+        initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
 
     t1 = time.time()

@@ -16,6 +16,7 @@ i32 = util.i32
 
 def poisson_solver(gstate, sim_state):
     phi_n = sim_state.phi
+    dirichlet_bc = sim_state.dirichlet_bc
     mu_m = sim_state.mu_m
     mu_p = sim_state.mu_p
     k_m = sim_state.k_m
@@ -36,6 +37,8 @@ def poisson_solver(gstate, sim_state):
     phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
+    
+    dirichlet_cube = dirichlet_bc.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
 
     k_m_cube_internal = k_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     k_p_cube_internal = k_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
@@ -262,19 +265,21 @@ def poisson_solver(gstate, sim_state):
             for solution estimate.
         
         """
-        u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-        u_cube = u_cube.at[0,:,:].set(0.0)
-        u_cube = u_cube.at[-1,:,:].set(0.0)
-        u_cube = u_cube.at[:,0,:].set(0.0)
-        u_cube = u_cube.at[:,-1,:].set(0.0)
-        u_cube = u_cube.at[:,:,0].set(0.0)
-        u_cube = u_cube.at[:,:,-1].set(0.0)
+
         """
-        Impose boundary conditions:
-            Dirichlet: update 
+        Impose boundary conditions and extend the solution cube
         """
+     
+        u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))   
+        u_cube = u_cube.at[ 0,:,:].set(dirichlet_cube[ 0,:,:])
+        u_cube = u_cube.at[-1,:,:].set(dirichlet_cube[-1,:,:])
+        u_cube = u_cube.at[:, 0,:].set(dirichlet_cube[:, 0,:])
+        u_cube = u_cube.at[:,-1,:].set(dirichlet_cube[:,-1,:])
+        u_cube = u_cube.at[:,:, 0].set(dirichlet_cube[:,:, 0])
+        u_cube = u_cube.at[:,:,-1].set(dirichlet_cube[:,:,-1])
         x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(xo, yo, zo, u_cube)
         _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
+        
 
         @jit
         def is_box_boundary_node(i, j, k):
@@ -293,7 +298,7 @@ def poisson_solver(gstate, sim_state):
             Dirichlet boundary condition around the box
             """
             u_m = 0.0
-            u_p = 0.0
+            u_p = dirichlet_cube[i-2,j-2,k-2]
             return jnp.array([u_m, u_p])
 
 
@@ -458,9 +463,13 @@ def poisson_solver(gstate, sim_state):
     @jit
     def compute_residual(x):
         lhs_rhs = compute_Ax_and_b_fn(x)
-        # lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        # return lhs - rhs
-        return jnp.square(lhs_rhs[:,0] - lhs_rhs[:,1]).mean()
+        #-- don't minimize on the boundaries of the box
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
+        # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
+        # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
+        loss = jnp.square(lhs - rhs).mean()
+        return loss
 
     x = sim_state.solution
 
