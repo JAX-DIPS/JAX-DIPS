@@ -176,6 +176,7 @@ def test_poisson_solver():
     }
     io.write_vtk_manual(gstate, log)
 
+    # L2_err = sim_state.solution.reshape((Nx,Ny,Nz)) - 
     pdb.set_trace()
 
 
