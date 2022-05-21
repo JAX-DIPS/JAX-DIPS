@@ -29,9 +29,9 @@ def test_poisson_solver():
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
     box_size = xmax - xmin
-    Nx = i32(128)
-    Ny = i32(128)
-    Nz = i32(128)
+    Nx = i32(16)
+    Ny = i32(16)
+    Nz = i32(16)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -166,7 +166,7 @@ def test_poisson_solver():
     t1 = time.time()
 
     sim_state = solve_fn(gstate, sim_state)
-    sim_state.solution.block_until_ready()
+    # sim_state.solution.block_until_ready()
 
     t2 = time.time()
 
