@@ -138,7 +138,7 @@ def test_poisson_solver_without_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 1.0
+        return 0.0
 
     @jit
     def f_m_fn(r):

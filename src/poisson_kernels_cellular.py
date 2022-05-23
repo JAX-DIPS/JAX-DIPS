@@ -491,7 +491,7 @@ def poisson_solver(gstate, sim_state):
         # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
         # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
         # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
-        loss = jnp.square(lhs - rhs).mean() + 0.001 * jnp.square(x).mean() * Vol_cell_nominal
+        loss = optax.l2_loss(lhs, rhs).mean() #optax.huber_loss(lhs, rhs).mean() #+ optax.cosine_distance(lhs, rhs).mean() #jnp.square(lhs - rhs).mean()  + 0.001 * jnp.square(x).mean() * Vol_cell_nominal
         return loss
 
     # --- iniate iterations from provided guess
