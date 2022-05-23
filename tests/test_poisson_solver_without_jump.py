@@ -148,7 +148,7 @@ def test_poisson_solver_without_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return -2.0 * jnp.sin(y) * jnp.cos(x)
+        return 2.0 * jnp.sin(y) * jnp.cos(x)
 
     @jit
     def f_p_fn(r):
@@ -158,7 +158,7 @@ def test_poisson_solver_without_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return -2.0 * jnp.sin(y) * jnp.cos(x)
+        return 2.0 * jnp.sin(y) * jnp.cos(x)
 
     exact_sol = vmap(evaluate_exact_solution_fn)(R)
 
