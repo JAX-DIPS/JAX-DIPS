@@ -52,18 +52,18 @@ def test_poisson_solver():
         y = r[1]
         z = r[2]
         return jnp.exp(z)
-    
+
     @jit
     def exact_sol_p_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
         return jnp.sin(y)*jnp.cos(x)
-    
+
     @jit
     def dirichlet_bc_fn(r):
         return exact_sol_p_fn(r)
-    
+
     @jit
     def unperturbed_phi_fn(r):
         """
@@ -77,7 +77,7 @@ def test_poisson_solver():
 
     @jit
     def evaluate_exact_solution_fn(r):
-        return jnp.where(phi_fn(r)>=0, exact_sol_p_fn(r), exact_sol_m_fn(r))
+        return jnp.where(phi_fn(r) >= 0, exact_sol_p_fn(r), exact_sol_m_fn(r))
 
     @jit
     def mu_m_fn(r):
@@ -88,6 +88,7 @@ def test_poisson_solver():
         y = r[1]
         z = r[2]
         return y*y*jnp.log(x+2.0)+4.0
+
     @jit
     def mu_p_fn(r):
         """
@@ -112,12 +113,12 @@ def test_poisson_solver():
         """
         normal_fn = grad(phi_fn)
         grad_u_p_fn = grad(exact_sol_p_fn)
-        grad_u_m_fn = grad(exact_sol_m_fn)   
-        
+        grad_u_m_fn = grad(exact_sol_m_fn)
+
         vec_1 = mu_p_fn(r)*grad_u_p_fn(r)
         vec_2 = mu_m_fn(r)*grad_u_m_fn(r)
         n_vec = normal_fn(r)
-        return jnp.dot(vec_1 - vec_2, n_vec) 
+        return jnp.dot(vec_1 - vec_2, n_vec)
 
     @jit
     def k_m_fn(r):
@@ -125,21 +126,21 @@ def test_poisson_solver():
         Linear term function in $\Omega^-$
         """
         return 0.0
-    
+
     @jit
     def k_p_fn(r):
         """
         Linear term function in $\Omega^+$
         """
         return 0.0
-    
+
     @jit
     def initial_value_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return x*x
-    
+        return y
+
     @jit
     def f_m_fn(r):
         """
@@ -158,7 +159,7 @@ def test_poisson_solver():
         return 0.0
 
     exact_sol = vmap(evaluate_exact_solution_fn)(R)
-    
+
     init_fn, solve_fn = poisson_solver.setup(
         initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
@@ -170,22 +171,26 @@ def test_poisson_solver():
 
     t2 = time.time()
 
-
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver.prof")
 
-    
-    
     log = {
-        'U': sim_state.solution,
         'phi': sim_state.phi,
-        'U exact': exact_sol
+        'U': sim_state.solution,
+        'U_exact': exact_sol,
+        'U-U_exact': sim_state.solution - exact_sol,
+        'alpha': sim_state.alpha,
+        'beta': sim_state.beta,
+        'mu_m': sim_state.mu_m,
+        'mu_p': sim_state.mu_p,
+        'f_m': sim_state.f_m,
+        'f_p': sim_state.f_p
     }
     io.write_vtk_manual(gstate, log)
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     print(f"L_inf error = {L_inf_err}")
-   
+
     pdb.set_trace()
 
 

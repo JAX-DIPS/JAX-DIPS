@@ -271,12 +271,12 @@ def poisson_solver(gstate, sim_state):
         """
      
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))   
-        u_cube = u_cube.at[ 0,:,:].set(dirichlet_cube[ 0,:,:])
-        u_cube = u_cube.at[-1,:,:].set(dirichlet_cube[-1,:,:])
-        u_cube = u_cube.at[:, 0,:].set(dirichlet_cube[:, 0,:])
-        u_cube = u_cube.at[:,-1,:].set(dirichlet_cube[:,-1,:])
-        u_cube = u_cube.at[:,:, 0].set(dirichlet_cube[:,:, 0])
-        u_cube = u_cube.at[:,:,-1].set(dirichlet_cube[:,:,-1])
+        # u_cube = u_cube.at[ 0,:,:].set(dirichlet_cube[ 0,:,:])
+        # u_cube = u_cube.at[-1,:,:].set(dirichlet_cube[-1,:,:])
+        # u_cube = u_cube.at[:, 0,:].set(dirichlet_cube[:, 0,:])
+        # u_cube = u_cube.at[:,-1,:].set(dirichlet_cube[:,-1,:])
+        # u_cube = u_cube.at[:,:, 0].set(dirichlet_cube[:,:, 0])
+        # u_cube = u_cube.at[:,:,-1].set(dirichlet_cube[:,:,-1])
         # x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(xo, yo, zo, u_cube)
         # _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
         
@@ -287,20 +287,17 @@ def poisson_solver(gstate, sim_state):
             Check if current node is on the boundary of box
             """
             boundary = (i-2)*(i-Nx-1)*(j-2)*(j-Ny-1)*(k-2)*(k-Nz-1)
-            # boundary_p1 = (i-1)*(i-Nx-2)*(j-1)*(j-Ny-2)*(k-1)*(k-Nz-2)
-            # boundary_p2 = (i)*(i-Nx-3)*(j)*(j-Ny-3)*(k)*(k-Nz-3)
-            # return jnp.where(boundary*boundary_p1*boundary_p2==0, True, False)
             return jnp.where(boundary==0, True, False)
 
 
-        @jit 
-        def u_mp_dirichlet_boundary_at_node(i, j, k):
-            """
-            Dirichlet boundary condition around the box
-            """
-            u_m = 0.0
-            u_p = dirichlet_cube[i-2,j-2,k-2]
-            return jnp.array([u_m, u_p])
+        # @jit 
+        # def u_mp_dirichlet_boundary_at_node(i, j, k):
+        #     """
+        #     Dirichlet boundary condition around the box
+        #     """
+        #     u_m = 0.0
+        #     u_p = dirichlet_cube[i-2,j-2,k-2]
+        #     return jnp.array([u_m, u_p])
 
 
         # @jit
@@ -383,59 +380,55 @@ def poisson_solver(gstate, sim_state):
             """
             Main u_minus/plus evaluator, takes care if node is on box boundary or is an interior node.
             """
-            return jnp.where(is_box_boundary_node(i, j, k), u_mp_dirichlet_boundary_at_node(i, j, k), u_mp_at_interior_node(i, j, k))
+            return u_mp_at_interior_node(i, j, k)
+            # return jnp.where(is_box_boundary_node(i, j, k), u_mp_dirichlet_boundary_at_node(i, j, k), u_mp_at_interior_node(i, j, k))
 
 
 
         # @jit
         def evaluate_discretization_lhs_rhs_at_node(node):
-            
+            #--- LHS
             i, j, k = node
-            
             poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(node)
-
             coeffs, vols = jnp.split(poisson_scheme_coeffs, [12], axis=0)
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
+            def get_lhs_at_interior_node(node):
+                i, j, k = node
+                k_m_ijk = k_m_cube_internal[i-2, j-2, k-2]  # k_cube's don't have ghost layers
+                k_p_ijk = k_p_cube_internal[i-2, j-2, k-2]
+                u_m_ijk, u_p_ijk = u_mp_at_node(i, j, k)
+                lhs  = k_m_ijk * V_m_ijk * u_m_ijk
+                lhs += k_p_ijk * V_p_ijk * u_p_ijk
+                lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6]) * u_m_ijk + (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7]) * u_p_ijk
+                u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j, k)
+                lhs += -1.0 * coeffs[0] * u_m_imjk - coeffs[1] * u_p_imjk
+                u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j, k)
+                lhs += -1.0 * coeffs[2] * u_m_ipjk - coeffs[3] * u_p_ipjk
+                u_m_ijmk, u_p_ijmk = u_mp_at_node(i, j-1, k)
+                lhs += -1.0 * coeffs[4] * u_m_ijmk - coeffs[5] * u_p_ijmk
+                u_m_ijpk, u_p_ijpk = u_mp_at_node(i, j+1, k)
+                lhs += -1.0 * coeffs[6] * u_m_ijpk - coeffs[7] * u_p_ijpk
+                u_m_ijkm, u_p_ijkm = u_mp_at_node(i, j, k-1)
+                lhs += -1.0 * coeffs[8] * u_m_ijkm - coeffs[9] * u_p_ijkm
+                u_m_ijkp, u_p_ijkp = u_mp_at_node(i, j, k+1)
+                lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
+                return lhs
+            def get_lhs_on_box_boundary(node):
+                i, j, k = node
+                lhs = u_cube[i-2, j-2, k-2]
+                return lhs
+            lhs = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
             
-            #--- LHS
-            k_m_ijk = k_m_cube_internal[i-2, j-2, k-2]  # k_cube's don't have ghost layers
-            k_p_ijk = k_p_cube_internal[i-2, j-2, k-2]
-            
-
-            u_m_ijk, u_p_ijk = u_mp_at_node(i, j, k)
-            lhs  = k_m_ijk * V_m_ijk * u_m_ijk
-            lhs += k_p_ijk * V_p_ijk * u_p_ijk
-            lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6]) * u_m_ijk + (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7]) * u_p_ijk
-
-            u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j, k)
-            lhs += -1.0 * coeffs[0] * u_m_imjk - coeffs[1] * u_p_imjk
-
-            u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j, k)
-            lhs += -1.0 * coeffs[2] * u_m_ipjk - coeffs[3] * u_p_ipjk
-
-            u_m_ijmk, u_p_ijmk = u_mp_at_node(i, j-1, k)
-            lhs += -1.0 * coeffs[4] * u_m_ijmk - coeffs[5] * u_p_ijmk
-
-            u_m_ijpk, u_p_ijpk = u_mp_at_node(i, j+1, k)
-            lhs += -1.0 * coeffs[6] * u_m_ijpk - coeffs[7] * u_p_ijpk
-
-            u_m_ijkm, u_p_ijkm = u_mp_at_node(i, j, k-1)
-            lhs += -1.0 * coeffs[8] * u_m_ijkm - coeffs[9] * u_p_ijkm
-
-            u_m_ijkp, u_p_ijkp = u_mp_at_node(i, j, k+1)
-            lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
-
             #--- RHS
             def get_rhs_at_interior_node(node):
                 i, j, k = node
                 rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
                 rhs += beta_integrate_over_interface_at_node(node)
                 return rhs
-
             def get_rhs_on_box_boundary(node):
-                return 0.0  # this is the case for dirichlet bc only
-
+                i, j, k = node
+                return dirichlet_cube[i-2, j-2, k-2]  # this is the case for dirichlet bc only
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
             
             return jnp.array([lhs, rhs])
@@ -459,12 +452,12 @@ def poisson_solver(gstate, sim_state):
     @jit
     def compute_residual(x):
         lhs_rhs = compute_Ax_and_b_fn(x)
-        #-- don't minimize on the boundaries of the box
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
-        rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
-        loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
-        # loss = jnp.square(lhs - rhs).mean()
+        #-- don't minimize on the boundaries of the box
+        # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
+        # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
+        # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
+        loss = jnp.square(lhs - rhs).mean()
         return loss
 
 
@@ -481,10 +474,11 @@ def poisson_solver(gstate, sim_state):
     x = x_cube.reshape(-1)
 
     ''' For testing only '''
-    # lhs_rhs = compute_Ax_and_b_fn(x)
-    # Amat = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
-    # rhs = lhs_rhs[:,1].reshape((xo.shape+yo.shape+zo.shape))
-    # pdb.set_trace()
+    lhs_rhs = compute_Ax_and_b_fn(x)
+    Amat = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
+    rhs = lhs_rhs[:,1].reshape((xo.shape+yo.shape+zo.shape))
+    plt.imshow(Amat[:,9,:]); plt.colorbar(); plt.show()
+    pdb.set_trace()
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()
     # return sol[0].reshape(-1)
@@ -517,7 +511,7 @@ def poisson_solver(gstate, sim_state):
     grad_fn = jit(grad(compute_loss))
 
     loss_store = []
-    for _ in range(100):
+    for _ in range(500):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
         params = optax.apply_updates(params, updates)
