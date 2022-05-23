@@ -440,7 +440,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
     
 
-    @jit
+    # @jit
     def compute_interface_faces(node):
         pieces = get_vertices_fn(node)  
         
@@ -634,7 +634,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
         
 
-    @jit
+    # @jit
     def compute_domain_faces(node, is_interface):
         """
         A domain face is not crossed by the interface, therefore plus/minus centroids overlap
@@ -680,7 +680,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
                                                                     vol_m, vol_p], dtype=f32)
         return node_coeff_times_area_divided_size_and_volumes
 
-    @jit
+    # @jit
     def compute_face_centroids_values_plus_minus_at_node(node):
         """
         Main driver, differentiating between domain cells and interface cells.

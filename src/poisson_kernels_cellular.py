@@ -269,7 +269,8 @@ def poisson_solver(gstate, sim_state):
         """
         Impose boundary conditions 
         """
-     
+        Vol_cell_nominal = dx*dy*dz
+
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))   
         # u_cube = u_cube.at[ 0,:,:].set(dirichlet_cube[ 0,:,:])
         # u_cube = u_cube.at[-1,:,:].set(dirichlet_cube[-1,:,:])
@@ -281,7 +282,7 @@ def poisson_solver(gstate, sim_state):
         # _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
         
         
-        @jit
+        # @jit
         def is_box_boundary_node(i, j, k):
             """
             Check if current node is on the boundary of box
@@ -416,7 +417,7 @@ def poisson_solver(gstate, sim_state):
                 return lhs 
             def get_lhs_on_box_boundary(node):
                 i, j, k = node
-                lhs = u_cube[i-2, j-2, k-2]
+                lhs = u_cube[i-2, j-2, k-2] * Vol_cell_nominal
                 return lhs
             lhs = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
             
@@ -428,7 +429,7 @@ def poisson_solver(gstate, sim_state):
                 return rhs
             def get_rhs_on_box_boundary(node):
                 i, j, k = node
-                return dirichlet_cube[i-2, j-2, k-2]  # this is the case for dirichlet bc only
+                return dirichlet_cube[i-2, j-2, k-2] * Vol_cell_nominal 
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
             
             return jnp.array([lhs, rhs])
@@ -475,9 +476,10 @@ def poisson_solver(gstate, sim_state):
 
     ''' For testing only '''
     lhs_rhs = compute_Ax_and_b_fn(x)
-    Amat = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
+    lhs = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
     rhs = lhs_rhs[:,1].reshape((xo.shape+yo.shape+zo.shape))
-    plt.imshow(Amat[:,9,:]); plt.colorbar(); plt.show()
+    plt.imshow(lhs[:,9,:]); plt.colorbar(); plt.show()
+    plt.imshow(rhs[:,9,:]); plt.colorbar(); plt.show()
     pdb.set_trace()
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()
