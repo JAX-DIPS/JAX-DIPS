@@ -241,6 +241,7 @@ def poisson_solver(gstate, sim_state):
     """
     END Geometric integration functions initiated
     """
+    Vol_cell_nominal = dx*dy*dz
     # @jit
     def compute_Ax_and_b_fn(u):
         """
@@ -270,7 +271,7 @@ def poisson_solver(gstate, sim_state):
         """
         Impose boundary conditions 
         """
-        Vol_cell_nominal = dx*dy*dz
+        
 
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
         # u_cube = u_cube.at[ 0,:,:].set(dirichlet_cube[ 0,:,:])
@@ -490,7 +491,7 @@ def poisson_solver(gstate, sim_state):
         # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
         # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
         # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
-        loss = jnp.square(lhs - rhs).mean()
+        loss = jnp.square(lhs - rhs).mean() + 0.001 * jnp.square(x).mean() * Vol_cell_nominal
         return loss
 
     # --- iniate iterations from provided guess
@@ -530,7 +531,7 @@ def poisson_solver(gstate, sim_state):
     # ------ Exponential decay of the learning rate.
     scheduler = optax.exponential_decay(
         init_value=1e-2,
-        transition_steps=1000,
+        transition_steps=100,
         decay_rate=0.99)
 
     # Combining gradient transforms using `optax.chain`.
@@ -552,13 +553,15 @@ def poisson_solver(gstate, sim_state):
 
     params = {'u': x}
     opt_state = optimizer.init(params)
-
-    def compute_loss(params): return jit(compute_residual)(params['u'])
+    
+    @jit
+    def compute_loss(params): 
+        return compute_residual(params['u'])
 
     grad_fn = jit(grad(compute_loss))
 
     loss_store = []
-    for _ in range(500):
+    for _ in range(2000):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
         params = optax.apply_updates(params, updates)
