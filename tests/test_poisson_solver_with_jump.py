@@ -23,12 +23,11 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 
-def test_poisson_solver():
+def test_poisson_solver_with_jump():
 
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    box_size = xmax - xmin
     Nx = i32(16)
     Ny = i32(16)
     Nz = i32(16)
@@ -73,7 +72,7 @@ def test_poisson_solver():
         y = r[1]
         z = r[2]
         return jnp.sqrt(x**2 + y**2 + z**2) - 0.5
-    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
+    phi_fn = unperturbed_phi_fn #level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     @jit
     def evaluate_exact_solution_fn(r):
@@ -195,4 +194,4 @@ def test_poisson_solver():
 
 
 if __name__ == "__main__":
-    test_poisson_solver()
+    test_poisson_solver_with_jump()
