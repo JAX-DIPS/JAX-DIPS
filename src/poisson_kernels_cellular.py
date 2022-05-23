@@ -1,17 +1,16 @@
-from jax import config
-import matplotlib.pyplot as plt
-from functools import partial
-from jax import (numpy as jnp, vmap, pmap, jit, grad, lax, ops)
+from jax import (numpy as jnp, vmap, jit, grad)
 from jax.scipy.sparse.linalg import gmres, bicgstab, cg
 import optax
 from src import (interpolate, util, geometric_integrations)
 import pdb
 import matplotlib
 matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 f32 = util.f32
 i32 = util.i32
 
+from jax import config
 config.update("jax_debug_nans", True)
 
 
@@ -491,7 +490,7 @@ def poisson_solver(gstate, sim_state):
         # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
         # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
         # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
-        loss = jnp.sqrt(jnp.square(lhs - rhs)).max()
+        loss = jnp.square(lhs - rhs).mean()
         return loss
 
     # --- iniate iterations from provided guess
