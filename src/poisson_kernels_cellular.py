@@ -267,7 +267,7 @@ def poisson_solver(gstate, sim_state):
         """
 
         """
-        Impose boundary conditions and extend the solution cube
+        Impose boundary conditions 
         """
      
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))   
@@ -280,16 +280,17 @@ def poisson_solver(gstate, sim_state):
         # x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(xo, yo, zo, u_cube)
         # _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
         
-
+        
         @jit
         def is_box_boundary_node(i, j, k):
             """
             Check if current node is on the boundary of box
             """
             boundary = (i-2)*(i-Nx-1)*(j-2)*(j-Ny-1)*(k-2)*(k-Nz-1)
-            boundary_p1 = (i-1)*(i-Nx-2)*(j-1)*(j-Ny-2)*(k-1)*(k-Nz-2)
-            boundary_p2 = (i)*(i-Nx-3)*(j)*(j-Ny-3)*(k)*(k-Nz-3)
-            return jnp.where(boundary*boundary_p1*boundary_p2==0, True, False)
+            # boundary_p1 = (i-1)*(i-Nx-2)*(j-1)*(j-Ny-2)*(k-1)*(k-Nz-2)
+            # boundary_p2 = (i)*(i-Nx-3)*(j)*(j-Ny-3)*(k)*(k-Nz-3)
+            # return jnp.where(boundary*boundary_p1*boundary_p2==0, True, False)
+            return jnp.where(boundary==0, True, False)
 
 
         @jit 
@@ -460,19 +461,30 @@ def poisson_solver(gstate, sim_state):
         lhs_rhs = compute_Ax_and_b_fn(x)
         #-- don't minimize on the boundaries of the box
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
-        # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
-        # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
-        loss = jnp.square(lhs - rhs).mean()
+        Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
+        rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
+        loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
+        # loss = jnp.square(lhs - rhs).mean()
         return loss
 
+
+    #--- iniate iterations from provided guess
     x = sim_state.solution
+    #--- impose the dirichlet bc because bc's won't be updated.
+    x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))   
+    x_cube = x_cube.at[ 0,:,:].set(dirichlet_cube[ 0,:,:])
+    x_cube = x_cube.at[-1,:,:].set(dirichlet_cube[-1,:,:])
+    x_cube = x_cube.at[:, 0,:].set(dirichlet_cube[:, 0,:])
+    x_cube = x_cube.at[:,-1,:].set(dirichlet_cube[:,-1,:])
+    x_cube = x_cube.at[:,:, 0].set(dirichlet_cube[:,:, 0])
+    x_cube = x_cube.at[:,:,-1].set(dirichlet_cube[:,:,-1])
+    x = x_cube.reshape(-1)
 
     ''' For testing only '''
-    lhs_rhs = compute_Ax_and_b_fn(x)
-    Amat = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
-    rhs = lhs_rhs[:,1].reshape((xo.shape+yo.shape+zo.shape))
-    pdb.set_trace()
+    # lhs_rhs = compute_Ax_and_b_fn(x)
+    # Amat = lhs_rhs[:,0].reshape((xo.shape+yo.shape+zo.shape))
+    # rhs = lhs_rhs[:,1].reshape((xo.shape+yo.shape+zo.shape))
+    # pdb.set_trace()
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()
     # return sol[0].reshape(-1)
