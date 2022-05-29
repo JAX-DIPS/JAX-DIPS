@@ -428,8 +428,8 @@ def poisson_solver(gstate, sim_state):
                 u_m_ijk, u_p_ijk = u_mp_at_node(i, j, k)
                 lhs = k_m_ijk * V_m_ijk * u_m_ijk
                 lhs += k_p_ijk * V_p_ijk * u_p_ijk
-                lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6]) * u_m_ijk + \
-                    (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7]) * u_p_ijk
+                lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) * u_m_ijk + \
+                    (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]) * u_p_ijk
                 u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j, k)
                 lhs += -1.0 * coeffs[0] * u_m_imjk - coeffs[1] * u_p_imjk
                 u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j, k)
@@ -507,22 +507,28 @@ def poisson_solver(gstate, sim_state):
     x = x_cube.reshape(-1)
 
     ''' For testing only '''
-    # lhs_rhs = compute_Ax_and_b_fn(x)
-    # lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
-    # rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
-    # plt.imshow(lhs[:, 9, :])
-    # plt.title("lhs")
-    # plt.colorbar()
-    # plt.show()
-    # plt.imshow(rhs[:, 9, :])
-    # plt.title("rhs")
-    # plt.colorbar()
-    # plt.show()
-    # plt.imshow((lhs-rhs)[:, 9, :])
-    # plt.title("residual")
-    # plt.colorbar()
-    # plt.show()
-    # pdb.set_trace()
+    lhs_rhs = compute_Ax_and_b_fn(x)
+    lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
+    rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
+    plt.imshow(lhs[:, 9, :])
+    plt.title("lhs")
+    plt.colorbar()
+    plt.show()
+    plt.imshow(rhs[:, 9, :])
+    plt.title("rhs")
+    plt.colorbar()
+    plt.show()
+    plt.imshow((lhs-rhs)[:, 9, :])
+    plt.title("residual")
+    plt.colorbar()
+    plt.show()
+
+    ''' TEST RHS vector below '''
+    plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
+    plt.imshow(rhs[:,:,1]/dx**3*2-f_p_cube_internal[:,:,1]); plt.show(); # should be 0 on boundaries
+    err_1 = abs(rhs[:,:,-1]/dx**3*2-f_p_cube_internal[:,:,-1]).max()
+    '''err_1 on all boundaries must be 0, it is 1e-8 which is fine'''
+    pdb.set_trace()
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()
     # return sol[0].reshape(-1)
@@ -561,7 +567,7 @@ def poisson_solver(gstate, sim_state):
     grad_fn = jit(grad(compute_loss))
 
     loss_store = []
-    for _ in range(2000):
+    for _ in range(1000):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
         params = optax.apply_updates(params, updates)
