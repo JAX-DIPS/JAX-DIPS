@@ -138,8 +138,8 @@ def test_poisson_solver_without_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        # return 0.0
-        return exact_sol_p_fn(r)   # PAM: testing
+        return y
+        # return exact_sol_p_fn(r)   # PAM: testing
 
     @jit
     def f_m_fn(r):

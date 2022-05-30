@@ -458,7 +458,7 @@ JAX-DIPS allows for exact computation of the gradient of the loss function using
 Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
 
 \section{Numerical Examples}
-\subsection{Stationary linear case}
+
 \begin{align*}
 	 & k^{\pm}u^{\pm} - \nabla \cdot (\mu^{\pm}\nabla u^\pm)=f^{\pm}, & \mathbf{x}\in\Omega^\pm \\
 	 & [u]=\alpha,                                                    & \mathbf{x} \in \Gamma   \\
@@ -467,6 +467,16 @@ Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is t
 
 
 
+We present successively more complex test cases and analyze performance of \texttt{JAX-DIPS} in each case.
+
+
+\subsection{No interface, $\Gamma=\emptyset $}
+We set the level-set function to $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} + 0.5$ within a domain $\Omega:[-1,1]^3$ characterizing absence of all jump conditions. Using the method of manufactured solutions, we construct the following Poisson problem for an exact solution $u(\mathbf{x}) = \sin(y)\cos(x)$ with appropriate Dirichlet boundary conditions:
+\begin{align*}
+	 - \Delta u &=2\sin(y)\cos(x), & \mathbf{x}\in\Omega\\
+	 u(\mathbf{x}) &= \sin(y)\cos(x), &\mathbf{x}\in \partial \Omega
+\end{align*}
+with \texttt{Adam} optimizer starting from an initial condition $\hat{u}(\mathbf{x};t=0)=y$ which does not satisfy the system of equations.
 
 \section*{Acknowledgement}
 

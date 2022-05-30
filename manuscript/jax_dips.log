@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.3.2)  11 APR 2022 22:13
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  29 MAY 2022 17:22
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -666,28 +666,40 @@ LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
  [4]
 Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
 put line 344.
- [5] [6] [7] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 482.
+ [5] [6]
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `math shift' on input line 473.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `\Gamma' on input line 473.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `\emptyset' on input line 473.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `math shift' on input line 473.
+
+[7] (./jax_dips.bbl)
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 492.
  [8]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 482.
-
-(./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 482.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 482.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 492.
+ (./jax_dips.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 492.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 492.
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
-(rerunfilecheck)             Checksum: DEF18D1FC080188E228731009AADE46C;596.
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 482.
+(rerunfilecheck)             Checksum: 076F1868601CDFAA5668C8DC82AF8FFB;589.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 492.
  ) 
 Here is how much of TeX's memory you used:
- 9904 strings out of 483065
- 146920 string characters out of 5963551
+ 9906 strings out of 483065
+ 146941 string characters out of 5963550
  435860 words of memory out of 5000000
- 24674 multiletter control sequences out of 15000+600000
- 543431 words of font info for 68 fonts, out of 8000000 for 9000
+ 24675 multiletter control sequences out of 15000+600000
+ 543599 words of font info for 69 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
  41i,26n,42p,1006b,517s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/mistani/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
@@ -713,11 +725,11 @@ blic/amsfonts/cm/cmsy6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
 sfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
 i7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb>
-
-Output written on jax_dips.pdf (8 pages, 390963 bytes).
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on jax_dips.pdf (8 pages, 403608 bytes).
 PDF statistics:
- 221 PDF objects out of 1000 (max. 8388607)
- 180 compressed objects within 2 object streams
+ 225 PDF objects out of 1000 (max. 8388607)
+ 183 compressed objects within 2 object streams
  37 named destinations out of 1000 (max. 500000)
  83 words of extra memory for PDF output out of 10000 (max. 10000000)
 
