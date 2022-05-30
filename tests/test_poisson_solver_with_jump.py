@@ -1,8 +1,9 @@
 
 from jax.config import config
+from optax import lamb
 from src import io, poisson_solver, mesh, level_set
 from src.util import f32, i32
-from jax import (jit, numpy as jnp, vmap, grad)
+from jax import (jit, numpy as jnp, vmap, grad, lax)
 import jax
 import jax.profiler
 import pdb
@@ -72,7 +73,7 @@ def test_poisson_solver_with_jump():
         y = r[1]
         z = r[2]
         return jnp.sqrt(x**2 + y**2 + z**2) - 0.5
-    phi_fn = unperturbed_phi_fn #level_set.perturb_level_set_fn(unperturbed_phi_fn)
+    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     @jit
     def evaluate_exact_solution_fn(r):
@@ -140,22 +141,41 @@ def test_poisson_solver_with_jump():
         z = r[2]
         return y
 
+
+
     @jit
     def f_m_fn(r):
         """
         Source function in $\Omega^-$
         """
-        return 0.0
+        def laplacian_m_fn(x):
+            grad_m_fn = grad(exact_sol_m_fn)
+            flux_m_fn = lambda p: mu_m_fn(p)*grad_m_fn(p)
+            eye = jnp.eye(dim, dtype=f32)
+            def _body_fun(i, val):
+                primal, tangent = jax.jvp(flux_m_fn, (x,), (eye[i],))
+                return val + primal[i]**2 + tangent[i]
+            return -0.5 * lax.fori_loop(i32(0), i32(dim), _body_fun, 0.0)
+        return laplacian_m_fn(r) * (-1.0)
+
+
 
     @jit
     def f_p_fn(r):
         """
         Source function in $\Omega^+$
         """
-        x = r[0]
-        y = r[1]
-        z = r[2]
-        return 0.0
+        def laplacian_p_fn(x):
+            grad_p_fn = grad(exact_sol_p_fn)
+            flux_p_fn = lambda p: mu_p_fn(p)*grad_p_fn(p)
+            eye = jnp.eye(dim, dtype=f32)
+            def _body_fun(i, val):
+                primal, tangent = jax.jvp(flux_p_fn, (x,), (eye[i],))
+                return val + primal[i]**2 + tangent[i]
+            return -0.5 * lax.fori_loop(i32(0), i32(dim), _body_fun, 0.0)
+        return laplacian_p_fn(r) * (-1.0)
+
+
 
     exact_sol = vmap(evaluate_exact_solution_fn)(R)
 
@@ -190,7 +210,6 @@ def test_poisson_solver_with_jump():
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     print(f"L_inf error = {L_inf_err}")
 
-    pdb.set_trace()
 
 
 if __name__ == "__main__":

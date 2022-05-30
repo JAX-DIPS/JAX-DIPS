@@ -478,6 +478,22 @@ We set the level-set function to $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} + 0.5$
 \end{align*}
 with \texttt{Adam} optimizer starting from an initial condition $\hat{u}(\mathbf{x};t=0)=y$ which does not satisfy the system of equations.
 
+
+
+\subsection{Interface, $\Gamma\neq \emptyset$}
+We consider the example 4.6 of the Voronoi-Interface Method (VIM) of Guittet et al 2015 \cite{guittet2015solving} where a sphere $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} - 0.5$ is centered in a box $\Omega:[-1,1]^3$ with the exact solution
+\begin{align*}
+& u(x,y,z)=e^{z}, & \phi(\mathbf{x})<0\\
+& u(x,y,z)=\cos(x)\sin(y), & \phi(\mathbf{x})\ge 0
+\end{align*}
+and the diffusion coefficient
+\begin{align*}
+\mu(x,y,z)&=y^2 \ln(x+2) + 4 &\phi(\mathbf{x})<0 \\
+\mu(x,y,z)&=e^{-z} &\phi(\mathbf{x})\ge 0 
+\end{align*}
+
+Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM.
+
 \section*{Acknowledgement}
 
 

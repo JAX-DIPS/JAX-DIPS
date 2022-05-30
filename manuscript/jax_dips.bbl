@@ -6,6 +6,12 @@ D.~Bochkov and F.~Gibou.
   grids.
 \newblock {\em Journal of Computational Physics}, 407:109269, 2020.
 
+\bibitem{guittet2015solving}
+A.~Guittet, M.~Lepilliez, S.~Tanguy, and F.~Gibou.
+\newblock Solving elliptic problems with discontinuities on irregular
+  domains--the voronoi interface method.
+\newblock {\em Journal of Computational Physics}, 298:747--765, 2015.
+
 \bibitem{min2007geometric}
 C.~Min and F.~Gibou.
 \newblock Geometric integration over irregular domains with application to
