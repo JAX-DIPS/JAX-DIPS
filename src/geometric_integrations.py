@@ -1,8 +1,4 @@
-from functools import partial
-from multiprocessing import dummy
-from jax import (numpy as jnp, vmap, jit, lax, ops)
-from numpy import extract
-from torch import dtype
+from jax import (numpy as jnp, jit)
 from src import (interpolate, util)
 import pdb
 
@@ -179,14 +175,14 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
         """
         i, j, k = node
         # Get corners of the control volume    
-        dXcorners = 0.5 * jnp.array([   [-dx, -dy, -dz],
-                                        [ dx, -dy, -dz],
-                                        [ dx, -dy,  dz],
-                                        [-dx, -dy,  dz],
-                                        [-dx,  dy, -dz],
-                                        [ dx,  dy, -dz],
-                                        [-dx,  dy,  dz],
-                                        [ dx,  dy,  dz] ], dtype=f32)
+        dXcorners = jnp.array([   [-dx, -dy, -dz],
+                                [ dx, -dy, -dz],
+                                [ dx, -dy,  dz],
+                                [-dx, -dy,  dz],
+                                [-dx,  dy, -dz],
+                                [ dx,  dy, -dz],
+                                [-dx,  dy,  dz],
+                                [ dx,  dy,  dz] ], dtype=f32) * (0.5)
         
         R_cell_corners = dXcorners + jnp.array([x[i], y[j], z[k]])
         phi_cell_corners = phi_interp_fn(R_cell_corners)
@@ -571,8 +567,8 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
             return area_partition_1  + area_partition_2
         
         def extract_area_minus_x_face(s_omega_m_partition_1, s_omega_m_partition_2, x_face):
-            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,0], x_face, atol=1e-8*dx) #s_omega_m_partition_1[:,:,0] == x_face
-            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,0], x_face, atol=1e-8*dx) # s_omega_m_partition_2[:,:,0] == x_face
+            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,0], x_face, atol=1e-6*dx) #s_omega_m_partition_1[:,:,0] == x_face
+            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,0], x_face, atol=1e-6*dx) # s_omega_m_partition_2[:,:,0] == x_face
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
             # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
             # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])
@@ -581,8 +577,8 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
             # return area_partition_1  + area_partition_2
 
         def extract_area_minus_y_face(s_omega_m_partition_1, s_omega_m_partition_2, y_face):
-            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,1], y_face, atol=1e-8*dy) #s_omega_m_partition_1[:,:,1] == y_face
-            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,1], y_face, atol=1e-8*dy) #s_omega_m_partition_2[:,:,1] == y_face
+            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,1], y_face, atol=1e-6*dy) #s_omega_m_partition_1[:,:,1] == y_face
+            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,1], y_face, atol=1e-6*dy) #s_omega_m_partition_2[:,:,1] == y_face
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
             # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
             # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])
@@ -591,8 +587,8 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
             # return area_partition_1  + area_partition_2
         
         def extract_area_minus_z_face(s_omega_m_partition_1, s_omega_m_partition_2, z_face):
-            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,2], z_face, atol=1e-8*dz) #s_omega_m_partition_1[:,:,2] == z_face
-            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,2], z_face, atol=1e-8*dz) #s_omega_m_partition_2[:,:,2] == z_face
+            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,2], z_face, atol=1e-6*dz) #s_omega_m_partition_1[:,:,2] == z_face
+            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,2], z_face, atol=1e-6*dz) #s_omega_m_partition_2[:,:,2] == z_face
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
             # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
             # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])

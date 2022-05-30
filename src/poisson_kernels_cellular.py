@@ -170,8 +170,8 @@ def poisson_solver(gstate, sim_state):
     @jit
     def D_mp_node_update(node):
         Wijk_m, Wijk_p = get_W_pm_matrices(node, phi_cube)
-        Dp = jnp.linalg.inv(Xijk.T @ Wijk_p @ Xijk) @ (Wijk_p @ Xijk).T
-        Dm = jnp.linalg.inv(Xijk.T @ Wijk_m @ Xijk) @ (Wijk_m @ Xijk).T
+        Dp = jnp.linalg.pinv(Xijk.T @ Wijk_p @ Xijk) @ (Wijk_p @ Xijk).T
+        Dm = jnp.linalg.pinv(Xijk.T @ Wijk_m @ Xijk) @ (Wijk_m @ Xijk).T
         return jnp.nan_to_num(Dm), jnp.nan_to_num(Dp)
     D_mp_fn = jit(vmap(D_mp_node_update))
 
@@ -396,8 +396,7 @@ def poisson_solver(gstate, sim_state):
             u_ijk = u_cube[i-2, j-2, k-2]
             # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
             is_interface = is_cell_crossed_by_interface((i, j, k))
-            u_mp = jnp.where(is_interface == 0, interface_node(
-                i, j, k), bulk_node(is_interface, u_ijk))
+            u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
             return u_mp
 
         # @jit
@@ -414,12 +413,18 @@ def poisson_solver(gstate, sim_state):
         def evaluate_discretization_lhs_rhs_at_node(node):
             #--- LHS
             i, j, k = node
-            poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(
-                node)
+            poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(node)
             coeffs, vols = jnp.split(poisson_scheme_coeffs, [12], axis=0)
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
+            
+            # plt.pcolor(coeffs.val[:,0].reshape((16,16,16))[:,:,9]); plt.title('u_m_imjk'); plt.show()
+            # plt.pcolor(coeffs.val[:,1].reshape((16,16,16))[:,:,9]); plt.title('u_p_imjk'); plt.show()
 
+            # plt.pcolor(coeffs.val[:,2].reshape((16,16,16))[:,:,9]); plt.title('u_m_ipjk'); plt.show()
+            # plt.pcolor(coeffs.val[:,3].reshape((16,16,16))[:,:,9]); plt.title('u_p_ipjk'); plt.show()
+
+            # pdb.set_trace()
             def get_lhs_at_interior_node(node):
                 i, j, k = node
                 # k_cube's don't have ghost layers
@@ -508,26 +513,27 @@ def poisson_solver(gstate, sim_state):
     x = x_cube.reshape(-1)
 
     ''' For testing only '''
-    lhs_rhs = compute_Ax_and_b_fn(x)
-    lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
-    rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
-    plt.imshow(lhs[:, 9, :]); plt.title("lhs"); plt.colorbar(); plt.show()
-    plt.imshow(rhs[:, 9, :])
-    plt.title("rhs")
-    plt.colorbar()
-    plt.show()
-    plt.imshow((lhs-rhs)[:, 9, :])
-    plt.title("residual")
-    plt.colorbar()
-    plt.show()
+    # lhs_rhs = compute_Ax_and_b_fn(x)
+    # lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
+    # rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
+    # plt.imshow(lhs[:, 9, :]); plt.title("lhs"); plt.colorbar(); plt.show()
+    # plt.imshow(rhs[:, 9, :])
+    # plt.title("rhs")
+    # plt.colorbar()
+    # plt.show()
+    # plt.imshow((lhs-rhs)[:, 9, :])
+    # plt.title("residual")
+    # plt.colorbar()
+    # plt.show()
 
-    ''' TEST RHS vector below '''
-    plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
-    plt.imshow(rhs[:,:,1]/dx**3*2-f_p_cube_internal[:,:,1]); plt.show(); # should be 0 on boundaries
-    err_1 = abs(rhs[:,:,-1]/dx**3*2-f_p_cube_internal[:,:,-1]).max()
-    '''err_1 on all boundaries must be 0, it is 1e-8 which is fine'''
-    err_2 = (lhs/x_cube/dx**3)[:,:,9]
-    pdb.set_trace()
+    # ''' TEST RHS vector below '''
+    # plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
+    # plt.imshow(rhs[:,:,1]/dx**3*2-f_p_cube_internal[:,:,1]); plt.show(); # should be 0 on boundaries
+    # err_1 = abs(rhs[:,:,-1]/dx**3*2-f_p_cube_internal[:,:,-1]).max()
+    # '''err_1 on all boundaries must be 0, it is 1e-8 which is fine'''
+    # err_2 = (lhs/x_cube/dx**3)[:,:,9]
+    # pdb.set_trace()
+    
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()
     # return sol[0].reshape(-1)

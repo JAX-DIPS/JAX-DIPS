@@ -139,7 +139,7 @@ def test_poisson_solver_with_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return y
+        return 1.0
 
 
 
