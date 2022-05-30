@@ -144,7 +144,7 @@ def test_poisson_solver_with_jump():
 
 
     @jit
-    def f_m_fn(r):
+    def f_m_fn_(r):
         """
         Source function in $\Omega^-$
         """
@@ -155,13 +155,11 @@ def test_poisson_solver_with_jump():
             def _body_fun(i, val):
                 primal, tangent = jax.jvp(flux_m_fn, (x,), (eye[i],))
                 return val + primal[i]**2 + tangent[i]
-            return -0.5 * lax.fori_loop(i32(0), i32(dim), _body_fun, 0.0)
+            return lax.fori_loop(i32(0), i32(dim), _body_fun, 0.0)
         return laplacian_m_fn(r) * (-1.0)
 
-
-
     @jit
-    def f_p_fn(r):
+    def f_p_fn_(r):
         """
         Source function in $\Omega^+$
         """
@@ -172,9 +170,23 @@ def test_poisson_solver_with_jump():
             def _body_fun(i, val):
                 primal, tangent = jax.jvp(flux_p_fn, (x,), (eye[i],))
                 return val + primal[i]**2 + tangent[i]
-            return -0.5 * lax.fori_loop(i32(0), i32(dim), _body_fun, 0.0)
+            return lax.fori_loop(i32(0), i32(dim), _body_fun, 0.0)
         return laplacian_p_fn(r) * (-1.0)
 
+
+    @jit
+    def f_m_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        return -1.0 * jnp.exp(z) * (y*y*jnp.log(x+2)+4)
+
+    @jit
+    def f_p_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        return 2.0 * jnp.exp(-1.0 * z) * jnp.cos(x) * jnp.sin(y)
 
 
     exact_sol = vmap(evaluate_exact_solution_fn)(R)
