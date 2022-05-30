@@ -73,7 +73,7 @@ def test_poisson_solver_with_jump():
         y = r[1]
         z = r[2]
         return jnp.sqrt(x**2 + y**2 + z**2) - 0.5
-    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
+    phi_fn = unperturbed_phi_fn #level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     @jit
     def evaluate_exact_solution_fn(r):
