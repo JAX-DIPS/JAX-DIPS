@@ -194,7 +194,7 @@ def test_poisson_solver_without_jump():
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     print(f"L_inf error = {L_inf_err}")
 
-    pdb.set_trace()
+    assert L_inf_err<0.3
 
 
 if __name__ == "__main__":
