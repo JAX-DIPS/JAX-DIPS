@@ -437,11 +437,11 @@ def poisson_solver(gstate, sim_state):
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
             
-            plt.pcolor(coeffs.val[:,0].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_m_imjk'); plt.show()
-            plt.pcolor(coeffs.val[:,1].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_p_imjk'); plt.show()
-            plt.pcolor(coeffs.val[:,2].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_m_ipjk'); plt.show()
-            plt.pcolor(coeffs.val[:,3].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_p_ipjk'); plt.show()
-            pdb.set_trace()
+            # plt.pcolor(coeffs.val[:,0].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_m_imjk'); plt.show()
+            # plt.pcolor(coeffs.val[:,1].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_p_imjk'); plt.show()
+            # plt.pcolor(coeffs.val[:,2].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_m_ipjk'); plt.show()
+            # plt.pcolor(coeffs.val[:,3].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_p_ipjk'); plt.show()
+            # pdb.set_trace()
 
             def get_lhs_at_interior_node(node):
                 i, j, k = node
@@ -531,20 +531,20 @@ def poisson_solver(gstate, sim_state):
     x = x_cube.reshape(-1)
 
     ''' testing begin '''
-    lhs_rhs = compute_Ax_and_b_fn(x)
-    lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
-    rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
-    plt.imshow(lhs[:, Ny//2, :]); plt.title("lhs"); plt.colorbar(); plt.show()
-    plt.imshow(rhs[:, Ny//2, :]); plt.title("rhs"); plt.colorbar(); plt.show()
-    plt.imshow((lhs-rhs)[:, Ny//2, :], vmin=-0.001, vmax=0.001); plt.title("residual"); plt.colorbar(); plt.show()
+    # lhs_rhs = compute_Ax_and_b_fn(x)
+    # lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
+    # rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
+    # plt.imshow(lhs[:, Ny//2, :]); plt.title("lhs"); plt.colorbar(); plt.show()
+    # plt.imshow(rhs[:, Ny//2, :]); plt.title("rhs"); plt.colorbar(); plt.show()
+    # plt.imshow((lhs-rhs)[:, Ny//2, :], vmin=-0.001, vmax=0.001); plt.title("residual"); plt.colorbar(); plt.show()
 
-    ''' TEST RHS vector below '''
-    plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
-    plt.imshow(rhs[:,:,1]/dx**3*2-f_p_cube_internal[:,:,1]); plt.show(); # should be 0 on boundaries
-    err_1 = abs(rhs[:,:,-1]/dx**3*2-f_p_cube_internal[:,:,-1]).max()
-    '''err_1 on all boundaries must be 0, it is 1e-8 which is fine'''
-    err_2 = (lhs/x_cube/dx**3)[:,:,Nz//2]
-    pdb.set_trace()
+    # ''' TEST RHS vector below '''
+    # plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
+    # plt.imshow(rhs[:,:,1]/dx**3*2-f_p_cube_internal[:,:,1]); plt.show(); # should be 0 on boundaries
+    # err_1 = abs(rhs[:,:,-1]/dx**3*2-f_p_cube_internal[:,:,-1]).max()
+    # '''err_1 on all boundaries must be 0, it is 1e-8 which is fine'''
+    # err_2 = (lhs/x_cube/dx**3)[:,:,Nz//2]
+    # pdb.set_trace()
 
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()
