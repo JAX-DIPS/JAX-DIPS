@@ -403,6 +403,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
     This is done by the middle-cut triangulation (cf. Min & Gibou 2007), where the grid cells crossed by the 
     interface are decomposed to five tetrahedra given by:
+      number;      vertices                              ; faces exposed to external 
         S1: conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) -> z = 0 plane, x = 0 plane, y = 0 plane
         S2: conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) -> z = 0 plane, x = 1 plane, y = 1 plane
         S3: conv(P_{101} ; P_{100} ; P_{111} ; P_{001}) -> z = 1 plane, x = 1 plane, y = 0 plane
@@ -430,17 +431,25 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
     area_y = dx * dz
     area_z = dx * dy
 
-    
-    vol_fn = lambda A: jnp.nan_to_num( (1.0 / 6.0) * jnp.sqrt( jnp.nan_to_num( jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) ) )
+
+    # vol_fn = lambda A: jnp.nan_to_num( (1.0 / 6.0) * jnp.sqrt( jnp.nan_to_num( jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) ) )
     # area_fn = lambda A: jnp.nan_to_num( 0.5 * jnp.sqrt( jnp.nan_to_num( jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) ) )
+
+    def vol_fn(A):
+        A = jnp.nan_to_num(A)
+        tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) 
+        vol_tmp = (1.0 / 6.0) * jnp.sqrt(tmp)
+        return vol_tmp
+        # return jnp.where(vol_tmp < 1e-10*vol, 0.0, vol_tmp)
+  
     def area_fn(A):
         A = jnp.nan_to_num(A)
-        # a_shape = jnp.shape(A)
         tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T )  #jnp.where(a_shape==(3,3), jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) , 0.0 ) 
         tmp = jnp.nan_to_num(tmp)
         return 0.5 * jnp.sqrt(tmp)
 
-    
+    def positive_or_zero(num):
+        return jnp.where(num < 0, 0.0, num)
 
     # @jit
     def compute_interface_faces(node):
@@ -485,7 +494,8 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         vol_m += vol_fn(S5_Omega_m[0]) 
         vol_m += vol_fn(S5_Omega_m[1]) 
         vol_m += vol_fn(S5_Omega_m[2]) 
-        vol_p = vol - vol_m
+        vol_p = positive_or_zero(vol - vol_m)
+        # vol_p = jnp.where(vol_p_ < 0, 0.0, vol_p_)
         #----
 
         #---- compute areas of minus/plus on each face
@@ -493,10 +503,10 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         x_p_face = xo[i] + 0.5 * dx
 
         y_m_face = yo[j] - 0.5 * dy
-        y_p_face = yo[i] + 0.5 * dy   
+        y_p_face = yo[j] + 0.5 * dy   
         
-        z_m_face = zo[j] - 0.5 * dz
-        z_p_face = zo[i] + 0.5 * dz   
+        z_m_face = zo[k] - 0.5 * dz
+        z_p_face = zo[k] + 0.5 * dz   
         
         def compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2):
             def comp(partition):
@@ -599,18 +609,18 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
        
         area_imh_m = extract_area_minus_x_face(S1_Omega_m, S4_Omega_m, x_m_face)
         area_iph_m = extract_area_minus_x_face(S2_Omega_m, S3_Omega_m, x_p_face)
-        area_imh_p = area_x - area_imh_m
-        area_iph_p = area_x - area_iph_m
+        area_imh_p = positive_or_zero(area_x - area_imh_m)
+        area_iph_p = positive_or_zero(area_x - area_iph_m)
 
         area_jmh_m = extract_area_minus_y_face(S1_Omega_m, S3_Omega_m, y_m_face)
         area_jph_m = extract_area_minus_y_face(S2_Omega_m, S4_Omega_m, y_p_face)
-        area_jmh_p = area_y - area_jmh_m
-        area_jph_p = area_y - area_jph_m
+        area_jmh_p = positive_or_zero(area_y - area_jmh_m)
+        area_jph_p = positive_or_zero(area_y - area_jph_m)
 
         area_kmh_m = extract_area_minus_z_face(S1_Omega_m, S2_Omega_m, z_m_face)
         area_kph_m = extract_area_minus_z_face(S3_Omega_m, S4_Omega_m, z_p_face)
-        area_kmh_p = area_z - area_kmh_m
-        area_kph_p = area_z - area_kph_m
+        area_kmh_p = positive_or_zero(area_z - area_kmh_m)
+        area_kph_p = positive_or_zero(area_z - area_kph_m)
         #----
 
 
@@ -633,6 +643,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
                                                                     mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
                                                                     mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
                                                                     vol_m, vol_p], dtype=f32)
+
         return node_coeff_times_area_divided_size_and_volumes
 
         
