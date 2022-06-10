@@ -536,7 +536,7 @@ def poisson_solver(gstate, sim_state):
     rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
     plt.imshow(lhs[:, Ny//2, :]); plt.title("lhs"); plt.colorbar(); plt.show()
     plt.imshow(rhs[:, Ny//2, :]); plt.title("rhs"); plt.colorbar(); plt.show()
-    plt.imshow((lhs-rhs)[:, Ny//2, :], vmin=-0.001, vmax=0.001); plt.title("residual"); plt.colorbar(); plt.show()
+    plt.imshow((lhs-rhs)[:, Ny//2, :]); plt.title("residual"); plt.colorbar(); plt.show()
 
     ''' TEST RHS vector below '''
     # plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
@@ -551,7 +551,6 @@ def poisson_solver(gstate, sim_state):
     # vols[jnp.where(vols[:,1] < 0)[0]]
     # plt.pcolor(vols[:,0].reshape(16,16,16)[:, Ny//2,:]); plt.colorbar(); plt.show()
 
-    coeff = compute_face_centroids_values_plus_minus_at_node(nodes[2474])
     pdb.set_trace()
 
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])

@@ -1,4 +1,4 @@
-from jax import (numpy as jnp, jit)
+from jax import (numpy as jnp, jit, vmap, lax)
 from src import (interpolate, util)
 import pdb
 
@@ -436,17 +436,14 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
     # area_fn = lambda A: jnp.nan_to_num( 0.5 * jnp.sqrt( jnp.nan_to_num( jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) ) )
 
     def vol_fn(A):
-        A = jnp.nan_to_num(A)
         tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) 
-        vol_tmp = (1.0 / 6.0) * jnp.sqrt(tmp)
+        vol_tmp = (1.0 / 6.0) * jnp.sqrt(jnp.nan_to_num(tmp))
         return vol_tmp
-        # return jnp.where(vol_tmp < 1e-10*vol, 0.0, vol_tmp)
+
   
     def area_fn(A):
-        A = jnp.nan_to_num(A)
         tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T )  #jnp.where(a_shape==(3,3), jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) , 0.0 ) 
-        tmp = jnp.nan_to_num(tmp)
-        return 0.5 * jnp.sqrt(tmp)
+        return 0.5 * jnp.sqrt(jnp.nan_to_num(tmp))
 
     def positive_or_zero(num):
         return jnp.where(num < 0, 0.0, num)
@@ -508,103 +505,113 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         z_m_face = zo[k] - 0.5 * dz
         z_p_face = zo[k] + 0.5 * dz   
         
+        #---- this number is used to keep track of garbage points in area_from_partitions function below
+        fiducial_point = jnp.rint((xo[-1] - xo[0])*100)
+
         def compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2):
+            
+            # pair_dist_fn = lambda p1, p2: jnp.linalg.norm(p2 - p1) 
+            # pair_dist_matrix_fn = vmap(vmap(pair_dist_fn, (0, None)), (None, 0))
+
             def comp(partition):
-                points_on_face_partition = jnp.unique(partition.reshape(-1,3), axis=0, size=3) #, fill_value=part)
-                return area_fn(points_on_face_partition)
-            partition_1 = jnp.zeros_like(s_omega_m_partition_1)
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[0,0], jnp.where(on_face_partition_1[0,0], s_omega_m_partition_1[0,0], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[0,1], jnp.where(on_face_partition_1[0,1], s_omega_m_partition_1[0,1], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[0,2], jnp.where(on_face_partition_1[0,2], s_omega_m_partition_1[0,2], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[0,3], jnp.where(on_face_partition_1[0,3], s_omega_m_partition_1[0,3], 0.0))
-            partition_1 = partition_1.at[0,0].set(jnp.where(on_face_partition_1[0,0], s_omega_m_partition_1[0,0], 0.0))
-            partition_1 = partition_1.at[0,1].set(jnp.where(on_face_partition_1[0,1], s_omega_m_partition_1[0,1], 0.0))
-            partition_1 = partition_1.at[0,2].set(jnp.where(on_face_partition_1[0,2], s_omega_m_partition_1[0,2], 0.0))
-            partition_1 = partition_1.at[0,3].set(jnp.where(on_face_partition_1[0,3], s_omega_m_partition_1[0,3], 0.0))
+                """
+                Figure 4 of Min & Gibou 2007: 3 different cases are possible. Among them the ones where 
+                exactly 3 vertices lie on the corresponding face contribute an area element. We add those areas.
+                """
+                simplex_0 = partition[0]
+                simplex_1 = partition[1]
+                simplex_2 = partition[2]
 
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[1,0], jnp.where(on_face_partition_1[1,0], s_omega_m_partition_1[1,0], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[1,1], jnp.where(on_face_partition_1[1,1], s_omega_m_partition_1[1,1], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[1,2], jnp.where(on_face_partition_1[1,2], s_omega_m_partition_1[1,2], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[1,3], jnp.where(on_face_partition_1[1,3], s_omega_m_partition_1[1,3], 0.0))
-            partition_1 = partition_1.at[1,0].set(jnp.where(on_face_partition_1[1,0], s_omega_m_partition_1[1,0], 0.0))
-            partition_1 = partition_1.at[1,1].set(jnp.where(on_face_partition_1[1,1], s_omega_m_partition_1[1,1], 0.0))
-            partition_1 = partition_1.at[1,2].set(jnp.where(on_face_partition_1[1,2], s_omega_m_partition_1[1,2], 0.0))
-            partition_1 = partition_1.at[1,3].set(jnp.where(on_face_partition_1[1,3], s_omega_m_partition_1[1,3], 0.0))
+                num_face_points_0 = jnp.count_nonzero(simplex_0[:,0] - fiducial_point)
+                num_face_points_1 = jnp.count_nonzero(simplex_1[:,0] - fiducial_point)
+                num_face_points_2 = jnp.count_nonzero(simplex_2[:,0] - fiducial_point) 
 
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[2,0], jnp.where(on_face_partition_1[2,0], s_omega_m_partition_1[2,0], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[2,1], jnp.where(on_face_partition_1[2,1], s_omega_m_partition_1[2,1], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[2,2], jnp.where(on_face_partition_1[2,2], s_omega_m_partition_1[2,2], 0.0))
-            # partition_1 = ops.index_update(partition_1, jnp.index_exp[2,3], jnp.where(on_face_partition_1[2,3], s_omega_m_partition_1[2,3], 0.0))
-            partition_1 = partition_1.at[2,0].set(jnp.where(on_face_partition_1[2,0], s_omega_m_partition_1[2,0], 0.0))
-            partition_1 = partition_1.at[2,1].set(jnp.where(on_face_partition_1[2,1], s_omega_m_partition_1[2,1], 0.0))
-            partition_1 = partition_1.at[2,2].set(jnp.where(on_face_partition_1[2,2], s_omega_m_partition_1[2,2], 0.0))
-            partition_1 = partition_1.at[2,3].set(jnp.where(on_face_partition_1[2,3], s_omega_m_partition_1[2,3], 0.0))
+                sort_indices_0 = jnp.argsort(simplex_0[:,0])
+                sort_indices_1 = jnp.argsort(simplex_1[:,0])
+                sort_indices_2 = jnp.argsort(simplex_2[:,0])
+
+              
+                area_0 = lax.cond(num_face_points_0==3, lambda p: area_fn(p), lambda p: f32(0.0), simplex_0[sort_indices_0][:3])
+                area_1 = lax.cond(num_face_points_1==3, lambda p: area_fn(p), lambda p: f32(0.0), simplex_1[sort_indices_1][:3])
+                area_2 = lax.cond(num_face_points_2==3, lambda p: area_fn(p), lambda p: f32(0.0), simplex_2[sort_indices_2][:3])
+              
+                return area_0 + area_1 + area_2
 
 
-            partition_2 = jnp.zeros_like(s_omega_m_partition_2)
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[0,0], jnp.where(on_face_partition_2[0,0], s_omega_m_partition_2[0,0], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[0,1], jnp.where(on_face_partition_2[0,1], s_omega_m_partition_2[0,1], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[0,2], jnp.where(on_face_partition_2[0,2], s_omega_m_partition_2[0,2], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[0,3], jnp.where(on_face_partition_2[0,3], s_omega_m_partition_2[0,3], 0.0))
-            partition_2 = partition_2.at[0,0].set(jnp.where(on_face_partition_2[0,0], s_omega_m_partition_2[0,0], 0.0))
-            partition_2 = partition_2.at[0,1].set(jnp.where(on_face_partition_2[0,1], s_omega_m_partition_2[0,1], 0.0))
-            partition_2 = partition_2.at[0,2].set(jnp.where(on_face_partition_2[0,2], s_omega_m_partition_2[0,2], 0.0))
-            partition_2 = partition_2.at[0,3].set(jnp.where(on_face_partition_2[0,3], s_omega_m_partition_2[0,3], 0.0))
+                # unraveled_vertices_on_face = partition.reshape(-1,3)
+                # increasing_x_indices = jnp.argsort(unraveled_vertices_on_face[:,0])   # sort based on x values, bc fiducial_point is large!
+                # points_on_face_partition = jnp.unique(unraveled_vertices_on_face[increasing_x_indices], axis=0, size=4) 
+                # num_allowed_points = jnp.count_nonzero(points_on_face_partition[:,0] - fiducial_point) 
+
+                
+
+                # def prune_4_to_3(points):
+                #     pair_dists = pair_dist_matrix_fn(points, points)
+                #     pair_01 = pair_dists[0,1]; pair_02 = pair_dists[0,2]; pair_03 = pair_dists[0,3]
+                #     pair_12 = pair_dists[1,2]; pair_13 = pair_dists[1,3]
+                #     pair_23 = pair_dists[2,3]
 
 
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[1,0], jnp.where(on_face_partition_2[1,0], s_omega_m_partition_2[1,0], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[1,1], jnp.where(on_face_partition_2[1,1], s_omega_m_partition_2[1,1], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[1,2], jnp.where(on_face_partition_2[1,2], s_omega_m_partition_2[1,2], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[1,3], jnp.where(on_face_partition_2[1,3], s_omega_m_partition_2[1,3], 0.0))
-            partition_2 = partition_2.at[1,0].set(jnp.where(on_face_partition_2[1,0], s_omega_m_partition_2[1,0], 0.0))
-            partition_2 = partition_2.at[1,1].set(jnp.where(on_face_partition_2[1,1], s_omega_m_partition_2[1,1], 0.0))
-            partition_2 = partition_2.at[1,2].set(jnp.where(on_face_partition_2[1,2], s_omega_m_partition_2[1,2], 0.0))
-            partition_2 = partition_2.at[1,3].set(jnp.where(on_face_partition_2[1,3], s_omega_m_partition_2[1,3], 0.0))
+                # pdb.set_trace()
+                # area = lax.cond(num_allowed_points==3, lambda p: area_fn(p[:3]), lambda p: area_fn(p[:4]), points_on_face_partition)
+
+                # return area
+
+            partition_1 = jnp.zeros_like(s_omega_m_partition_1) 
+
+            partition_1 = partition_1.at[0,0].set(jnp.where(on_face_partition_1[0,0], s_omega_m_partition_1[0,0], fiducial_point))
+            partition_1 = partition_1.at[0,1].set(jnp.where(on_face_partition_1[0,1], s_omega_m_partition_1[0,1], fiducial_point))
+            partition_1 = partition_1.at[0,2].set(jnp.where(on_face_partition_1[0,2], s_omega_m_partition_1[0,2], fiducial_point))
+            partition_1 = partition_1.at[0,3].set(jnp.where(on_face_partition_1[0,3], s_omega_m_partition_1[0,3], fiducial_point))
+
+            partition_1 = partition_1.at[1,0].set(jnp.where(on_face_partition_1[1,0], s_omega_m_partition_1[1,0], fiducial_point))
+            partition_1 = partition_1.at[1,1].set(jnp.where(on_face_partition_1[1,1], s_omega_m_partition_1[1,1], fiducial_point))
+            partition_1 = partition_1.at[1,2].set(jnp.where(on_face_partition_1[1,2], s_omega_m_partition_1[1,2], fiducial_point))
+            partition_1 = partition_1.at[1,3].set(jnp.where(on_face_partition_1[1,3], s_omega_m_partition_1[1,3], fiducial_point))
+
+            partition_1 = partition_1.at[2,0].set(jnp.where(on_face_partition_1[2,0], s_omega_m_partition_1[2,0], fiducial_point))
+            partition_1 = partition_1.at[2,1].set(jnp.where(on_face_partition_1[2,1], s_omega_m_partition_1[2,1], fiducial_point))
+            partition_1 = partition_1.at[2,2].set(jnp.where(on_face_partition_1[2,2], s_omega_m_partition_1[2,2], fiducial_point))
+            partition_1 = partition_1.at[2,3].set(jnp.where(on_face_partition_1[2,3], s_omega_m_partition_1[2,3], fiducial_point))
 
 
+            partition_2 = jnp.zeros_like(s_omega_m_partition_2) 
 
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[2,0], jnp.where(on_face_partition_2[2,0], s_omega_m_partition_2[2,0], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[2,1], jnp.where(on_face_partition_2[2,1], s_omega_m_partition_2[2,1], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[2,2], jnp.where(on_face_partition_2[2,2], s_omega_m_partition_2[2,2], 0.0))
-            # partition_2 = ops.index_update(partition_2, jnp.index_exp[2,3], jnp.where(on_face_partition_2[2,3], s_omega_m_partition_2[2,3], 0.0))
-            partition_2 = partition_2.at[2,0].set(jnp.where(on_face_partition_2[2,0], s_omega_m_partition_2[2,0], 0.0))
-            partition_2 = partition_2.at[2,1].set(jnp.where(on_face_partition_2[2,1], s_omega_m_partition_2[2,1], 0.0))
-            partition_2 = partition_2.at[2,2].set(jnp.where(on_face_partition_2[2,2], s_omega_m_partition_2[2,2], 0.0))
-            partition_2 = partition_2.at[2,3].set(jnp.where(on_face_partition_2[2,3], s_omega_m_partition_2[2,3], 0.0))
+            partition_2 = partition_2.at[0,0].set(jnp.where(on_face_partition_2[0,0], s_omega_m_partition_2[0,0], fiducial_point))
+            partition_2 = partition_2.at[0,1].set(jnp.where(on_face_partition_2[0,1], s_omega_m_partition_2[0,1], fiducial_point))
+            partition_2 = partition_2.at[0,2].set(jnp.where(on_face_partition_2[0,2], s_omega_m_partition_2[0,2], fiducial_point))
+            partition_2 = partition_2.at[0,3].set(jnp.where(on_face_partition_2[0,3], s_omega_m_partition_2[0,3], fiducial_point))
+
+            partition_2 = partition_2.at[1,0].set(jnp.where(on_face_partition_2[1,0], s_omega_m_partition_2[1,0], fiducial_point))
+            partition_2 = partition_2.at[1,1].set(jnp.where(on_face_partition_2[1,1], s_omega_m_partition_2[1,1], fiducial_point))
+            partition_2 = partition_2.at[1,2].set(jnp.where(on_face_partition_2[1,2], s_omega_m_partition_2[1,2], fiducial_point))
+            partition_2 = partition_2.at[1,3].set(jnp.where(on_face_partition_2[1,3], s_omega_m_partition_2[1,3], fiducial_point))
+
+            partition_2 = partition_2.at[2,0].set(jnp.where(on_face_partition_2[2,0], s_omega_m_partition_2[2,0], fiducial_point))
+            partition_2 = partition_2.at[2,1].set(jnp.where(on_face_partition_2[2,1], s_omega_m_partition_2[2,1], fiducial_point))
+            partition_2 = partition_2.at[2,2].set(jnp.where(on_face_partition_2[2,2], s_omega_m_partition_2[2,2], fiducial_point))
+            partition_2 = partition_2.at[2,3].set(jnp.where(on_face_partition_2[2,3], s_omega_m_partition_2[2,3], fiducial_point))
             
             area_partition_1 = comp(partition_1) 
             area_partition_2 = comp(partition_2) 
+
             return area_partition_1  + area_partition_2
         
         def extract_area_minus_x_face(s_omega_m_partition_1, s_omega_m_partition_2, x_face):
             on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,0], x_face, atol=1e-6*dx) #s_omega_m_partition_1[:,:,0] == x_face
             on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,0], x_face, atol=1e-6*dx) # s_omega_m_partition_2[:,:,0] == x_face
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
-            # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
-            # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])
-            # area_partition_1 = area_fn(points_on_face_partition_1)
-            # area_partition_2 = area_fn(points_on_face_partition_2)
-            # return area_partition_1  + area_partition_2
 
         def extract_area_minus_y_face(s_omega_m_partition_1, s_omega_m_partition_2, y_face):
             on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,1], y_face, atol=1e-6*dy) #s_omega_m_partition_1[:,:,1] == y_face
             on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,1], y_face, atol=1e-6*dy) #s_omega_m_partition_2[:,:,1] == y_face
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
-            # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
-            # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])
-            # area_partition_1 = area_fn(points_on_face_partition_1)
-            # area_partition_2 = area_fn(points_on_face_partition_2)
-            # return area_partition_1  + area_partition_2
-        
+
         def extract_area_minus_z_face(s_omega_m_partition_1, s_omega_m_partition_2, z_face):
             on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,2], z_face, atol=1e-6*dz) #s_omega_m_partition_1[:,:,2] == z_face
             on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,2], z_face, atol=1e-6*dz) #s_omega_m_partition_2[:,:,2] == z_face
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
-            # points_on_face_partition_1 = jnp.unique(s_omega_m_partition_1[on_face_partition_1], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_1[0,0])
-            # points_on_face_partition_2 = jnp.unique(s_omega_m_partition_2[on_face_partition_2], axis=0, size=3, fill_value=0.0) #s_omega_m_partition_2[0,0])
-            # area_partition_1 = area_fn(points_on_face_partition_1)
-            # area_partition_2 = area_fn(points_on_face_partition_2)
-            # return area_partition_1  + area_partition_2
+
         
        
         area_imh_m = extract_area_minus_x_face(S1_Omega_m, S4_Omega_m, x_m_face)
@@ -643,7 +650,6 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
                                                                     mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
                                                                     mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
                                                                     vol_m, vol_p], dtype=f32)
-
         return node_coeff_times_area_divided_size_and_volumes
 
         
