@@ -439,7 +439,7 @@ def poisson_solver(gstate, sim_state):
             
             coeffs = coeffs_[:12]
             vols = coeffs_[12:14]
-            areas = coeffs_[14:]
+            # areas = coeffs_[14:]
 
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
@@ -541,9 +541,9 @@ def poisson_solver(gstate, sim_state):
     lhs_rhs = compute_Ax_and_b_fn(x)
     lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
     rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
-    plt.imshow(lhs[:, Ny//2, :]); plt.title("lhs"); plt.colorbar(); plt.show()
-    plt.imshow(rhs[:, Ny//2, :]); plt.title("rhs"); plt.colorbar(); plt.show()
-    plt.imshow((lhs-rhs)[:, Ny//2, :]); plt.title("residual"); plt.colorbar(); plt.show()
+    plt.imshow(lhs[:, Ny//2, :], cmap='jet'); plt.title("lhs"); plt.colorbar(); plt.show()
+    plt.imshow(rhs[:, Ny//2, :], cmap='jet'); plt.title("rhs"); plt.colorbar(); plt.show()
+    plt.imshow((lhs-rhs)[:, Ny//2, :], cmap='jet'); plt.title("residual"); plt.colorbar(); plt.show()
 
     ''' TEST RHS vector below '''
     # plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
@@ -552,12 +552,12 @@ def poisson_solver(gstate, sim_state):
     # '''err_1 on all boundaries must be 0, it is 1e-8 which is fine'''
     # err_2 = (lhs/x_cube/dx**3)[:,:,Nz//2]
     
-    #-- volume test is correct:
-    # coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
-    # poissons = coeffs[:,:12]; vols = coeffs[:,12:14]; face_areas = coeffs[:,14:]
-    # vols[jnp.where(vols[:,1] < 0)[0]]
-    # plt.pcolor(vols[:,0].reshape(16,16,16)[:, Ny//2,:]); plt.colorbar(); plt.show()
-    # plt.pcolor(face_areas[...,0].reshape(16,16,16)[:, Ny//2,:]); plt.colorbar(); plt.show()
+    #-- volume & face area test:
+    coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
+    poissons = coeffs[:,:12]; vols = coeffs[:,12:14]; face_areas = coeffs[:,14:]
+    vols[jnp.where(vols[:,1] < 0)[0]]
+    plt.pcolor(vols[:,0].reshape(16,16,16)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
+    plt.pcolor(face_areas[...,0].reshape(16,16,16)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
 
     pdb.set_trace()
 
@@ -569,6 +569,7 @@ def poisson_solver(gstate, sim_state):
 
 
     ''' Actual optimization '''
+    """
     # ------ Exponential decay of the learning rate.
     scheduler = optax.exponential_decay(
         init_value=1e-2,
@@ -586,10 +587,12 @@ def poisson_solver(gstate, sim_state):
         optax.scale(-1.0)
     )
     optimizer = gradient_transform
-
+    """
     # ------ SIMPLE OPTIMIZER
     # learning_rate = 1e-1
     # optimizer = optax.adam(learning_rate)
+    learning_rate = 1e-1
+    optimizer = optax.rmsprop(learning_rate)
     # ------
 
     params = {'u': x}
