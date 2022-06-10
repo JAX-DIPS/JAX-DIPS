@@ -521,8 +521,8 @@ def poisson_solver(gstate, sim_state):
         # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
         # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
         # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
-        loss = optax.l2_loss(lhs, rhs).mean() #optax.huber_loss(lhs, rhs).mean() #+ optax.cosine_distance(lhs, rhs).mean() #jnp.square(lhs - rhs).mean()  + 0.001 * jnp.square(x).mean() * Vol_cell_nominal
-        # loss = optax.huber_loss(lhs, rhs).mean()
+        # loss = optax.l2_loss(lhs, rhs).mean() #optax.huber_loss(lhs, rhs).mean() #+ optax.cosine_distance(lhs, rhs).mean() #jnp.square(lhs - rhs).mean()  + 0.001 * jnp.square(x).mean() * Vol_cell_nominal
+        loss = optax.huber_loss(lhs, rhs).mean()
         return loss
 
     # --- iniate iterations from provided guess
@@ -538,12 +538,12 @@ def poisson_solver(gstate, sim_state):
     x = x_cube.reshape(-1)
 
     ''' testing begin '''
-    lhs_rhs = compute_Ax_and_b_fn(x)
-    lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
-    rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
-    plt.imshow(lhs[:, Ny//2, :], cmap='jet'); plt.title("lhs"); plt.colorbar(); plt.show()
-    plt.imshow(rhs[:, Ny//2, :], cmap='jet'); plt.title("rhs"); plt.colorbar(); plt.show()
-    plt.imshow((lhs-rhs)[:, Ny//2, :], cmap='jet'); plt.title("residual"); plt.colorbar(); plt.show()
+    # lhs_rhs = compute_Ax_and_b_fn(x)
+    # lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
+    # rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
+    # plt.imshow(lhs[:, Ny//2, :], cmap='jet'); plt.title("lhs"); plt.colorbar(); plt.show()
+    # plt.imshow(rhs[:, Ny//2, :], cmap='jet'); plt.title("rhs"); plt.colorbar(); plt.show()
+    # plt.imshow((lhs-rhs)[:, Ny//2, :], cmap='jet'); plt.title("residual"); plt.colorbar(); plt.show()
 
     ''' TEST RHS vector below '''
     # plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
@@ -553,13 +553,13 @@ def poisson_solver(gstate, sim_state):
     # err_2 = (lhs/x_cube/dx**3)[:,:,Nz//2]
     
     #-- volume & face area test:
-    coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
-    poissons = coeffs[:,:12]; vols = coeffs[:,12:14]; face_areas = coeffs[:,14:]
-    vols[jnp.where(vols[:,1] < 0)[0]]
-    plt.pcolor(vols[:,0].reshape(16,16,16)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
-    plt.pcolor(face_areas[...,0].reshape(16,16,16)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
+    # coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
+    # poissons = coeffs[:,:12]; vols = coeffs[:,12:14]; face_areas = coeffs[:,14:]
+    # vols[jnp.where(vols[:,1] < 0)[0]]
+    # plt.pcolor(vols[:,0].reshape(16,16,16)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
+    # plt.pcolor(face_areas[...,0].reshape(16,16,16)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
 
-    pdb.set_trace()
+    # pdb.set_trace()
 
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()
@@ -578,7 +578,7 @@ def poisson_solver(gstate, sim_state):
 
     # Combining gradient transforms using `optax.chain`.
     gradient_transform = optax.chain(
-        # Clip by the gradient by the global norm.
+        # Clip the gradient by the global norm.
         optax.clip_by_global_norm(1.0),
         optax.scale_by_adam(),  # Use the updates from adam.
         # Use the learning rate from the scheduler.
@@ -593,6 +593,7 @@ def poisson_solver(gstate, sim_state):
     # optimizer = optax.adam(learning_rate)
     learning_rate = 1e-1
     optimizer = optax.rmsprop(learning_rate)
+    
     # ------
 
     params = {'u': x}
