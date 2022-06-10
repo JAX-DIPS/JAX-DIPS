@@ -432,8 +432,15 @@ def poisson_solver(gstate, sim_state):
         def evaluate_discretization_lhs_rhs_at_node(node):
             #--- LHS
             i, j, k = node
-            poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(node)
-            coeffs, vols = jnp.split(poisson_scheme_coeffs, [12], axis=0)
+            # poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(node)
+            # coeffs, vols = jnp.split(poisson_scheme_coeffs, [12], axis=0)
+
+            coeffs_ = compute_face_centroids_values_plus_minus_at_node(node)
+            
+            coeffs = coeffs_[:12]
+            vols = coeffs_[12:14]
+            areas = coeffs_[14:]
+
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
             
@@ -546,10 +553,11 @@ def poisson_solver(gstate, sim_state):
     # err_2 = (lhs/x_cube/dx**3)[:,:,Nz//2]
     
     #-- volume test is correct:
-    coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
-    vols = coeffs[:,12:]; poissons = coeffs[:,:12]
+    # coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
+    # poissons = coeffs[:,:12]; vols = coeffs[:,12:14]; face_areas = coeffs[:,14:]
     # vols[jnp.where(vols[:,1] < 0)[0]]
     # plt.pcolor(vols[:,0].reshape(16,16,16)[:, Ny//2,:]); plt.colorbar(); plt.show()
+    # plt.pcolor(face_areas[...,0].reshape(16,16,16)[:, Ny//2,:]); plt.colorbar(); plt.show()
 
     pdb.set_trace()
 

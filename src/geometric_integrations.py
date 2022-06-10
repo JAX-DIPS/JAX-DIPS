@@ -628,7 +628,8 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         area_kph_m = extract_area_minus_z_face(S3_Omega_m, S4_Omega_m, z_p_face)
         area_kmh_p = positive_or_zero(area_z - area_kmh_m)
         area_kph_p = positive_or_zero(area_z - area_kph_m)
-        #----
+        
+        #-----
 
 
         mu_A_dx_imh_m = area_imh_m * mu_m_faces[0] / dx
@@ -646,13 +647,23 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         mu_A_dz_kmh_p = area_kmh_p * mu_p_faces[4] / dz
         mu_A_dz_kph_p = area_kph_p * mu_p_faces[5] / dz
 
-        node_coeff_times_area_divided_size_and_volumes = jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
-                                                                    mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
-                                                                    mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
-                                                                    vol_m, vol_p], dtype=f32)
-        return node_coeff_times_area_divided_size_and_volumes
 
-        
+        # node_coeff_times_area_divided_size_and_volumes = jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
+        #                                                             mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+        #                                                             mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+        #                                                             vol_m, vol_p], dtype=f32)
+        # return node_coeff_times_area_divided_size_and_volumes
+
+  
+        return jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
+                        mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+                        mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+                        vol_m, vol_p, \
+                        area_imh_m, area_imh_p, area_iph_m, area_iph_p, \
+                        area_jmh_m, area_jmh_p, area_jph_m, area_jph_p, \
+                        area_kmh_m, area_kmh_p, area_kph_m, area_kph_p], dtype=f32)
+
+
 
     # @jit
     def compute_domain_faces(node, is_interface):
@@ -679,6 +690,8 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         vol_m = vol * sign_m_fn(is_interface)
         vol_p = vol * sign_p_fn(is_interface)
 
+        #---------
+
         mu_A_dx_imh_m = area_x * mu_m_faces[0] / dx
         mu_A_dx_iph_m = area_x * mu_m_faces[1] / dx
         mu_A_dx_imh_p = area_x * mu_p_faces[0] / dx
@@ -694,11 +707,21 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         mu_A_dz_kmh_p = area_z * mu_p_faces[4] / dz
         mu_A_dz_kph_p = area_z * mu_p_faces[5] / dz
 
-        node_coeff_times_area_divided_size_and_volumes = jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
-                                                                    mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
-                                                                    mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
-                                                                    vol_m, vol_p], dtype=f32)
-        return node_coeff_times_area_divided_size_and_volumes
+  
+
+        # node_coeff_times_area_divided_size_and_volumes = jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
+        #                                                             mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+        #                                                             mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+        #                                                             vol_m, vol_p], dtype=f32)
+        # return node_coeff_times_area_divided_size_and_volumes
+
+        return jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
+                            mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+                            mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+                            vol_m, vol_p, \
+                            area_x, area_x, area_x, area_x, \
+                            area_y, area_y, area_y, area_y, \
+                            area_z, area_z, area_z, area_z], dtype=f32)
 
     # @jit
     def compute_face_centroids_values_plus_minus_at_node(node):
