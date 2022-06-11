@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  29 MAY 2022 20:02
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  11 JUN 2022 11:21
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -669,55 +669,56 @@ put line 344.
  [5] [6]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 473.
+(hyperref)                removing `math shift' on input line 509.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\Gamma' on input line 473.
+(hyperref)                removing `\Gamma' on input line 509.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\emptyset' on input line 473.
+(hyperref)                removing `\emptyset' on input line 509.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 473.
+(hyperref)                removing `math shift' on input line 509.
+
+[7]
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `math shift' on input line 519.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 483.
+(hyperref)                removing `\Gamma' on input line 519.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\Gamma' on input line 483.
+(hyperref)                removing `\not' on input line 519.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\not' on input line 483.
+(hyperref)                removing `\emptyset' on input line 519.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\emptyset' on input line 483.
+(hyperref)                removing `math shift' on input line 519.
 
-
-Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 483.
-
-[7] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 513.
- [8]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 513.
+[8] (./jax_dips.bbl)
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 549.
+ [9]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 549.
  (./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 513.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 513.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 549.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 549.
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
 (rerunfilecheck)             Checksum: 1E40E97C2520142E3489B406C166DB9D;651.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 513.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 549.
  ) 
 Here is how much of TeX's memory you used:
- 9912 strings out of 483065
- 147072 string characters out of 5963550
- 435875 words of memory out of 5000000
+ 9913 strings out of 483065
+ 147078 string characters out of 5963550
+ 436875 words of memory out of 5000000
  24679 multiletter control sequences out of 15000+600000
  543599 words of font info for 69 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
@@ -746,10 +747,10 @@ sfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
 i7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on jax_dips.pdf (8 pages, 405715 bytes).
+Output written on jax_dips.pdf (9 pages, 410740 bytes).
 PDF statistics:
- 232 PDF objects out of 1000 (max. 8388607)
- 190 compressed objects within 2 object streams
- 39 named destinations out of 1000 (max. 500000)
+ 243 PDF objects out of 1000 (max. 8388607)
+ 200 compressed objects within 2 object streams
+ 40 named destinations out of 1000 (max. 500000)
  91 words of extra memory for PDF output out of 10000 (max. 10000000)
 

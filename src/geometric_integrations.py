@@ -32,7 +32,7 @@ def get_vertices_S_intersect_Gamma(S, phi_S, eta_S):
     The intersection of the mesh-cell simplex S crossed by the level-set function. 
     """
     zeros_gamma = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
-                            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
+                              [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
 
     
     def eta_1_fn(arg):
@@ -78,7 +78,7 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
     This function returns the tetrahedra vertices splitted by the level set.
     The intersection of the mesh-cell volume crossed by the level-set function. 
     """            
-    zeros_ = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+    zeros_ = jnp.array([[[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
 
@@ -95,8 +95,8 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
         Q_2 =  ( phi_S_sorted[0] * S_sorted[2] - phi_S_sorted[2] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[2])
         Q_3 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
         return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
-                        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
-                        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
+                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
+                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
     
     def eta_2_fn(arg):
         S, phi_S, zeros_, ones_ = arg
@@ -109,8 +109,8 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
         Q_4 =  ( phi_S_sorted[1] * S_sorted[2] - phi_S_sorted[2] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[2])
         Q_5 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
         return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
-                        [Q_4, Q_1, Q_2, Q_3],\
-                        [Q_0, Q_5, Q_2, Q_3]], dtype=f32)
+                          [Q_4, Q_1, Q_2, Q_3],\
+                          [Q_0, Q_5, Q_2, Q_3]], dtype=f32)
     
     def eta_3_fn(arg):
         S, phi_S, zeros_, ones_ = arg
@@ -123,8 +123,8 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
         Q_4 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
         Q_5 =  ( phi_S_sorted[2] * S_sorted[3] - phi_S_sorted[3] * S_sorted[2] ) / (phi_S_sorted[2] - phi_S_sorted[3])
         return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
-                        [Q_0, Q_4, Q_2, Q_3],\
-                        [Q_5, Q_4, Q_2, Q_3]], dtype=f32)
+                          [Q_0, Q_4, Q_2, Q_3],\
+                          [Q_5, Q_4, Q_2, Q_3]], dtype=f32)
     
     def eta_2_3_fn(arg):
         return jnp.where(eta_S == 2, eta_2_fn(arg), eta_3_fn(arg))
@@ -154,14 +154,6 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
     
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
-    # Nx = gstate.x.shape[0]
-    # Ny = gstate.y.shape[0]
-    # Nz = gstate.z.shape[0]
-    # ii = jnp.arange(2, Nx+2)
-    # jj = jnp.arange(2, Ny+2)
-    # kk = jnp.arange(2, Nz+2)
-    # I, J, K = jnp.meshgrid(ii, jj, kk, indexing='ij')
-    # nodes = jnp.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
 
     @jit
     def is_node_crossed_by_interface(node):
@@ -175,7 +167,7 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
         """
         i, j, k = node
         # Get corners of the control volume    
-        dXcorners = jnp.array([   [-dx, -dy, -dz],
+        dXcorners = jnp.array([ [-dx, -dy, -dz],
                                 [ dx, -dy, -dz],
                                 [ dx, -dy,  dz],
                                 [-dx, -dy,  dz],
@@ -509,9 +501,6 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         fiducial_point = jnp.rint((xo[-1] - xo[0])*100)
 
         def compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2):
-            
-            # pair_dist_fn = lambda p1, p2: jnp.linalg.norm(p2 - p1) 
-            # pair_dist_matrix_fn = vmap(vmap(pair_dist_fn, (0, None)), (None, 0))
 
             def comp(partition):
                 """
@@ -537,25 +526,6 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
               
                 return area_0 + area_1 + area_2
 
-
-                # unraveled_vertices_on_face = partition.reshape(-1,3)
-                # increasing_x_indices = jnp.argsort(unraveled_vertices_on_face[:,0])   # sort based on x values, bc fiducial_point is large!
-                # points_on_face_partition = jnp.unique(unraveled_vertices_on_face[increasing_x_indices], axis=0, size=4) 
-                # num_allowed_points = jnp.count_nonzero(points_on_face_partition[:,0] - fiducial_point) 
-
-                
-
-                # def prune_4_to_3(points):
-                #     pair_dists = pair_dist_matrix_fn(points, points)
-                #     pair_01 = pair_dists[0,1]; pair_02 = pair_dists[0,2]; pair_03 = pair_dists[0,3]
-                #     pair_12 = pair_dists[1,2]; pair_13 = pair_dists[1,3]
-                #     pair_23 = pair_dists[2,3]
-
-
-                # pdb.set_trace()
-                # area = lax.cond(num_allowed_points==3, lambda p: area_fn(p[:3]), lambda p: area_fn(p[:4]), points_on_face_partition)
-
-                # return area
 
             partition_1 = jnp.zeros_like(s_omega_m_partition_1) 
 

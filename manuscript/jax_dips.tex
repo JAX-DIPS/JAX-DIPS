@@ -436,14 +436,50 @@ in matrix notation we have
 
 
 \subsection{3D geometric integrations}
-We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007) \cite{min2007geometric}. In this scheme each grid cell is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle} where each grid cell crossed by the interface is decomposed to five tetrahedra given by (each cell is rescaled to $[0,1]^3$):
+We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007) \cite{min2007geometric}. In this scheme each grid cell, $\mathcal{C}$, is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle} (each cell is rescaled to $[0,1]^3$):
 \begin{align*}
-	 & \rm T_1 \equiv conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 0\ face,\ z = 0\ face} \\
-	 & \rm T_2 \equiv conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) & \rm{ x = 1\ face,\ y = 1\ face,\ z = 0\ face} \\
-	 & \rm T_3 \equiv conv(P_{101} ; P_{100} ; P_{111} ; P_{001}) & \rm{ x = 1\ face,\ y = 0\ face,\ z = 1\ face} \\
-	 & \rm T_4 \equiv conv(P_{011} ; P_{111} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 1\ face,\ z = 1\ face} \\
-	 & \rm T_5\equiv conv(P_{111} ; P_{100} ; P_{010} ; P_{001})  & \rm{ no\ face\ exposure}
+	 & \rm S_1 \equiv conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 0\ face,\ z = 0\ face} \\
+	 & \rm S_2 \equiv conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) & \rm{ x = 1\ face,\ y = 1\ face,\ z = 0\ face} \\
+	 & \rm S_3 \equiv conv(P_{101} ; P_{100} ; P_{111} ; P_{001}) & \rm{ x = 1\ face,\ y = 0\ face,\ z = 1\ face} \\
+	 & \rm S_4 \equiv conv(P_{011} ; P_{111} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 1\ face,\ z = 1\ face} \\
+	 & \rm S_5\equiv conv(P_{111} ; P_{100} ; P_{010} ; P_{001})  & \rm{ no\ face\ exposure}
 \end{align*}
+
+Hence each 3D grid cell is the union of $5$ tetrahedra (simplices) $\mathcal{C}=\cup_{i=1}^5 S_i$, where each simplex is identified by the pre-existing vertices of the grid cell (hence not creating new grid points). Given the values of the level set function sampled at these vertices one can compute coordinates of intersection points of the interface with each of the simplices $S_i \cap \Gamma $ as well as the negative domain $S_i \cap \Omega^-$. If ${P_0,\cdots, P_3}$ are the four vertices of a simplex $S$, then $\Gamma$ crosses an edge $P_i P_j$ if and only if $\phi(P_i)\phi(P_j)<0$ and the intersection point across this edge is given by linear interpolation:
+\begin{align*}
+P_{ij}=P_j \frac{\phi(P_i)}{\phi(P_i) - \phi(P_j)} - P_i \frac{\phi(P_j)}{\phi(P_i) - \phi(P_j)}
+\end{align*}
+
+Number of negative level-set values on the $4$ (in 3D) tetrahedron vertices classifies the specific configuration for intersection between simplex $S$ and the interface through a variable $\eta(\phi, S)=n({P_i | \phi(P_i)<0})$. In 3D, possible values are $\eta =0,1,2,3,4$ that correspond to the four configurations for the intersection cross section enumerated below:
+\begin{itemize}
+\item $S\cap\Gamma$, see table 2 and figure 2 of \cite{min2007geometric}:
+	\begin{itemize}
+		\item $\eta=0$: tetrahedron ($S$) is completely in positive domain with no intersection, $S\cap\Gamma=\emptyset$.
+		\item $\eta=1$: with a single vertex in negative domain and remaining three in positive domain, the tetrahedron and interface have exactly $3$ intersection points, the simplex $S\cap\Gamma$ has exactly $3$ vertices; \textit{cf.}, see figure 2 (center) of  \cite{min2007geometric}.   
+		\item $\eta=2$: with two vertices in negative domain and remaining two in positive domain, the cross section has four vertices that is splitted into two 3-vertex simplices; \textit{cf.}, see figure 2 (right) of  \cite{min2007geometric}.
+		\item $\eta=3$: with one vertex in positive domain and remaining three vertices in negative domain, the cross section has 3 vertices that is computed by inverting the sign of the level-set values on vertices and following the instruction for case $\eta=1$.
+		\item $\eta=4$: tetrahedron is completely in negative domain with no intersection, $S\cap\Gamma=\emptyset$.
+	\end{itemize}
+
+\item $S\cap \Omega^-$, see table 4 and figure 4 of \cite{min2007geometric}:
+	\begin{itemize}
+		\item $\eta=0$: tetrahedron is completely in positive domain with no intersection, $S\cap\Omega^-=\emptyset$; 
+		\item $\eta=1$: the intersection $S\cap\Omega^-$ is characterized by a single tetrahedron with 4 vertices according to figure 4 (left) of \cite{min2007geometric}; \textit{i.e.}, one vertex is the negative level-set vertex of the parent tetrahedron and three others are interpolated points over the three edges pertaining to the negative vertex.
+		\item $\eta=2$: the intersection $S\cap\Omega^-$ is characterized by three tetrahedra with 12 vertices according to figure 4 (center) of \cite{min2007geometric}. Note that there 
+		\item $\eta=3$: the intersection $S\cap\Omega^-$ is characterized by three tetrahedra with 12 vertices according to figure 4 (right) of \cite{min2007geometric}.
+		\item $\eta=4$: tetrahedron is completely in negative domain and $S\cap\Omega^-=S$; 
+	\end{itemize}
+
+\end{itemize}
+
+
+Note that although we only need to allocate memory for at most 4 vertices to uniquely identify $S\cap\Gamma$, in \texttt{JAX-DIPS} we choose to pre-allocate memory for two 3-vertex simplex data structure per $S$ with a total of $6$ vertices to separately store information for the cross section geometry. Similarly for $S\cap \Omega^-$ we pre-allocate memory for a three 4-vertex simplex data structure per $S$. Altogether, in the current implementation the geometric information of intersection points for each simplex $S$ is expressed in terms of 5 simplicies (2 three-vertex simplices for surface area and 3 four-vertex simplicies for volume) using 18 points; this is an area for future optimization.
+
+
+
+
+Having the intersection points, we compute surface and volume integrals of a given field over the interface $\Gamma$ and in negative domain $\Omega^-$ as a summation of integrals over the identified simplices.
+
 
 
 
