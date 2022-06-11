@@ -1,4 +1,4 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
 
 \bibitem{bochkov2020solving}
 D.~Bochkov and F.~Gibou.
@@ -18,6 +18,18 @@ C.~Min and F.~Gibou.
   level-set methods.
 \newblock {\em Journal of Computational Physics}, 226(2):1432--1443, 2007.
 
+\bibitem{MIN2007300}
+C.~Min and F.~Gibou.
+\newblock A second order accurate level set method on non-graded adaptive
+  cartesian grids.
+\newblock {\em Journal of Computational Physics}, 225(1):300--321, 2007.
+
+\bibitem{osher1988fronts}
+S.~Osher and J.~A. Sethian.
+\newblock Fronts propagating with curvature-dependent speed: Algorithms based
+  on hamilton-jacobi formulations.
+\newblock {\em Journal of computational physics}, 79(1):12--49, 1988.
+
 \bibitem{pakravan2021solving}
 S.~Pakravan, P.~A. Mistani, M.~A. Aragon-Calvo, and F.~Gibou.
 \newblock Solving inverse-pde problems with physics-aware neural networks.
@@ -28,5 +40,22 @@ J.~F. Sallee.
 \newblock The middle-cut triangulations of the n-cube.
 \newblock {\em SIAM Journal on Algebraic Discrete Methods}, 5(3):407--419,
   1984.
+
+\bibitem{shu1988efficient}
+C.-W. Shu and S.~Osher.
+\newblock Efficient implementation of essentially non-oscillatory
+  shock-capturing schemes.
+\newblock {\em Journal of computational physics}, 77(2):439--471, 1988.
+
+\bibitem{SUSSMAN1994146}
+M.~Sussman, P.~Smereka, and S.~Osher.
+\newblock A level set approach for computing solutions to incompressible
+  two-phase flow.
+\newblock {\em Journal of Computational Physics}, 114(1):146--159, 1994.
+
+\bibitem{XIU2001658}
+D.~Xiu and G.~E. Karniadakis.
+\newblock A semi-lagrangian high-order method for navier–stokes equations.
+\newblock {\em Journal of Computational Physics}, 172(2):658--684, 2001.
 
 \end{thebibliography}

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  11 JUN 2022 11:51
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  11 JUN 2022 15:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -647,81 +647,82 @@ Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
 [1
 
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-<./figures/grids_full.png, id=74, 770.88pt x 770.88pt>
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2] [3] [4] [5] [6]
+<./figures/grids_full.png, id=148, 770.88pt x 770.88pt>
 File: ./figures/grids_full.png Graphic file (type png)
 <use ./figures/grids_full.png>
-Package pdftex.def Info: ./figures/grids_full.png  used on input line 164.
+Package pdftex.def Info: ./figures/grids_full.png  used on input line 372.
 (pdftex.def)             Requested size: 193.50076pt x 193.49586pt.
-<./figures/grids.png, id=76, 770.88pt x 770.88pt>
+<./figures/grids.png, id=150, 770.88pt x 770.88pt>
 File: ./figures/grids.png Graphic file (type png)
 <use ./figures/grids.png>
-Package pdftex.def Info: ./figures/grids.png  used on input line 165.
+Package pdftex.def Info: ./figures/grids.png  used on input line 373.
 (pdftex.def)             Requested size: 193.50076pt x 193.49586pt.
- [2] [3 <./figures/grids_full.png> <./figures/grids.png>]
+
+[7 <./figures/grids_full.png> <./figures/grids.png>]
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <7> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 281.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 489.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 281.
- [4]
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 489.
+ [8]
 Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
-put line 344.
- [5] [6] [7]
+put line 552.
+ [9] [10]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 535.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\Gamma' on input line 535.
+(hyperref)                removing `math shift' on input line 669.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\emptyset' on input line 535.
+(hyperref)                removing `\Gamma' on input line 669.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 535.
+(hyperref)                removing `\emptyset' on input line 669.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 545.
+(hyperref)                removing `math shift' on input line 669.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\Gamma' on input line 545.
+(hyperref)                removing `math shift' on input line 679.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\not' on input line 545.
+(hyperref)                removing `\Gamma' on input line 679.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\emptyset' on input line 545.
+(hyperref)                removing `\not' on input line 679.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 545.
+(hyperref)                removing `\emptyset' on input line 679.
 
-[8] [9] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 575.
- [10]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 575.
+
+Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
+(hyperref)                removing `math shift' on input line 679.
+
+[11] (./jax_dips.bbl)
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 709.
+ [12]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 709.
  (./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 575.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 575.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 709.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 709.
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
-(rerunfilecheck)             Checksum: CABBF035642E481932C7BA976D9464D2;768.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 575.
+(rerunfilecheck)             Checksum: 6FD570DFA971C5AFED01A61BB4E5D34D;1227.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 709.
  ) 
 Here is how much of TeX's memory you used:
- 9916 strings out of 483065
- 147115 string characters out of 5963550
- 435875 words of memory out of 5000000
- 24680 multiletter control sequences out of 15000+600000
+ 9952 strings out of 483065
+ 147776 string characters out of 5963550
+ 441001 words of memory out of 5000000
+ 24701 multiletter control sequences out of 15000+600000
  543599 words of font info for 69 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
- 41i,26n,42p,1006b,517s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,28n,42p,1006b,517s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/mistani/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
 00pk></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><
 /usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/sh
@@ -745,11 +746,12 @@ blic/amsfonts/cm/cmsy6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
 sfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
 i7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on jax_dips.pdf (10 pages, 416233 bytes).
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/
+share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
+Output written on jax_dips.pdf (12 pages, 441630 bytes).
 PDF statistics:
- 253 PDF objects out of 1000 (max. 8388607)
- 208 compressed objects within 3 object streams
- 42 named destinations out of 1000 (max. 500000)
- 99 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 303 PDF objects out of 1000 (max. 8388607)
+ 255 compressed objects within 3 object streams
+ 57 named destinations out of 1000 (max. 500000)
+ 139 words of extra memory for PDF output out of 10000 (max. 10000000)
 

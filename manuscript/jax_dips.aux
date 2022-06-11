@@ -23,38 +23,55 @@
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
 \newlabel{sec::introduction}{{1}{1}{Introduction}{section.1}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Numerical Scheme for Free Boundary Problems}{1}{section.2}\protected@file@percent }
-\citation{bochkov2020solving}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}The level-set method}{2}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Finite discretization method}{2}{subsection.2.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{3}{figure.caption.1}\protected@file@percent }
-\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:grid}{{1}{3}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.1}{}}
+\citation{MIN2007300}
+\citation{MIN2007300}
+\citation{osher1988fronts}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Interpolation methods}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}Trilinear interpolation}{2}{subsubsection.2.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.2}Quadratic non-oscillatory interpolation}{2}{subsubsection.2.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Level-set method}{2}{subsection.2.2}\protected@file@percent }
+\citation{SUSSMAN1994146}
+\citation{XIU2001658}
+\newlabel{eq::sussman}{{2}{3}{Level-set method}{equation.2.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Second order accurate semi-Lagrangian advection scheme}{3}{subsubsection.2.2.1}\protected@file@percent }
+\citation{shu1988efficient}
 \citation{min2007geometric}
 \citation{sallee1984middle}
 \citation{min2007geometric}
-\citation{min2007geometric}
-\citation{min2007geometric}
-\citation{min2007geometric}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}3D surface and volume geometric integrations}{5}{subsection.2.3}\protected@file@percent }
-\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{6}{algorithm.1}\protected@file@percent }
-\newlabel{euclid}{{1}{6}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Godunov Hamiltonian for reinitialization}{4}{subsubsection.2.2.2}\protected@file@percent }
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Cross sections of interface with grid cell faces}{7}{subsection.2.4}\protected@file@percent }
+\citation{min2007geometric}
+\citation{min2007geometric}
+\citation{min2007geometric}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Integration over 3D surfaces and volumes}{5}{subsection.2.3}\protected@file@percent }
+\citation{bochkov2020solving}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Cross sections of interface with grid cell faces}{6}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Finite discretization method}{6}{subsection.2.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{7}{figure.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:grid}{{1}{7}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Differentiable solution strategy}{9}{subsection.2.6}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{10}{algorithm.1}\protected@file@percent }
+\newlabel{euclid}{{1}{10}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
 \citation{guittet2015solving}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Differentiable Solution Strategy}{8}{subsection.2.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Numerical Examples}{8}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}No interface, $\Gamma =\emptyset $}{8}{subsection.3.1}\protected@file@percent }
 \citation{guittet2015solving}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Interface, $\Gamma \neq  \emptyset $}{9}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Numerical Examples}{11}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}No interface, $\Gamma =\emptyset $}{11}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Interface, $\Gamma \neq  \emptyset $}{11}{subsection.3.2}\protected@file@percent }
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{bochkov2020solving}{{1}{}{{}}{{}}}
 \bibcite{guittet2015solving}{{2}{}{{}}{{}}}
 \bibcite{min2007geometric}{{3}{}{{}}{{}}}
-\bibcite{pakravan2021solving}{{4}{}{{}}{{}}}
-\bibcite{sallee1984middle}{{5}{}{{}}{{}}}
+\bibcite{MIN2007300}{{4}{}{{}}{{}}}
+\bibcite{osher1988fronts}{{5}{}{{}}{{}}}
+\bibcite{pakravan2021solving}{{6}{}{{}}{{}}}
+\bibcite{sallee1984middle}{{7}{}{{}}{{}}}
+\bibcite{shu1988efficient}{{8}{}{{}}{{}}}
+\bibcite{SUSSMAN1994146}{{9}{}{{}}{{}}}
+\bibcite{XIU2001658}{{10}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
-\@writefile{toc}{\contentsline {section}{References}{10}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{12}{section*.2}\protected@file@percent }

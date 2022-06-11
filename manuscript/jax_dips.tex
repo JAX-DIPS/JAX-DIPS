@@ -142,7 +142,215 @@ Consider a closed irregular interface ($\rm \Gamma$) that partitions the computa
 Here $f^\pm=f(\mathbf{x} \in \Omega^\pm)$ is the spatially varying source term, $\rm \mu^\pm=\mu(\mathbf{x} \in \Omega^\pm)$  are the diffusion coefficients, and $k^\pm$ are the reaction coefficients in the two domains. We consider Dirichlet boundary conditions in a cubic domain $\rm \Omega=[-L/2,L/2]^3$.
 
 
-\subsection{The level-set method}
+
+\subsection{Interpolation methods}
+To support finite discretization methods for the free boundary problems (namely solver, level-set method, and geometric integrations) a widely needed building block is the ability to interpolate field values anywhere inside a grid cell given the values on the grid points. In \texttt{JAX-DIPS} we currently implement two types of interpolation schemes that have been used in the context of the level set method for achieving second-order accurate solutions by Min \& Gibou (2007a)\cite{MIN2007300}: (i) trilinear interpolation, and (ii) quadratic non-oscillatory interpolation.
+
+
+\subsubsection{Trilinear interpolation}
+In a unit grid cell, rescaled to $\mathcal{C}\in [0,1]^3$, the trilinear interpolation at a point $(x,y,z)\in \mathcal{C}$ uses the grid values on the parent cell vertices according to equation 11 of \cite{MIN2007300},
+\begin{align*}
+ \phi(x,y,z)= \sum_{i,j,k\in {0,1}} \phi(i,j,k) (-1)^{i+j+k}(1-x-i)(1-y-j)(1-z-k)
+\end{align*}
+Trilinear interpolation is based on polynomials of order 1 and offers accuracy of order 2 using 8 immediate vertices in a grid cell.
+
+\subsubsection{Quadratic non-oscillatory interpolation}
+Quadratic interpolation extends the trilinear interpolation by adding second order derivatives of the interpolating field. This is needed because trilinear interpolation is sensitive to presence of discontinuities and kinks which are abundant in the context of free boundary problems. The extension reads
+\begin{align*}
+	\phi(x,y,z)= &\sum_{i,j,k\in {0,1}} \phi(i,j,k) (-1)^{i+j+k}(1-x-i)(1-y-j)(1-z-k) \\
+				& - \phi_{xx} \frac{x(1-x)}{2} - \phi_{yy} \frac{y(1-y)}{2}- \phi_{zz} \frac{z(1-z)}{2} 
+\end{align*}
+where second order derviatives are sampled as the minimum value on the parent cell vertices to enhance numerical stability of the interpolation
+\begin{align*}
+	\phi_{xx} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{xx}^0 \phi_v \vert \\
+	\phi_{yy} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{yy}^0 \phi_v \vert \\
+	\phi_{zz} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{zz}^0 \phi_v \vert
+\end{align*}
+The second order derivative opeartor is the familiar 5-point finite difference stencil.
+
+
+
+
+\subsection{Level-set method}
+The level-set method for solving free boundary problems was introduced by Osher \& Sethian (1988) \cite{osher1988fronts}. The free boundary is described as the zero contour of a signed-distance function, $\phi$, whose evolution is given by the advection equation according to some velocity field dictated by the physics of the problem, $\mathbf{v}$, that is defined over the moving boundary
+\begin{align}
+	\frac{\partial \phi}{\partial t} + \mathbf{v}\cdot \nabla \phi = 0
+\end{align}
+
+This \textit{implicit} representation of the moving boundaries resolves the need for the challenging task of adapting the underlying grid to the yet-unknown discontinuities in the solution field. The computational simplicity of using Cartesian grids for solving free boundary problems with irregular geometries, as well as the ability to simulate freely moving discontinuities in a \textit{sharp}-manner, that is required by the physics of these problems, are the two main offerings of the level-set method for this class of PDE problems.
+
+The signed-distance property of the level-set function, \textit{i.e.} $\vert \nabla \phi\vert =1 $, deteriorates with timestepping the discretized advection equation. This is resolved by solving the Sussman reinitialization equation \cite{SUSSMAN1994146} in fictitious time ($\tau$) every few iterations of the physical time ($t$),
+\begin{align}
+	\frac{\partial \phi}{\partial \tau} + sgn(\phi_0) (\vert \nabla \phi \vert - 1) = 0 \label{eq::sussman}
+\end{align}
+
+Note the asymptotic solution of the Sussman equation is the signed-distance property of the level-set function. Here $sgn(\phi_0)$ is the sign function evaluated on the level-set function before reinitialization in order to preserve the sign of grid points during the fictitous updates.
+
+Besides implicit representation of the free boundaries, the level-set function can be used to compute normal vectors to the interface 
+\begin{align*}
+	\mathbf{n} = \nabla\phi / \vert \nabla \phi \vert 
+\end{align*}
+as well as the curvature of the interface
+\begin{align*}
+	\kappa = \nabla \cdot \mathbf{n}
+\end{align*}
+
+
+
+Below we describe numerical methods implementd in \texttt{JAX-DIPS} to solve the level-set equations.
+
+\subsubsection{Second order accurate semi-Lagrangian advection scheme}
+Semi-Lagrangian methods are unconditionally stable for solving advection equations, therefore avoiding the restrictive CFL condition on the timestep size from time $t^n$ to $t^{n+1}$. The general procedure to solve for $\phi^{n+1}(\mathbf{x}^{n+1})$ is to first evaluate for each grid point, $\mathbf{x}^{n+1}$, the departure point, $\mathbf{x}_d$, in the upwind direction along the characteristic curve; then use interpolation methods to recover value of the solution field at the departure point; and finally updating the solution field by setting $\phi^{n+1}(\mathbf{x}^{n+1})=\phi^n(\mathbf{x}_d)$.
+
+The task of evaluating departure points is treated by the second-order mid-point method \cite{XIU2001658}
+\begin{align*}
+	\hat{\mathbf{x}} &= \mathbf{x}^{n+1} - \frac{\Delta t}{2} \cdot \mathbf{v}^n(\mathbf{x}^{n+1})\\
+	\mathbf{x}_d &= \mathbf{x}^{n+1} - \Delta t \cdot \mathbf{v}^{n+\frac{1}{2}}(\hat{\mathbf{x}})
+\end{align*}
+
+The first step is trivial, but the second step demands velocity at the mid-timestep $t^{n + \frac{1}{2}}$ which can be evaluated from the velocity field at the previous two timesteps, $t^n$ and $t^{n-1}$, according to
+\begin{align*}
+	\mathbf{v}^{n+\frac{1}{2}} = \frac{3}{2}\mathbf{v}^n - \frac{1}{2} \mathbf{v}^{n-1}
+\end{align*}
+this intermediate velocity field is then fed into a trilinear interpolation scheme to sample the velocities on the intermediate points $\mathbf{v}^{n+\frac{1}{2}}(\hat{\mathbf{x}})$. At this point departure points can be computed, and the advected solution is updated by sampling a nonoscillatory interpolant of the level-set function at timestep $t^n$ over the computed departure points $\phi^n(\mathbf{x}_d)$.
+
+
+\subsubsection{Godunov Hamiltonian for reinitialization}
+The Sussman equation \ref{eq::sussman} is generically discretized over its spatial dimensions to obtain
+\begin{align}
+	\frac{d\phi}{d\tau} = -sgn(\phi^0) \bigg[ H_G(D_x^+\phi, D_x^-\phi, D_y^+\phi, D_y^-\phi, D_z^+\phi, D_z^-\phi, ) - 1 \bigg]
+\end{align}
+where $H_G$ is the so-called Gudonov Hamiltonian defined as
+\begin{align*}
+	H_G(a,b,c,d,e,f) &= \sqrt{ \sum_{(i,j)\in (a,b),(c,d),(e,f)}\max\bigg( \vert\min( s\cdot i,0)\vert^2, \vert\max( s\cdot j,0)\vert^2 \bigg)  }\\
+	s&= sgn(\phi^0)
+\end{align*}
+where the one-sided derivatives are computed using second order accurate discretizations in the bulk far from interfaces
+\begin{align*}
+	&(D_x^+\phi)_{i,j,k} = \frac{\phi_{i+1,j,k} - \phi_{i,j,k}}{\Delta x} - \frac{\Delta x}{2} \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i+1,j,k})\\
+	&(D_x^-\phi)_{i,j,k} = \frac{\phi_{i,j,k} - \phi_{i-1,j,k}}{\Delta x} + \frac{\Delta x}{2} \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i-1,j,k})
+\end{align*}
+where we used $\textrm{minmod}(a,b)\triangleq \textrm{median}(a,0,b)$ slope-limiter \cite{shu1988efficient}; and in the vicinity of interfaces these derivatives take into account distance to the interface using the level-set function. With similar results along $y$ and $z$ axes, the derivative along the positive $x$-axis is given by 
+\begin{align*}
+ &(D_x^+\phi)_{i,j,k} = \frac{0 - \phi_{i,j,k}}{s_I} - \frac{s_I}{2} c_2^+\\
+ & s_I = \frac{\Delta x}{2} + \left\{
+ \begin{array}{ll}
+ 	-c_0^+/c_1^+    & \textrm{if} \ \vert c_2^+\vert<\epsilon \\
+ 	\bigg(-c_1^+ - sgn(\phi^0_{i,j,k})\sqrt{(c_1^+)^2 - 4c_2^+ c_0^+} \bigg)/(2 c_2^+)    & \textrm{if} \ \vert c_2^+\vert\ge \epsilon 
+ \end{array}
+\right.
+\end{align*}
+where 
+\begin{align*}
+	c_2^+ &= \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i+1,j,k}) \\
+	c_1^+ &=  \frac{\phi_{i+1,j,k} - \phi_{i,j,k}}{\Delta x} \\
+	c_0^+ &= \frac{\phi_{i+1,j,k} + \phi_{i,j,k}}{2} - \frac{c_2^+ (\Delta x)^2}{4}
+\end{align*}
+
+
+
+
+
+And along the negative $x$-axis
+\begin{align*}
+ &(D_x^-\phi)_{i,j,k} = \frac{\phi_{i,j,k} - 0}{s_I} + \frac{s_I}{2} c_2^-\\
+ & s_I = \frac{\Delta x}{2} + \left\{
+ \begin{array}{ll}
+ 	c_0^-/c_1^-    & \textrm{if} \ \vert c_2^-\vert<\epsilon \\
+ 	\bigg(c_1^- - sgn(\phi^0_{i,j,k})\sqrt{(c_1^-)^2 - 4c_2^- c_0^-} \bigg)/(2 c_2^-)    & \textrm{if} \ \vert c_2^-\vert\ge \epsilon 
+ \end{array}
+\right.
+\end{align*}
+where 
+\begin{align*}
+	c_2^- &= \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i-1,j,k}) \\
+	c_1^- &= \frac{\phi_{i,j,k} - \phi_{i-1,j,k}}{\Delta x} \\
+	c_0^- &= \frac{\phi_{i-1,j,k} + \phi_{i,j,k}}{2} - \frac{c_2^- (\Delta x)^2}{4}
+\end{align*}
+
+
+
+
+
+
+\subsection{Integration over 3D surfaces and volumes}
+We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007b) \cite{min2007geometric}. In this scheme each grid cell, $\mathcal{C}$, is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle} (each cell is rescaled to $[0,1]^3$) that are described below (also see figure 1 (right) of \cite{min2007geometric}):
+\begin{align*}
+	 & \rm S_1 \equiv conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 0\ face,\ z = 0\ face} \\
+	 & \rm S_2 \equiv conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) & \rm{ x = 1\ face,\ y = 1\ face,\ z = 0\ face} \\
+	 & \rm S_3 \equiv conv(P_{101} ; P_{100} ; P_{111} ; P_{001}) & \rm{ x = 1\ face,\ y = 0\ face,\ z = 1\ face} \\
+	 & \rm S_4 \equiv conv(P_{011} ; P_{111} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 1\ face,\ z = 1\ face} \\
+	 & \rm S_5\equiv conv(P_{111} ; P_{100} ; P_{010} ; P_{001})  & \rm{ no\ face\ exposure}
+\end{align*}
+
+Hence each 3D grid cell is the union of $5$ tetrahedra (simplices) $\mathcal{C}=\cup_{i=1}^5 S_i$, where each simplex is identified by the pre-existing vertices of the grid cell (hence not creating new grid points). Given the values of the level set function sampled at these vertices one can compute coordinates of intersection points of the interface with each of the simplices $S_i \cap \Gamma $ as well as the negative domain $S_i \cap \Omega^-$. If ${P_0,\cdots, P_3}$ are the four vertices of a simplex $S$, then $\Gamma$ crosses an edge $P_i P_j$ if and only if $\phi(P_i)\phi(P_j)<0$ and the intersection point across this edge is given by linear interpolation:
+\begin{align*}
+P_{ij}=P_j \frac{\phi(P_i)}{\phi(P_i) - \phi(P_j)} - P_i \frac{\phi(P_j)}{\phi(P_i) - \phi(P_j)}
+\end{align*}
+
+Number of negative level-set values on the $4$ (in 3D) tetrahedron vertices classifies the specific configuration for intersection between simplex $S$ and the interface through a variable $\eta(\phi, S)=n({P_i | \phi(P_i)<0})$. In 3D, possible values are $\eta =0,1,2,3,4$ that correspond to the four configurations for the intersection cross section enumerated below:
+\begin{itemize}
+\item $S\cap\Gamma$, see table 2 and figure 2 of \cite{min2007geometric}:
+	\begin{itemize}
+		\item $\eta=0$: tetrahedron ($S$) is completely in positive domain with no intersection, $S\cap\Gamma=\emptyset$.
+		\item $\eta=1$: with a single vertex in negative domain and remaining three in positive domain, the tetrahedron and interface have exactly $3$ intersection points, the simplex $S\cap\Gamma$ has exactly $3$ vertices; \textit{cf.}, see figure 2 (center) of  \cite{min2007geometric}.   
+		\item $\eta=2$: with two vertices in negative domain and remaining two in positive domain, the cross section has four vertices that is splitted into two 3-vertex simplices; \textit{cf.}, see figure 2 (right) of  \cite{min2007geometric}.
+		\item $\eta=3$: with one vertex in positive domain and remaining three vertices in negative domain, the cross section has 3 vertices that is computed by inverting the sign of the level-set values on vertices and following the instruction for case $\eta=1$.
+		\item $\eta=4$: tetrahedron is completely in negative domain with no intersection, $S\cap\Gamma=\emptyset$.
+	\end{itemize}
+
+\item $S\cap \Omega^-$, see table 4 and figure 4 of \cite{min2007geometric}:
+	\begin{itemize}
+		\item $\eta=0$: tetrahedron is completely in positive domain with no intersection, $S\cap\Omega^-=\emptyset$; 
+		\item $\eta=1$: the intersection $S\cap\Omega^-$ is characterized by a single tetrahedron with 4 vertices according to figure 4 (left) of \cite{min2007geometric}; \textit{i.e.}, one vertex is the negative level-set vertex of the parent tetrahedron and three others are interpolated points over the three edges pertaining to the negative vertex.
+		\item $\eta=2$: the intersection $S\cap\Omega^-$ is characterized by three tetrahedra with 12 vertices according to figure 4 (center) of \cite{min2007geometric}. Note that there 
+		\item $\eta=3$: the intersection $S\cap\Omega^-$ is characterized by three tetrahedra with 12 vertices according to figure 4 (right) of \cite{min2007geometric}.
+		\item $\eta=4$: tetrahedron is completely in negative domain and $S\cap\Omega^-=S$; 
+	\end{itemize}
+
+\end{itemize}
+
+
+Note that although we only need to allocate memory for at most 4 vertices to uniquely identify $S\cap\Gamma$, in \texttt{JAX-DIPS} we choose to pre-allocate memory for two 3-vertex simplex data structure per $S$ with a total of $6$ vertices to separately store information for the cross section geometry. Similarly for $S\cap \Omega^-$ we pre-allocate memory for a three 4-vertex simplex data structure per $S$. Altogether, in the current implementation the geometric information of intersection points for each simplex $S$ is expressed in terms of 5 simplicies (2 three-vertex simplices for surface area and 3 four-vertex simplicies for volume) using 18 points; this is an area for future optimization.
+
+
+
+
+Having the intersection points, we compute surface and volume integrals of a given field over the interface $\Gamma$ and in negative domain $\Omega^-$ as a summation of integrals over the identified simplices. For each simplex (with $n=3$ or $n=4$ vertices) surface and volume integrals can be numerically computed by having these vertices ${P_0,\cdots, P_n}$ and the values of the field $f$ at these vertices according to 
+\begin{align*}
+\int_S f dx = \textrm{vol}(S)\cdot \frac{f(P_0) + \cdots + f(P_n)}{n+1}
+\end{align*}
+where
+\begin{align*}
+\textrm{vol}(S) = \frac{1}{n!} \bigg\vert \textrm{det} \begin{pmatrix}
+(P_1-P_0)\hat{e}_1 & \cdots & (P_n-P_0)\hat{e}_1 \\
+\vdots  & \ddots & \vdots  \\
+(P_1-P_0)\hat{e}_n  & \cdots & (P_n-P_0)\hat{e}_n 
+\end{pmatrix} \bigg\vert
+\end{align*}
+with $\hat{e}_i$ being the $i^{th}$ Cartesian unit basis vector.
+
+
+
+
+
+\subsection{Cross sections of interface with grid cell faces}
+For the numerical discretizations considered in this work we also need the surface areas for simplices created at the intersection of $\Gamma$ with each of the 6 faces of a grid cell $\mathcal{C}$. In \texttt{JAX-DIPS} for each face we reuse two corresponding simplices exposed to that face that were calculated in the geometric integrations module, explicitly: 
+\begin{itemize}
+	\item $x=0$ face has contributions from ($S_1$, $S_4$)
+	\item $x=1$ face has contributions from ($S_2$, $S_3$)
+	\item $y=0$ face has contributions from ($S_1$, $S_3$)
+	\item $y=1$ face has contributions from ($S_2$, $S_4$)
+	\item $z=0$ face has contributions from ($S_1$, $S_2$)
+	\item $z=1$ face has contributions from ($S_3$, $S_4$)
+\end{itemize}
+For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the considered face and sum the surface areas in (negative domain) contributed from each simplex on that face; therefore, the portion of the face surface area in the positive domain is simply the complementing value $\rm area^+=area_{face}-area^-$; \textit{i.e.}, this ensures sum of areas adds up to the exact face area in downstream computations.
+
+
+
+
+
+
 
 \subsection{Finite discretization method}
 
@@ -435,81 +643,7 @@ in matrix notation we have
 
 
 
-\subsection{3D surface and volume geometric integrations}
-We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007) \cite{min2007geometric}. In this scheme each grid cell, $\mathcal{C}$, is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle} (each cell is rescaled to $[0,1]^3$) that are described below (also see figure 1 (right) of \cite{min2007geometric}):
-\begin{align*}
-	 & \rm S_1 \equiv conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 0\ face,\ z = 0\ face} \\
-	 & \rm S_2 \equiv conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) & \rm{ x = 1\ face,\ y = 1\ face,\ z = 0\ face} \\
-	 & \rm S_3 \equiv conv(P_{101} ; P_{100} ; P_{111} ; P_{001}) & \rm{ x = 1\ face,\ y = 0\ face,\ z = 1\ face} \\
-	 & \rm S_4 \equiv conv(P_{011} ; P_{111} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 1\ face,\ z = 1\ face} \\
-	 & \rm S_5\equiv conv(P_{111} ; P_{100} ; P_{010} ; P_{001})  & \rm{ no\ face\ exposure}
-\end{align*}
-
-Hence each 3D grid cell is the union of $5$ tetrahedra (simplices) $\mathcal{C}=\cup_{i=1}^5 S_i$, where each simplex is identified by the pre-existing vertices of the grid cell (hence not creating new grid points). Given the values of the level set function sampled at these vertices one can compute coordinates of intersection points of the interface with each of the simplices $S_i \cap \Gamma $ as well as the negative domain $S_i \cap \Omega^-$. If ${P_0,\cdots, P_3}$ are the four vertices of a simplex $S$, then $\Gamma$ crosses an edge $P_i P_j$ if and only if $\phi(P_i)\phi(P_j)<0$ and the intersection point across this edge is given by linear interpolation:
-\begin{align*}
-P_{ij}=P_j \frac{\phi(P_i)}{\phi(P_i) - \phi(P_j)} - P_i \frac{\phi(P_j)}{\phi(P_i) - \phi(P_j)}
-\end{align*}
-
-Number of negative level-set values on the $4$ (in 3D) tetrahedron vertices classifies the specific configuration for intersection between simplex $S$ and the interface through a variable $\eta(\phi, S)=n({P_i | \phi(P_i)<0})$. In 3D, possible values are $\eta =0,1,2,3,4$ that correspond to the four configurations for the intersection cross section enumerated below:
-\begin{itemize}
-\item $S\cap\Gamma$, see table 2 and figure 2 of \cite{min2007geometric}:
-	\begin{itemize}
-		\item $\eta=0$: tetrahedron ($S$) is completely in positive domain with no intersection, $S\cap\Gamma=\emptyset$.
-		\item $\eta=1$: with a single vertex in negative domain and remaining three in positive domain, the tetrahedron and interface have exactly $3$ intersection points, the simplex $S\cap\Gamma$ has exactly $3$ vertices; \textit{cf.}, see figure 2 (center) of  \cite{min2007geometric}.   
-		\item $\eta=2$: with two vertices in negative domain and remaining two in positive domain, the cross section has four vertices that is splitted into two 3-vertex simplices; \textit{cf.}, see figure 2 (right) of  \cite{min2007geometric}.
-		\item $\eta=3$: with one vertex in positive domain and remaining three vertices in negative domain, the cross section has 3 vertices that is computed by inverting the sign of the level-set values on vertices and following the instruction for case $\eta=1$.
-		\item $\eta=4$: tetrahedron is completely in negative domain with no intersection, $S\cap\Gamma=\emptyset$.
-	\end{itemize}
-
-\item $S\cap \Omega^-$, see table 4 and figure 4 of \cite{min2007geometric}:
-	\begin{itemize}
-		\item $\eta=0$: tetrahedron is completely in positive domain with no intersection, $S\cap\Omega^-=\emptyset$; 
-		\item $\eta=1$: the intersection $S\cap\Omega^-$ is characterized by a single tetrahedron with 4 vertices according to figure 4 (left) of \cite{min2007geometric}; \textit{i.e.}, one vertex is the negative level-set vertex of the parent tetrahedron and three others are interpolated points over the three edges pertaining to the negative vertex.
-		\item $\eta=2$: the intersection $S\cap\Omega^-$ is characterized by three tetrahedra with 12 vertices according to figure 4 (center) of \cite{min2007geometric}. Note that there 
-		\item $\eta=3$: the intersection $S\cap\Omega^-$ is characterized by three tetrahedra with 12 vertices according to figure 4 (right) of \cite{min2007geometric}.
-		\item $\eta=4$: tetrahedron is completely in negative domain and $S\cap\Omega^-=S$; 
-	\end{itemize}
-
-\end{itemize}
-
-
-Note that although we only need to allocate memory for at most 4 vertices to uniquely identify $S\cap\Gamma$, in \texttt{JAX-DIPS} we choose to pre-allocate memory for two 3-vertex simplex data structure per $S$ with a total of $6$ vertices to separately store information for the cross section geometry. Similarly for $S\cap \Omega^-$ we pre-allocate memory for a three 4-vertex simplex data structure per $S$. Altogether, in the current implementation the geometric information of intersection points for each simplex $S$ is expressed in terms of 5 simplicies (2 three-vertex simplices for surface area and 3 four-vertex simplicies for volume) using 18 points; this is an area for future optimization.
-
-
-
-
-Having the intersection points, we compute surface and volume integrals of a given field over the interface $\Gamma$ and in negative domain $\Omega^-$ as a summation of integrals over the identified simplices. For each simplex (with $n=3$ or $n=4$ vertices) surface and volume integrals can be numerically computed by having these vertices ${P_0,\cdots, P_n}$ and the values of the field $f$ at these vertices according to 
-\begin{align*}
-\int_S f dx = \textrm{vol}(S)\cdot \frac{f(P_0) + \cdots + f(P_n)}{n+1}
-\end{align*}
-where
-\begin{align*}
-\textrm{vol}(S) = \frac{1}{n!} \bigg\vert \textrm{det} \begin{pmatrix}
-(P_1-P_0)\hat{e}_1 & \cdots & (P_n-P_0)\hat{e}_1 \\
-\vdots  & \ddots & \vdots  \\
-(P_1-P_0)\hat{e}_n  & \cdots & (P_n-P_0)\hat{e}_n 
-\end{pmatrix} \bigg\vert
-\end{align*}
-with $\hat{e}_i$ being the $i^{th}$ Cartesian unit basis vector.
-
-
-
-
-
-\subsection{Cross sections of interface with grid cell faces}
-For the numerical discretizations considered in this work we also need the surface areas for simplices created at the intersection of $\Gamma$ with each of the 6 faces of a grid cell $\mathcal{C}$. In \texttt{JAX-DIPS} for each face we reuse two corresponding simplices exposed to that face that were calculated in the geometric integrations module, explicitly: 
-\begin{itemize}
-	\item $x=0$ face has contributions from ($S_1$, $S_4$)
-	\item $x=1$ face has contributions from ($S_2$, $S_3$)
-	\item $y=0$ face has contributions from ($S_1$, $S_3$)
-	\item $y=1$ face has contributions from ($S_2$, $S_4$)
-	\item $z=0$ face has contributions from ($S_1$, $S_2$)
-	\item $z=1$ face has contributions from ($S_3$, $S_4$)
-\end{itemize}
-For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the considered face and sum the surface areas in (negative domain) contributed from each simplex on that face; therefore, the portion of the face surface area in the positive domain is simply the complementing value $\rm area^+=area_{face}-area^-$; \textit{i.e.}, this ensures sum of areas adds up to the exact face area in downstream computations.
-
-
-\subsection{Differentiable Solution Strategy}
+\subsection{Differentiable solution strategy}
 
 We define the loss function by the 2-norm of the residual of the discretized function:
 \begin{align*}

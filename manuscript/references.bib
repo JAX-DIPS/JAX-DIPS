@@ -51,6 +51,75 @@
   publisher={Elsevier}
 }
 
+
+@article{MIN2007300,
+title = {A second order accurate level set method on non-graded adaptive cartesian grids},
+journal = {Journal of Computational Physics},
+volume = {225},
+number = {1},
+pages = {300-321},
+year = {2007},
+issn = {0021-9991},
+doi = {https://doi.org/10.1016/j.jcp.2006.11.034},
+url = {https://www.sciencedirect.com/science/article/pii/S0021999106005912},
+author = {Chohong Min and Frédéric Gibou},
+keywords = {Level set method, Ghost fluid method, Adaptive mesh refinement, Non-graded Cartesian grids, Motion by mean curvature, Motion in the normal direction, Motion in an externally generated velocity field, Extrapolation in the normal direction},
+abstract = {We present a level set method on non-graded adaptive Cartesian grids, i.e. grids for which the ratio between adjacent cells is not constrained. We use quadtree and octree data structures to represent the grid and a simple algorithm to generate a mesh with the finest resolution at the interface. In particular, we present (1) a locally third order accurate reinitialization scheme that transforms an arbitrary level set function into a signed distance function, (2) a second order accurate semi-Lagrangian methods to evolve the linear level set advection equation under an externally generated velocity field, (3) a second order accurate upwind method to evolve the non-linear level set equation under a normal velocity as well as to extrapolate scalar quantities across an interface in the normal direction, and (4) a semi-implicit scheme to evolve the interface under mean curvature. Combined, we obtain a level set method on adaptive Cartesian grids with a negligible amount of mass loss. We propose numerical examples in two and three spatial dimensions to demonstrate the accuracy of the method.}
+}
+
+
+@article{osher1988fronts,
+  title={Fronts propagating with curvature-dependent speed: Algorithms based on Hamilton-Jacobi formulations},
+  author={Osher, Stanley and Sethian, James A},
+  journal={Journal of computational physics},
+  volume={79},
+  number={1},
+  pages={12--49},
+  year={1988},
+  publisher={Elsevier}
+}
+
+@article{SUSSMAN1994146,
+title = {A Level Set Approach for Computing Solutions to Incompressible Two-Phase Flow},
+journal = {Journal of Computational Physics},
+volume = {114},
+number = {1},
+pages = {146-159},
+year = {1994},
+issn = {0021-9991},
+doi = {https://doi.org/10.1006/jcph.1994.1155},
+url = {https://www.sciencedirect.com/science/article/pii/S0021999184711557},
+author = {Mark Sussman and Peter Smereka and Stanley Osher},
+abstract = {A level set approach for computing solutions to incompressible two-phase flow is presented. The interface between the two fluids is considered to be sharp and is described as the zero level set of a smooth function. We use a second-order projection method which implements a second-order upwinded procedure for differencing the convection terms. A new treatment of the level set method allows us to include large density and viscosity ratios as well as surface tension. We consider the motion of air bubbles in water and falling water drops in air.}
+}
+
+@article{XIU2001658,
+title = {A Semi-Lagrangian High-Order Method for Navier–Stokes Equations},
+journal = {Journal of Computational Physics},
+volume = {172},
+number = {2},
+pages = {658-684},
+year = {2001},
+issn = {0021-9991},
+doi = {https://doi.org/10.1006/jcph.2001.6847},
+url = {https://www.sciencedirect.com/science/article/pii/S0021999101968470},
+author = {Dongbin Xiu and George Em Karniadakis},
+abstract = {We present a semi-Lagrangian method for advection–diffusion and incompressible Navier–Stokes equations. The focus is on constructing stable schemes of second-order temporal accuracy, as this is a crucial element for the successful application of semi-Lagrangian methods to turbulence simulations. We implement the method in the context of unstructured spectral/hp element discretization, which allows for efficient search-interpolation procedures as well as for illumination of the nonmonotonic behavior of the temporal (advection) error of the form: O(Δtk+Δxp+1Δt). We present numerical results that validate this error estimate for the advection–diffusion equation, and we document that such estimate is also valid for the Navier–Stokes equations at moderate or high Reynolds number. Two- and three-dimensional laminar and transitional flow simulations suggest that semi-Lagrangian schemes are more efficient than their Eulerian counterparts for high-order discretizations on nonuniform grids.}
+}
+
+
+@article{shu1988efficient,
+  title={Efficient implementation of essentially non-oscillatory shock-capturing schemes},
+  author={Shu, Chi-Wang and Osher, Stanley},
+  journal={Journal of computational physics},
+  volume={77},
+  number={2},
+  pages={439--471},
+  year={1988},
+  publisher={Elsevier}
+}
+
+
 @article{sylvester1884equation,
   title={Sur l’{\'e}quation en matrices px= xq},
   author={Sylvester, James Joseph},

@@ -1,11 +1,16 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}% 1
 \BOOKMARK [1][-]{section.2}{Numerical Scheme for Free Boundary Problems}{}% 2
-\BOOKMARK [2][-]{subsection.2.1}{The level-set method}{section.2}% 3
-\BOOKMARK [2][-]{subsection.2.2}{Finite discretization method}{section.2}% 4
-\BOOKMARK [2][-]{subsection.2.3}{3D surface and volume geometric integrations}{section.2}% 5
-\BOOKMARK [2][-]{subsection.2.4}{Cross sections of interface with grid cell faces}{section.2}% 6
-\BOOKMARK [2][-]{subsection.2.5}{Differentiable Solution Strategy}{section.2}% 7
-\BOOKMARK [1][-]{section.3}{Numerical Examples}{}% 8
-\BOOKMARK [2][-]{subsection.3.1}{No interface, =}{section.3}% 9
-\BOOKMARK [2][-]{subsection.3.2}{Interface, =}{section.3}% 10
-\BOOKMARK [1][-]{section*.2}{References}{}% 11
+\BOOKMARK [2][-]{subsection.2.1}{Interpolation methods}{section.2}% 3
+\BOOKMARK [3][-]{subsubsection.2.1.1}{Trilinear interpolation}{subsection.2.1}% 4
+\BOOKMARK [3][-]{subsubsection.2.1.2}{Quadratic non-oscillatory interpolation}{subsection.2.1}% 5
+\BOOKMARK [2][-]{subsection.2.2}{Level-set method}{section.2}% 6
+\BOOKMARK [3][-]{subsubsection.2.2.1}{Second order accurate semi-Lagrangian advection scheme}{subsection.2.2}% 7
+\BOOKMARK [3][-]{subsubsection.2.2.2}{Godunov Hamiltonian for reinitialization}{subsection.2.2}% 8
+\BOOKMARK [2][-]{subsection.2.3}{Integration over 3D surfaces and volumes}{section.2}% 9
+\BOOKMARK [2][-]{subsection.2.4}{Cross sections of interface with grid cell faces}{section.2}% 10
+\BOOKMARK [2][-]{subsection.2.5}{Finite discretization method}{section.2}% 11
+\BOOKMARK [2][-]{subsection.2.6}{Differentiable solution strategy}{section.2}% 12
+\BOOKMARK [1][-]{section.3}{Numerical Examples}{}% 13
+\BOOKMARK [2][-]{subsection.3.1}{No interface, =}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.2}{Interface, =}{section.3}% 15
+\BOOKMARK [1][-]{section*.2}{References}{}% 16
