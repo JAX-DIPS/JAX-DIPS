@@ -162,11 +162,11 @@ Quadratic interpolation extends the trilinear interpolation by adding second ord
 \end{align*}
 where second order derviatives are sampled as the minimum value on the parent cell vertices to enhance numerical stability of the interpolation
 \begin{align*}
-	\phi_{xx} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{xx}^0 \phi_v \vert \\
-	\phi_{yy} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{yy}^0 \phi_v \vert \\
-	\phi_{zz} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{zz}^0 \phi_v \vert
+	\phi_{xx} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{xx} \phi_v \vert \\
+	\phi_{yy} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{yy} \phi_v \vert \\
+	\phi_{zz} & = \min_{v \in \textrm{vertices}(\mathcal{C})} \vert D_{zz} \phi_v \vert
 \end{align*}
-The second order derivative opeartor is the familiar 5-point finite difference stencil.
+The second order derivative operator is the familiar 5-point finite difference stencil.
 
 
 
@@ -246,12 +246,7 @@ where
 	c_1^+ &=  \frac{\phi_{i+1,j,k} - \phi_{i,j,k}}{\Delta x} \\
 	c_0^+ &= \frac{\phi_{i+1,j,k} + \phi_{i,j,k}}{2} - \frac{c_2^+ (\Delta x)^2}{4}
 \end{align*}
-
-
-
-
-
-And along the negative $x$-axis
+And along the negative $x$-axis we obtain
 \begin{align*}
  &(D_x^-\phi)_{i,j,k} = \frac{\phi_{i,j,k} - 0}{s_I} + \frac{s_I}{2} c_2^-\\
  & s_I = \frac{\Delta x}{2} + \left\{
@@ -269,9 +264,13 @@ where
 \end{align*}
 
 
-
-
-
+Having the right-hand-side, the TVD-RK2 method of Shu \& Osher \cite{shu1988efficient} is applied to the update the level-set function in fictitious time
+\begin{align*}
+	\tilde{\phi}^{n+1}&=\phi^n - \Delta \tau \cdot sgn(\phi^0) [ H_G^n -1] \\
+	\tilde{\phi}^{n+2}&=\tilde{\phi}^{n+1} - \Delta \tau \cdot sgn(\phi^0) [ \tilde{H}_G^{n+1} -1] \\
+	\phi^{n+1}&=\frac{\phi^n + \tilde{\phi}^{n+2}}{2}
+\end{align*}
+with a timestep chosen by $\Delta \tau = \min (s_I, \Delta x, \Delta y, \Delta z) / 3$.
 
 \subsection{Integration over 3D surfaces and volumes}
 We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007b) \cite{min2007geometric}. In this scheme each grid cell, $\mathcal{C}$, is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle} (each cell is rescaled to $[0,1]^3$) that are described below (also see figure 1 (right) of \cite{min2007geometric}):
