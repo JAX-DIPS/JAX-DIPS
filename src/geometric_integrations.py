@@ -626,12 +626,12 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
   
         return jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
-                        mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
-                        mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
-                        vol_m, vol_p, \
-                        area_imh_m, area_imh_p, area_iph_m, area_iph_p, \
-                        area_jmh_m, area_jmh_p, area_jph_m, area_jph_p, \
-                        area_kmh_m, area_kmh_p, area_kph_m, area_kph_p], dtype=f32)
+                          mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+                          mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+                          vol_m, vol_p, \
+                          area_imh_m, area_imh_p, area_iph_m, area_iph_p, \
+                          area_jmh_m, area_jmh_p, area_jph_m, area_jph_p, \
+                          area_kmh_m, area_kmh_p, area_kph_m, area_kph_p], dtype=f32)
 
 
 
@@ -687,12 +687,12 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         m_mask = sign_m_fn(is_interface)
 
         return jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
-                            mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
-                            mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
-                            vol_m, vol_p, \
-                            area_x * m_mask, area_x * p_mask, area_x * m_mask, area_x * p_mask, \
-                            area_y * m_mask, area_y * p_mask, area_y * m_mask, area_y * p_mask, \
-                            area_z * m_mask, area_z * p_mask, area_z * m_mask, area_z * p_mask], dtype=f32)
+                          mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
+                          mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
+                          vol_m, vol_p, \
+                          area_x * m_mask, area_x * p_mask, area_x * m_mask, area_x * p_mask, \
+                          area_y * m_mask, area_y * p_mask, area_y * m_mask, area_y * p_mask, \
+                          area_z * m_mask, area_z * p_mask, area_z * m_mask, area_z * p_mask], dtype=f32)
 
 
 

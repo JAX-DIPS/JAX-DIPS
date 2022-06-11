@@ -435,8 +435,8 @@ in matrix notation we have
 
 
 
-\subsection{3D geometric integrations}
-We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007) \cite{min2007geometric}. In this scheme each grid cell, $\mathcal{C}$, is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle} (each cell is rescaled to $[0,1]^3$):
+\subsection{3D surface and volume geometric integrations}
+We use uniform Cartesian grids. For computational cells that are crossed by the interface, \textit{i.e.} $\mathcal{V}_{i,j,k}\cap \Gamma \neq 0$, we use the geometric integrations proposed by Min \& Gibou (2007) \cite{min2007geometric}. In this scheme each grid cell, $\mathcal{C}$, is decomposed into five tetrahedra by the middle-cut triangulation \cite{sallee1984middle} (each cell is rescaled to $[0,1]^3$) that are described below (also see figure 1 (right) of \cite{min2007geometric}):
 \begin{align*}
 	 & \rm S_1 \equiv conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) & \rm{ x = 0\ face,\ y = 0\ face,\ z = 0\ face} \\
 	 & \rm S_2 \equiv conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) & \rm{ x = 1\ face,\ y = 1\ face,\ z = 0\ face} \\
@@ -478,9 +478,35 @@ Note that although we only need to allocate memory for at most 4 vertices to uni
 
 
 
-Having the intersection points, we compute surface and volume integrals of a given field over the interface $\Gamma$ and in negative domain $\Omega^-$ as a summation of integrals over the identified simplices.
+Having the intersection points, we compute surface and volume integrals of a given field over the interface $\Gamma$ and in negative domain $\Omega^-$ as a summation of integrals over the identified simplices. For each simplex (with $n=3$ or $n=4$ vertices) surface and volume integrals can be numerically computed by having these vertices ${P_0,\cdots, P_n}$ and the values of the field $f$ at these vertices according to 
+\begin{align*}
+\int_S f dx = \textrm{vol}(S)\cdot \frac{f(P_0) + \cdots + f(P_n)}{n+1}
+\end{align*}
+where
+\begin{align*}
+\textrm{vol}(S) = \frac{1}{n!} \bigg\vert \textrm{det} \begin{pmatrix}
+(P_1-P_0)\hat{e}_1 & \cdots & (P_n-P_0)\hat{e}_1 \\
+\vdots  & \ddots & \vdots  \\
+(P_1-P_0)\hat{e}_n  & \cdots & (P_n-P_0)\hat{e}_n 
+\end{pmatrix} \bigg\vert
+\end{align*}
+with $\hat{e}_i$ being the $i^{th}$ Cartesian unit basis vector.
 
 
+
+
+
+\subsection{Cross sections of interface with grid cell faces}
+For the numerical discretizations considered in this work we also need the surface areas for simplices created at the intersection of $\Gamma$ with each of the 6 faces of a grid cell $\mathcal{C}$. In \texttt{JAX-DIPS} for each face we reuse two corresponding simplices exposed to that face that were calculated in the geometric integrations module, explicitly: 
+\begin{itemize}
+	\item $x=0$ face has contributions from ($S_1$, $S_4$)
+	\item $x=1$ face has contributions from ($S_2$, $S_3$)
+	\item $y=0$ face has contributions from ($S_1$, $S_3$)
+	\item $y=1$ face has contributions from ($S_2$, $S_4$)
+	\item $z=0$ face has contributions from ($S_1$, $S_2$)
+	\item $z=1$ face has contributions from ($S_3$, $S_4$)
+\end{itemize}
+For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the considered face and sum the surface areas in (negative domain) contributed from each simplex on that face; therefore, the portion of the face surface area in the positive domain is simply the complementing value $\rm area^+=area_{face}-area^-$; \textit{i.e.}, this ensures sum of areas adds up to the exact face area in downstream computations.
 
 
 \subsection{Differentiable Solution Strategy}
