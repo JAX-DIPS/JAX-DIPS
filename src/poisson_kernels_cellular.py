@@ -322,7 +322,7 @@ def poisson_solver(gstate, sim_state):
             def interface_node(i, j, k):
                 def mu_minus_bigger_fn(i, j, k):
                     def extrapolate_u_m_from_negative_domain(i, j, k):
-                        delta_ijk = phi_cube[i, j, k] * (1.0)
+                        delta_ijk = phi_cube[i, j, k] 
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_m_proj = r_m_proj[jnp.newaxis]
@@ -333,7 +333,7 @@ def poisson_solver(gstate, sim_state):
                         return u_m
 
                     def extrapolate_u_p_from_positive_domain(i, j, k):
-                        delta_ijk = phi_cube[i, j, k]  * (1.0) # explore
+                        delta_ijk = phi_cube[i, j, k]  
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_p_proj = r_p_proj[jnp.newaxis]
@@ -349,7 +349,7 @@ def poisson_solver(gstate, sim_state):
 
                 def mu_plus_bigger_fn(i, j, k):
                     def extrapolate_u_m_from_negative_domain_(i, j, k):
-                        delta_ijk = phi_cube[i, j, k] * (1.0)
+                        delta_ijk = phi_cube[i, j, k] 
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_m_proj = r_m_proj[jnp.newaxis]
@@ -360,7 +360,7 @@ def poisson_solver(gstate, sim_state):
                         return u_m
 
                     def extrapolate_u_p_from_positive_domain_(i, j, k):
-                        delta_ijk = phi_cube[i, j, k] * (1.0)    # explore
+                        delta_ijk = phi_cube[i, j, k] 
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_p_proj = r_p_proj[jnp.newaxis]
