@@ -291,7 +291,6 @@ def poisson_solver(gstate, sim_state):
         # _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
 
         # @jit
-
         def is_box_boundary_node(i, j, k):
             """
             Check if current node is on the boundary of box
@@ -309,7 +308,6 @@ def poisson_solver(gstate, sim_state):
         #     return jnp.array([u_m, u_p])
 
         # @jit
-
         def u_mp_at_interior_node(i, j, k):
             """
             BIAS SLOW:
@@ -324,18 +322,14 @@ def poisson_solver(gstate, sim_state):
             def interface_node(i, j, k):
                 def mu_minus_bigger_fn(i, j, k):
                     def extrapolate_u_m_from_negative_domain(i, j, k):
-                        delta_ijk = phi_cube[i, j, k] 
+                        delta_ijk = phi_cube[i, j, k] * (-1.0)
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_m_proj = r_m_proj[jnp.newaxis]
                         curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), ngbs)
-                        u_m = -1.0 * \
-                            jnp.dot(
-                                gamma_m_ijk_pqm[i-2, j-2, k-2], cube_at_v(u_cube, curr_ngbs))
-                        u_m += (1.0 - gamma_m_ijk[i-2, j-2, k-2] +
-                                gamma_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                        u_m += -1.0 * (1.0 - gamma_m_ijk[i-2, j-2, k-2]) * (alpha_interp_fn(
-                            r_m_proj) + delta_ijk * beta_interp_fn(r_m_proj) / mu_p_interp_fn(r_m_proj))
+                        u_m = -1.0 * jnp.dot(gamma_m_ijk_pqm[i-2, j-2, k-2], cube_at_v(u_cube, curr_ngbs))
+                        u_m += (1.0 - gamma_m_ijk[i-2, j-2, k-2] + gamma_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
+                        u_m += -1.0 * (1.0 - gamma_m_ijk[i-2, j-2, k-2]) * (alpha_interp_fn(r_m_proj) + delta_ijk * beta_interp_fn(r_m_proj) / mu_p_interp_fn(r_m_proj))
                         return u_m
 
                     def extrapolate_u_p_from_positive_domain(i, j, k):
@@ -344,35 +338,25 @@ def poisson_solver(gstate, sim_state):
                         r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_p_proj = r_p_proj[jnp.newaxis]
                         curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), ngbs)
-                        u_p = -1.0 * \
-                            jnp.dot(
-                                zeta_m_ijk_pqm[i-2, j-2, k-2], cube_at_v(u_cube, curr_ngbs))
-                        u_p += (1.0 - zeta_m_ijk[i-2, j-2, k-2] +
-                                zeta_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                        u_p += alpha_interp_fn(r_p_proj) + delta_ijk * \
-                            beta_interp_fn(r_p_proj) / mu_p_interp_fn(r_p_proj)
+                        u_p = -1.0 * jnp.dot(zeta_m_ijk_pqm[i-2, j-2, k-2], cube_at_v(u_cube, curr_ngbs))
+                        u_p += (1.0 - zeta_m_ijk[i-2, j-2, k-2] + zeta_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
+                        u_p += alpha_interp_fn(r_p_proj) + delta_ijk * beta_interp_fn(r_p_proj) / mu_p_interp_fn(r_p_proj)
                         return u_p
                     phi_ijk = phi_cube[i, j, k]
-                    u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain(
-                        i, j, k), u_cube[i-2, j-2, k-2])[0]
-                    u_p = jnp.where(
-                        phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain(i, j, k))[0]
+                    u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain(i, j, k), u_cube[i-2, j-2, k-2])[0]
+                    u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain(i, j, k))[0]
                     return jnp.array([u_m, u_p])
 
                 def mu_plus_bigger_fn(i, j, k):
                     def extrapolate_u_m_from_negative_domain_(i, j, k):
-                        delta_ijk = phi_cube[i, j, k] 
+                        delta_ijk = phi_cube[i, j, k] * (-1.0)
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_m_proj = r_m_proj[jnp.newaxis]
                         curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), ngbs)
-                        u_m = -1.0 * \
-                            jnp.dot(
-                                zeta_p_ijk_pqm[i-2, j-2, k-2], cube_at_v(u_cube, curr_ngbs))
-                        u_m += (1.0 - zeta_p_ijk[i-2, j-2, k-2] +
-                                zeta_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                        u_m += (-1.0)*(alpha_interp_fn(r_m_proj) + delta_ijk * \
-                            beta_interp_fn(r_m_proj) / mu_m_interp_fn(r_m_proj) )
+                        u_m = -1.0 * jnp.dot(zeta_p_ijk_pqm[i-2, j-2, k-2], cube_at_v(u_cube, curr_ngbs))
+                        u_m += (1.0 - zeta_p_ijk[i-2, j-2, k-2] + zeta_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
+                        u_m += (-1.0)*(alpha_interp_fn(r_m_proj) + delta_ijk * beta_interp_fn(r_m_proj) / mu_m_interp_fn(r_m_proj) )
                         return u_m
 
                     def extrapolate_u_p_from_positive_domain_(i, j, k):
@@ -381,19 +365,13 @@ def poisson_solver(gstate, sim_state):
                         r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_p_proj = r_p_proj[jnp.newaxis]
                         curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), ngbs)
-                        u_p = -1.0 * \
-                            jnp.dot(
-                                gamma_p_ijk_pqm[i-2, j-2, k-2], cube_at_v(u_cube, curr_ngbs))
-                        u_p += (1.0 - gamma_p_ijk[i-2, j-2, k-2] +
-                                gamma_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                        u_p += (1.0 - gamma_p_ijk[i-2, j-2, k-2]) * (alpha_interp_fn(
-                            r_p_proj) + delta_ijk * beta_interp_fn(r_p_proj) / mu_m_interp_fn(r_p_proj))
+                        u_p = -1.0 * jnp.dot(gamma_p_ijk_pqm[i-2, j-2, k-2], cube_at_v(u_cube, curr_ngbs))
+                        u_p += (1.0 - gamma_p_ijk[i-2, j-2, k-2] + gamma_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
+                        u_p += (1.0 - gamma_p_ijk[i-2, j-2, k-2]) * (alpha_interp_fn(r_p_proj) + delta_ijk * beta_interp_fn(r_p_proj) / mu_m_interp_fn(r_p_proj))
                         return u_p
                     phi_ijk = phi_cube[i, j, k]
-                    u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain_(
-                        i, j, k), u_cube[i-2, j-2, k-2])[0]
-                    u_p = jnp.where(
-                        phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain_(i, j, k))[0]
+                    u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain_(i, j, k), u_cube[i-2, j-2, k-2])[0]
+                    u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain_(i, j, k))[0]
                     return jnp.array([u_m, u_p])
 
                 mu_m_ijk = mu_m_cube_internal[i-2, j-2, k-2]
@@ -456,21 +434,21 @@ def poisson_solver(gstate, sim_state):
                 k_m_ijk = k_m_cube_internal[i-2, j-2, k-2]
                 k_p_ijk = k_p_cube_internal[i-2, j-2, k-2]
                 u_m_ijk, u_p_ijk = u_mp_at_node(i, j, k)
-                lhs = k_m_ijk * V_m_ijk * u_m_ijk
+                lhs  = k_m_ijk * V_m_ijk * u_m_ijk
                 lhs += k_p_ijk * V_p_ijk * u_p_ijk
                 lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) * u_m_ijk + \
-                    (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]) * u_p_ijk
-                u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j, k)
+                       (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]) * u_p_ijk
+                u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j  , k  )
                 lhs += -1.0 * coeffs[0] * u_m_imjk - coeffs[1] * u_p_imjk
-                u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j, k)
+                u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j  , k  )
                 lhs += -1.0 * coeffs[2] * u_m_ipjk - coeffs[3] * u_p_ipjk
-                u_m_ijmk, u_p_ijmk = u_mp_at_node(i, j-1, k)
+                u_m_ijmk, u_p_ijmk = u_mp_at_node(i  , j-1, k  )
                 lhs += -1.0 * coeffs[4] * u_m_ijmk - coeffs[5] * u_p_ijmk
-                u_m_ijpk, u_p_ijpk = u_mp_at_node(i, j+1, k)
+                u_m_ijpk, u_p_ijpk = u_mp_at_node(i  , j+1, k  )
                 lhs += -1.0 * coeffs[6] * u_m_ijpk - coeffs[7] * u_p_ijpk
-                u_m_ijkm, u_p_ijkm = u_mp_at_node(i, j, k-1)
+                u_m_ijkm, u_p_ijkm = u_mp_at_node(i  , j  , k-1)
                 lhs += -1.0 * coeffs[8] * u_m_ijkm - coeffs[9] * u_p_ijkm
-                u_m_ijkp, u_p_ijkp = u_mp_at_node(i, j, k+1)
+                u_m_ijkp, u_p_ijkp = u_mp_at_node(i  , j  , k+1)
                 lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
                 return lhs
 
@@ -478,22 +456,19 @@ def poisson_solver(gstate, sim_state):
                 i, j, k = node
                 lhs = u_cube[i-2, j-2, k-2] * Vol_cell_nominal
                 return lhs
-            lhs = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(
-                node), get_lhs_at_interior_node(node))
+            lhs = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
 
             #--- RHS
             def get_rhs_at_interior_node(node):
                 i, j, k = node
-                rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + \
-                    f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
+                rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
                 rhs += beta_integrate_over_interface_at_node(node)
                 return rhs
 
             def get_rhs_on_box_boundary(node):
                 i, j, k = node
                 return dirichlet_cube[i-2, j-2, k-2] * Vol_cell_nominal
-            rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(
-                node), get_rhs_at_interior_node(node))
+            rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
 
             return jnp.array([lhs, rhs])
 
@@ -521,29 +496,29 @@ def poisson_solver(gstate, sim_state):
         # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
         # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
         # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
-        # loss = optax.l2_loss(lhs, rhs).mean() #optax.huber_loss(lhs, rhs).mean() #+ optax.cosine_distance(lhs, rhs).mean() #jnp.square(lhs - rhs).mean()  + 0.001 * jnp.square(x).mean() * Vol_cell_nominal
-        loss = optax.huber_loss(lhs, rhs).mean()
+        loss = optax.l2_loss(lhs, rhs).mean() #optax.huber_loss(lhs, rhs).mean() #+ optax.cosine_distance(lhs, rhs).mean() #jnp.square(lhs - rhs).mean()  + 0.001 * jnp.square(x).mean() * Vol_cell_nominal
+        # loss = optax.huber_loss(lhs, rhs).mean()
         return loss
 
     # --- iniate iterations from provided guess
     x = sim_state.solution
     # --- impose the dirichlet bc because bc's won't be updated.
     x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    x_cube = x_cube.at[0, :, :].set(dirichlet_cube[0, :, :])
+    x_cube = x_cube.at[ 0, :, :].set(dirichlet_cube[ 0, :, :])
     x_cube = x_cube.at[-1, :, :].set(dirichlet_cube[-1, :, :])
-    x_cube = x_cube.at[:, 0, :].set(dirichlet_cube[:, 0, :])
-    x_cube = x_cube.at[:, -1, :].set(dirichlet_cube[:, -1, :])
-    x_cube = x_cube.at[:, :, 0].set(dirichlet_cube[:, :, 0])
-    x_cube = x_cube.at[:, :, -1].set(dirichlet_cube[:, :, -1])
+    x_cube = x_cube.at[ :, 0, :].set(dirichlet_cube[ :, 0, :])
+    x_cube = x_cube.at[ :,-1, :].set(dirichlet_cube[ :,-1, :])
+    x_cube = x_cube.at[ :, :, 0].set(dirichlet_cube[ :, :, 0])
+    x_cube = x_cube.at[ :, :,-1].set(dirichlet_cube[ :, :,-1])
     x = x_cube.reshape(-1)
 
     ''' testing begin '''
-    # lhs_rhs = compute_Ax_and_b_fn(x)
-    # lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
-    # rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
-    # plt.imshow(lhs[:, Ny//2, :], cmap='jet'); plt.title("lhs"); plt.colorbar(); plt.show()
-    # plt.imshow(rhs[:, Ny//2, :], cmap='jet'); plt.title("rhs"); plt.colorbar(); plt.show()
-    # plt.imshow((lhs-rhs)[:, Ny//2, :], cmap='jet'); plt.title("residual"); plt.colorbar(); plt.show()
+    lhs_rhs = compute_Ax_and_b_fn(x)
+    lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
+    rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
+    plt.imshow(lhs[:, Ny//2, :], cmap='jet'); plt.title("lhs"); plt.colorbar(); plt.show()
+    plt.imshow(rhs[:, Ny//2, :], cmap='jet'); plt.title("rhs"); plt.colorbar(); plt.show()
+    plt.imshow((lhs-rhs)[:, Ny//2, :], cmap='jet'); plt.title("residual"); plt.colorbar(); plt.show()
 
     ''' TEST RHS vector below '''
     # plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
@@ -556,10 +531,10 @@ def poisson_solver(gstate, sim_state):
     # coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
     # poissons = coeffs[:,:12]; vols = coeffs[:,12:14]; face_areas = coeffs[:,14:]
     # vols[jnp.where(vols[:,1] < 0)[0]]
-    # plt.pcolor(vols[:,0].reshape(16,16,16)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
-    # plt.pcolor(face_areas[...,0].reshape(16,16,16)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
+    # plt.pcolor(vols[:,0].reshape(Nx,Ny,Nz)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
+    # plt.pcolor(face_areas[...,0].reshape(Nx,Ny,Nz)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
 
-    # pdb.set_trace()
+    pdb.set_trace()
 
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()
@@ -591,7 +566,7 @@ def poisson_solver(gstate, sim_state):
     # ------ SIMPLE OPTIMIZER
     # learning_rate = 1e-1
     # optimizer = optax.adam(learning_rate)
-    learning_rate = 1e-1
+    learning_rate = 1e-2
     optimizer = optax.rmsprop(learning_rate)
     
     # ------
@@ -606,7 +581,7 @@ def poisson_solver(gstate, sim_state):
     grad_fn = jit(grad(compute_loss))
 
     loss_store = []
-    for _ in range(2000):
+    for _ in range(5000):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
         params = optax.apply_updates(params, updates)
