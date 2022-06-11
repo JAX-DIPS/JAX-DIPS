@@ -322,7 +322,7 @@ def poisson_solver(gstate, sim_state):
             def interface_node(i, j, k):
                 def mu_minus_bigger_fn(i, j, k):
                     def extrapolate_u_m_from_negative_domain(i, j, k):
-                        delta_ijk = phi_cube[i, j, k] * (-1.0)
+                        delta_ijk = phi_cube[i, j, k] * (1.0)
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_m_proj = r_m_proj[jnp.newaxis]
@@ -333,7 +333,7 @@ def poisson_solver(gstate, sim_state):
                         return u_m
 
                     def extrapolate_u_p_from_positive_domain(i, j, k):
-                        delta_ijk = phi_cube[i, j, k]  
+                        delta_ijk = phi_cube[i, j, k]  * (1.0) # explore
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_p_proj = r_p_proj[jnp.newaxis]
@@ -349,7 +349,7 @@ def poisson_solver(gstate, sim_state):
 
                 def mu_plus_bigger_fn(i, j, k):
                     def extrapolate_u_m_from_negative_domain_(i, j, k):
-                        delta_ijk = phi_cube[i, j, k] * (-1.0)
+                        delta_ijk = phi_cube[i, j, k] * (1.0)
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_m_proj = r_m_proj[jnp.newaxis]
@@ -360,7 +360,7 @@ def poisson_solver(gstate, sim_state):
                         return u_m
 
                     def extrapolate_u_p_from_positive_domain_(i, j, k):
-                        delta_ijk = phi_cube[i, j, k] 
+                        delta_ijk = phi_cube[i, j, k] * (1.0)    # explore
                         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                         r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                         r_p_proj = r_p_proj[jnp.newaxis]
@@ -513,12 +513,12 @@ def poisson_solver(gstate, sim_state):
     x = x_cube.reshape(-1)
 
     ''' testing begin '''
-    lhs_rhs = compute_Ax_and_b_fn(x)
-    lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
-    rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
-    plt.imshow(lhs[:, Ny//2, :], cmap='jet'); plt.title("lhs"); plt.colorbar(); plt.show()
-    plt.imshow(rhs[:, Ny//2, :], cmap='jet'); plt.title("rhs"); plt.colorbar(); plt.show()
-    plt.imshow((lhs-rhs)[:, Ny//2, :], cmap='jet'); plt.title("residual"); plt.colorbar(); plt.show()
+    # lhs_rhs = compute_Ax_and_b_fn(x)
+    # lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
+    # rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
+    # plt.imshow(lhs[:, Ny//2, :], cmap='jet'); plt.title("lhs"); plt.colorbar(); plt.show()
+    # plt.imshow(rhs[:, Ny//2, :], cmap='jet'); plt.title("rhs"); plt.colorbar(); plt.show()
+    # plt.imshow((lhs-rhs)[:, Ny//2, :], cmap='jet'); plt.title("residual"); plt.colorbar(); plt.show()
 
     ''' TEST RHS vector below '''
     # plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
@@ -534,7 +534,7 @@ def poisson_solver(gstate, sim_state):
     # plt.pcolor(vols[:,0].reshape(Nx,Ny,Nz)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
     # plt.pcolor(face_areas[...,0].reshape(Nx,Ny,Nz)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
 
-    pdb.set_trace()
+    # pdb.set_trace()
 
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
     # pdb.set_trace()

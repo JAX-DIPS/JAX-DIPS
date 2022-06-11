@@ -118,7 +118,7 @@ def test_poisson_solver_with_jump():
         vec_1 = mu_p_fn(r)*grad_u_p_fn(r)
         vec_2 = mu_m_fn(r)*grad_u_m_fn(r)
         n_vec = normal_fn(r)
-        return jnp.dot(vec_1 - vec_2, n_vec)
+        return jnp.dot(vec_1 - vec_2, n_vec) * (-1.0)
 
     @jit
     def k_m_fn(r):
