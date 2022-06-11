@@ -222,7 +222,7 @@ def test_poisson_solver_with_jump():
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     print(f"L_inf error = {L_inf_err}")
 
-
+    assert L_inf_err<0.1
 
 if __name__ == "__main__":
     test_poisson_solver_with_jump()
