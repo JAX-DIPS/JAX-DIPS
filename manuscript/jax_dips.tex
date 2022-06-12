@@ -652,6 +652,50 @@ JAX-DIPS allows for exact computation of the gradient of the loss function using
 
 Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
 
+
+First order methods are slow but cheap; second order methods are fast but expensive.
+
+
+\subsubsection{First order optimization methods}
+Only use Gradient:
+\begin{itemize}
+\item Adam
+\item RMSProp
+\item SGD
+\item Momentum
+\end{itemize}
+
+
+\subsubsection{Second order optimization methods}
+Explicitly compute Hessian:
+\begin{itemize}
+\item Newton method
+\item Levenberg-Marquardt method
+\end{itemize}
+
+
+\subsubsection{Conjugate directions optimization methods}
+Build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$. They are somewhere between first order and second order optimization methods.
+
+Applicable to quadratic problems such as the one appearing here $\min_{x\in R^n} \frac{1}{2} x^T A x - b^T x$ (equivalent to solving $Ax=b$), assuming $A$ is symmetric positive definite then CG method can solve this problem in at most $n$ steps.
+
+\begin{itemize}
+\item Conjugate gradient
+\item GMRES
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+
+
 \section{Numerical Examples}
 
 \begin{align*}

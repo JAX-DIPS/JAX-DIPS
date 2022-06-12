@@ -534,6 +534,16 @@ def poisson_solver(gstate, sim_state):
     # plt.pcolor(vols[:,0].reshape(Nx,Ny,Nz)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
     # plt.pcolor(face_areas[...,0].reshape(Nx,Ny,Nz)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
 
+
+    # from jax import jacrev, jacfwd
+    # def hessian_fn(f): 
+    #     return jacfwd(jacrev(f))
+    
+    # H_fn = hessian_fn(compute_residual)
+    # J_fn = jacfwd(compute_residual)
+
+    # def minimize_newton_step(x): 
+    #     return x - 0.1*jnp.linalg.inv(H_fn(x)) @ J_fn(x)
     # pdb.set_trace()
 
     # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
