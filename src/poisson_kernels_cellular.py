@@ -565,7 +565,7 @@ def poisson_solver(gstate, sim_state):
         grad_n_u_p = -1.0 * Cp_ijk_pqm.sum(axis=1) * u_mp[:,1] + c_mp_u_mp_ngbs[1]
         return grad_n_u_m, grad_n_u_p
 
-    grad_normal_u_mp_at_interface = compute_normal_gradient_solution_mp_on_interface(params['u'])
+    grad_u_mp_normal_to_interface = compute_normal_gradient_solution_mp_on_interface(params['u'])
 
 
     def compute_gradient_solution_mp(u):
@@ -574,11 +574,17 @@ def poisson_solver(gstate, sim_state):
         """
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
         u_mp = vmap(get_u_mp_at_node_fn, (None, 0, 0, 0))(u_cube, nodes[:,0], nodes[:,1], nodes[:,2])
-
-        D_m_mat
-        D_p_mat
-        pdb.set_trace()
+        def convolve_at_node(node, d_m_mat, d_p_mat):
+            i,j,k = node
+            curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), ngbs)
+            u_mp_pqm = u_mp.reshape(phi_cube_.shape+(2,))[curr_ngbs[:,0], curr_ngbs[:,1], curr_ngbs[:,2]]
+            grad_m = d_m_mat @ u_mp_pqm[:,0]
+            grad_p = d_p_mat @ u_mp_pqm[:,1]
+            return grad_m, grad_p
+        return vmap(convolve_at_node, (0,0,0))(nodes, D_m_mat, D_p_mat)  
     
     grad_u_mp = compute_gradient_solution_mp(params['u'])
+
+    pdb.set_trace()
 
     return params['u']
