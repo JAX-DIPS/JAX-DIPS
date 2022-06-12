@@ -236,25 +236,45 @@ def test_poisson_solver_with_jump():
     """
     MASK the solution over sphere only
     """
+    grad_um = sim_state.grad_solution[0].reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
+    grad_up = sim_state.grad_solution[1].reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
+
+    grad_um_exact = vmap(grad(exact_sol_m_fn))(gstate.R).reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
+    grad_up_exact = vmap(grad(exact_sol_p_fn))(gstate.R).reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
+
+    mask_m = sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] < -0.5*dx
+    err_x_m = abs(grad_um[mask_m][:,0] - grad_um_exact[mask_m][:,0]).max()
+    err_y_m = abs(grad_um[mask_m][:,1] - grad_um_exact[mask_m][:,1]).max()
+    err_z_m = abs(grad_um[mask_m][:,2] - grad_um_exact[mask_m][:,2]).max()
+
+    mask_p = sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] > 0.5*dx
+    err_x_p = abs(grad_up[mask_p][:,0] - grad_up_exact[mask_p][:,0]).max()
+    err_y_p = abs(grad_up[mask_p][:,1] - grad_up_exact[mask_p][:,1]).max()
+    err_z_p = abs(grad_up[mask_p][:,2] - grad_up_exact[mask_p][:,2]).max()
+
+    print(f"errors in grad u_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
+    print(f"errors in grad u_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
     
+
     
+    #--- normal gradients over interface
+    normal_fn = grad(phi_fn)
+    normal_vec = vmap(normal_fn)(gstate.R).reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
 
+    grad_um_n = sim_state.grad_normal_solution[0].reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1]
+    grad_up_n = sim_state.grad_normal_solution[1].reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1]
 
-    grad_um = sim_state.grad_solution[0]
-    grad_up = sim_state.grad_solution[1]
+    mask_i_m = ( abs(sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1]) < 0.5*dx ) * ( sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] < 0.0 )
+    mask_i_p = ( abs(sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1]) < 0.5*dx ) * ( sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] > 0.0 )
+    
+    grad_um_n_exact = vmap(jnp.dot, (0,0))(normal_vec.reshape(-1,3), grad_um_exact.reshape(-1,3)).reshape((Nx-2,Ny-2,Nz-2))
+    grad_up_n_exact = vmap(jnp.dot, (0,0))(normal_vec.reshape(-1,3), grad_up_exact.reshape(-1,3)).reshape((Nx-2,Ny-2,Nz-2))
 
-    grad_um_exact = vmap(grad(exact_sol_m_fn))(gstate.R)
-    grad_up_exact = vmap(grad(exact_sol_p_fn))(gstate.R)
+    err_um_n = abs(grad_um_n - grad_um_n_exact)[mask_i_m].max()
+    err_up_n = abs(grad_up_n - grad_up_n_exact)[mask_i_p].max()
 
+    print(f"error normal gradient on interface minus: {err_um_n} \t plus: {err_up_n}")
 
-    import matplotlib.pyplot as plt
-
-    EPS = 1e-1
-    mask = sim_state.phi>EPS #(abs(sim_state.phi) < EPS) * (sim_state.phi >=0)
-
-    plt.scatter(grad_um_exact[mask][:,0], grad_um[mask][:,0]); plt.show()
-
-    L_inf_err_sphere = abs(sim_state.solution - exact_sol)[mask].max()
     pdb.set_trace()
 
 
