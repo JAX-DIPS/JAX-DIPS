@@ -29,9 +29,9 @@ def test_poisson_solver_with_jump():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(32)
-    Ny = i32(32)
-    Nz = i32(32)
+    Nx = i32(16)
+    Ny = i32(16)
+    Nz = i32(16)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -73,7 +73,7 @@ def test_poisson_solver_with_jump():
         y = r[1]
         z = r[2]
         return jnp.sqrt(x**2 + y**2 + z**2) - 0.5
-    phi_fn = unperturbed_phi_fn #level_set.perturb_level_set_fn(unperturbed_phi_fn)
+    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     @jit
     def evaluate_exact_solution_fn(r):
@@ -221,8 +221,16 @@ def test_poisson_solver_with_jump():
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     print(f"L_inf error = {L_inf_err}")
-
+    pdb.set_trace()
     assert L_inf_err<0.1
+
+
+    """
+    MASK the solution over sphere only
+    """
+    EPS = 1e-3
+    sphere_mask = abs(sim_state.phi) < EPS
+    L_inf_err_sphere = abs(sim_state.solution - exact_sol)[sphere_mask].max()
 
 if __name__ == "__main__":
     test_poisson_solver_with_jump()

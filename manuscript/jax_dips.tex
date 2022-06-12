@@ -423,6 +423,11 @@ The least square coefficients are then obtained by dot product of normal vector 
 \begin{align*}
 	c^\pm_{i,j,p,q} = \mathbf{n}_{i,j}^T  d^\pm_{i,j,p,q}
 \end{align*}
+and normal derivative can be computed (noting that $c_{i,j}^\pm =-\sum_{(p,q)\in N_{i,j}^\pm}c_{i,j,p,q}^\pm$)
+\begin{align*}
+\partial_n u^\pm (\mathbf{r}^{proj}_{i,j})= c_{i,j}^\pm u_{i,j}^\pm + \sum_{(p,q)\in N_{i,j}^\pm} c_{i,j,p,q}^\pm u_{i+p, j+q}^\pm + \mathcal{O}(h) 
+\end{align*}
+
 At this point we can define a few intermediate variables at each grid point to simplify the presentation of the method,
 \begin{align*}
 	 & \zeta_{i,j,p,q}^\pm := \delta_{i,j} \frac{[\mu]}{\mu^\mp}c_{i,j,p,q}^\pm  & \zeta_{i,j}^\pm := -\sum_{(p,q)\in N_{i,j}^\pm} \zeta_{i,j,p,q}^\pm   \\
@@ -737,6 +742,28 @@ that imply
 \end{align*}
 
 Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM.
+
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{|l||ll|ll|ll|ll|}
+\hline
+& \multicolumn{2}{c|}{VIM}& \multicolumn{2}{c|}{JAX-DIPS} & \multicolumn{2}{|c|}{VIM}& \multicolumn{2}{c|}{JAX-DIPS}\\
+\hline
+Resolution   &   Solution    &   Order   &   Solution   &   Order &   Gradient    &   Order   &   Gradient   &   Order  \\
+\hline
+$2^3$ & $3.61\times 10^{-3}$ & -      & - & - & $1.13\times 10^{-2}$ & - & - & - \\ 
+$2^4$ & $1.21\times 10^{-3}$ & $1.58$ & - & - & $7.69\times 10^{-3}$ & $0.56$ & - & -\\ 
+$2^5$ & $3.04\times 10^{-4}$ & $1.99$ & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & -\\ 
+$2^6$ & $7.74\times 10^{-5}$ & $1.98$ & - & - & $2.43\times 10^{-3}$ & $0.66$ & - & -\\ 
+$2^7$ & $1.97\times 10^{-5}$ & $1.98$ & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -\\ \hline
+\end{tabular}
+\caption{Convergence on the solution and its gradient in the $L^\infty$-norm over the surface of the sphere.}
+\end{center}
+\end{table}
+
+
+
 
 \section*{Acknowledgement}
 

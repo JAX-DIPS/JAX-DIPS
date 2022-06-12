@@ -11,7 +11,7 @@ f32 = util.f32
 i32 = util.i32
 
 from jax import config
-config.update("jax_debug_nans", True)
+config.update("jax_debug_nans", False)
 
 
 def poisson_solver(gstate, sim_state):
@@ -220,18 +220,6 @@ def poisson_solver(gstate, sim_state):
 
 
 
-    ''' testing begins '''
-    # plt.pcolor(abs(1-zeta_m_ijk[Nx//2,:,:])); plt.colorbar(); plt.show()
-    # # problem is 1-zeta_m_ijk becomes very close to 0 and messes with gamma_m_ijk
-    # plt.pcolor(zeta_m_ijk[Nx//2,:,:]); plt.colorbar(); plt.show()
-    # plt.pcolor(zeta_p_ijk[Nx//2,:,:]); plt.colorbar(); plt.show()
-
-    # plt.pcolor(gamma_m_ijk[Nx//2,:,:]); plt.colorbar(); plt.show()
-    # plt.pcolor(gamma_p_ijk[Nx//2,:,:]); plt.colorbar(); plt.show()
-    # pdb.set_trace()
-    ''' testing ends '''
-
-
     """
     BEGIN geometric integration functions intiation
     Getting simplices of the grid: intersection points 
@@ -249,65 +237,23 @@ def poisson_solver(gstate, sim_state):
     END Geometric integration functions initiated
     """
     Vol_cell_nominal = dx*dy*dz
-    # @jit
-    def compute_Ax_and_b_fn(u):
+
+
+    @jit
+    def is_box_boundary_node(i, j, k):
         """
-        This function calculates  A @ u for a given vector of unknowns u.
-        This evaluates the rhs in Au^k=b given estimate u^k.
-        The purpose would be to define an optimization problem with:
-
-        min || A u^k - b ||^2 
-
-        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
-
-        Note that this should return same shape and type as of u.
-        This function is needed to be fed into jax sparse linalg solvers such as gmres:
-
-        jax.scipy.sparse.linalg.gmres(A, b, x0=None, *, tol=1e-05, atol=0.0, restart=20, maxiter=None, M=None, solve_method='batched')
-
-        A = this function!
-
-        * PROCEDURE: 
-            first compute u = B:u + r for each node
-            then use the actual cell geometries (face areas and mu coeffs) to 
-            compute the rhs of the linear system given currently passed-in u vector
-            for solution estimate.
-
+        Check if current node is on the boundary of box
         """
+        boundary = (i-2)*(i-Nx-1)*(j-2)*(j-Ny-1)*(k-2)*(k-Nz-1)
+        return jnp.where(boundary == 0, True, False)
 
+
+    @jit
+    def get_u_mp_at_node_fn(u_cube):
         """
-        Impose boundary conditions 
+        This function evaluates pairs of u^+ and u^- at each grid point
+        in the domain, given a current cube of u values.
         """
-        
-
-        u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-        # u_cube = u_cube.at[ 0,:,:].set(dirichlet_cube[ 0,:,:])
-        # u_cube = u_cube.at[-1,:,:].set(dirichlet_cube[-1,:,:])
-        # u_cube = u_cube.at[:, 0,:].set(dirichlet_cube[:, 0,:])
-        # u_cube = u_cube.at[:,-1,:].set(dirichlet_cube[:,-1,:])
-        # u_cube = u_cube.at[:,:, 0].set(dirichlet_cube[:,:, 0])
-        # u_cube = u_cube.at[:,:,-1].set(dirichlet_cube[:,:,-1])
-        # x_, y_, z_, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(xo, yo, zo, u_cube)
-        # _, _, _, u_cube = interpolate.add_ghost_layer_3d_Dirichlet_extension(x_, y_, z_, u_cube)
-
-        # @jit
-        def is_box_boundary_node(i, j, k):
-            """
-            Check if current node is on the boundary of box
-            """
-            boundary = (i-2)*(i-Nx-1)*(j-2)*(j-Ny-1)*(k-2)*(k-Nz-1)
-            return jnp.where(boundary == 0, True, False)
-
-        # @jit
-        # def u_mp_dirichlet_boundary_at_node(i, j, k):
-        #     """
-        #     Dirichlet boundary condition around the box
-        #     """
-        #     u_m = 0.0
-        #     u_p = dirichlet_cube[i-2,j-2,k-2]
-        #     return jnp.array([u_m, u_p])
-
-        # @jit
         def u_mp_at_interior_node(i, j, k):
             """
             BIAS SLOW:
@@ -383,30 +329,33 @@ def poisson_solver(gstate, sim_state):
             is_interface = is_cell_crossed_by_interface((i, j, k))
             u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
             return u_mp
-
-        # @jit
-        def u_mp_at_node(i, j, k):
-            """
-            Main u_minus/plus evaluator, takes care if node is on box boundary or is an interior node.
-            """
-            return u_mp_at_interior_node(i, j, k)
-            # return jnp.where(is_box_boundary_node(i, j, k), u_mp_dirichlet_boundary_at_node(i, j, k), u_mp_at_interior_node(i, j, k))
+        
+        return u_mp_at_interior_node
 
 
-        ''' testing begin '''
-        # u_mp = lambda node: u_mp_at_node(node[0], node[1], node[2])
-        # UMP = vmap(u_mp)(nodes)
-        # plt.pcolor(UMP[:,0].reshape((16,16,16))[7,:,:]); plt.colorbar(); plt.show()
-        # plt.pcolor(UMP[:,1].reshape((16,16,16))[7,:,:]); plt.colorbar(); plt.show()
+    @jit
+    def compute_Ax_and_b_fn(u):
+        """
+        This function calculates  A @ u for a given vector of unknowns u.
+        This evaluates the rhs in Au^k=b given estimate u^k.
+        The purpose would be to define an optimization problem with:
 
-        # plt.pcolor(UMP[:,0].reshape((64,64))); plt.colorbar(); plt.show()
-        # plt.pcolor(UMP[:,1].reshape((64,64))); plt.colorbar(); plt.show()
-        # pdb.set_trace()
-        ''' testing end '''
+        min || A u^k - b ||^2 
 
+        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
 
+        * PROCEDURE: 
+            first compute u = B:u + r for each node
+            then use the actual cell geometries (face areas and mu coeffs) to 
+            compute the rhs of the linear system given currently passed-in u vector
+            for solution estimate.
 
-        # @jit
+        """
+        
+        u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+
+        u_mp_at_node = get_u_mp_at_node_fn(u_cube)
+
         def evaluate_discretization_lhs_rhs_at_node(node):
             #--- LHS
             i, j, k = node
@@ -421,12 +370,6 @@ def poisson_solver(gstate, sim_state):
 
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
-            
-            # plt.pcolor(coeffs.val[:,0].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_m_imjk'); plt.show()
-            # plt.pcolor(coeffs.val[:,1].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_p_imjk'); plt.show()
-            # plt.pcolor(coeffs.val[:,2].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_m_ipjk'); plt.show()
-            # plt.pcolor(coeffs.val[:,3].reshape((Nx,Ny,Nz))[Nx//2,:,:]); plt.colorbar(); plt.title('coeff_p_ipjk'); plt.show()
-            # pdb.set_trace()
 
             def get_lhs_at_interior_node(node):
                 i, j, k = node
@@ -466,6 +409,9 @@ def poisson_solver(gstate, sim_state):
                 return rhs
 
             def get_rhs_on_box_boundary(node):
+                """
+                Imposing Dirichlet BCs on the RHS
+                """
                 i, j, k = node
                 return dirichlet_cube[i-2, j-2, k-2] * Vol_cell_nominal
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
@@ -476,29 +422,17 @@ def poisson_solver(gstate, sim_state):
         lhs_rhs = evaluate_on_nodes_fn(nodes)
         return lhs_rhs
 
-    @jit
-    def compute_Ax(x):
-        lhs_rhs = compute_Ax_and_b_fn(x)
-        lhs, _ = jnp.split(lhs_rhs, [1], axis=1)
-        return lhs
-
-    @jit
-    def compute_b(x):
-        lhs_rhs = compute_Ax_and_b_fn(x)
-        _, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        return rhs
 
     @jit
     def compute_residual(x):
+        """
+        Evaluates the residual given x in the l2 norm.
+        """
         lhs_rhs = compute_Ax_and_b_fn(x)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        # -- don't minimize on the boundaries of the box
-        # Amat_c = lhs.reshape((xo.shape+yo.shape+zo.shape))
-        # rhs_c  = rhs.reshape((xo.shape+yo.shape+zo.shape))
-        # loss = jnp.square(Amat_c[1:-1, 1:-1, 1:-1] - rhs_c[1:-1,1:-1,1:-1]).mean()
-        loss = optax.l2_loss(lhs, rhs).mean() #optax.huber_loss(lhs, rhs).mean() #+ optax.cosine_distance(lhs, rhs).mean() #jnp.square(lhs - rhs).mean()  + 0.001 * jnp.square(x).mean() * Vol_cell_nominal
-        # loss = optax.huber_loss(lhs, rhs).mean()
+        loss = optax.l2_loss(lhs, rhs).mean() 
         return loss
+
 
     # --- iniate iterations from provided guess
     x = sim_state.solution
@@ -546,9 +480,6 @@ def poisson_solver(gstate, sim_state):
     #     return x - 0.1*jnp.linalg.inv(H_fn(x)) @ J_fn(x)
     # pdb.set_trace()
 
-    # sol = gmres(compute_Ax, lhs_rhs[:,jnp.newaxis,1])
-    # pdb.set_trace()
-    # return sol[0].reshape(-1)
     ''' testing end '''
 
 
@@ -573,6 +504,8 @@ def poisson_solver(gstate, sim_state):
     )
     optimizer = gradient_transform
     """
+
+
     # ------ SIMPLE OPTIMIZER
     # learning_rate = 1e-1
     # optimizer = optax.adam(learning_rate)
@@ -607,5 +540,10 @@ def poisson_solver(gstate, sim_state):
     plt.ylabel('loss', fontsize=20)
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
-
+    
+    # pdb.set_trace()
+    """
+    Compute normal gradients
+    """
+    # cm_u = Cm_ijk_pqm.reshape(phi_cube_.shape + (-1,)) * params['u'].reshape(phi_cube_.shape)[...,jnp.newaxis]
     return params['u']

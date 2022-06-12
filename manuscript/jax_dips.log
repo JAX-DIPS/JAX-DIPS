@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  11 JUN 2022 17:50
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  11 JUN 2022 20:43
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -661,65 +661,70 @@ Package pdftex.def Info: ./figures/grids.png  used on input line 372.
 
 [7 <./figures/grids_full.png> <./figures/grids.png>] [8]
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <7> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 488.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 493.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 488.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 493.
 Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
-put line 551.
+put line 556.
  [9] [10]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 712.
+(hyperref)                removing `math shift' on input line 717.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\Gamma' on input line 712.
+(hyperref)                removing `\Gamma' on input line 717.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\emptyset' on input line 712.
+(hyperref)                removing `\emptyset' on input line 717.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 712.
+(hyperref)                removing `math shift' on input line 717.
 
 [11]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 722.
+(hyperref)                removing `math shift' on input line 727.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\Gamma' on input line 722.
+(hyperref)                removing `\Gamma' on input line 727.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\not' on input line 722.
+(hyperref)                removing `\not' on input line 727.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\emptyset' on input line 722.
+(hyperref)                removing `\emptyset' on input line 727.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 722.
+(hyperref)                removing `math shift' on input line 727.
+
+
+Overfull \hbox (5.03772pt too wide) in paragraph at lines 749--761
+ [] 
+ []
 
 [12] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 752.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 779.
  [13]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 752.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 779.
  (./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 752.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 752.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 779.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 779.
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
-(rerunfilecheck)             Checksum: 540EC34CED94E0D55A63B9336B6F50ED;1513.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 752.
+(rerunfilecheck)             Checksum: 62E6105CDEA32A2216573E60CC6BE7E6;1513.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 779.
  ) 
 Here is how much of TeX's memory you used:
- 9959 strings out of 483065
- 147903 string characters out of 5963550
- 442004 words of memory out of 5000000
- 24704 multiletter control sequences out of 15000+600000
+ 9961 strings out of 483065
+ 147935 string characters out of 5963550
+ 443004 words of memory out of 5000000
+ 24705 multiletter control sequences out of 15000+600000
  543599 words of font info for 69 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
  41i,28n,42p,1006b,517s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -748,10 +753,10 @@ cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
 i7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/
 share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb>
-Output written on jax_dips.pdf (13 pages, 444912 bytes).
+Output written on jax_dips.pdf (13 pages, 446919 bytes).
 PDF statistics:
- 322 PDF objects out of 1000 (max. 8388607)
- 273 compressed objects within 3 object streams
- 61 named destinations out of 1000 (max. 500000)
+ 323 PDF objects out of 1000 (max. 8388607)
+ 274 compressed objects within 3 object streams
+ 62 named destinations out of 1000 (max. 500000)
  163 words of extra memory for PDF output out of 10000 (max. 10000000)
 
