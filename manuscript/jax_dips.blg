@@ -3,44 +3,44 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: jax_dips.aux
 The style file: abbrv.bst
 Database file #1: references.bib
-You've used 10 entries,
+You've used 11 entries,
             2118 wiz_defined-function locations,
-            563 strings with 5355 characters,
-and the built_in function-call counts, 3390 in all, are:
-= -- 338
-> -- 149
+            569 strings with 5496 characters,
+and the built_in function-call counts, 3654 in all, are:
+= -- 360
+> -- 167
 < -- 0
-+ -- 62
-- -- 48
-* -- 265
-:= -- 578
-add.period$ -- 30
-call.type$ -- 10
-change.case$ -- 54
++ -- 69
+- -- 54
+* -- 280
+:= -- 622
+add.period$ -- 32
+call.type$ -- 11
+change.case$ -- 60
 chr.to.int$ -- 0
-cite$ -- 10
-duplicate$ -- 110
-empty$ -- 266
-format.name$ -- 48
-if$ -- 688
+cite$ -- 11
+duplicate$ -- 117
+empty$ -- 288
+format.name$ -- 54
+if$ -- 743
 int.to.chr$ -- 0
-int.to.str$ -- 10
+int.to.str$ -- 11
 missing$ -- 10
-newline$ -- 53
-num.names$ -- 20
-pop$ -- 34
+newline$ -- 57
+num.names$ -- 22
+pop$ -- 45
 preamble$ -- 1
-purify$ -- 44
+purify$ -- 49
 quote$ -- 0
-skip$ -- 75
+skip$ -- 83
 stack$ -- 0
-substring$ -- 278
-swap$ -- 10
+substring$ -- 283
+swap$ -- 11
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 40
+type$ -- 44
 warning$ -- 0
-while$ -- 35
-width$ -- 12
-write$ -- 112
+while$ -- 37
+width$ -- 13
+write$ -- 120

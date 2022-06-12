@@ -430,6 +430,15 @@ def poisson_solver(gstate, sim_state):
         lhs_rhs = compute_Ax_and_b_fn(x)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         loss = optax.l2_loss(lhs, rhs).mean() 
+        # regularizer on boundaries
+        x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+
+        loss += jnp.square(x_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
+        loss += jnp.square(x_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
+        loss += jnp.square(x_cube[ :, 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
+        loss += jnp.square(x_cube[ :,-1, :] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
+        loss += jnp.square(x_cube[ :, :, 0] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
+        loss += jnp.square(x_cube[ :, :,-1] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
         return loss
 
 
@@ -484,7 +493,7 @@ def poisson_solver(gstate, sim_state):
 
 
     ''' Actual optimization '''
-    """
+   
     # ------ Exponential decay of the learning rate.
     scheduler = optax.exponential_decay(
         init_value=1e-2,
@@ -502,15 +511,14 @@ def poisson_solver(gstate, sim_state):
         optax.scale(-1.0)
     )
     optimizer = gradient_transform
-    """
+    
 
 
     # ------ SIMPLE OPTIMIZER
-    # learning_rate = 1e-1
+    # learning_rate = 1e-3
+
+    # optimizer = optax.rmsprop(learning_rate)
     # optimizer = optax.adam(learning_rate)
-    learning_rate = 1e0
-    optimizer = optax.rmsprop(learning_rate)
-    
     # ------
 
     params = {'u': x}
@@ -523,7 +531,7 @@ def poisson_solver(gstate, sim_state):
     grad_fn = jit(grad(compute_loss))
 
     loss_store = []
-    for _ in range(10000):
+    for _ in range(20000):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
         params = optax.apply_updates(params, updates)

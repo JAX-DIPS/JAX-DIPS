@@ -35,6 +35,10 @@ S.~Pakravan, P.~A. Mistani, M.~A. Aragon-Calvo, and F.~Gibou.
 \newblock Solving inverse-pde problems with physics-aware neural networks.
 \newblock {\em Journal of Computational Physics}, 440:110414, 2021.
 
+\bibitem{gradClipping}
+R.~Pascanu, T.~Mikolov, and Y.~Bengio.
+\newblock On the difficulty of training recurrent neural networks, 2012.
+
 \bibitem{sallee1984middle}
 J.~F. Sallee.
 \newblock The middle-cut triangulations of the n-cube.

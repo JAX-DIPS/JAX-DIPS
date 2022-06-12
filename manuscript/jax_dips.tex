@@ -658,41 +658,19 @@ JAX-DIPS allows for exact computation of the gradient of the loss function using
 Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
 
 
-First order methods are slow but cheap; second order methods are fast but expensive.
+First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
 
 
-\subsubsection{First order optimization methods}
-Only use Gradient:
-\begin{itemize}
-\item Adam
-\item RMSProp
-\item SGD
-\item Momentum
-\end{itemize}
+\subsubsection{Gradient based optimization with annealing}
+
+We found that starting from zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process that resembles annealing. For this purpose, we use \texttt{Optax} to build custom schedulers for the learning rate.
 
 
-\subsubsection{Second order optimization methods}
-Explicitly compute Hessian:
-\begin{itemize}
-\item Newton method
-\item Levenberg-Marquardt method
-\end{itemize}
-
-
-\subsubsection{Conjugate directions optimization methods}
-Build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$. They are somewhere between first order and second order optimization methods.
-
-Applicable to quadratic problems such as the one appearing here $\min_{x\in R^n} \frac{1}{2} x^T A x - b^T x$ (equivalent to solving $Ax=b$), assuming $A$ is symmetric positive definite then CG method can solve this problem in at most $n$ steps.
-
-\begin{itemize}
-\item Conjugate gradient
-\item GMRES
-\end{itemize}
-
-
-
-
-
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/poisson_solver_loss_with_annealing.png}
+\caption{Effect of annealing to dampen learning rate with number of epochs. Each $100$ epochs learning rate decays by a factor of $0.99$ starting from an initial value of $10^{-2}$ and use maximum global gradient norm clipping (to a value $1$) \cite{gradClipping} in an Adam optimizer.}
+\end{figure}
 
 
 
