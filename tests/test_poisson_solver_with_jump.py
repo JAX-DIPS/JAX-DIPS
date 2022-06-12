@@ -236,16 +236,25 @@ def test_poisson_solver_with_jump():
     """
     MASK the solution over sphere only
     """
-    EPS = 1e-1
-    sphere_mask = abs(sim_state.phi) < EPS
-    L_inf_err_sphere = abs(sim_state.solution - exact_sol)[sphere_mask].max()
+    
+    
+
 
     grad_um = sim_state.grad_solution[0]
     grad_up = sim_state.grad_solution[1]
 
-    sphere_grad_um = grad_um[sphere_mask]
-    sphere_grad_up = grad_up[sphere_mask]
+    grad_um_exact = vmap(grad(exact_sol_m_fn))(gstate.R)
+    grad_up_exact = vmap(grad(exact_sol_p_fn))(gstate.R)
 
+
+    import matplotlib.pyplot as plt
+
+    EPS = 1e-1
+    sphere_mask = (abs(sim_state.phi) < EPS) * (sim_state.phi >=0)
+
+    plt.scatter(grad_up_exact[sphere_mask][:,0], grad_up[sphere_mask][:,0]); plt.show()
+
+    L_inf_err_sphere = abs(sim_state.solution - exact_sol)[sphere_mask].max()
     pdb.set_trace()
 
 
