@@ -38,6 +38,8 @@ class SState:
     f_p: Array
     alpha: Array
     beta: Array
+    grad_solution: Array
+    grad_normal_solution: Array
 
 
 
@@ -78,10 +80,10 @@ def setup(initial_value_fn :  Callable[..., Array],
         F_P   = f_p_fn(R)
         ALPHA = alpha_fn(R)
         BETA  = beta_fn(R)
-        return SState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA) 
+        return SState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA, None, None) 
 
     def solve_fn(gstate, sim_state):
-        U_sol = poisson_kernels_cellular.poisson_solver(gstate, sim_state)
-        return dataclasses.replace(sim_state, solution=U_sol)
+        U_sol, grad_u_mp, grad_u_mp_normal_to_interface = poisson_kernels_cellular.poisson_solver(gstate, sim_state)
+        return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface)
     
     return init_fn, solve_fn

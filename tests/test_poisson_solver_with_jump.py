@@ -215,22 +215,39 @@ def test_poisson_solver_with_jump():
         'mu_m': sim_state.mu_m,
         'mu_p': sim_state.mu_p,
         'f_m': sim_state.f_m,
-        'f_p': sim_state.f_p
+        'f_p': sim_state.f_p,
+        'grad_um_x': sim_state.grad_solution[0][:,0],
+        'grad_um_y': sim_state.grad_solution[0][:,1],
+        'grad_um_z': sim_state.grad_solution[0][:,2],
+        'grad_up_x': sim_state.grad_solution[1][:,0],
+        'grad_up_y': sim_state.grad_solution[1][:,1],
+        'grad_up_z': sim_state.grad_solution[1][:,2],
+        'grad_um_n': sim_state.grad_normal_solution[0],
+        'grad_up_n': sim_state.grad_normal_solution[1]
     }
     io.write_vtk_manual(gstate, log)
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     print(f"L_inf error = {L_inf_err}")
-    pdb.set_trace()
-    assert L_inf_err<0.1
+    
+    assert L_inf_err<0.2
 
 
     """
     MASK the solution over sphere only
     """
-    EPS = 1e-3
+    EPS = 1e-1
     sphere_mask = abs(sim_state.phi) < EPS
     L_inf_err_sphere = abs(sim_state.solution - exact_sol)[sphere_mask].max()
+
+    grad_um = sim_state.grad_solution[0]
+    grad_up = sim_state.grad_solution[1]
+
+    sphere_grad_um = grad_um[sphere_mask]
+    sphere_grad_up = grad_up[sphere_mask]
+
+    pdb.set_trace()
+
 
 if __name__ == "__main__":
     test_poisson_solver_with_jump()

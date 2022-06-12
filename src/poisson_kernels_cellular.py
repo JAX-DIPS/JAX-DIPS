@@ -566,7 +566,7 @@ def poisson_solver(gstate, sim_state):
         return grad_n_u_m, grad_n_u_p
 
     grad_u_mp_normal_to_interface = compute_normal_gradient_solution_mp_on_interface(params['u'])
-
+    # plt.pcolor(grad_u_mp_normal_to_interface[0].reshape((Nx,Ny,Nz))[:,Ny//2,:]); plt.show()
 
     def compute_gradient_solution_mp(u):
         """
@@ -584,7 +584,7 @@ def poisson_solver(gstate, sim_state):
         return vmap(convolve_at_node, (0,0,0))(nodes, D_m_mat, D_p_mat)  
     
     grad_u_mp = compute_gradient_solution_mp(params['u'])
+    # plt.pcolor(grad_u_mp[0].reshape((Nx,Ny,Nz,3))[:,Ny//2,:,1]); plt.show()
+    
 
-    pdb.set_trace()
-
-    return params['u']
+    return params['u'], grad_u_mp, grad_u_mp_normal_to_interface
