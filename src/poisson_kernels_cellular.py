@@ -573,13 +573,14 @@ def poisson_solver(gstate, sim_state):
         This function computes \nabla u^+ and \nabla u^- given a solution vector u.
         """
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-        u_mp = vmap(get_u_mp_at_node_fn, (None, 0, 0, 0))(u_cube, nodes[:,0], nodes[:,1], nodes[:,2])
         def convolve_at_node(node, d_m_mat, d_p_mat):
             i,j,k = node
             curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), ngbs)
-            u_mp_pqm = u_mp.reshape(phi_cube_.shape+(2,))[curr_ngbs[:,0], curr_ngbs[:,1], curr_ngbs[:,2]]
-            grad_m = d_m_mat @ u_mp_pqm[:,0]
-            grad_p = d_p_mat @ u_mp_pqm[:,1]
+            u_curr_ngbs = cube_at_v(u_cube, curr_ngbs)
+            u_mp_node = get_u_mp_at_node_fn(u_cube, i, j, k)
+            dU_mp = u_curr_ngbs[:,jnp.newaxis] - u_mp_node
+            grad_m = d_m_mat @ dU_mp[:,0]
+            grad_p = d_p_mat @ dU_mp[:,1]
             return grad_m, grad_p
         return vmap(convolve_at_node, (0,0,0))(nodes, D_m_mat, D_p_mat)  
     

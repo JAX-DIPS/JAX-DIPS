@@ -250,11 +250,11 @@ def test_poisson_solver_with_jump():
     import matplotlib.pyplot as plt
 
     EPS = 1e-1
-    sphere_mask = (abs(sim_state.phi) < EPS) * (sim_state.phi >=0)
+    mask = sim_state.phi>EPS #(abs(sim_state.phi) < EPS) * (sim_state.phi >=0)
 
-    plt.scatter(grad_up_exact[sphere_mask][:,0], grad_up[sphere_mask][:,0]); plt.show()
+    plt.scatter(grad_um_exact[mask][:,0], grad_um[mask][:,0]); plt.show()
 
-    L_inf_err_sphere = abs(sim_state.solution - exact_sol)[sphere_mask].max()
+    L_inf_err_sphere = abs(sim_state.solution - exact_sol)[mask].max()
     pdb.set_trace()
 
 
