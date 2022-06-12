@@ -139,7 +139,7 @@ def test_poisson_solver_with_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return evaluate_exact_solution_fn(r)
+        return 0.0 #evaluate_exact_solution_fn(r)
 
 
 
@@ -228,10 +228,8 @@ def test_poisson_solver_with_jump():
     io.write_vtk_manual(gstate, log)
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
-    print(f"L_inf error = {L_inf_err}")
+    print(f"L_inf error on solution everywhere in the domain is = {L_inf_err}")
     
-    assert L_inf_err<0.2
-
 
     """
     MASK the solution over sphere only
@@ -252,8 +250,8 @@ def test_poisson_solver_with_jump():
     err_y_p = abs(grad_up[mask_p][:,1] - grad_up_exact[mask_p][:,1]).max()
     err_z_p = abs(grad_up[mask_p][:,2] - grad_up_exact[mask_p][:,2]).max()
 
-    print(f"errors in grad u_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
-    print(f"errors in grad u_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
+    print(f"L_inf errors in grad u_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
+    print(f"L_inf errors in grad u_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
     
 
     
@@ -273,7 +271,10 @@ def test_poisson_solver_with_jump():
     err_um_n = abs(grad_um_n - grad_um_n_exact)[mask_i_m].max()
     err_up_n = abs(grad_up_n - grad_up_n_exact)[mask_i_p].max()
 
-    print(f"error normal gradient on interface minus: {err_um_n} \t plus: {err_up_n}")
+    print(f"L_inf error normal gradient on interface minus: {err_um_n} \t plus: {err_up_n}")
+
+    #----
+    assert L_inf_err<0.2
 
     pdb.set_trace()
 

@@ -508,7 +508,7 @@ def poisson_solver(gstate, sim_state):
     # ------ SIMPLE OPTIMIZER
     # learning_rate = 1e-1
     # optimizer = optax.adam(learning_rate)
-    learning_rate = 1e-2
+    learning_rate = 1e0
     optimizer = optax.rmsprop(learning_rate)
     
     # ------
@@ -523,7 +523,7 @@ def poisson_solver(gstate, sim_state):
     grad_fn = jit(grad(compute_loss))
 
     loss_store = []
-    for _ in range(5000):
+    for _ in range(10000):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
         params = optax.apply_updates(params, updates)
