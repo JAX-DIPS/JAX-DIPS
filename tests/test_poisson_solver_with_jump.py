@@ -29,9 +29,9 @@ def test_poisson_solver_with_jump():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(16)
-    Ny = i32(16)
-    Nz = i32(16)
+    Nx = i32(32)
+    Ny = i32(32)
+    Nz = i32(32)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -228,30 +228,35 @@ def test_poisson_solver_with_jump():
     io.write_vtk_manual(gstate, log)
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
+
+    print("\n SOLUTION ERROR\n")
+
     print(f"L_inf error on solution everywhere in the domain is = {L_inf_err}")
     
 
     """
     MASK the solution over sphere only
     """
+    print("\n GRADIENT ERROR\n")
+
     grad_um = sim_state.grad_solution[0].reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
     grad_up = sim_state.grad_solution[1].reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
 
     grad_um_exact = vmap(grad(exact_sol_m_fn))(gstate.R).reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
     grad_up_exact = vmap(grad(exact_sol_p_fn))(gstate.R).reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
 
-    mask_m = sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] < -0.5*dx
+    mask_m = sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] < 0.0 #-0.5*dx
     err_x_m = abs(grad_um[mask_m][:,0] - grad_um_exact[mask_m][:,0]).max()
     err_y_m = abs(grad_um[mask_m][:,1] - grad_um_exact[mask_m][:,1]).max()
     err_z_m = abs(grad_um[mask_m][:,2] - grad_um_exact[mask_m][:,2]).max()
 
-    mask_p = sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] > 0.5*dx
+    mask_p = sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] > 0.0 #0.5*dx
     err_x_p = abs(grad_up[mask_p][:,0] - grad_up_exact[mask_p][:,0]).max()
     err_y_p = abs(grad_up[mask_p][:,1] - grad_up_exact[mask_p][:,1]).max()
     err_z_p = abs(grad_up[mask_p][:,2] - grad_up_exact[mask_p][:,2]).max()
 
-    print(f"L_inf errors in grad u_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
-    print(f"L_inf errors in grad u_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
+    print(f"L_inf errors in grad u in Omega_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
+    print(f"L_inf errors in grad u in Omega_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
     
 
     
@@ -271,7 +276,8 @@ def test_poisson_solver_with_jump():
     err_um_n = abs(grad_um_n - grad_um_n_exact)[mask_i_m].max()
     err_up_n = abs(grad_up_n - grad_up_n_exact)[mask_i_p].max()
 
-    print(f"L_inf error normal gradient on interface minus: {err_um_n} \t plus: {err_up_n}")
+    
+    print(f"L_inf error in normal grad u on interface minus: {err_um_n} \t plus: {err_up_n}")
 
     #----
     assert L_inf_err<0.2

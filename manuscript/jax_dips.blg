@@ -3,44 +3,47 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: jax_dips.aux
 The style file: abbrv.bst
 Database file #1: references.bib
-You've used 11 entries,
+Warning--entry type for "optax2020github" isn't style-file defined
+--line 201 of file references.bib
+You've used 13 entries,
             2118 wiz_defined-function locations,
-            569 strings with 5496 characters,
-and the built_in function-call counts, 3654 in all, are:
-= -- 360
-> -- 167
+            577 strings with 5798 characters,
+and the built_in function-call counts, 4251 in all, are:
+= -- 411
+> -- 213
 < -- 0
-+ -- 69
-- -- 54
-* -- 280
-:= -- 622
-add.period$ -- 32
-call.type$ -- 11
-change.case$ -- 60
++ -- 87
+- -- 70
+* -- 319
+:= -- 729
+add.period$ -- 37
+call.type$ -- 13
+change.case$ -- 74
 chr.to.int$ -- 0
-cite$ -- 11
-duplicate$ -- 117
-empty$ -- 288
-format.name$ -- 54
-if$ -- 743
+cite$ -- 13
+duplicate$ -- 134
+empty$ -- 327
+format.name$ -- 70
+if$ -- 861
 int.to.chr$ -- 0
-int.to.str$ -- 11
-missing$ -- 10
-newline$ -- 57
-num.names$ -- 22
-pop$ -- 45
+int.to.str$ -- 13
+missing$ -- 11
+newline$ -- 66
+num.names$ -- 26
+pop$ -- 64
 preamble$ -- 1
-purify$ -- 49
+purify$ -- 61
 quote$ -- 0
-skip$ -- 83
+skip$ -- 99
 stack$ -- 0
-substring$ -- 283
-swap$ -- 11
+substring$ -- 293
+swap$ -- 13
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 44
+type$ -- 52
 warning$ -- 0
-while$ -- 37
-width$ -- 13
-write$ -- 120
+while$ -- 41
+width$ -- 15
+write$ -- 138
+(There was 1 warning)

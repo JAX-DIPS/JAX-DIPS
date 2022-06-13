@@ -56,29 +56,34 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Finite discretization method}{7}{subsection.2.5}\protected@file@percent }
 \@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{10}{algorithm.1}\protected@file@percent }
 \newlabel{euclid}{{1}{10}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
+\citation{kingma2014adam}
+\citation{optax2020github}
+\citation{kingma2014adam}
 \citation{gradClipping}
-\citation{gradClipping}
-\citation{guittet2015solving}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Differentiable solution strategy}{11}{subsection.2.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.6.1}Gradient based optimization with annealing}{11}{subsubsection.2.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.6.1}Gradient based optimization with learning rate annealing}{11}{subsubsection.2.6.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {3}Numerical Examples}{11}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}No interface, $\Gamma =\emptyset $}{11}{subsection.3.1}\protected@file@percent }
 \citation{guittet2015solving}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Effect of annealing to dampen learning rate with number of epochs. Each $100$ epochs learning rate decays by a factor of $0.99$ starting from an initial value of $10^{-2}$ and use maximum global gradient norm clipping (to a value $1$) \cite  {gradClipping} in an Adam optimizer.\relax }}{12}{figure.caption.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Effect of annealing to dampen learning rate with number of epochs. \relax }}{12}{figure.caption.2}\protected@file@percent }
+\newlabel{fig::optimization}{{2}{12}{Effect of annealing to dampen learning rate with number of epochs. \relax }{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}No interface, $\Gamma =\emptyset $}{12}{subsection.3.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Interface, $\Gamma \neq  \emptyset $}{12}{subsection.3.2}\protected@file@percent }
+\citation{guittet2015solving}
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution and its gradient in the $L^\infty $-norm over the surface of the sphere.\relax }}{13}{table.caption.3}\protected@file@percent }
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{bochkov2020solving}{{1}{}{{}}{{}}}
 \bibcite{guittet2015solving}{{2}{}{{}}{{}}}
-\bibcite{min2007geometric}{{3}{}{{}}{{}}}
-\bibcite{MIN2007300}{{4}{}{{}}{{}}}
-\bibcite{osher1988fronts}{{5}{}{{}}{{}}}
-\bibcite{pakravan2021solving}{{6}{}{{}}{{}}}
-\bibcite{gradClipping}{{7}{}{{}}{{}}}
-\bibcite{sallee1984middle}{{8}{}{{}}{{}}}
-\bibcite{shu1988efficient}{{9}{}{{}}{{}}}
-\bibcite{SUSSMAN1994146}{{10}{}{{}}{{}}}
-\bibcite{XIU2001658}{{11}{}{{}}{{}}}
+\bibcite{optax2020github}{{3}{}{{}}{{}}}
+\bibcite{kingma2014adam}{{4}{}{{}}{{}}}
+\bibcite{min2007geometric}{{5}{}{{}}{{}}}
+\bibcite{MIN2007300}{{6}{}{{}}{{}}}
+\bibcite{osher1988fronts}{{7}{}{{}}{{}}}
+\bibcite{pakravan2021solving}{{8}{}{{}}{{}}}
+\bibcite{gradClipping}{{9}{}{{}}{{}}}
+\bibcite{sallee1984middle}{{10}{}{{}}{{}}}
+\bibcite{shu1988efficient}{{11}{}{{}}{{}}}
+\bibcite{SUSSMAN1994146}{{12}{}{{}}{{}}}
+\bibcite{XIU2001658}{{13}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
 \@writefile{toc}{\contentsline {section}{References}{14}{section*.4}\protected@file@percent }

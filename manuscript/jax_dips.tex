@@ -653,7 +653,7 @@ We define the loss function by the 2-norm of the residual of the discretized fun
 \begin{align*}
 	\mathcal{L}(u) = \vert\vert Au - b\vert\vert_2^2
 \end{align*}
-JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
+JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
 
 Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
 
@@ -661,15 +661,19 @@ Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is t
 First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
 
 
-\subsubsection{Gradient based optimization with annealing}
+\subsubsection{Gradient based optimization with learning rate annealing}
 
-We found that starting from zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process that resembles annealing. For this purpose, we use \texttt{Optax} to build custom schedulers for the learning rate.
-
+We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam \cite{kingma2014adam} optimizer:
+\begin{align*}
+r_{k} = r_0 \alpha^{k / T}
+\end{align*}
+where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.97$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. See figure \ref{fig::optimization} for an example of loss evolution during optimization.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/poisson_solver_loss_with_annealing.png}
-\caption{Effect of annealing to dampen learning rate with number of epochs. Each $100$ epochs learning rate decays by a factor of $0.99$ starting from an initial value of $10^{-2}$ and use maximum global gradient norm clipping (to a value $1$) \cite{gradClipping} in an Adam optimizer.}
+\caption{Effect of annealing to dampen learning rate with number of epochs. }
+\label{fig::optimization}
 \end{figure}
 
 
@@ -730,11 +734,11 @@ Table 8 of \cite{guittet2015solving} reports convergence results for the solutio
 \hline
 Resolution   &   Solution    &   Order   &   Solution   &   Order &   Gradient    &   Order   &   Gradient   &   Order  \\
 \hline
-$2^3$ & $3.61\times 10^{-3}$ & -      & - & - & $1.13\times 10^{-2}$ & - & - & - \\ 
-$2^4$ & $1.21\times 10^{-3}$ & $1.58$ & - & - & $7.69\times 10^{-3}$ & $0.56$ & - & -\\ 
-$2^5$ & $3.04\times 10^{-4}$ & $1.99$ & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & -\\ 
-$2^6$ & $7.74\times 10^{-5}$ & $1.98$ & - & - & $2.43\times 10^{-3}$ & $0.66$ & - & -\\ 
-$2^7$ & $1.97\times 10^{-5}$ & $1.98$ & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -\\ \hline
+$2^3$ & $3.61\times 10^{-3}$ & -         & - & - & $1.13\times 10^{-2}$ & - & - & - \\ 
+$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $1.64\times 10^{-1}$ & - & $7.69\times 10^{-3}$ & $0.56$ & $4.86\times 10^{-1}$ & -\\ 
+$2^5$ & $3.04\times 10^{-4}$ & $1.99$    & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & -\\ 
+$2^6$ & $7.74\times 10^{-5}$ & $1.98$    & - & - & $2.43\times 10^{-3}$ & $0.66$ & - & -\\ 
+$2^7$ & $1.97\times 10^{-5}$ & $1.98$    & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -\\ \hline
 \end{tabular}
 \caption{Convergence on the solution and its gradient in the $L^\infty$-norm over the surface of the sphere.}
 \end{center}

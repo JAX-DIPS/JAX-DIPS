@@ -498,7 +498,7 @@ def poisson_solver(gstate, sim_state):
     scheduler = optax.exponential_decay(
         init_value=1e-2,
         transition_steps=100,
-        decay_rate=0.99)
+        decay_rate=0.97)
 
     # Combining gradient transforms using `optax.chain`.
     gradient_transform = optax.chain(
@@ -516,7 +516,6 @@ def poisson_solver(gstate, sim_state):
 
     # ------ SIMPLE OPTIMIZER
     # learning_rate = 1e-3
-
     # optimizer = optax.rmsprop(learning_rate)
     # optimizer = optax.adam(learning_rate)
     # ------

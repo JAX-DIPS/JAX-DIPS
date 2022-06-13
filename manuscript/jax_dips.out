@@ -10,7 +10,7 @@
 \BOOKMARK [2][-]{subsection.2.4}{Cross sections of interface with grid cell faces}{section.2}% 10
 \BOOKMARK [2][-]{subsection.2.5}{Finite discretization method}{section.2}% 11
 \BOOKMARK [2][-]{subsection.2.6}{Differentiable solution strategy}{section.2}% 12
-\BOOKMARK [3][-]{subsubsection.2.6.1}{Gradient based optimization with annealing}{subsection.2.6}% 13
+\BOOKMARK [3][-]{subsubsection.2.6.1}{Gradient based optimization with learning rate annealing}{subsection.2.6}% 13
 \BOOKMARK [1][-]{section.3}{Numerical Examples}{}% 14
 \BOOKMARK [2][-]{subsection.3.1}{No interface, =}{section.3}% 15
 \BOOKMARK [2][-]{subsection.3.2}{Interface, =}{section.3}% 16

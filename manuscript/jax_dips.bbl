@@ -12,6 +12,16 @@ A.~Guittet, M.~Lepilliez, S.~Tanguy, and F.~Gibou.
   domains--the voronoi interface method.
 \newblock {\em Journal of Computational Physics}, 298:747--765, 2015.
 
+\bibitem{optax2020github}
+M.~Hessel, D.~Budden, F.~Viola, M.~Rosca, E.~Sezener, and T.~Hennigan.
+\newblock Optax: composable gradient transformation and optimisation, in jax!,
+  2020.
+
+\bibitem{kingma2014adam}
+D.~P. Kingma and J.~Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock {\em arXiv preprint arXiv:1412.6980}, 2014.
+
 \bibitem{min2007geometric}
 C.~Min and F.~Gibou.
 \newblock Geometric integration over irregular domains with application to
