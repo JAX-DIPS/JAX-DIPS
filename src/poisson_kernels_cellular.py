@@ -1,6 +1,7 @@
-from jax import (numpy as jnp, vmap, jit, grad)
+from jax import (numpy as jnp, vmap, jit, grad, random)
 from functools import partial
 import optax
+import haiku as hk
 from src import (interpolate, util, geometric_integrations)
 import pdb
 import matplotlib
@@ -432,7 +433,6 @@ def poisson_solver(gstate, sim_state):
         loss = optax.l2_loss(lhs, rhs).mean() 
         # regularizer on boundaries
         x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-
         loss += jnp.square(x_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
         loss += jnp.square(x_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
         loss += jnp.square(x_cube[ :, 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
@@ -492,44 +492,134 @@ def poisson_solver(gstate, sim_state):
 
 
 
-    ''' Actual optimization '''
-   
+    ''' Defining Optimizer'''
     # ------ Exponential decay of the learning rate.
+    decay_rate_ = 0.975
+    learning_rate = 1e-2
+
+
     scheduler = optax.exponential_decay(
-        init_value=1e-2,
+        init_value=learning_rate,
         transition_steps=100,
-        decay_rate=0.97)
+        decay_rate=decay_rate_)
+
 
     # Combining gradient transforms using `optax.chain`.
-    gradient_transform = optax.chain(
-        # Clip the gradient by the global norm.
-        optax.clip_by_global_norm(1.0),
-        optax.scale_by_adam(),  # Use the updates from adam.
-        # Use the learning rate from the scheduler.
-        optax.scale_by_schedule(scheduler),
-        # Scale updates by -1 since optax.apply_updates is additive and we want to descend on the loss.
-        optax.scale(-1.0)
+    optimizer = optax.chain(                         
+                            optax.clip_by_global_norm(1.0), # Clip the gradient by the global norm.
+                            optax.scale_by_adam(),  # Use the updates from adam.
+                            optax.scale_by_schedule(scheduler), # Use the learning rate from the scheduler.
+                            optax.scale(-1.0) # Scale updates by -1 since optax.apply_updates is additive and we want to descend on the loss.
     )
-    optimizer = gradient_transform
+   
+    
+    # RMSProp Optimizers 
+    # optimizer = optax.chain(
+    #                         optax.clip_by_global_norm(1.0),
+    #                         optax.scale_by_rms(decay=decay_rate_),  
+    #                         optax.scale_by_schedule(scheduler),
+    #                         optax.scale(-1.0)
+    # )
+    '''
+    optimizer = optax.rmsprop(learning_rate)
+    optimizer = optax.adam(learning_rate)
+    '''
+
+
+
+
+
+
+
+
+
+    #--------------- EXPLORE
+    """
+    def nn_up_fn(r):
+        '''
+        neural network function for solution in Omega plus
+        input: 
+            r: vector of coordinates for one point (x,y,z)
+        output:
+            one scalar value representing the solution u_p
+        '''
+        h1 = hk.Linear(output_size=10)(r)
+        h1 = hk.celu(h1)
+        h2 = hk.Linear(output_size=10)(h1)
+        h2 = hk.celu(h2)
+        h3 = hk.Linear(output_size=1)(h2)
+        return h3
+
+    def nn_um_fn(r):
+        '''
+        neural network function for solution in Omega minus
+        input: 
+            r: vector of coordinates for one point (x,y,z)
+        output:
+            one scalar value representing the solution u_m
+        '''
+        # mlp = hk.nets.MLP(output_sizes=[3,10,10,1])
+        # return mlp(r)
+        h1 = hk.Linear(output_size=10)(r)
+        h1 = hk.celu(h1)
+        h2 = hk.Linear(output_size=10)(h1)
+        h2 = hk.celu(h2)
+        h3 = hk.Linear(output_size=1)(h2)
+        return h3
+
+    
+    
+    rng = random.PRNGKey(42)
+
+    model_up = hk.transform(nn_up_fn)
+    model_um = hk.transform(nn_um_fn)
+
+    params_up = model_up.init(next(rng), nodes[0])
+    params_um = model_um.init(next(rng), nodes[0])
+
     
 
-
-    # ------ SIMPLE OPTIMIZER
-    # learning_rate = 1e-3
-    # optimizer = optax.rmsprop(learning_rate)
-    # optimizer = optax.adam(learning_rate)
-    # ------
-
-    params = {'u': x}
-    opt_state = optimizer.init(params)
+    def nn_u_node_fn(node):
+        '''
+        Driver function for evaluating neural networks in appropriate regions
+        based on the value of the level set function at the point.
+        '''
+        i,j,k = node
+        r = jnp.array([xo[i-2], yo[j-2], zo[k-2]])
+        return jnp.where(phi_cube[i,j,k] >=0, model_up.apply(params_up, None, r), model_um.apply(params_um, None, r))
     
+    
+    nn_u_fn = vmap(nn_u_node_fn)
+    pdb.set_trace()
+
+
+    for layer_name, weights in params.items():
+        print(layer_name)
+        print("Weights : {}, Biases : {}\n".format(params[layer_name]["w"].shape,params[layer_name]["b"].shape))
+    
+    pdb.set_trace()
+
+    """
+    #----------- EXPLORE
+
+
+
+
+
+
+    """ Optimization Problem is set up by defining: (1) params, (2) compute_loss(params) """
+
+    params = {'u': x}                        # parameters to be optimized
     @jit
-    def compute_loss(params): 
+    def compute_loss(params):                # loss function to minimize
         return compute_residual(params['u'])
+    
 
-    grad_fn = jit(grad(compute_loss))
 
+    """ Generic Optimization Routine """
     loss_store = []
+    grad_fn = jit(grad(compute_loss))
+    opt_state = optimizer.init(params)
     for _ in range(20000):
         grads = grad_fn(params)
         updates, opt_state = optimizer.update(grads, opt_state)
@@ -549,7 +639,7 @@ def poisson_solver(gstate, sim_state):
     
 
     """
-    Compute normal gradients
+    Compute normal gradients for error analysis
     """
     
     def compute_normal_gradient_solution_mp_on_interface(u):

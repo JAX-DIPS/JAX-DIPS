@@ -99,7 +99,7 @@
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present an end-to-end differentiable PDE solver supporting both forward and inverse free boundary problems using the level-set method. We implemented this framework using JAX, extending support for CPU/GPU/TPU platforms. Algorithmically, our proposed framework builds on the blended inverse PDE solver architecure (BiPDE) that authors have proposed earlier \cite{pakravan2021solving}. JAX-DIPS is an open-source software package published under MIT license and is available at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
+	We present an end-to-end differentiable PDE solver supporting both forward and inverse free boundary problems using the level-set method. We implemented this framework using JAX, extending support for CPU/GPU/TPU platforms. Algorithmically, our proposed framework builds on the blended inverse PDE solver architecure (BiPDE) that authors have proposed earlier \cite{pakravan2021solving}. JAX-DIPS is an open-source software package published is available at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
 
 \end{abstract}
 
@@ -351,7 +351,7 @@ For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the conside
 
 
 
-\subsection{Finite discretization method}
+\subsection{Finite discretization method}\label{sec::FD}
 
 For spatial discretizations at the presence of jump conditions we employ the numerical algorithm proposed by Bochkov and Gibou (2020) \cite{bochkov2020solving} (BG20) on Cartesian grids. BG20 produces second-order accurate solutions and first-order accuracte gradients in the $L^\infty$-norm, while having a compact stencil that makes it a good candidate for parallelization. Moreover, treatment of the interface jump conditions do not introduce any augmented variables, this preserves the homogeneous structure of the linear system.
 
@@ -647,6 +647,20 @@ in matrix notation we have
 
 
 
+
+
+\subsection{Neural network approximators for the solution}
+
+In 1987, Hecht and Nielson \cite{hecht1987kolmogorov} applied an improved version of Kolmogorov's 1957 superposition theorem \cite{kolmogorov1957representation}, due to Sprecher \cite{sprecher1965structure}, to the field of neurocomputing and demonstrated that a $3$-layer feedforward neural network (one input layer with $n$ inputs, one hidden layer with $2n+1$ neurons, one output layer) are universal approximators for all \textit{continuous} functions from the $n$-dimensional cube to a finite $m$-dimensional real vector space; \textit{i.e.}, $f: [0,1]^n \rightarrow \mathbb{R}^m $. Recently, Ismailov (2022) \cite{ismailov2022} demonstrated existence of neural networks implementing \textit{discontinuous} functions, however efficient learning algorithms for such networks are not still available. 
+
+The solutions of interfacial PDE problems are discontinuous, with jumps appearing not only in the solution but also in the solution gradient. In light of above considerations, we define two separate neural networks to represent solution in $\Omega^-$ and $\Omega^+$ regions:
+\begin{align*}
+& u^+ = \mathcal{N}^+(\mathbf{x}): \mathbb{R}^3\cap \Omega^+ \rightarrow \mathbb{R}  & u^- = \mathcal{N}^-(\mathbf{x}): \mathbb{R}^3\cap \Omega^- \rightarrow \mathbb{R}
+\end{align*}
+In each network we implement one hidden layer with $\ge 7$ neurons and the output layer has a single linear neuron. Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function defined on the $\rm L_2$-norm of the residual of the linear system obtained in section \ref{sec::FD}.
+
+
+
 \subsection{Differentiable solution strategy}
 
 We define the loss function by the 2-norm of the residual of the discretized function:
@@ -667,7 +681,7 @@ We found that starting from a zero guess for the solution it is important to sta
 \begin{align*}
 r_{k} = r_0 \alpha^{k / T}
 \end{align*}
-where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.97$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. See figure \ref{fig::optimization} for an example of loss evolution during optimization.
+where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. See figure \ref{fig::optimization} for an example of loss evolution during optimization.
 
 \begin{figure}[ht]
 \centering
