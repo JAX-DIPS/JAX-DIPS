@@ -16,9 +16,10 @@ from src.nn_solution_model import DoubleMLP
 
 
 class Trainer:
-    def __init__(self, compute_Ax_and_b_fn, optimizer=optax.adam):
+    def __init__(self, compute_Ax_and_b_fn, grid_shape, optimizer=optax.adam):
         self.optimizer = optimizer
         self.compute_Ax_and_b_fn = compute_Ax_and_b_fn
+        self.grid_shape = grid_shape
    
 
         
@@ -50,7 +51,7 @@ class Trainer:
         return sol_fn
 
     @partial(jit, static_argnums=(0))
-    def loss(self, params, R_flat, phi_flat, boundary, dirichlet_cube, Vol_cell_nominal):
+    def loss(self, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):
         """
             Loss function of the neural network
         """        
@@ -59,20 +60,21 @@ class Trainer:
         lhs_rhs = self.compute_Ax_and_b_fn(pred_sol)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
 
-        tot_loss = optax.l2_loss(lhs, rhs).mean()                     
-        tot_loss += jnp.square(pred_sol[boundary['x_L']] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol[boundary['x_R']] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol[boundary['y_L']] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol[boundary['y_R']] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol[boundary['z_L']] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol[boundary['z_R']] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
+        tot_loss = optax.l2_loss(lhs, rhs).mean()   
+        sol_cube = pred_sol.reshape(self.grid_shape)                  
+        tot_loss += jnp.square(sol_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[: , 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[: ,-1, :] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[: , :, 0] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[: , :,-1] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
         
         return tot_loss
 
 
     @partial(jit, static_argnums=(0,))
-    def update(self, opt_state, params, R_flat, phi_flat, shape_grid, dirichlet_cube, Vol_cell_nominal):      
-        loss, grads = value_and_grad(self.loss)(params, R_flat, phi_flat, shape_grid, dirichlet_cube, Vol_cell_nominal)
+    def update(self, opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):      
+        loss, grads = value_and_grad(self.loss)(params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
@@ -82,7 +84,7 @@ class Trainer:
 
 
 
-def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, boundary, dirichlet_cube, Vol_cell_nominal, num_epochs=10000):
+def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, grid_shape, dirichlet_cube, Vol_cell_nominal, num_epochs=10000):
     """
     Train the neural network.
 
@@ -94,7 +96,7 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, boundary, dirichlet_
         trained parameters of the neural network
     """
 
-    trainer = Trainer(compute_Ax_and_b_fn, optimizer)
+    trainer = Trainer(compute_Ax_and_b_fn, grid_shape, optimizer)
     
     opt_state, params = trainer.init()
 
@@ -123,7 +125,7 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, boundary, dirichlet_
     loss_epochs = []
     epoch_store = []
     for epoch in range(num_epochs):            
-        opt_state, params, loss_epoch = trainer.update(opt_state, params, R_flat, phi_flat, boundary, dirichlet_cube, Vol_cell_nominal)            
+        opt_state, params, loss_epoch = trainer.update(opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal)            
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
