@@ -426,21 +426,22 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
     # vol_fn = lambda A: jnp.nan_to_num( (1.0 / 6.0) * jnp.sqrt( jnp.nan_to_num( jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) ) )
     # area_fn = lambda A: jnp.nan_to_num( 0.5 * jnp.sqrt( jnp.nan_to_num( jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) ) )
-
+    @jit
     def vol_fn(A):
         tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) 
         vol_tmp = (1.0 / 6.0) * jnp.sqrt(jnp.abs(jnp.nan_to_num(tmp)))
         return vol_tmp
 
-  
+    @jit
     def area_fn(A):
         tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T )  #jnp.where(a_shape==(3,3), jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) , 0.0 ) 
         return 0.5 * jnp.sqrt(jnp.abs(jnp.nan_to_num(tmp)))
-
+    
+    @jit
     def positive_or_zero(num):
         return jnp.where(num < 0, 0.0, num)
 
-    # @jit
+    @jit
     def compute_interface_faces(node):
         pieces = get_vertices_fn(node)  
         
@@ -635,7 +636,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
 
 
-    # @jit
+    @jit
     def compute_domain_faces(node, is_interface):
         """
         A domain face is not crossed by the interface, therefore plus/minus centroids overlap

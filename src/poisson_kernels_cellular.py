@@ -241,7 +241,7 @@ def poisson_solver(gstate, sim_state):
     Vol_cell_nominal = dx*dy*dz
 
 
-    # @jit
+    @jit
     def is_box_boundary_node(i, j, k):
         """
         Check if current node is on the boundary of box
@@ -250,7 +250,7 @@ def poisson_solver(gstate, sim_state):
         return jnp.where(boundary == 0, True, False)
 
 
-    # @jit
+    @jit
     def get_u_mp_at_node_fn(u_cube, i, j, k):
         """
         This function evaluates pairs of u^+ and u^- at each grid point
@@ -334,7 +334,7 @@ def poisson_solver(gstate, sim_state):
        
 
 
-    # @jit
+    
     def compute_Ax_and_b_fn(u):
         """
         This function calculates  A @ u for a given vector of unknowns u.
