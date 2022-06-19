@@ -13,7 +13,6 @@ from jax._src.dtypes import dtype
 
 import jax.numpy as np
 from jax import ops, lax, jit
-from numpy import where
 from scipy.interpolate import splrep, PPoly
 from scipy.interpolate import RegularGridInterpolator
 from src import util
@@ -355,7 +354,7 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         k = lax.cond(k <= 1, lambda p: i32(2), lambda p: p, k)
         return i, j, k
 
-    @jit
+    
     def second_order_deriv(i, j, k, dd):
         dx, dy, dz = dd
         dxx = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) #/ dx / dx
@@ -400,19 +399,32 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         # correcting for second derivatives:
         dd = (dx, dy, dz)
         
-        d2x_000, d2y_000, d2z_000 = second_order_deriv(i  , j  , k  , dd)
-        d2x_100, d2y_100, d2z_100 = second_order_deriv(i+1, j  , k  , dd)
-        d2x_010, d2y_010, d2z_010 = second_order_deriv(i  , j+1, k  , dd)
-        d2x_001, d2y_001, d2z_001 = second_order_deriv(i  , j  , k+1, dd)
-
-        d2x_101, d2y_101, d2z_101 = second_order_deriv(i+1, j  , k+1, dd)
-        d2x_011, d2y_011, d2z_011 = second_order_deriv(i  , j+1, k+1, dd)
-        d2x_110, d2y_110, d2z_110 = second_order_deriv(i+1, j+1, k  , dd)
-        d2x_111, d2y_111, d2z_111 = second_order_deriv(i+1, j+1, k+1, dd)
+        ngbs = np.array([[i  , j  , k  ],
+                         [i+1, j  , k  ],
+                         [i  , j+1, k  ],
+                         [i  , j  , k+1],
+                         [i+1, j  , k+1],
+                         [i  , j+1, k+1], 
+                         [i+1, j+1, k  ],
+                         [i+1, j+1, k+1]], dtype=i32)
         
-        d2c_dxx = np.min(np.array([abs(d2x_000), abs(d2x_100), abs(d2x_010), abs(d2x_001), abs(d2x_101), abs(d2x_011), abs(d2x_110), abs(d2x_111)]))
-        d2c_dyy = np.min(np.array([abs(d2y_000), abs(d2y_100), abs(d2y_010), abs(d2y_001), abs(d2y_101), abs(d2y_011), abs(d2y_110), abs(d2y_111)]))
-        d2c_dzz = np.min(np.array([abs(d2z_000), abs(d2z_100), abs(d2z_010), abs(d2z_001), abs(d2z_101), abs(d2z_011), abs(d2z_110), abs(d2z_111)]))
+        d2x_d2y_d2z = vmap(second_order_deriv, (0,0,0, None))(ngbs[:,0], ngbs[:,1], ngbs[:,2], dd)
+        d2c_dxx, d2c_dyy, d2c_dzz = np.min(np.abs(d2x_d2y_d2z), axis=0)
+
+        # pdb.set_trace()
+        # d2x_000, d2y_000, d2z_000 = second_order_deriv(i  , j  , k  , dd)
+        # d2x_100, d2y_100, d2z_100 = second_order_deriv(i+1, j  , k  , dd)
+        # d2x_010, d2y_010, d2z_010 = second_order_deriv(i  , j+1, k  , dd)
+        # d2x_001, d2y_001, d2z_001 = second_order_deriv(i  , j  , k+1, dd)
+
+        # d2x_101, d2y_101, d2z_101 = second_order_deriv(i+1, j  , k+1, dd)
+        # d2x_011, d2y_011, d2z_011 = second_order_deriv(i  , j+1, k+1, dd)
+        # d2x_110, d2y_110, d2z_110 = second_order_deriv(i+1, j+1, k  , dd)
+        # d2x_111, d2y_111, d2z_111 = second_order_deriv(i+1, j+1, k+1, dd)
+        
+        # d2c_dxx = np.min(np.array([np.abs(d2x_000),np.abs(d2x_100),np.abs(d2x_010),np.abs(d2x_001),np.abs(d2x_101),np.abs(d2x_011),np.abs(d2x_110),np.abs(d2x_111)]))
+        # d2c_dyy = np.min(np.array([np.abs(d2y_000),np.abs(d2y_100),np.abs(d2y_010),np.abs(d2y_001),np.abs(d2y_101),np.abs(d2y_011),np.abs(d2y_110),np.abs(d2y_111)]))
+        # d2c_dzz = np.min(np.array([np.abs(d2z_000),np.abs(d2z_100),np.abs(d2z_010),np.abs(d2z_001),np.abs(d2z_101),np.abs(d2z_011),np.abs(d2z_110),np.abs(d2z_111)]))
 
         c  = c - d2c_dxx * f32(0.5) * x_d * (f32(1.0) - x_d) - d2c_dyy * f32(0.5) * y_d * (f32(1.0) - y_d) - d2c_dzz * f32(0.5) * z_d * (f32(1.0) - z_d) 
 
@@ -423,7 +435,7 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         """
         interpolate on all provided points
         """
-        return vmap(jit(single_cell_interp))(R_star)
+        return vmap(single_cell_interp)(R_star)
 
     return interp_fn
 

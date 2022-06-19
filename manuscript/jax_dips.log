@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  18 JUN 2022 21:03
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  18 JUN 2022 21:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -712,7 +712,7 @@ Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
 (hyperref)                removing `math shift' on input line 726.
 
 
-Overfull \hbox (31.69038pt too wide) in paragraph at lines 751--763
+Overfull \hbox (50.03415pt too wide) in paragraph at lines 751--763
  [] 
  []
 
@@ -728,11 +728,11 @@ Package rerunfilecheck Info: File `jax_dips.out' has not changed.
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 781.
  ) 
 Here is how much of TeX's memory you used:
- 9998 strings out of 483065
- 148918 string characters out of 5963550
+ 10000 strings out of 483065
+ 148937 string characters out of 5963550
  443273 words of memory out of 5000000
- 24732 multiletter control sequences out of 15000+600000
- 543599 words of font info for 69 fonts, out of 8000000 for 9000
+ 24733 multiletter control sequences out of 15000+600000
+ 543767 words of font info for 70 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
  41i,28n,42p,1006b,517s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/mistani/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
@@ -759,12 +759,13 @@ sfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
 i7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/
-share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/s
-hare/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jax_dips.pdf (14 pages, 482396 bytes).
+share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/t
+exlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/te
+xlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on jax_dips.pdf (14 pages, 486635 bytes).
 PDF statistics:
- 349 PDF objects out of 1000 (max. 8388607)
- 296 compressed objects within 3 object streams
+ 353 PDF objects out of 1000 (max. 8388607)
+ 299 compressed objects within 3 object streams
  70 named destinations out of 1000 (max. 500000)
  160 words of extra memory for PDF output out of 10000 (max. 10000000)
 

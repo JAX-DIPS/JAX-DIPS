@@ -60,6 +60,7 @@ class Trainer:
         lhs_rhs = self.compute_Ax_and_b_fn(pred_sol)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
 
+        # tot_loss = jnp.max(jnp.abs(lhs - rhs))
         tot_loss = optax.l2_loss(lhs, rhs).mean()   
         sol_cube = pred_sol.reshape(self.grid_shape)                  
         tot_loss += jnp.square(sol_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal

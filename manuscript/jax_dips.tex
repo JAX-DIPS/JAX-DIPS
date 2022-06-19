@@ -740,27 +740,27 @@ that imply
 &f^+(x,y,z)=2\cos(x)\sin(y)e^{-z} &\phi(\mathbf{x})\ge 0
 \end{align*}
 
-Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM. 
+Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM. Order of convergence, denoted by $p$, is computed by doubling the number of grid points in every dimension and measuring the $L^\infty$ error of solution and its gradient over all the grid points in the domain:
 \begin{align*}
-\frac{\textrm{err}(2h)}{\textrm{err}(h)}=2^p \rightarrow p = log_2\bigg(\frac{\textrm{err}(2h)}{\textrm{err}(h)}\bigg)
+&\frac{\textrm{err}(2h)}{\textrm{err}(h)}=2^p \rightarrow p = \log_2\bigg(\frac{\textrm{err}(2h)}{\textrm{err}(h)}\bigg)  & h=\min(h_x,h_y,h_z)
 \end{align*}
 
 
 \begin{table}[ht]
 \begin{center}
-\begin{tabular}{|l||ll|ll|ll|ll|}
+\begin{tabular}{|l||ll|ll|ll|ll|c|}
 \hline
-& \multicolumn{2}{c|}{VIM}& \multicolumn{2}{c|}{JAX-DIPS} & \multicolumn{2}{|c|}{VIM}& \multicolumn{2}{c|}{JAX-DIPS}\\
+& \multicolumn{2}{c|}{VIM}& \multicolumn{2}{c|}{JAX-DIPS} & \multicolumn{2}{|c|}{VIM}& \multicolumn{3}{c|}{JAX-DIPS}\\
 \hline
-Resolution   &   Solution    &   Order   &   Solution   &   Order &   Gradient    &   Order   &   Gradient   &   Order  \\
+$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order &   Gradient    &   Order   &   Gradient   &   Order & t (sec) \\
 \hline
-$2^3$ & $3.61\times 10^{-3}$ & -         & $9.49\times 10^{-1}$ & -      & $1.13\times 10^{-2}$ & -      & $2.38$               & -     \\ 
-$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $1.56\times 10^{-1}$ & $2.60$ & $7.69\times 10^{-3}$ & $0.56$ & $4.80\times 10^{-1}$ & $2.31$\\ 
-$2^5$ & $3.04\times 10^{-4}$ & $1.99$    & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & -\\ 
-$2^6$ & $7.74\times 10^{-5}$ & $1.98$    & - & - & $2.43\times 10^{-3}$ & $0.66$ & - & -\\ 
-$2^7$ & $1.97\times 10^{-5}$ & $1.98$    & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -\\ \hline
+$2^3$ & $3.61\times 10^{-3}$ & -         & $9.49\times 10^{-1}$ & -      & $1.13\times 10^{-2}$ & -      & $2.38$               & -      & 180\\ 
+$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $1.56\times 10^{-1}$ & $2.60$ & $7.69\times 10^{-3}$ & $0.56$ & $4.80\times 10^{-1}$ & $2.31$ & 320\\ 
+$2^5$ & $3.04\times 10^{-4}$ & $1.99$    & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & - & 900\\ 
+$2^6$ & $7.74\times 10^{-5}$ & $1.98$    & - & - & $2.43\times 10^{-3}$ & $0.66$ & - & -&\\ 
+$2^7$ & $1.97\times 10^{-5}$ & $1.98$    & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -&\\ \hline
 \end{tabular}
-\caption{Convergence on the solution and its gradient. VIM values are the $L^\infty$-norm over the surface of the sphere. We report $L^\infty$-norm of solution and its gradient evaluated everywhere in the domain (more conservative).}
+\caption{Convergence on the solution and its gradient. VIM values are the $L^\infty$-norm over the surface of the sphere. We report $L^\infty$-norm of solution and its gradient evaluated everywhere in the domain (more conservative). Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case.}
 \end{center}
 \end{table}
 
