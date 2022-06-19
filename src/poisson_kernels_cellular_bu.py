@@ -1,9 +1,8 @@
-from jax import (numpy as jnp, vmap, jit, grad, random, nn as jnn)
+from jax import (numpy as jnp, vmap, jit, grad, random)
 from functools import partial
 import optax
 import haiku as hk
 from src import (interpolate, util, geometric_integrations)
-from src.nn_solution_trainer import train
 import pdb
 import matplotlib
 matplotlib.use('TkAgg')
@@ -455,6 +454,41 @@ def poisson_solver(gstate, sim_state):
     x_cube = x_cube.at[ :, :,-1].set(dirichlet_cube[ :, :,-1])
     x = x_cube.reshape(-1)
 
+    ''' testing begin '''
+    # lhs_rhs = compute_Ax_and_b_fn(x)
+    # lhs = lhs_rhs[:, 0].reshape((xo.shape+yo.shape+zo.shape))
+    # rhs = lhs_rhs[:, 1].reshape((xo.shape+yo.shape+zo.shape))
+    # plt.imshow(lhs[:, Ny//2, :], cmap='jet'); plt.title("lhs"); plt.colorbar(); plt.show()
+    # plt.imshow(rhs[:, Ny//2, :], cmap='jet'); plt.title("rhs"); plt.colorbar(); plt.show()
+    # plt.imshow((lhs-rhs)[:, Ny//2, :], cmap='jet'); plt.title("residual"); plt.colorbar(); plt.show()
+
+    ''' TEST RHS vector below '''
+    # plt.imshow(rhs[:,:,1]/dx**3-f_p_cube_internal[:,:,1]); plt.show(); #without interface test this must be 0 internals
+    # plt.imshow(rhs[:,:,1]/dx**3*2-f_p_cube_internal[:,:,1]); plt.show(); # should be 0 on boundaries
+    # err_1 = abs(rhs[:,:,-1]/dx**3*2-f_p_cube_internal[:,:,-1]).max()
+    # '''err_1 on all boundaries must be 0, it is 1e-8 which is fine'''
+    # err_2 = (lhs/x_cube/dx**3)[:,:,Nz//2]
+    
+    #-- volume & face area test:
+    # coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
+    # poissons = coeffs[:,:12]; vols = coeffs[:,12:14]; face_areas = coeffs[:,14:]
+    # vols[jnp.where(vols[:,1] < 0)[0]]
+    # plt.pcolor(vols[:,0].reshape(Nx,Ny,Nz)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
+    # plt.pcolor(face_areas[...,0].reshape(Nx,Ny,Nz)[:, Ny//2,:], cmap='jet'); plt.colorbar(); plt.show()
+
+
+    # from jax import jacrev, jacfwd
+    # def hessian_fn(f): 
+    #     return jacfwd(jacrev(f))
+    
+    # H_fn = hessian_fn(compute_residual)
+    # J_fn = jacfwd(compute_residual)
+
+    # def minimize_newton_step(x): 
+    #     return x - 0.1*jnp.linalg.inv(H_fn(x)) @ J_fn(x)
+    # pdb.set_trace()
+
+    ''' testing end '''
 
 
 
@@ -477,45 +511,137 @@ def poisson_solver(gstate, sim_state):
                             optax.scale_by_schedule(scheduler), # Use the learning rate from the scheduler.
                             optax.scale(-1.0) # Scale updates by -1 since optax.apply_updates is additive and we want to descend on the loss.
     )
-
-
-
-
-  
-    final_solution = train(optimizer, compute_Ax_and_b_fn, gstate.R, phi_cube_.reshape(-1), num_epochs=10000)
-
-
-    # Optimization Problem is set up by defining: (1) params, (2) compute_loss(params) 
-    # params = {'u': x}                        # parameters to be optimized
-    # @jit
-    # def compute_loss(params):                # loss function to minimize
-    #     return compute_residual(params['u'])
-    
-
-
-    # # Generic Optimization Routine 
-    # loss_store = []
-    # grad_fn = jit(grad(compute_loss))
-    # opt_state = optimizer.init(params)
-    # for _ in range(20000):
-    #     grads = grad_fn(params)
-    #     updates, opt_state = optimizer.update(grads, opt_state)
-    #     params = optax.apply_updates(params, updates)
-
-    #     loss_ = compute_loss(params)
-    #     loss_store.append(loss_.tolist())
-    #     print(f"iteration {_} loss = {loss_}")
-
-    # plt.figure(figsize=(8, 8))
-    # plt.plot(loss_store)
-    # plt.yscale('log')
-    # plt.xlabel('epoch', fontsize=20)
-    # plt.ylabel('loss', fontsize=20)
-    # plt.savefig('tests/poisson_solver_loss.png')
-    # plt.close()
-    
    
-    #Compute normal gradients for error analysis
+    
+    # RMSProp Optimizers 
+    # optimizer = optax.chain(
+    #                         optax.clip_by_global_norm(1.0),
+    #                         optax.scale_by_rms(decay=decay_rate_),  
+    #                         optax.scale_by_schedule(scheduler),
+    #                         optax.scale(-1.0)
+    # )
+    '''
+    optimizer = optax.rmsprop(learning_rate)
+    optimizer = optax.adam(learning_rate)
+    '''
+
+
+
+
+
+
+
+
+
+    #--------------- EXPLORE
+    """
+    def nn_up_fn(r):
+        '''
+        neural network function for solution in Omega plus
+        input: 
+            r: vector of coordinates for one point (x,y,z)
+        output:
+            one scalar value representing the solution u_p
+        '''
+        h1 = hk.Linear(output_size=10)(r)
+        h1 = hk.celu(h1)
+        h2 = hk.Linear(output_size=10)(h1)
+        h2 = hk.celu(h2)
+        h3 = hk.Linear(output_size=1)(h2)
+        return h3
+
+    def nn_um_fn(r):
+        '''
+        neural network function for solution in Omega minus
+        input: 
+            r: vector of coordinates for one point (x,y,z)
+        output:
+            one scalar value representing the solution u_m
+        '''
+        # mlp = hk.nets.MLP(output_sizes=[3,10,10,1])
+        # return mlp(r)
+        h1 = hk.Linear(output_size=10)(r)
+        h1 = hk.celu(h1)
+        h2 = hk.Linear(output_size=10)(h1)
+        h2 = hk.celu(h2)
+        h3 = hk.Linear(output_size=1)(h2)
+        return h3
+
+    
+    
+    rng = random.PRNGKey(42)
+
+    model_up = hk.transform(nn_up_fn)
+    model_um = hk.transform(nn_um_fn)
+
+    params_up = model_up.init(next(rng), nodes[0])
+    params_um = model_um.init(next(rng), nodes[0])
+
+    
+
+    def nn_u_node_fn(node):
+        '''
+        Driver function for evaluating neural networks in appropriate regions
+        based on the value of the level set function at the point.
+        '''
+        i,j,k = node
+        r = jnp.array([xo[i-2], yo[j-2], zo[k-2]])
+        return jnp.where(phi_cube[i,j,k] >=0, model_up.apply(params_up, None, r), model_um.apply(params_um, None, r))
+    
+    
+    nn_u_fn = vmap(nn_u_node_fn)
+    pdb.set_trace()
+
+
+    for layer_name, weights in params.items():
+        print(layer_name)
+        print("Weights : {}, Biases : {}\n".format(params[layer_name]["w"].shape,params[layer_name]["b"].shape))
+    
+    pdb.set_trace()
+
+    """
+    #----------- EXPLORE
+
+
+
+
+
+
+    """ Optimization Problem is set up by defining: (1) params, (2) compute_loss(params) """
+
+    params = {'u': x}                        # parameters to be optimized
+    @jit
+    def compute_loss(params):                # loss function to minimize
+        return compute_residual(params['u'])
+    
+
+
+    """ Generic Optimization Routine """
+    loss_store = []
+    grad_fn = jit(grad(compute_loss))
+    opt_state = optimizer.init(params)
+    for _ in range(20000):
+        grads = grad_fn(params)
+        updates, opt_state = optimizer.update(grads, opt_state)
+        params = optax.apply_updates(params, updates)
+
+        loss_ = compute_loss(params)
+        loss_store.append(loss_.tolist())
+        print(f"iteration {_} loss = {loss_}")
+
+    plt.figure(figsize=(8, 8))
+    plt.plot(loss_store)
+    plt.yscale('log')
+    plt.xlabel('epoch', fontsize=20)
+    plt.ylabel('loss', fontsize=20)
+    plt.savefig('tests/poisson_solver_loss.png')
+    plt.close()
+    
+
+    """
+    Compute normal gradients for error analysis
+    """
+    
     def compute_normal_gradient_solution_mp_on_interface(u):
         """
         Given the solution field u, this function computes gradient of u along normal direction
@@ -536,6 +662,9 @@ def poisson_solver(gstate, sim_state):
         grad_n_u_p = -1.0 * Cp_ijk_pqm.sum(axis=1) * u_mp[:,1] + c_mp_u_mp_ngbs[1]
         return grad_n_u_m, grad_n_u_p
 
+    grad_u_mp_normal_to_interface = compute_normal_gradient_solution_mp_on_interface(params['u'])
+    # plt.pcolor(grad_u_mp_normal_to_interface[0].reshape((Nx,Ny,Nz))[:,Ny//2,:]); plt.show()
+
     def compute_gradient_solution_mp(u):
         """
         This function computes \nabla u^+ and \nabla u^- given a solution vector u.
@@ -552,10 +681,8 @@ def poisson_solver(gstate, sim_state):
             return grad_m, grad_p
         return vmap(convolve_at_node, (0,0,0))(nodes, D_m_mat, D_p_mat)  
     
-    # grad_u_mp_normal_to_interface = compute_normal_gradient_solution_mp_on_interface(params['u'])
-    # grad_u_mp = compute_gradient_solution_mp(params['u'])
-    # return params['u'], grad_u_mp, grad_u_mp_normal_to_interface
+    grad_u_mp = compute_gradient_solution_mp(params['u'])
+    # plt.pcolor(grad_u_mp[0].reshape((Nx,Ny,Nz,3))[:,Ny//2,:,1]); plt.show()
+    
 
-    grad_u_mp_normal_to_interface = compute_normal_gradient_solution_mp_on_interface(final_solution)
-    grad_u_mp = compute_gradient_solution_mp(final_solution)
-    return final_solution, grad_u_mp, grad_u_mp_normal_to_interface
+    return params['u'], grad_u_mp, grad_u_mp_normal_to_interface

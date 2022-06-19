@@ -663,9 +663,9 @@ In each network we implement one hidden layer with $\ge 7$ neurons and the outpu
 
 \subsection{Differentiable solution strategy}
 
-We define the loss function by the 2-norm of the residual of the discretized function:
+We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions evaluated on the grid points:
 \begin{align*}
-	\mathcal{L}(u) = \vert\vert Au - b\vert\vert_2^2
+	&\mathcal{L}(u) = \vert\vert Au(\mathbf{x}_{ijk}) - b\vert\vert_2^2 & \mathbf{x}_{ijk}\in \Omega
 \end{align*}
 JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
 
