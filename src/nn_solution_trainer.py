@@ -5,6 +5,10 @@ from functools import partial
 import optax
 import pdb
 import time
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+
 
 from src.nn_solution_model import DoubleMLP
 
