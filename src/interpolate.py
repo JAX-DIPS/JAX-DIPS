@@ -399,17 +399,20 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         # correcting for second derivatives:
         dd = (dx, dy, dz)
         
-        ngbs = np.array([[i  , j  , k  ],
-                         [i+1, j  , k  ],
-                         [i  , j+1, k  ],
-                         [i  , j  , k+1],
-                         [i+1, j  , k+1],
-                         [i  , j+1, k+1], 
-                         [i+1, j+1, k  ],
-                         [i+1, j+1, k+1]], dtype=i32)
         
-        d2x_d2y_d2z = vmap(second_order_deriv, (0,0,0, None))(ngbs[:,0], ngbs[:,1], ngbs[:,2], dd)
-        d2c_dxx, d2c_dyy, d2c_dzz = np.min(np.abs(d2x_d2y_d2z), axis=0)
+        
+        
+        # ngbs = np.array([[i  , j  , k  ],
+        #                  [i+1, j  , k  ],
+        #                  [i  , j+1, k  ],
+        #                  [i  , j  , k+1],
+        #                  [i+1, j  , k+1],
+        #                  [i  , j+1, k+1], 
+        #                  [i+1, j+1, k  ],
+        #                  [i+1, j+1, k+1]], dtype=i32)
+        
+        # d2x_d2y_d2z = vmap(second_order_deriv, (0,0,0, None))(ngbs[:,0], ngbs[:,1], ngbs[:,2], dd)
+        # d2c_dxx, d2c_dyy, d2c_dzz = np.min(np.abs(d2x_d2y_d2z), axis=0)
 
         # pdb.set_trace()
         # d2x_000, d2y_000, d2z_000 = second_order_deriv(i  , j  , k  , dd)
@@ -422,9 +425,43 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         # d2x_110, d2y_110, d2z_110 = second_order_deriv(i+1, j+1, k  , dd)
         # d2x_111, d2y_111, d2z_111 = second_order_deriv(i+1, j+1, k+1, dd)
         
-        # d2c_dxx = np.min(np.array([np.abs(d2x_000),np.abs(d2x_100),np.abs(d2x_010),np.abs(d2x_001),np.abs(d2x_101),np.abs(d2x_011),np.abs(d2x_110),np.abs(d2x_111)]))
-        # d2c_dyy = np.min(np.array([np.abs(d2y_000),np.abs(d2y_100),np.abs(d2y_010),np.abs(d2y_001),np.abs(d2y_101),np.abs(d2y_011),np.abs(d2y_110),np.abs(d2y_111)]))
-        # d2c_dzz = np.min(np.array([np.abs(d2z_000),np.abs(d2z_100),np.abs(d2z_010),np.abs(d2z_001),np.abs(d2z_101),np.abs(d2z_011),np.abs(d2z_110),np.abs(d2z_111)]))
+        d2x_000 = (c_cube[i+1, j  , k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i-1,j  ,k  ]) 
+        d2y_000 = (c_cube[i  , j+1, k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i  ,j-1,k  ]) 
+        d2z_000 = (c_cube[i  , j  , k+1] - 2*c_cube[i  ,j  ,k  ] + c_cube[i  ,j  ,k-1])
+
+        d2x_100 = (c_cube[i+2, j  , k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i  ,j  ,k  ]) 
+        d2y_100 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i+1,j-1,k  ]) 
+        d2z_100 = (c_cube[i+1, j  , k+1] - 2*c_cube[i+1,j  ,k  ] + c_cube[i+1,j  ,k-1])
+
+        d2x_010 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i-1,j+1,k  ]) 
+        d2y_010 = (c_cube[i  , j+2, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i  ,j  ,k  ]) 
+        d2z_010 = (c_cube[i  , j+1, k+1] - 2*c_cube[i  ,j+1,k  ] + c_cube[i  ,j+1,k-1])
+
+        d2x_001 = (c_cube[i+1, j  , k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i-1,j  ,k+1]) 
+        d2y_001 = (c_cube[i  , j+1, k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i  ,j-1,k+1]) 
+        d2z_001 = (c_cube[i  , j  , k+2] - 2*c_cube[i  ,j  ,k+1] + c_cube[i  ,j  ,k  ])
+
+
+        d2x_101 = (c_cube[i+2, j  , k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i  ,j  ,k+1]) 
+        d2y_101 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i+1,j-1,k+1]) 
+        d2z_101 = (c_cube[i+1, j  , k+2] - 2*c_cube[i+1,j  ,k+1] + c_cube[i+1,j  ,k  ])
+
+        d2x_011 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i-1,j+1,k+1]) 
+        d2y_011 = (c_cube[i  , j+2, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i  ,j  ,k+1]) 
+        d2z_011 = (c_cube[i  , j+1, k+2] - 2*c_cube[i  ,j+1,k+1] + c_cube[i  ,j+1,k  ])
+
+        d2x_110 = (c_cube[i+2, j+1, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i  ,j+1,k  ]) 
+        d2y_110 = (c_cube[i+1, j+2, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i+1,j  ,k  ]) 
+        d2z_110 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i+1,j+1,k  ] + c_cube[i+1,j+1,k-1])
+
+        d2x_111 = (c_cube[i+2, j+1, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i  ,j+1,k+1]) 
+        d2y_111 = (c_cube[i+1, j+2, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i+1,j  ,k+1]) 
+        d2z_111 = (c_cube[i+1, j+1, k+2] - 2*c_cube[i+1,j+1,k+1] + c_cube[i+1,j+1,k  ])
+
+
+        d2c_dxx = np.min(np.array([np.abs(d2x_000),np.abs(d2x_100),np.abs(d2x_010),np.abs(d2x_001),np.abs(d2x_101),np.abs(d2x_011),np.abs(d2x_110),np.abs(d2x_111)]))
+        d2c_dyy = np.min(np.array([np.abs(d2y_000),np.abs(d2y_100),np.abs(d2y_010),np.abs(d2y_001),np.abs(d2y_101),np.abs(d2y_011),np.abs(d2y_110),np.abs(d2y_111)]))
+        d2c_dzz = np.min(np.array([np.abs(d2z_000),np.abs(d2z_100),np.abs(d2z_010),np.abs(d2z_001),np.abs(d2z_101),np.abs(d2z_011),np.abs(d2z_110),np.abs(d2z_111)]))
 
         c  = c - d2c_dxx * f32(0.5) * x_d * (f32(1.0) - x_d) - d2c_dyy * f32(0.5) * y_d * (f32(1.0) - y_d) - d2c_dzz * f32(0.5) * z_d * (f32(1.0) - z_d) 
 
