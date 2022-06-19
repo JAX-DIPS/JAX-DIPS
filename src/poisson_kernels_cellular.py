@@ -446,6 +446,9 @@ def poisson_solver(gstate, sim_state):
 
     # optimizer = optax.adam(learning_rate)
     # optimizer = optax.rmsprop(learning_rate)
+    
+    #---------------------
+    
     boundary = {}
     boundary['x_L'] = nodes[:,0]==2
     boundary['x_R'] = nodes[:,0]==Nx+1

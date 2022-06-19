@@ -58,14 +58,14 @@ class Trainer:
         pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
         lhs_rhs = self.compute_Ax_and_b_fn(pred_sol)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        
+
         tot_loss = optax.l2_loss(lhs, rhs).mean()                     
-        loss += jnp.square(pred_sol[boundary['x_L']] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
-        loss += jnp.square(pred_sol[boundary['x_R']] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
-        loss += jnp.square(pred_sol[boundary['y_L']] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
-        loss += jnp.square(pred_sol[boundary['y_R']] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
-        loss += jnp.square(pred_sol[boundary['z_L']] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
-        loss += jnp.square(pred_sol[boundary['z_R']] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol[boundary['x_L']] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol[boundary['x_R']] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol[boundary['y_L']] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol[boundary['y_R']] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol[boundary['z_L']] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol[boundary['z_R']] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
         
         return tot_loss
 
