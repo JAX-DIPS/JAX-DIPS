@@ -15,6 +15,7 @@ class DoubleMLP(hk.Module):
         self.num_hidden_layers = 2
         self.hidden_dim = 10
         self.activation_fn = jnn.silu
+        self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=1.0, mean=0.0)
 
 
     def __call__(self, r, phi_r):
@@ -34,7 +35,7 @@ class DoubleMLP(hk.Module):
             one scalar value representing the solution u_p
         '''
         for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim)(h)
+            h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h
@@ -48,7 +49,7 @@ class DoubleMLP(hk.Module):
             one scalar value representing the solution u_m
         '''
         for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim)(h)
+            h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h

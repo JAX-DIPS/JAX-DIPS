@@ -427,8 +427,26 @@ def poisson_solver(gstate, sim_state):
     #------ Solvers are below:
 
 
-    optimizer = optax.adam(learning_rate=1e-2)
-    # optimizer = optax.rmsprop(FLAGS.learning_rate)
+    #--- Defining Optimizer
+    
+    # ------ Exponential decay of the learning rate.
+    decay_rate_ = 0.975
+    learning_rate = 1e-2
+    scheduler = optax.exponential_decay(
+        init_value=learning_rate,
+        transition_steps=100,
+        decay_rate=decay_rate_)
+    # Combining gradient transforms using `optax.chain`.
+    optimizer = optax.chain(                         
+                            optax.clip_by_global_norm(1.0), # Clip the gradient by the global norm.
+                            optax.scale_by_adam(),  # Use the updates from adam.
+                            optax.scale_by_schedule(scheduler), # Use the learning rate from the scheduler.
+                            optax.scale(-1.0) # Scale updates by -1 since optax.apply_updates is additive and we want to descend on the loss.
+    )
+
+    # optimizer = optax.adam(learning_rate)
+    # optimizer = optax.rmsprop(learning_rate)
+
     final_solution = train(optimizer, compute_Ax_and_b_fn, gstate.R, phi_cube_.reshape(-1), num_epochs=10000)
 
 
@@ -465,26 +483,7 @@ def poisson_solver(gstate, sim_state):
     # x_cube = x_cube.at[ :, :,-1].set(dirichlet_cube[ :, :,-1])
     # x = x_cube.reshape(-1)
 
-    # #--- Defining Optimizer
-    # # ------ Exponential decay of the learning rate.
-    # decay_rate_ = 0.975
-    # learning_rate = 1e-2
-
-
-    # scheduler = optax.exponential_decay(
-    #     init_value=learning_rate,
-    #     transition_steps=100,
-    #     decay_rate=decay_rate_)
-
-
-    # # Combining gradient transforms using `optax.chain`.
-    # optimizer = optax.chain(                         
-    #                         optax.clip_by_global_norm(1.0), # Clip the gradient by the global norm.
-    #                         optax.scale_by_adam(),  # Use the updates from adam.
-    #                         optax.scale_by_schedule(scheduler), # Use the learning rate from the scheduler.
-    #                         optax.scale(-1.0) # Scale updates by -1 since optax.apply_updates is additive and we want to descend on the loss.
-    # )
-
+    
     # Optimization Problem is set up by defining: (1) params, (2) compute_loss(params) 
     # params = {'u': x}                        # parameters to be optimized
     # @jit
