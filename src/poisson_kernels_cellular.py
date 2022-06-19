@@ -424,53 +424,48 @@ def poisson_solver(gstate, sim_state):
         return lhs_rhs
 
 
-    @jit
-    def compute_residual(x):
-        """
-        Evaluates the residual given x in the l2 norm.
-        """
-        lhs_rhs = compute_Ax_and_b_fn(x)
-        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        loss = optax.l2_loss(lhs, rhs).mean() 
-        # regularizer on boundaries
-        x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-        loss += jnp.square(x_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
-        loss += jnp.square(x_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
-        loss += jnp.square(x_cube[ :, 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
-        loss += jnp.square(x_cube[ :,-1, :] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
-        loss += jnp.square(x_cube[ :, :, 0] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
-        loss += jnp.square(x_cube[ :, :,-1] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
-        return loss
-
-
-    # --- initiate iterations from provided guess
-    x = sim_state.solution
-    # --- impose the dirichlet bc because bc's won't be updated.
-    x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    x_cube = x_cube.at[ 0, :, :].set(dirichlet_cube[ 0, :, :])
-    x_cube = x_cube.at[-1, :, :].set(dirichlet_cube[-1, :, :])
-    x_cube = x_cube.at[ :, 0, :].set(dirichlet_cube[ :, 0, :])
-    x_cube = x_cube.at[ :,-1, :].set(dirichlet_cube[ :,-1, :])
-    x_cube = x_cube.at[ :, :, 0].set(dirichlet_cube[ :, :, 0])
-    x_cube = x_cube.at[ :, :,-1].set(dirichlet_cube[ :, :,-1])
-    x = x_cube.reshape(-1)
-
-
-
-
-    
-
-
+    #------ Solvers are below:
 
 
     optimizer = optax.adam(learning_rate=1e-2)
     # optimizer = optax.rmsprop(FLAGS.learning_rate)
-
     final_solution = train(optimizer, compute_Ax_and_b_fn, gstate.R, phi_cube_.reshape(-1), num_epochs=10000)
 
 
 
-    ''' Defining Optimizer'''
+    #------- Explicitly solving for each node value is below:
+
+    # @jit
+    # def compute_residual(x):
+    #     """
+    #     Evaluates the residual given x in the l2 norm.
+    #     """
+    #     lhs_rhs = compute_Ax_and_b_fn(x)
+    #     lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+    #     loss = optax.l2_loss(lhs, rhs).mean() 
+    #     # regularizer on boundaries
+    #     x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    #     loss += jnp.square(x_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
+    #     loss += jnp.square(x_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
+    #     loss += jnp.square(x_cube[ :, 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
+    #     loss += jnp.square(x_cube[ :,-1, :] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
+    #     loss += jnp.square(x_cube[ :, :, 0] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
+    #     loss += jnp.square(x_cube[ :, :,-1] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
+    #     return loss
+
+    # --- initiate iterations from provided guess
+    # x = sim_state.solution
+    # # --- impose the dirichlet bc because bc's won't be updated.
+    # x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+    # x_cube = x_cube.at[ 0, :, :].set(dirichlet_cube[ 0, :, :])
+    # x_cube = x_cube.at[-1, :, :].set(dirichlet_cube[-1, :, :])
+    # x_cube = x_cube.at[ :, 0, :].set(dirichlet_cube[ :, 0, :])
+    # x_cube = x_cube.at[ :,-1, :].set(dirichlet_cube[ :,-1, :])
+    # x_cube = x_cube.at[ :, :, 0].set(dirichlet_cube[ :, :, 0])
+    # x_cube = x_cube.at[ :, :,-1].set(dirichlet_cube[ :, :,-1])
+    # x = x_cube.reshape(-1)
+
+    # #--- Defining Optimizer
     # # ------ Exponential decay of the learning rate.
     # decay_rate_ = 0.975
     # learning_rate = 1e-2
@@ -520,6 +515,9 @@ def poisson_solver(gstate, sim_state):
     # plt.close()
     
    
+
+    #------------- Gradients of discovered solutions are below:
+
     #Compute normal gradients for error analysis
     def compute_normal_gradient_solution_mp_on_interface(u):
         """
