@@ -446,8 +446,15 @@ def poisson_solver(gstate, sim_state):
 
     # optimizer = optax.adam(learning_rate)
     # optimizer = optax.rmsprop(learning_rate)
-    shape_grid = (xo.shape[0], yo.shape[0], zo.shape[0])
-    final_solution = train(optimizer, compute_Ax_and_b_fn, gstate.R, phi_cube_.reshape(-1), shape_grid, dirichlet_cube, Vol_cell_nominal, num_epochs=10000)
+    boundary = {}
+    boundary['x_L'] = nodes[:,0]==2
+    boundary['x_R'] = nodes[:,0]==Nx+1
+    boundary['y_L'] = nodes[:,1]==2
+    boundary['y_R'] = nodes[:,1]==Ny+1
+    boundary['z_L'] = nodes[:,2]==2
+    boundary['z_R'] = nodes[:,2]==Nz+1
+    
+    final_solution = train(optimizer, compute_Ax_and_b_fn, gstate.R, phi_cube_.reshape(-1), boundary, dirichlet_cube, Vol_cell_nominal, num_epochs=10000)
 
 
 
