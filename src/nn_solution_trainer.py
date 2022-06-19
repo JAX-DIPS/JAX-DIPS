@@ -45,20 +45,16 @@ class Trainer:
         return opt_state, params
 
 
-
-    @partial(jit, static_argnums=0)
     def evaluation_fn(self, params):
         sol_fn =  partial(self.forward.apply, params, None)
         return sol_fn
-
-
 
     @partial(jit, static_argnums=0)
     def loss(self, params, R_flat, phi_flat):
         """
             Loss function of the neural network
         """        
-        sol_fn =  self.evaluation_fn(params) #partial(self.forward.apply, params, None)
+        sol_fn =  partial(self.forward.apply, params, None)
         pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
         lhs_rhs = self.compute_Ax_and_b_fn(pred_sol)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
@@ -109,7 +105,8 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, num_epochs=10000):
             for elem in val:
                 res *= elem
             num_params += res
-
+    
+    print('\n')
     print(f"Total number of trainable parameters is equal to {num_params} ...")
     print('\n')
     
