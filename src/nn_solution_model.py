@@ -1,10 +1,5 @@
 import haiku as hk
-import jax
-from jax import (numpy as jnp, vmap, grad, jit, random, nn as jnn)
-from functools import partial
-import optax
-import pdb
-
+from jax import (numpy as jnp, nn as jnn)
 
 
 class DoubleMLP(hk.Module):
