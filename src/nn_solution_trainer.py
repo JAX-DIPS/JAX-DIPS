@@ -107,7 +107,7 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, num_epochs=10000):
             num_params += res
     
     print('\n')
-    print(f"Total number of trainable parameters is equal to {num_params} ...")
+    print(f"Total number of trainable parameters = {num_params} ...")
     print('\n')
     
     #----------------------------------------------------------------------    
