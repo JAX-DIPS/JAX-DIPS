@@ -133,5 +133,6 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, num_epochs=10000):
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
 
-    solution = vmap(trainer.evaluation_fn, (0,0))(R_flat, phi_flat)
+    sol_fn = trainer.evaluation_fn(params)
+    solution = vmap(sol_fn, (0,0))(R_flat, phi_flat)
     return solution
