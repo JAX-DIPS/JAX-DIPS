@@ -9,6 +9,8 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
+from jax import config
+config.update("jax_debug_nans", True)
 
 from src.nn_solution_model import DoubleMLP
 
@@ -50,7 +52,7 @@ class Trainer:
         sol_fn =  partial(self.forward.apply, params, None)
         return sol_fn
 
-    @partial(jit, static_argnums=(0))
+    # @partial(jit, static_argnums=(0))
     def loss(self, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):
         """
             Loss function of the neural network
@@ -73,7 +75,7 @@ class Trainer:
         return tot_loss
 
 
-    @partial(jit, static_argnums=(0,))
+    # @partial(jit, static_argnums=(0,))
     def update(self, opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):      
         loss, grads = value_and_grad(self.loss)(params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)

@@ -13,7 +13,7 @@ f32 = util.f32
 i32 = util.i32
 
 from jax import config
-config.update("jax_debug_nans", False)
+config.update("jax_debug_nans", True)
 
 
 def poisson_solver(gstate, sim_state):
@@ -70,7 +70,7 @@ def poisson_solver(gstate, sim_state):
 
     nodes = jnp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1)))
 
-    @jit
+    # @jit
     def get_X_ijk():
         Xijk = jnp.array([[-dx, -dy, -dz],
                           [0.0, -dy, -dz],
@@ -130,18 +130,18 @@ def poisson_solver(gstate, sim_state):
 
         return Xijk, ngbs
 
-    @jit
+    # @jit
     def sign_pm_fn(a):
         sgn = jnp.sign(a)
         return jnp.sign(sgn - 0.5)
 
-    @jit
+    # @jit
     def sign_p_fn(a):
         # returns 1 only if a>0, otherwise is 0
         sgn = jnp.sign(a)
         return jnp.floor(0.5 * sgn + 0.75)
 
-    @jit
+    # @jit
     def sign_m_fn(a):
         # returns 1 only if a<0, otherwise is 0
         sgn = jnp.sign(a)
@@ -151,17 +151,17 @@ def poisson_solver(gstate, sim_state):
 
     def cube_at(cube, ind):
         return cube[ind[0], ind[1], ind[2]]
-    cube_at_v = jit(vmap(cube_at, (None, 0)))
+    cube_at_v = vmap(cube_at, (None, 0))
 
-    @jit
+    # @jit
     def get_W_p_fn(cube, inds):
         return jnp.diag(vmap(sign_p_fn)(cube_at_v(cube, inds)))
 
-    @jit
+    # @jit
     def get_W_m_fn(cube, inds):
         return jnp.diag(vmap(sign_m_fn)(cube_at_v(cube, inds)))
 
-    @jit
+    # @jit
     def get_W_pm_matrices(node, phi_cube):
         i, j, k = node
         curr_ngbs = jnp.add(jnp.array([i, j, k]), ngbs)
@@ -169,17 +169,17 @@ def poisson_solver(gstate, sim_state):
         Wm = get_W_m_fn(phi_cube, curr_ngbs)
         return Wm, Wp
 
-    @jit
+    # @jit
     def D_mp_node_update(node):
         Wijk_m, Wijk_p = get_W_pm_matrices(node, phi_cube)
         Dp = jnp.linalg.pinv(Xijk.T @ Wijk_p @ Xijk) @ (Wijk_p @ Xijk).T
         Dm = jnp.linalg.pinv(Xijk.T @ Wijk_m @ Xijk) @ (Wijk_m @ Xijk).T
         return jnp.nan_to_num(Dm), jnp.nan_to_num(Dp)
-    D_mp_fn = jit(vmap(D_mp_node_update))
+    D_mp_fn = vmap(D_mp_node_update)
 
     D_m_mat, D_p_mat = D_mp_fn(nodes)
 
-    @jit
+    # @jit
     def normal_vec_fn(node):
         i, j, k = node
         phi_x = (phi_cube[i+1, j, k] - phi_cube[i-1, j, k]) / (f32(2) * dx)
@@ -192,7 +192,7 @@ def poisson_solver(gstate, sim_state):
 
     def get_c_ijk_pqm(normal_ijk, D_ijk):
         return normal_ijk @ D_ijk
-    get_c_ijk_pqm_vec = jit(vmap(get_c_ijk_pqm, (0, 0)))
+    get_c_ijk_pqm_vec = vmap(get_c_ijk_pqm, (0, 0))
 
     Cm_ijk_pqm = get_c_ijk_pqm_vec(normal_vecs, D_m_mat)
     Cp_ijk_pqm = get_c_ijk_pqm_vec(normal_vecs, D_p_mat)

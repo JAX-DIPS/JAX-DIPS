@@ -429,13 +429,13 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
     def vol_fn(A):
         tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) 
-        vol_tmp = (1.0 / 6.0) * jnp.sqrt(jnp.nan_to_num(tmp))
+        vol_tmp = (1.0 / 6.0) * jnp.sqrt(jnp.abs(jnp.nan_to_num(tmp)))
         return vol_tmp
 
   
     def area_fn(A):
         tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T )  #jnp.where(a_shape==(3,3), jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) , 0.0 ) 
-        return 0.5 * jnp.sqrt(jnp.nan_to_num(tmp))
+        return 0.5 * jnp.sqrt(jnp.abs(jnp.nan_to_num(tmp)))
 
     def positive_or_zero(num):
         return jnp.where(num < 0, 0.0, num)
