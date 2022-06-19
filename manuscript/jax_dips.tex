@@ -657,15 +657,18 @@ The solutions of interfacial PDE problems are discontinuous, with jumps appearin
 \begin{align*}
 & u^+ = \mathcal{N}^+(\mathbf{x}): \mathbb{R}^3\cap \Omega^+ \rightarrow \mathbb{R}  & u^- = \mathcal{N}^-(\mathbf{x}): \mathbb{R}^3\cap \Omega^- \rightarrow \mathbb{R}
 \end{align*}
-In each network we implement one hidden layer with $\ge 7$ neurons and the output layer has a single linear neuron. Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function defined on the $\rm L_2$-norm of the residual of the linear system obtained in section \ref{sec::FD}.
+
+In each network we implement two hidden layers with $10$ neurons per layer using \texttt{ReLU} activation function and the output layer is a single linear neuron. Weights and biases are initialized from a truncated normal distribution with zero mean and unit variance. There are a total of $322$ trainable parameters.
+
+Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function.
 
 
 
 \subsection{Differentiable solution strategy}
 
-We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions evaluated on the grid points:
+We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
 \begin{align*}
-	&\mathcal{L}(u) = \vert\vert Au(\mathbf{x}_{ijk}) - b\vert\vert_2^2 & \mathbf{x}_{ijk}\in \Omega
+	&\mathcal{L}(u) = \vert\vert A\hat{u}(\mathbf{x}_{ijk}\in \Omega) - b\vert\vert_2^2 + \textrm{vol}_{\mathcal{C}}\vert\vert \hat{u}(\mathbf{x}_{ijk}\in\partial \Omega) - u(\mathbf{x}_{ijk}\in\partial \Omega)\vert\vert_2^2 
 \end{align*}
 JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
 
@@ -737,7 +740,10 @@ that imply
 &f^+(x,y,z)=2\cos(x)\sin(y)e^{-z} &\phi(\mathbf{x})\ge 0
 \end{align*}
 
-Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM.
+Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM. 
+\begin{align*}
+\frac{\textrm{err}(2h)}{\textrm{err}(h)}=2^p \rightarrow p = log_2\bigg(\frac{\textrm{err}(2h)}{\textrm{err}(h)}\bigg)
+\end{align*}
 
 
 \begin{table}[ht]
@@ -748,13 +754,13 @@ Table 8 of \cite{guittet2015solving} reports convergence results for the solutio
 \hline
 Resolution   &   Solution    &   Order   &   Solution   &   Order &   Gradient    &   Order   &   Gradient   &   Order  \\
 \hline
-$2^3$ & $3.61\times 10^{-3}$ & -         & - & - & $1.13\times 10^{-2}$ & - & - & - \\ 
-$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $1.64\times 10^{-1}$ & - & $7.69\times 10^{-3}$ & $0.56$ & $4.86\times 10^{-1}$ & -\\ 
+$2^3$ & $3.61\times 10^{-3}$ & -         & $9.49\times 10^{-1}$ & -      & $1.13\times 10^{-2}$ & -      & $2.38$               & -     \\ 
+$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $1.56\times 10^{-1}$ & $2.60$ & $7.69\times 10^{-3}$ & $0.56$ & $4.80\times 10^{-1}$ & $2.31$\\ 
 $2^5$ & $3.04\times 10^{-4}$ & $1.99$    & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & -\\ 
 $2^6$ & $7.74\times 10^{-5}$ & $1.98$    & - & - & $2.43\times 10^{-3}$ & $0.66$ & - & -\\ 
 $2^7$ & $1.97\times 10^{-5}$ & $1.98$    & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -\\ \hline
 \end{tabular}
-\caption{Convergence on the solution and its gradient in the $L^\infty$-norm over the surface of the sphere.}
+\caption{Convergence on the solution and its gradient. VIM values are the $L^\infty$-norm over the surface of the sphere. We report $L^\infty$-norm of solution and its gradient evaluated everywhere in the domain (more conservative).}
 \end{center}
 \end{table}
 
