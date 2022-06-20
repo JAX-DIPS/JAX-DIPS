@@ -371,7 +371,7 @@ def poisson_solver(gstate, sim_state):
 
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
-
+            
             def get_lhs_at_interior_node(node):
                 i, j, k = node
                 # k_cube's don't have ghost layers
@@ -395,7 +395,7 @@ def poisson_solver(gstate, sim_state):
                 u_m_ijkp, u_p_ijkp = u_mp_at_node(i  , j  , k+1)
                 lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
                 return lhs
-
+            
             def get_lhs_on_box_boundary(node):
                 i, j, k = node
                 lhs = u_cube[i-2, j-2, k-2] * Vol_cell_nominal
@@ -403,12 +403,13 @@ def poisson_solver(gstate, sim_state):
             lhs = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
 
             #--- RHS
+            
             def get_rhs_at_interior_node(node):
                 i, j, k = node
                 rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
                 rhs += beta_integrate_over_interface_at_node(node)
                 return rhs
-
+            
             def get_rhs_on_box_boundary(node):
                 """
                 Imposing Dirichlet BCs on the RHS

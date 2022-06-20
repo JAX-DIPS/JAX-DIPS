@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  18 JUN 2022 23:35
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  19 JUN 2022 21:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -712,7 +712,7 @@ Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
 (hyperref)                removing `math shift' on input line 726.
 
 
-Overfull \hbox (50.03415pt too wide) in paragraph at lines 751--763
+Overfull \hbox (80.312pt too wide) in paragraph at lines 751--763
  [] 
  []
 
@@ -762,7 +762,7 @@ i7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb>
 share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/t
 exlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/te
 xlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jax_dips.pdf (14 pages, 486627 bytes).
+Output written on jax_dips.pdf (14 pages, 486846 bytes).
 PDF statistics:
  353 PDF objects out of 1000 (max. 8388607)
  299 compressed objects within 3 object streams

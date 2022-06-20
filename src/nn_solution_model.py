@@ -10,7 +10,7 @@ class DoubleMLP(hk.Module):
     
         self.num_hidden_layers = 2
         self.hidden_dim = 10
-        self.activation_fn = jnn.relu 
+        self.activation_fn = jnn.tanh 
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=1.0, mean=0.0)
 
 

@@ -52,7 +52,25 @@ class Trainer:
         sol_fn =  partial(self.forward.apply, params, None)
         return sol_fn
 
-    # @partial(jit, static_argnums=(0))
+
+    @partial(jit, static_argnums=(0))
+    def weighted_loss_fn(self, phi_flat, lhs, rhs, sol_cube, dirichlet_cube, Vol_cell_nominal):
+        """
+            Weighted L2 loss with exp(-\phi^2) to emphasize error around boundaries
+        """
+        weight = jnp.exp(-1.0*jnp.square(phi_flat))
+        tot_loss = jnp.mean(weight * optax.l2_loss(lhs, rhs))             
+        tot_loss += jnp.square(sol_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[: , 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[: ,-1, :] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[: , :, 0] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(sol_cube[: , :,-1] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
+
+        return tot_loss
+
+
+
     def loss(self, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):
         """
             Loss function of the neural network
@@ -61,21 +79,11 @@ class Trainer:
         pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
         lhs_rhs = self.compute_Ax_and_b_fn(pred_sol)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-
-        # tot_loss = jnp.max(jnp.abs(lhs - rhs))
-        tot_loss = optax.l2_loss(lhs, rhs).mean()   
-        sol_cube = pred_sol.reshape(self.grid_shape)                  
-        tot_loss += jnp.square(sol_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(sol_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(sol_cube[: , 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(sol_cube[: ,-1, :] - dirichlet_cube[ :,-1, :]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(sol_cube[: , :, 0] - dirichlet_cube[ :, :, 0]).mean() * Vol_cell_nominal
-        tot_loss += jnp.square(sol_cube[: , :,-1] - dirichlet_cube[ :, :,-1]).mean() * Vol_cell_nominal
-        
+        sol_cube = pred_sol.reshape(self.grid_shape)      
+        tot_loss = self.weighted_loss_fn( phi_flat, lhs, rhs, sol_cube, dirichlet_cube, Vol_cell_nominal)
         return tot_loss
 
 
-    # @partial(jit, static_argnums=(0,))
     def update(self, opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):      
         loss, grads = value_and_grad(self.loss)(params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
