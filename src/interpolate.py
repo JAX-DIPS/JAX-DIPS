@@ -337,7 +337,8 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         j = which_cell_index(np.asarray(y_p >= y))
         k = which_cell_index(np.asarray(z_p >= z))
         return i, j, k
-
+    
+    @jit
     def find_lower_left_cell_idx(point):
         """
         find cell index (i,j,k) containing point
@@ -362,7 +363,7 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         dzz = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) #/ dz / dz
         return np.array([dxx, dyy, dzz])
 
-
+    @jit
     def single_cell_interp(point):
         """
         nonoscillatory quadratic interpolation
@@ -467,7 +468,7 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
 
         return c
 
-
+    @jit
     def interp_fn(R_star):
         """
         interpolate on all provided points
@@ -591,7 +592,7 @@ def multilinear_interpolation(c, gstate):
         j = which_cell_index(np.asarray(y_p >= y))
         k = which_cell_index(np.asarray(z_p >= z))
         return i, j, k
-
+    @jit
     def find_lower_left_cell_idx(point):
         """
         find cell index (i,j,k) containing point
@@ -610,7 +611,7 @@ def multilinear_interpolation(c, gstate):
         k = lax.cond(k <= 1, lambda p: i32(2), lambda p: p, k)
 
         return i, j, k
-
+    @jit
     def single_cell_interp(point):
         """
         Trilinear interpolation
@@ -646,7 +647,7 @@ def multilinear_interpolation(c, gstate):
 
         return c
 
-
+    @jit
     def interp_fn(R_star):
         """
         interpolate on all provided points

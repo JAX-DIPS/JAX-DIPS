@@ -1,7 +1,7 @@
 import haiku as hk
 from jax import (numpy as jnp, nn as jnn)
 from jax import config
-config.update("jax_debug_nans", True)
+config.update("jax_debug_nans", False)
 
 class DoubleMLP(hk.Module):
 

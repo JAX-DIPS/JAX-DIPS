@@ -10,7 +10,7 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 from jax import config
-config.update("jax_debug_nans", True)
+config.update("jax_debug_nans", False)
 
 from src.nn_solution_model import DoubleMLP
 
@@ -47,10 +47,11 @@ class Trainer:
         opt_state = self.optimizer.init(params)
         return opt_state, params
 
-
-    def evaluation_fn(self, params):
+    @partial(jit, static_argnums=(0))
+    def evaluation_solution_fn(self, params, R_flat, phi_flat):
         sol_fn =  partial(self.forward.apply, params, None)
-        return sol_fn
+        pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
+        return pred_sol
 
 
     @partial(jit, static_argnums=(0))
@@ -58,8 +59,9 @@ class Trainer:
         """
             Weighted L2 loss with exp(-\phi^2) to emphasize error around boundaries
         """
-        weight = jnp.exp(-1.0*jnp.square(phi_flat))
-        tot_loss = jnp.mean(weight * optax.l2_loss(lhs, rhs))             
+        # weight = jnp.exp(-1.0*jnp.square(phi_flat))
+        # tot_loss = jnp.mean(weight * optax.l2_loss(lhs, rhs)) #/ jnp.mean(weight)            
+        tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
         tot_loss += jnp.square(sol_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
         tot_loss += jnp.square(sol_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
         tot_loss += jnp.square(sol_cube[: , 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal
@@ -75,12 +77,14 @@ class Trainer:
         """
             Loss function of the neural network
         """        
-        sol_fn =  partial(self.forward.apply, params, None)
-        pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
+        pred_sol = self.evaluation_solution_fn(params, R_flat, phi_flat)
+        
         lhs_rhs = self.compute_Ax_and_b_fn(pred_sol)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+
         sol_cube = pred_sol.reshape(self.grid_shape)      
         tot_loss = self.weighted_loss_fn( phi_flat, lhs, rhs, sol_cube, dirichlet_cube, Vol_cell_nominal)
+        
         return tot_loss
 
 
@@ -153,6 +157,8 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, grid_shape, dirichle
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
 
-    sol_fn = trainer.evaluation_fn(params)
-    solution = vmap(sol_fn, (0,0))(R_flat, phi_flat)
+    # sol_fn = trainer.evaluation_fn(params)
+    # solution = vmap(sol_fn, (0,0))(R_flat, phi_flat)
+    solution = trainer.evaluation_solution_fn(params, R_flat, phi_flat)
+
     return solution.reshape(-1)

@@ -1,5 +1,5 @@
 from jax import (numpy as jnp, vmap, jit, grad, random, nn as jnn)
-from functools import partial
+from functools import (partial, lru_cache)
 import optax
 import haiku as hk
 from src import (interpolate, util, geometric_integrations)
@@ -13,7 +13,7 @@ f32 = util.f32
 i32 = util.i32
 
 from jax import config
-config.update("jax_debug_nans", True)
+config.update("jax_debug_nans", False)
 
 
 def poisson_solver(gstate, sim_state):
@@ -240,6 +240,7 @@ def poisson_solver(gstate, sim_state):
     """
     Vol_cell_nominal = dx*dy*dz
 
+    
 
     @jit
     def is_box_boundary_node(i, j, k):
@@ -371,6 +372,7 @@ def poisson_solver(gstate, sim_state):
 
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
+            
             
             def get_lhs_at_interior_node(node):
                 i, j, k = node

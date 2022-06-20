@@ -1,5 +1,6 @@
 from jax import (numpy as jnp, jit, vmap, lax)
 from src import (interpolate, util)
+import functools
 import pdb
 
 f32 = util.f32
@@ -441,6 +442,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
     def positive_or_zero(num):
         return jnp.where(num < 0, 0.0, num)
 
+
     @jit
     def compute_interface_faces(node):
         pieces = get_vertices_fn(node)  
@@ -635,7 +637,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
                           area_kmh_m, area_kmh_p, area_kph_m, area_kph_p], dtype=f32)
 
 
-
+ 
     @jit
     def compute_domain_faces(node, is_interface):
         """
@@ -697,7 +699,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
 
 
-    # @jit
+
     def compute_face_centroids_values_plus_minus_at_node(node):
         """
         Main driver, differentiating between domain cells and interface cells.
