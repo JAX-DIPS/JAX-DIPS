@@ -3,7 +3,7 @@ from jax import (lax,
                  vmap, 
                  numpy as jnp)
 from src.interpolate import add_ghost_layer_3d
-from src import util
+from src.jaxmd_modules import util
 import pdb
 
 # Typing

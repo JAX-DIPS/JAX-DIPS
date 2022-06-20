@@ -2,7 +2,7 @@
 from jax.config import config
 from optax import lamb
 from src import io, poisson_solver, mesh, level_set
-from src.util import f32, i32
+from src.jaxmd_modules.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad, lax)
 import jax
 import jax.profiler

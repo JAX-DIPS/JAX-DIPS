@@ -1,6 +1,6 @@
 import jax
 from jax import (jit, random, lax, ops, vmap, grad, numpy as jnp)
-from src.util import f32, i32
+from src.jaxmd_modules.util import f32, i32
 from functools import partial
 import pdb
 

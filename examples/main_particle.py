@@ -3,12 +3,13 @@ from jax import jit, random, lax, ops
 import jax.numpy as jnp
 import numpy as onp
 from jax.config import config
-from src.quantity import EnergyFn
+from src.jaxmd_modules import energy, partition
+from src.jaxmd_modules.quantity import EnergyFn
 config.update("jax_enable_x64", True)
-from src.util import f32, i32
-from src import partition, space
+from src.jaxmd_modules.util import f32, i32
+from src.jaxmd_modules import space
 from src import simulate_fields
-from src import energy, simulate_particles
+from src import simulate_particles
 from src import visualization
 import pdb
 

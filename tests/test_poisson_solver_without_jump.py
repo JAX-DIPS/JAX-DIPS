@@ -1,7 +1,7 @@
 
 from jax.config import config
 from src import io, poisson_solver, mesh, level_set
-from src.util import f32, i32
+from src.jaxmd_modules.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad)
 import jax
 import jax.profiler

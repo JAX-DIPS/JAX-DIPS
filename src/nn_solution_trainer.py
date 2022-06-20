@@ -48,14 +48,14 @@ class Trainer:
         return opt_state, params
 
     @partial(jit, static_argnums=(0))
-    def evaluation_solution_fn(self, params, R_flat, phi_flat):
+    def evaluate_solution_fn(self, params, R_flat, phi_flat):
         sol_fn =  partial(self.forward.apply, params, None)
         pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
         return pred_sol
 
 
     @partial(jit, static_argnums=(0))
-    def weighted_loss_fn(self, phi_flat, lhs, rhs, sol_cube, dirichlet_cube, Vol_cell_nominal):
+    def evaluate_loss_fn(self, phi_flat, lhs, rhs, sol_cube, dirichlet_cube, Vol_cell_nominal):
         """
             Weighted L2 loss with exp(-\phi^2) to emphasize error around boundaries
         """
@@ -77,13 +77,13 @@ class Trainer:
         """
             Loss function of the neural network
         """        
-        pred_sol = self.evaluation_solution_fn(params, R_flat, phi_flat)
+        pred_sol = self.evaluate_solution_fn(params, R_flat, phi_flat)
         
         lhs_rhs = self.compute_Ax_and_b_fn(pred_sol)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
 
         sol_cube = pred_sol.reshape(self.grid_shape)      
-        tot_loss = self.weighted_loss_fn( phi_flat, lhs, rhs, sol_cube, dirichlet_cube, Vol_cell_nominal)
+        tot_loss = self.evaluate_loss_fn( phi_flat, lhs, rhs, sol_cube, dirichlet_cube, Vol_cell_nominal)
         
         return tot_loss
 
@@ -159,6 +159,6 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, grid_shape, dirichle
 
     # sol_fn = trainer.evaluation_fn(params)
     # solution = vmap(sol_fn, (0,0))(R_flat, phi_flat)
-    solution = trainer.evaluation_solution_fn(params, R_flat, phi_flat)
+    solution = trainer.evaluate_solution_fn(params, R_flat, phi_flat)
 
     return solution.reshape(-1)

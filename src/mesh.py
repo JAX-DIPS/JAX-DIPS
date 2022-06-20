@@ -11,11 +11,11 @@ import jax
 
 import jax.numpy as jnp
 
-from src.util import Array
-from src.util import f32
-from src.util import f64
-from src.util import safe_mask
-from src import dataclasses
+from src.jaxmd_modules.util import Array
+from src.jaxmd_modules.util import f32
+from src.jaxmd_modules.util import f64
+from src.jaxmd_modules.util import safe_mask
+from src.jaxmd_modules import dataclasses
 
 # Types
 

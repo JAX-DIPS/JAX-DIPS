@@ -6,9 +6,11 @@ from typing import TypeVar, Callable, Union, Tuple
 from jax import grad, vmap, eval_shape
 import jax.numpy as jnp
 
-from src import space, dataclasses, partition, util
+from src.jaxmd_modules import util
 
 from functools import partial
+
+from src.jaxmd_modules import dataclasses, partition, space
 
 
 # Types

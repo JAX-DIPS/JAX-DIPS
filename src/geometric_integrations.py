@@ -1,7 +1,9 @@
 from jax import (numpy as jnp, jit, vmap, lax)
-from src import (interpolate, util)
+from src import (interpolate)
 import functools
 import pdb
+
+from src.jaxmd_modules import util
 
 f32 = util.f32
 i32 = util.i32

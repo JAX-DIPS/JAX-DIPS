@@ -3,8 +3,8 @@ from src.dips.utils.data import StateData
 from src import mesh, level_set
 from src import io
 from src import simulate_fields, interpolate
-from src import space
-from src.util import f32, i32
+from src.jaxmd_modules import space
+from src.jaxmd_modules.util import f32, i32
 from jax.experimental import host_callback
 from jax import (jit, lax, numpy as jnp, vmap)
 import jax.profiler

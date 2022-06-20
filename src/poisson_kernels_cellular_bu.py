@@ -2,9 +2,11 @@ from jax import (numpy as jnp, vmap, jit, grad, random)
 from functools import partial
 import optax
 import haiku as hk
-from src import (interpolate, util, geometric_integrations)
+from src import (interpolate, geometric_integrations)
 import pdb
 import matplotlib
+
+from src.jaxmd_modules import util
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 

@@ -14,7 +14,8 @@ from jax.abstract_arrays import ShapedArray
 from jax.interpreters import partial_eval as pe
 import jax.numpy as jnp
 
-from src import quantity, space, util
+from src.jaxmd_modules import util
+from src.jaxmd_modules import quantity, space
 
 high_precision_sum = util.high_precision_sum
 

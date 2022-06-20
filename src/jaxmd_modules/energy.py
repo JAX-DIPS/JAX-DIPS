@@ -8,7 +8,8 @@ import jax.numpy as np
 from jax.tree_util import tree_map
 from jax import vmap
 from jax.scipy.special import erfc  # error function
-from src import space, smap, partition, quantity, util
+from src.jaxmd_modules import util
+from src.jaxmd_modules import partition, quantity, smap, space
 
 maybe_downcast = util.maybe_downcast
 

@@ -15,7 +15,7 @@ import jax.numpy as np
 from jax import ops, lax, jit
 from scipy.interpolate import splrep, PPoly
 from scipy.interpolate import RegularGridInterpolator
-from src import util
+from src.jaxmd_modules import util
 import pdb
 
 # Typing

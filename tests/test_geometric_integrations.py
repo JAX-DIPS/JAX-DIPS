@@ -1,7 +1,8 @@
 from unittest import TextTestResult
 from jax.config import config
-from src import io, mesh, interpolate, geometric_integrations, dataclasses, util
-from src.util import f32, i32
+from src import io, mesh, interpolate, geometric_integrations
+from src.jaxmd_modules import dataclasses, util
+from src.jaxmd_modules.util import f32, i32
 from jax import (random, numpy as jnp, vmap)
 
 import os

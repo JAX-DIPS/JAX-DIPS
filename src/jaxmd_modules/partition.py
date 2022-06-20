@@ -19,7 +19,8 @@ from jax import custom_jvp
 import jax.numpy as np
 import numpy as onp
 
-from src import util, space, dataclasses
+from src.jaxmd_modules import util
+from src.jaxmd_modules import dataclasses, space
 
 
 # Types
@@ -36,7 +37,7 @@ MetricFn = space.MetricFn
 
 # Class for the cells and their transforms
 
-@dataclasses.dataclass
+@src.jaxmd_modules.dataclasses.dataclass
 class CellList:
     """Stores the mesh composed of grid cells."
     See cell_list(...) for details on the construction / specification.
@@ -330,7 +331,7 @@ def _displacement_or_metric_to_metric_sq(
 
 
 
-@dataclasses.dataclass
+@src.jaxmd_modules.dataclasses.dataclass
 class NeighborList(object):
   """A struct containing the state of a Neighbor List.
   Attributes:
@@ -352,8 +353,8 @@ class NeighborList(object):
   idx: Array
   reference_position: Array
   did_buffer_overflow: Array
-  max_occupancy: int = dataclasses.static_field()
-  cell_list_fn: Callable[[Array], CellList] = dataclasses.static_field()
+  max_occupancy: int = src.jaxmd_modules.dataclasses.static_field()
+  cell_list_fn: Callable[[Array], CellList] = src.jaxmd_modules.dataclasses.static_field()
 
 
 NeighborFn = Callable[[Array, Optional[NeighborList], Optional[int]],

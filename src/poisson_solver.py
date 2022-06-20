@@ -1,7 +1,9 @@
 from typing import Callable, TypeVar, Union, Tuple, Dict, Optional
 
-from src import (poisson_kernels_cellular, util, space, dataclasses, interpolate)
+from src import (poisson_kernels_cellular, interpolate)
 from jax import (vmap, numpy as jnp)
+
+from src.jaxmd_modules import dataclasses, util
 
 
 Array = util.Array

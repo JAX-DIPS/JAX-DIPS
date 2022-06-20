@@ -5,16 +5,17 @@ from jax._src.api import vmap
 import jax.numpy as jnp
 import numpy as onp
 from jax.config import config
-from src import quantity
-from src.quantity import EnergyFn
+from src.jaxmd_modules import quantity, space, util
+from src.jaxmd_modules import energy, partition
+from src.jaxmd_modules.quantity import EnergyFn
 config.update("jax_enable_x64", True)
-from src.util import f32, i32
-from src import partition, space, compositions
+from src.jaxmd_modules.util import f32, i32
+from src import compositions
 from src import simulate_fields
-from src import energy, simulate_particles
+from src import simulate_particles
 from src import io
 from src import mesh
-from src import util, interpolate 
+from src import interpolate 
 import pdb
 import os
 import numpy as onp

@@ -2,7 +2,8 @@ from jax import (numpy as jnp, vmap, jit, grad, random, nn as jnn)
 from functools import (partial, lru_cache)
 import optax
 import haiku as hk
-from src import (interpolate, util, geometric_integrations)
+from src import (interpolate, geometric_integrations)
+from src.jaxmd_modules import util
 from src.nn_solution_trainer import train
 import pdb
 import matplotlib

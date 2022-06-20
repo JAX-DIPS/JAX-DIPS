@@ -2,8 +2,8 @@ from jax.config import config
 from src import mesh
 from src import io
 from src import simulate_fields
-from src import space
-from src.util import f32, i32
+from src.jaxmd_modules import space
+from src.jaxmd_modules.util import f32, i32
 from jax import (jit, lax, numpy as jnp)
 import jax.profiler
 import jax

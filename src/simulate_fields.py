@@ -12,8 +12,10 @@ from numpy import int32
 from torch import norm
 # from min_gibou_tests import velocity_fn
 
-from src import (util, space, dataclasses, interpolate, quantity, level_set as ls)
+from src import (interpolate, level_set as ls)
 import pdb
+
+from src.jaxmd_modules import dataclasses, util
 
 
 static_cast = util.static_cast
@@ -24,9 +26,9 @@ i32 = util.i32
 f32 = util.f32
 f64 = util.f64
 
-Box = space.Box
 
-ShiftFn = space.ShiftFn
+
+
 
 T = TypeVar('T')
 InitFn = Callable[..., T]
@@ -171,7 +173,6 @@ def advect_level_set(gstate: T,
 
 
 def advect_one_step(velocity_fn: Callable[..., Array],
-                    shift_fn: ShiftFn,
                     dt: float,
                     sstate: T,
                     gstate: T,
@@ -263,7 +264,6 @@ class SIMState:
 
 # def level_set(velocity_or_energy_fn: Callable[..., Array],
 def level_set(level_set_fn: Callable[..., Array],
-              shift_fn: ShiftFn,
               dt: float) -> Simulator:
     """
     Simulates a system.
@@ -274,8 +274,7 @@ def level_set(level_set_fn: Callable[..., Array],
         [n, spatial_dimension]. 
         velocity_fn = -grad(Energy_fn)
 
-    shift_fn: A function that displaces positions, R, by an amount dR. Both R
-        and dR should be ndarrays of shape [n, spatial_dimension].
+  
     dt: Floating point number specifying the timescale (step size) of the
         simulation.
 
@@ -295,7 +294,7 @@ def level_set(level_set_fn: Callable[..., Array],
         return SIMState(U, V)  
 
     def apply_fn(velocity_fn, sim_state, grid_state, time, **kwargs):
-        return advect_one_step(velocity_fn, shift_fn, dt, sim_state, grid_state, time, **kwargs)
+        return advect_one_step(velocity_fn, dt, sim_state, grid_state, time, **kwargs)
 
     def reinitialize_fn(sim_state, grid_state, **kwargs):
         return reinitialize_level_set(sim_state, grid_state, **kwargs)
