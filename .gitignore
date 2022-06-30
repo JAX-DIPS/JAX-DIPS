@@ -1,6 +1,8 @@
 results/
 
 .pytest_cache
+./.cache
+./.local
 
 __pycache__/
 src/__pycache__
