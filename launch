@@ -5,12 +5,11 @@ DOCKER_CMD="docker run \
     --network host \
     --gpus all \
     -p ${JUPYTER_PORT}:8888 \
-    -v $(pwd):/workspace \
-    -e HOME=/workspace \
-    -e TF_CPP_MIN_LOG_LEVEL=0 \
     -v /etc/passwd:/etc/passwd:ro \
     -v /etc/group:/etc/group:ro \
     -v /etc/shadow:/etc/shadow:ro \
+    -v $(pwd):/workspace \
+    -e HOME=/workspace \
     -w /workspace"
 
 
@@ -33,6 +32,7 @@ build() {
 
 dev() {
     local DEV_IMG=${IMAGE_NAME}
+    PYTHONPATH='/workspace'
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -48,7 +48,13 @@ dev() {
         esac
     done
 
-    $DOCKER_CMD -u $(id -u):$(id -u) -it ${DEV_IMG} bash
+    $DOCKER_CMD \
+        --name jax_dip \
+        -u $(id -u):$(id -u) \
+        -e PYTHONPATH=$PYTHONPATH \
+        -it --rm \
+        ${DEV_IMG} \
+        bash
 }
 
 
@@ -58,6 +64,7 @@ case $1 in
         ;;
     dev)
         "$@"
+        exit 0
         ;;
     *)
         usage

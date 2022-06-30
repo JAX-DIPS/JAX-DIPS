@@ -1,6 +1,7 @@
 FROM nvidia/cuda:11.4.2-devel-ubuntu20.04
 
-RUN apt update && apt install -y git vim sudo python3 python3-pip
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive apt install -y git vim sudo python3 python3-pip python3-tk
 
 COPY ./requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
