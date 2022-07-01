@@ -1,2 +1,4 @@
 results/
 .git
+./.cache
+./.local
