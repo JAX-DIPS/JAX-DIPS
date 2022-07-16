@@ -87,7 +87,7 @@ class Trainer:
         
         return tot_loss
 
-
+    @partial(jit, static_argnums=(0))
     def update(self, opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):      
         loss, grads = value_and_grad(self.loss)(params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
