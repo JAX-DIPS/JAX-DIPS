@@ -775,7 +775,55 @@ After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty
 
 
 
+We consider a star-shaped interface with inner and outer radii $r_i=0.151$ and $r_e=0.911$ that is immersed in a box $\Omega:[-1,1]^3$ described by the level-set function
 
+\begin{align*}
+\phi(\mathbf{x}) = \sqrt{x^2 + y^2 + z^2} - r_0 \bigg( 1 + \big( \frac{x^2 + y^2}{x^2 + y^2 + z^2}\big)^2  \sum_{k=1}^3 \beta_k \cos\big(n_k \big(\arctan\big(\frac{y}{x}\big) - \theta_k\big) \big) \bigg)
+\end{align*}
+with the parameters
+\begin{align*}
+&r_0 = 0.483, &\begin{pmatrix}
+n_1\\
+\beta_1\\
+\theta_1
+\end{pmatrix}=\begin{pmatrix}
+3\\
+0.1\\
+0.5
+\end{pmatrix}, &\begin{pmatrix}
+n_2\\
+\beta_2\\
+\theta_2
+\end{pmatrix}=\begin{pmatrix}
+4\\
+-0.1\\
+1.8
+\end{pmatrix}, &\begin{pmatrix}
+n_3\\
+\beta_3\\
+\theta_3
+\end{pmatrix}=\begin{pmatrix}
+7\\
+0.15\\
+0
+\end{pmatrix}
+\end{align*}
+
+Considering an exact solution 
+\begin{align*}
+& u^-(x,y,z)=\sin(2x)\cos(2y) e^{z}, & \phi(\mathbf{x})<0\\
+& u^+(x,y,z)=\bigg[ 16\big(\frac{y-x}{3}\big)^5 - 20 \big(\frac{y-x}{3}\big)^3 + 5\big( \frac{y-x}{3}\big) \bigg]\ln(x+y+3)\cos(z)          , & \phi(\mathbf{x})\ge 0
+\end{align*}
+and the diffusion coefficient
+\begin{align*}
+\mu^-(x,y,z)&=10\bigg[ 1+0.2\cos(2\pi(x+y))\sin(2\pi(x-y)) \cos(z) \bigg] &\phi(\mathbf{x})<0 \\
+\mu^+(x,y,z)&=1 &\phi(\mathbf{x})\ge 0 
+\end{align*}
+that imply
+\begin{align*}
+&f^-(x,y,z)=-[y^2\ln(x+2) + 4] e^{z} &\phi(\mathbf{x})< 0\\
+&f^+(x,y,z)=2\cos(x)\sin(y)e^{-z} &\phi(\mathbf{x})\ge 0
+\end{align*}
 
 
 

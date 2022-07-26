@@ -29,9 +29,9 @@ def test_poisson_solver_with_jump_complex():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(16)
-    Ny = i32(16)
-    Nz = i32(16)
+    Nx = i32(32)
+    Ny = i32(32)
+    Nz = i32(32)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -81,11 +81,11 @@ def test_poisson_solver_with_jump_complex():
         n_2 = 4.0; beta_2 = -0.1; theta_2 = 1.8
         n_3 = 7.0; beta_3 = 0.15; theta_3 = 0.0
 
-        core  = beta_1 * jnp.cos(n_1 * (jnp.arctan(y/x) - theta_1))
-        core += beta_2 * jnp.cos(n_2 * (jnp.arctan(y/x) - theta_2))
-        core += beta_3 * jnp.cos(n_3 * (jnp.arctan(y/x) - theta_3))
+        core  = beta_1 * jnp.cos(n_1 * (jnp.arctan2(y,x) - theta_1))
+        core += beta_2 * jnp.cos(n_2 * (jnp.arctan2(y,x) - theta_2))
+        core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y,x) - theta_3))
 
-        phi_  = jnp.sqrt(x**2 + y**2 + z**2) - 0.5
+        phi_  = jnp.sqrt(x**2 + y**2 + z**2)
         phi_ += -1.0*r0 * (1.0 + ((x**2 + y**2)/(x**2 + y**2 + z**2))**2 * core ) 
 
         return phi_
