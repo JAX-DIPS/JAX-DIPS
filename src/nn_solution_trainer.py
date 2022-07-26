@@ -62,6 +62,8 @@ class Trainer:
         # weight = jnp.exp(-1.0*jnp.square(phi_flat))
         # tot_loss = jnp.mean(weight * optax.l2_loss(lhs, rhs)) #/ jnp.mean(weight)            
         tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
+        # pdb.set_trace()
+
         tot_loss += jnp.square(sol_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
         tot_loss += jnp.square(sol_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
         tot_loss += jnp.square(sol_cube[: , 0, :] - dirichlet_cube[ :, 0, :]).mean() * Vol_cell_nominal

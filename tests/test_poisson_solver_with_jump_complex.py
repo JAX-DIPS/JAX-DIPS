@@ -24,7 +24,7 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 
-def test_poisson_solver_with_jump():
+def test_poisson_solver_with_jump_complex():
 
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
@@ -51,14 +51,17 @@ def test_poisson_solver_with_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.exp(z)
+        return jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z) 
+  
 
     @jit
     def exact_sol_p_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sin(y)*jnp.cos(x)
+        yx3 = (y-x)/3.0
+        return (16.0*yx3**5 - 20.0*yx3**3 + 5.0*yx3) * jnp.log(x+y+3) * jnp.cos(z) 
+        
 
     @jit
     def dirichlet_bc_fn(r):
@@ -72,7 +75,20 @@ def test_poisson_solver_with_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sqrt(x**2 + y**2 + z**2) - 0.5
+
+        r0 = 0.483; ri = 0.151; re = 0.911
+        n_1 = 3.0; beta_1 =  0.1; theta_1 = 0.5
+        n_2 = 4.0; beta_2 = -0.1; theta_2 = 1.8
+        n_3 = 7.0; beta_3 = 0.15; theta_3 = 0.0
+
+        core  = beta_1 * jnp.cos(n_1 * (jnp.arctan(y/x) - theta_1))
+        core += beta_2 * jnp.cos(n_2 * (jnp.arctan(y/x) - theta_2))
+        core += beta_3 * jnp.cos(n_3 * (jnp.arctan(y/x) - theta_3))
+
+        phi_  = jnp.sqrt(x**2 + y**2 + z**2) - 0.5
+        phi_ += -1.0*r0 * (1.0 + ((x**2 + y**2)/(x**2 + y**2 + z**2))**2 * core ) 
+
+        return phi_
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     @jit
@@ -87,7 +103,7 @@ def test_poisson_solver_with_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return y*y*jnp.log(x+2.0)+4.0
+        return 10.0 * (1 + 0.2 * jnp.cos(2*jnp.pi*(x+y)) * jnp.sin(2*jnp.pi*(x-y)) * jnp.cos(z) )
 
     @jit
     def mu_p_fn(r):
@@ -97,7 +113,7 @@ def test_poisson_solver_with_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.exp(-1.0*z)
+        return 1.0
 
     @jit
     def alpha_fn(r):
@@ -179,14 +195,24 @@ def test_poisson_solver_with_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return -1.0 * jnp.exp(z) * (y*y*jnp.log(x+2)+4)
+        fm   = -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z)) +\
+               -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*x) * 2*jnp.cos(2*x)*jnp.cos(2*y)*jnp.exp(z)   +\
+                4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*y) * (-2)*jnp.sin(2*x)*jnp.sin(2*y)*jnp.exp(z) +\
+                2*jnp.cos(2*jnp.pi*(x+y))*jnp.sin(2*jnp.pi*(x-y))*jnp.sin(z) * jnp.sin(2*x)*jnp.cos(2*y)*jnp.exp(z)
+        
+        return fm
 
     @jit
     def f_p_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return 2.0 * jnp.exp(-1.0 * z) * jnp.cos(x) * jnp.sin(y)
+        f_p = -1.0 * ( 
+            ( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*(y-x)/3 ) * (-2)*jnp.cos(z) / (x+y+3)**2 +\
+             2*( 16*5*((y-x)/3)**3 - 20*2*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z) +\
+            -1*( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z)
+        )
+        return f_p
 
 
     exact_sol = vmap(evaluate_exact_solution_fn)(R)
@@ -286,4 +312,4 @@ def test_poisson_solver_with_jump():
 
 
 if __name__ == "__main__":
-    test_poisson_solver_with_jump()
+    test_poisson_solver_with_jump_complex()

@@ -702,6 +702,7 @@ where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the 
 
 \section{Numerical Examples}
 
+We consider solution to the problem
 \begin{align*}
 	 & k^{\pm}u^{\pm} - \nabla \cdot (\mu^{\pm}\nabla u^\pm)=f^{\pm}, & \mathbf{x}\in\Omega^\pm \\
 	 & [u]=\alpha,                                                    & \mathbf{x} \in \Gamma   \\
@@ -710,21 +711,22 @@ where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the 
 
 
 
-We present successively more complex test cases and analyze performance of \texttt{JAX-DIPS} in each case.
+
+%
+%\subsection{No interface, $\Gamma=\emptyset $}
+%We set the level-set function to $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} + 0.5$ within a domain $\Omega:[-1,1]^3$ characterizing absence of all jump conditions. Using the method of manufactured solutions, we construct the following Poisson problem for an exact solution $u(\mathbf{x}) = \sin(y)\cos(x)$ with appropriate Dirichlet boundary conditions:
+%\begin{align*}
+%	 - \Delta u &=2\sin(y)\cos(x), & \mathbf{x}\in\Omega\\
+%	 u(\mathbf{x}) &= \sin(y)\cos(x), &\mathbf{x}\in \partial \Omega
+%\end{align*}
+%with \texttt{Adam} optimizer starting from an initial condition $\hat{u}(\mathbf{x};t=0)=y$ which does not satisfy the system of equations.
 
 
-\subsection{No interface, $\Gamma=\emptyset $}
-We set the level-set function to $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} + 0.5$ within a domain $\Omega:[-1,1]^3$ characterizing absence of all jump conditions. Using the method of manufactured solutions, we construct the following Poisson problem for an exact solution $u(\mathbf{x}) = \sin(y)\cos(x)$ with appropriate Dirichlet boundary conditions:
-\begin{align*}
-	 - \Delta u &=2\sin(y)\cos(x), & \mathbf{x}\in\Omega\\
-	 u(\mathbf{x}) &= \sin(y)\cos(x), &\mathbf{x}\in \partial \Omega
-\end{align*}
-with \texttt{Adam} optimizer starting from an initial condition $\hat{u}(\mathbf{x};t=0)=y$ which does not satisfy the system of equations.
 
-
-
-\subsection{Interface, $\Gamma\neq \emptyset$}
-We consider the example 4.6 of the Voronoi-Interface Method (VIM) of Guittet et al 2015 \cite{guittet2015solving} where a sphere $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} - 0.5$ is centered in a box $\Omega:[-1,1]^3$ with the exact solution
+%\subsection{Interface, $\Gamma\neq \emptyset$}
+\subsection{Case I.}
+%We consider the example 4.6 of the Voronoi-Interface Method (VIM) of Guittet et al 2015 \cite{guittet2015solving} where a sphere $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} - 0.5$ is centered in a box $\Omega:[-1,1]^3$ with the exact solution
+We consider a sphere $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} - 0.5$ centered in a box $\Omega:[-1,1]^3$ with the exact solution
 \begin{align*}
 & u^-(x,y,z)=e^{z}, & \phi(\mathbf{x})<0\\
 & u^+(x,y,z)=\cos(x)\sin(y), & \phi(\mathbf{x})\ge 0
@@ -740,29 +742,42 @@ that imply
 &f^+(x,y,z)=2\cos(x)\sin(y)e^{-z} &\phi(\mathbf{x})\ge 0
 \end{align*}
 
-Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM. Order of convergence, denoted by $p$, is computed by doubling the number of grid points in every dimension and measuring the $L^\infty$ error of solution and its gradient over all the grid points in the domain:
-\begin{align*}
-&\frac{\textrm{err}(2h)}{\textrm{err}(h)}=2^p \rightarrow p = \log_2\bigg(\frac{\textrm{err}(2h)}{\textrm{err}(h)}\bigg)  & h=\min(h_x,h_y,h_z)
-\end{align*}
+%Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM. Order of convergence, denoted by $p$, is computed by doubling the number of grid points in every dimension and measuring the $L^\infty$ error of solution and its gradient over all the grid points in the domain:
+%\begin{align*}
+%&\frac{\textrm{err}(2h)}{\textrm{err}(h)}=2^p \rightarrow p = \log_2\bigg(\frac{\textrm{err}(2h)}{\textrm{err}(h)}\bigg)  & h=\min(h_x,h_y,h_z)
+%\end{align*}
+%
+%
+%\begin{table}[ht]
+%\begin{center}
+%\begin{tabular}{|l||ll|ll|ll|ll|c|}
+%\hline
+%& \multicolumn{2}{c|}{VIM}& \multicolumn{2}{c|}{JAX-DIPS} & \multicolumn{2}{|c|}{VIM}& \multicolumn{3}{c|}{JAX-DIPS}\\
+%\hline
+%$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order &   Gradient    &   Order   &   Gradient   &   Order & t (sec/epoch) \\
+%\hline
+%$2^3$ & $3.61\times 10^{-3}$ & -         & $9.49\times 10^{-1}$ & -      & $1.13\times 10^{-2}$ & -      & $2.38$               & -      & 180\\ 
+%$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $1.56\times 10^{-1}$ & $2.60$ & $7.69\times 10^{-3}$ & $0.56$ & $4.80\times 10^{-1}$ & $2.31$ & 274\\ 
+%$2^5$ & $3.04\times 10^{-4}$ & $1.99$    & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & - &  \\ 
+%$2^6$ & $7.74\times 10^{-5}$ & $1.98$    & $8.86\times 10^{-2}$ & - & $2.43\times 10^{-3}$ & $0.66$ & $5.73\times 10^{-1}$ & -& 1.45\\ 
+%$2^7$ & $1.97\times 10^{-5}$ & $1.98$    & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -&\\ \hline
+%\end{tabular}
+%\caption{Convergence on the solution and its gradient. VIM values are the $L^\infty$-norm over the surface of the sphere. We report $L^\infty$-norm of solution and its gradient evaluated everywhere in the domain (more conservative). Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case.}
+%\end{center}
+%\end{table}
+
+After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty$-norm error of the solution is $1.72\times 10^{-1}$, corresponding to a $10\%$ relative error in the solution.
 
 
-\begin{table}[ht]
-\begin{center}
-\begin{tabular}{|l||ll|ll|ll|ll|c|}
-\hline
-& \multicolumn{2}{c|}{VIM}& \multicolumn{2}{c|}{JAX-DIPS} & \multicolumn{2}{|c|}{VIM}& \multicolumn{3}{c|}{JAX-DIPS}\\
-\hline
-$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order &   Gradient    &   Order   &   Gradient   &   Order & t (sec/epoch) \\
-\hline
-$2^3$ & $3.61\times 10^{-3}$ & -         & $9.49\times 10^{-1}$ & -      & $1.13\times 10^{-2}$ & -      & $2.38$               & -      & 180\\ 
-$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $1.56\times 10^{-1}$ & $2.60$ & $7.69\times 10^{-3}$ & $0.56$ & $4.80\times 10^{-1}$ & $2.31$ & 274\\ 
-$2^5$ & $3.04\times 10^{-4}$ & $1.99$    & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & - &  \\ 
-$2^6$ & $7.74\times 10^{-5}$ & $1.98$    & $8.86\times 10^{-2}$ & - & $2.43\times 10^{-3}$ & $0.66$ & $5.73\times 10^{-1}$ & -& 1.45\\ 
-$2^7$ & $1.97\times 10^{-5}$ & $1.98$    & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -&\\ \hline
-\end{tabular}
-\caption{Convergence on the solution and its gradient. VIM values are the $L^\infty$-norm over the surface of the sphere. We report $L^\infty$-norm of solution and its gradient evaluated everywhere in the domain (more conservative). Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case.}
-\end{center}
-\end{table}
+
+
+\subsection{Case II.}
+
+
+
+
+
+
 
 
 

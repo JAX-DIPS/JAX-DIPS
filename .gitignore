@@ -16,3 +16,9 @@ database_tmp/
 .bash_history
 memory*
 workspace.code-workspace
+
+.python_history
+
+.cache
+.config
+.nv
