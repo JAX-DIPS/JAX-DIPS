@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  26 JUL 2022 00:06
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  26 JUL 2022 19:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -460,7 +460,11 @@ File: l3backend-pdfmode.def 2020-02-03 L3 backend support: PDF mode
 \l__kernel_color_stack_int=\count293
 \l__pdf_internal_box=\box60
 )
-(./jax_dips.aux)
+(./jax_dips.aux
+
+LaTeX Warning: Label `fig:shapes' multiply defined.
+
+)
 \openout1 = `jax_dips.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 87.
@@ -479,8 +483,7 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 87.
 LaTeX Font Info:    ... okay on input line 87.
 LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 87.
 LaTeX Font Info:    ... okay on input line 87.
-
-(/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+ (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count294
 \scratchdimen=\dimen178
@@ -673,24 +676,51 @@ File: figures/poisson_solver_loss_with_annealing.png Graphic file (type png)
 Package pdftex.def Info: figures/poisson_solver_loss_with_annealing.png  used o
 n input line 691.
 (pdftex.def)             Requested size: 365.50655pt x 365.50427pt.
- [12 <./figures/poisson_solver_loss_with_annealing.png>] [13] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 844.
- [14]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 844.
+ [12 <./figures/poisson_solver_loss_with_annealing.png>]
+<./figures/star_shape.png, id=229, 2097.8375pt x 2097.8375pt>
+File: ./figures/star_shape.png Graphic file (type png)
+<use ./figures/star_shape.png>
+Package pdftex.def Info: ./figures/star_shape.png  used on input line 832.
+(pdftex.def)             Requested size: 193.50076pt x 193.47075pt.
+<./figures/star_mu_m.png, id=230, 2097.8375pt x 2097.8375pt>
+File: ./figures/star_mu_m.png Graphic file (type png)
+<use ./figures/star_mu_m.png>
+Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 833.
+(pdftex.def)             Requested size: 193.50076pt x 193.47075pt.
+<./figures/star_num_sol.png, id=231, 2097.8375pt x 2097.8375pt>
+File: ./figures/star_num_sol.png Graphic file (type png)
+<use ./figures/star_num_sol.png>
+Package pdftex.def Info: ./figures/star_num_sol.png  used on input line 840.
+(pdftex.def)             Requested size: 193.50076pt x 193.47075pt.
+<./figures/star_exact_sol.png, id=232, 2097.8375pt x 2097.8375pt>
+File: ./figures/star_exact_sol.png Graphic file (type png)
+<use ./figures/star_exact_sol.png>
+Package pdftex.def Info: ./figures/star_exact_sol.png  used on input line 841.
+(pdftex.def)             Requested size: 193.50076pt x 193.47075pt.
+ [13] [14 <./figures/star_shape.png (PNG copy)> <./figures/star_mu_m.png (PNG c
+opy)> <./figures/star_num_sol.png (PNG copy)> <./figures/star_exact_sol.png (PN
+G copy)>] (./jax_dips.bbl)
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 857.
 
-(./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 844.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 844.
+[15]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 857.
+ (./jax_dips.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 857.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 857.
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
-(rerunfilecheck)             Checksum: 73450172BF332CDAEE844E5D7F4B2D1C;1426.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 844.
+(rerunfilecheck)             Checksum: 95BE25A6C4CDB0E258F188CDD0C06236;1426.
+
+
+LaTeX Warning: There were multiply-defined labels.
+
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 857.
  ) 
 Here is how much of TeX's memory you used:
- 9996 strings out of 483065
- 148886 string characters out of 5963550
- 443273 words of memory out of 5000000
- 24731 multiletter control sequences out of 15000+600000
- 543599 words of font info for 69 fonts, out of 8000000 for 9000
+ 10036 strings out of 483065
+ 149694 string characters out of 5963550
+ 443394 words of memory out of 5000000
+ 24759 multiletter control sequences out of 15000+600000
+ 545259 words of font info for 76 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
  41i,28n,42p,1006b,517s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/mistani/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
@@ -704,25 +734,27 @@ onts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texlive/texmf-dist/fonts/ty
 pe1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
 lic/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
 fonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/c
-m/cmmib10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr
-10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/sh
-are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texl
-ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/texlive/texmf-dist/f
-onts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/t
-ype1/public/amsfonts/cm/cmsy5.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
-blic/amsfonts/cm/cmsy6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
-cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmt
-i7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/
-share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/s
-hare/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jax_dips.pdf (14 pages, 479692 bytes).
+m/cmmi9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib
+10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb>
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/s
+hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/share/tex
+live/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/texlive/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmsy5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
+sfonts/cm/cmsy6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
+cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
+9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti7.pfb></usr/s
+hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb></usr/share/te
+xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/
+texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/t
+exmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on jax_dips.pdf (15 pages, 2156085 bytes).
 PDF statistics:
- 346 PDF objects out of 1000 (max. 8388607)
- 293 compressed objects within 3 object streams
- 69 named destinations out of 1000 (max. 500000)
- 160 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 365 PDF objects out of 1000 (max. 8388607)
+ 304 compressed objects within 4 object streams
+ 72 named destinations out of 1000 (max. 500000)
+ 180 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -819,16 +819,29 @@ and the diffusion coefficient
 \mu^-(x,y,z)&=10\bigg[ 1+0.2\cos(2\pi(x+y))\sin(2\pi(x-y)) \cos(z) \bigg] &\phi(\mathbf{x})<0 \\
 \mu^+(x,y,z)&=1 &\phi(\mathbf{x})\ge 0 
 \end{align*}
-that imply
-\begin{align*}
-&f^-(x,y,z)=-[y^2\ln(x+2) + 4] e^{z} &\phi(\mathbf{x})< 0\\
-&f^+(x,y,z)=2\cos(x)\sin(y)e^{-z} &\phi(\mathbf{x})\ge 0
-\end{align*}
 
 
 
 
 
+
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\linewidth]{./figures/star_shape.png}
+	\includegraphics[width=0.45\linewidth]{./figures/star_mu_m.png}
+	\caption{Illustration of three dimensional interface used (left), and $\mu^\pm$ on the $32\times 32\times 32$ grid (right).}
+	\label{fig:shapes}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\linewidth]{./figures/star_num_sol.png}
+	\includegraphics[width=0.45\linewidth]{./figures/star_exact_sol.png}
+	\caption{Illustration of three dimensional interfaces used.}
+	\label{fig:shapes}
+\end{figure}
 
 \section*{Acknowledgement}
 

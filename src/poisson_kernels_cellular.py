@@ -438,7 +438,7 @@ def poisson_solver(gstate, sim_state):
     learning_rate = 1e-2
     scheduler = optax.exponential_decay(
         init_value=learning_rate,
-        transition_steps=100,
+        transition_steps=1000,
         decay_rate=decay_rate_)
     # Combining gradient transforms using `optax.chain`.
     optimizer = optax.chain(                         
@@ -455,7 +455,7 @@ def poisson_solver(gstate, sim_state):
     
    
     grid_shape = (Nx,Ny,Nz)
-    final_solution = train(optimizer, compute_Ax_and_b_fn, gstate.R, phi_cube_.reshape(-1), grid_shape, dirichlet_cube, Vol_cell_nominal, num_epochs=10000)
+    final_solution = train(optimizer, compute_Ax_and_b_fn, gstate.R, phi_cube_.reshape(-1), grid_shape, dirichlet_cube, Vol_cell_nominal, num_epochs=50000)
 
 
 
