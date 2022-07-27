@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  26 JUL 2022 22:18
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  26 JUL 2022 22:27
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -746,29 +746,23 @@ star.png>] [14 <./figures/sphere_shape.png (PNG copy)> <./figures/sphere_mu_m.p
 ng (PNG copy)> <./figures/sphere_sols.png (PNG copy)>] [15 <./figures/star_shap
 e.png (PNG copy)> <./figures/star_mu_m.png (PNG copy)>] [16 <./figures/star_sol
 s.png (PNG copy)> <./figures/star_sols_z.png (PNG copy)>] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 906.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 919.
 
 [17]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 906.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 919.
  (./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 906.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 906.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 919.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 919.
+Package rerunfilecheck Info: File `jax_dips.out' has not changed.
+(rerunfilecheck)             Checksum: D045A9566F3DCB0E9C5F2A9CD6FD4359;1495.
 
-
-Package rerunfilecheck Warning: File `jax_dips.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `jax_dips.out':
-(rerunfilecheck)             Before: DE171DBBC04951C55813FCE6F20A8433;1490
-(rerunfilecheck)             After:  D045A9566F3DCB0E9C5F2A9CD6FD4359;1495.
 
 LaTeX Warning: There were undefined references.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 906.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 919.
  ) 
 Here is how much of TeX's memory you used:
  10072 strings out of 483065
@@ -806,7 +800,7 @@ hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb></usr/share/te
 xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/
 texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/t
 exmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jax_dips.pdf (17 pages, 2528843 bytes).
+Output written on jax_dips.pdf (17 pages, 2529735 bytes).
 PDF statistics:
  387 PDF objects out of 1000 (max. 8388607)
  318 compressed objects within 4 object streams

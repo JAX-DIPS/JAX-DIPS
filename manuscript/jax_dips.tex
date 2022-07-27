@@ -890,7 +890,20 @@ and the diffusion coefficient
 We developed a differentiable GPU-based framework for solving partial differential equations with jump conditions across irregular interfaces in three spatial dimensions. Solutions in each domain are represented by a simple multi-layer perceptron (MLP) and Cartesian grid points of the underlying numerical discretization scheme are treated as collocation points for optimizing the unknown parameters of the MLPs. 
 
 
- More sophisticated neural architectures can be considered in \texttt{JAX-DIPS} by adding neural architectures in the model class of the library. We 
+There are many improvements for \texttt{JAX-DIPS} that we will pursue for future development:
+
+\begin{itemize}
+
+\item  More sophisticated neural architectures can be considered in \texttt{JAX-DIPS} by adding to the model class of the library. We only considered MLPs, however in recent years there have a plethora of deep neural network models that have shown great promise such as transformers, graph neural networks, \textit{etc}.
+
+\item Multi-GPU training using domain decomposition and distribution using the \texttt{pmap} primitive in JAX is another very immediate improvement that will enable higher resolution simulations.
+
+\item Modification of the numerical discretization scheme in order to operate over unstructured point clouds rather than the uniform Cartesian grids.
+
+\item Extension to adaptive grids with enhanced resolutions closer to the interfaces while coarsening the grid cells in the bulk.
+
+
+\end{itemize}
 
 \section*{Acknowledgement}
 
