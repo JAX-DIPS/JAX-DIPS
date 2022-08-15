@@ -361,7 +361,7 @@ For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the conside
 
 \subsection{Finite discretization method}\label{sec::FD}
 
-For spatial discretizations at the presence of jump conditions we employ the numerical algorithm proposed by Bochkov and Gibou (2020) \cite{bochkov2020solving} (BG20) on Cartesian grids. BG20 produces second-order accurate solutions and first-order accuracte gradients in the $L^\infty$-norm, while having a compact stencil that makes it a good candidate for parallelization. Moreover, treatment of the interface jump conditions do not introduce any augmented variables, this preserves the homogeneous structure of the linear system.
+For spatial discretizations at the presence of jump conditions we employ the numerical algorithm proposed by \cite{bochkov2020solving} on Cartesian grids. Method of \cite{bochkov2020solving} produces second-order accurate solutions and first-order accuracte gradients in the $L^\infty$-norm, while having a compact stencil that makes it a good candidate for parallelization. Moreover, treatment of the interface jump conditions do not introduce any augmented variables, this preserves the homogeneous structure of the linear system.
 
 Here we use a finite volume discretization equation uniformly for all grid points. At grid points where the finite volumes are crossed by $\rm \Gamma$ we have
 
@@ -382,7 +382,7 @@ where $\mathcal{D}$ is the problem dimensionality.
 	\label{fig:grid}
 \end{figure}
 
-Note that far from interface either $s=-$ (for $\mathbf{x}\in \Omega^-$) or $s=+$ (for $\mathbf{x}\in \Omega^+$) is retained. This is automatically considered through zero values for sub-volumes $|\mathcal{V}_{i,j}^+|$ and $|\mathcal{V}_{i,j}^-|$ as well as their face areas. Note that $\mu_{i-1/2,j}^-$ (or $\mu_{i-1/2,j}^+$) corresponds to the value of diffusion coefficient at the middle of segment $A^-_{i-1/2,j}$ (or $A^+_{i-1/2,j}$) respectively, same is true for other edges as well. However, there are extra degrees of freedom on grid points whose finite volumes are crossed by the interface; \textit{i.e.}, see double circles in figure \ref{fig:grid}. Bochkov and Gibou derived analytical expressions for the extra degrees of freedom ($u^+$ in $\Omega^-$ and $u^-$ in $\Omega^+$) in terms of the original degrees of freedom ($u^-$ in $\Omega^-$ and $u^+$ in $\Omega^+$) as well as the jump conditions, this preserves the original $\rm N_x \times N_y$ system size.
+Note that far from interface either $s=-$ (for $\mathbf{x}\in \Omega^-$) or $s=+$ (for $\mathbf{x}\in \Omega^+$) is retained. This is automatically considered through zero values for sub-volumes $|\mathcal{V}_{i,j}^+|$ and $|\mathcal{V}_{i,j}^-|$ as well as their face areas. Note that $\mu_{i-1/2,j}^-$ (or $\mu_{i-1/2,j}^+$) corresponds to the value of diffusion coefficient at the middle of segment $A^-_{i-1/2,j}$ (or $A^+_{i-1/2,j}$) respectively, same is true for other edges as well. However, there are extra degrees of freedom on grid points whose finite volumes are crossed by the interface; \textit{i.e.}, see double circles in figure \ref{fig:grid}. \cite{bochkov2020solving} derived analytical expressions for the extra degrees of freedom ($u^+$ in $\Omega^-$ and $u^-$ in $\Omega^+$) in terms of the original degrees of freedom ($u^-$ in $\Omega^-$ and $u^+$ in $\Omega^+$) as well as the jump conditions, this preserves the original $\rm N_x \times N_y$ system size.
 
 In this scheme the basic idea is to extrapolate the jump at grid point from jump condition at the projected point onto the interface using a Taylor expansion: $u^+_{i,j} - u^-_{i,j}=[u]_{\mathbf{r}_{i,j}^{pr}} + \delta_{i,j}(\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) - \partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j})) $. The unknown value ($u^-_{i,j}$ or $u^+_{i,j}$) is obtained based on approximation of the normal derivatives (\textit{i.e.} $\partial_\mathbf{n}u^\pm(\mathbf{r}^{pr}_{i,j})$) which are computed using a least squares calculation on neighboring grid points that are in the fast-diffusion region (referred to as ``Bias Fast'') or in the slow diffusion region (referred to as ``Bias Slow''). This makes two sets of ruls for unknown values $u^\pm_{i,j}$.
 
@@ -679,6 +679,11 @@ Solution networks are evaluated on grid points while the parameters of these net
 \end{figure}
 
 
+
+
+
+
+
 \subsection{Differentiable solution strategy}
 
 We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
@@ -708,6 +713,43 @@ where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the 
 %\label{fig::optimization}
 %\end{figure}
 
+
+
+
+
+
+\subsection{Our proposed architecture}
+Our proposed physics-aware PDE solver is based on the observation that the neural network models for negative and positive domains can be explicitly used as interpolation and extrapolation functions within the finite discretization schemes.  
+
+The basic idea of the finite discretization method of section \ref{sec::FD} is to impose the jump conditions on the already-available grid points in the computational cells that are crossed by the interface, instead of aspiring to impose the jump conditions exactly on the interface itself. This is achieved by a Taylor expansion
+
+
+For points on the interface we have
+\begin{align*}
+u^+ - u^- &= \alpha\\
+\mu^+\partial_n u^+ - \mu^- \partial_n u^- &= \beta
+\end{align*}
+and after Taylor expansion in space we obtain on the adjacent grid points $(i,j)$
+\begin{align}
+u^+_{i,j} - u^-_{i,j}=[u]_{\mathbf{r}_{i,j}^{pr}} + \delta_{i,j}(\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) - \partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j})) \label{eq::taylorexpandjump}
+\end{align}
+which incorporates the jump in solutions. To incorporate jump in fluxes we can rewrite either of the normal gradients in terms of the other 
+\begin{align*}
+\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) &= \frac{\mu^-}{\mu^+}\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta}{\mu^+} \\
+\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) &= \frac{\mu^+}{\mu^-}\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) - \frac{\beta}{\mu^-} 
+\end{align*}
+which leads to two expected relationships on predictions of the two neural networks
+\begin{align}
+u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(\frac{\mu^-}{\mu^+}-1\big)\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^+} \bigg) \\
+u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(1-\frac{\mu^+}{\mu^-}\big)\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^-} \bigg) \label{eq::interfaceConstraints}
+\end{align}
+
+Each of the two versions of the constraint \ref{eq::interfaceConstraints} offers an extra residual term to penalize the loss function
+\begin{align*}
+\mathcal{L}_{interface} = || (\hat{u}^+_{i,j} - \hat{u}^-_{i,j}) - (u^+_{i,j} - u^-_{i,j}) ||_2^2
+\end{align*}
+
+Note that we are representing solutions, $\hat{u}^\pm$ at all points, with neural networks and computing the normal derivatives is trivial using automatic differentiation of the network along the normal directions. 
 
 
 

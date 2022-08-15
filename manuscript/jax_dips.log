@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  26 JUL 2022 22:27
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.8.15)  15 AUG 2022 13:56
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -663,12 +663,12 @@ Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
 
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2] [3] [4] [5] [6]
-<./figures/grids_full.png, id=161, 770.88pt x 770.88pt>
+<./figures/grids_full.png, id=166, 770.88pt x 770.88pt>
 File: ./figures/grids_full.png Graphic file (type png)
 <use ./figures/grids_full.png>
 Package pdftex.def Info: ./figures/grids_full.png  used on input line 379.
 (pdftex.def)             Requested size: 193.50076pt x 193.49586pt.
-<./figures/grids.png, id=163, 770.88pt x 770.88pt>
+<./figures/grids.png, id=168, 770.88pt x 770.88pt>
 File: ./figures/grids.png Graphic file (type png)
 <use ./figures/grids.png>
 Package pdftex.def Info: ./figures/grids.png  used on input line 380.
@@ -682,7 +682,7 @@ LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
 Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
 put line 564.
  [9] [10]
-<./figures/neural_network_arch.png, id=208, 963.6pt x 542.025pt>
+<./figures/neural_network_arch.png, id=214, 963.6pt x 542.025pt>
 File: ./figures/neural_network_arch.png Graphic file (type png)
 <use ./figures/neural_network_arch.png>
 Package pdftex.def Info: ./figures/neural_network_arch.png  used on input line 
@@ -691,70 +691,71 @@ Package pdftex.def Info: ./figures/neural_network_arch.png  used on input line
  [11 <./figures/neural_network_arch.png (PNG copy)>]
 
 LaTeX Warning: Reference `fig::optimization' on page 12 undefined on input line
- 702.
+ 707.
 
 [12]
-<./figures/poisson_solver_loss_sphere.png, id=231, 578.16pt x 578.16pt>
+<./figures/poisson_solver_loss_sphere.png, id=240, 578.16pt x 578.16pt>
 File: ./figures/poisson_solver_loss_sphere.png Graphic file (type png)
 <use ./figures/poisson_solver_loss_sphere.png>
 Package pdftex.def Info: ./figures/poisson_solver_loss_sphere.png  used on inpu
-t line 789.
+t line 831.
 (pdftex.def)             Requested size: 210.70462pt x 210.70464pt.
-<./figures/poisson_solver_loss_star.png, id=232, 578.16pt x 578.16pt>
+<./figures/poisson_solver_loss_star.png, id=241, 578.16pt x 578.16pt>
 File: ./figures/poisson_solver_loss_star.png Graphic file (type png)
 <use ./figures/poisson_solver_loss_star.png>
 Package pdftex.def Info: ./figures/poisson_solver_loss_star.png  used on input 
-line 790.
+line 832.
 (pdftex.def)             Requested size: 210.70462pt x 210.70464pt.
-<./figures/sphere_shape.png, id=233, 2097.8375pt x 2097.8375pt>
+<./figures/sphere_shape.png, id=242, 2097.8375pt x 2097.8375pt>
 File: ./figures/sphere_shape.png Graphic file (type png)
 <use ./figures/sphere_shape.png>
-Package pdftex.def Info: ./figures/sphere_shape.png  used on input line 798.
+Package pdftex.def Info: ./figures/sphere_shape.png  used on input line 840.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/sphere_mu_m.png, id=234, 2097.8375pt x 2097.8375pt>
+<./figures/sphere_mu_m.png, id=243, 2097.8375pt x 2097.8375pt>
 File: ./figures/sphere_mu_m.png Graphic file (type png)
 <use ./figures/sphere_mu_m.png>
-Package pdftex.def Info: ./figures/sphere_mu_m.png  used on input line 799.
+Package pdftex.def Info: ./figures/sphere_mu_m.png  used on input line 841.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/sphere_sols.png, id=235, 2088.80376pt x 1157.32375pt>
+<./figures/sphere_sols.png, id=244, 2088.80376pt x 1157.32375pt>
 File: ./figures/sphere_sols.png Graphic file (type png)
 <use ./figures/sphere_sols.png>
-Package pdftex.def Info: ./figures/sphere_sols.png  used on input line 806.
+Package pdftex.def Info: ./figures/sphere_sols.png  used on input line 848.
 (pdftex.def)             Requested size: 430.00462pt x 238.24182pt.
-<./figures/star_shape.png, id=236, 2097.8375pt x 2097.8375pt>
+ [13] [14 <./figures/poisson_solver_loss_sphere.png> <./figures/poisson_solver_
+loss_star.png> <./figures/sphere_shape.png (PNG copy)> <./figures/sphere_mu_m.p
+ng (PNG copy)>]
+<./figures/star_shape.png, id=262, 2097.8375pt x 2097.8375pt>
 File: ./figures/star_shape.png Graphic file (type png)
 <use ./figures/star_shape.png>
-Package pdftex.def Info: ./figures/star_shape.png  used on input line 872.
+Package pdftex.def Info: ./figures/star_shape.png  used on input line 914.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/star_mu_m.png, id=237, 2097.8375pt x 2097.8375pt>
+<./figures/star_mu_m.png, id=263, 2097.8375pt x 2097.8375pt>
 File: ./figures/star_mu_m.png Graphic file (type png)
 <use ./figures/star_mu_m.png>
-Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 873.
+Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 915.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/star_sols.png, id=238, 2088.80376pt x 1157.32375pt>
+<./figures/star_sols.png, id=264, 2088.80376pt x 1157.32375pt>
 File: ./figures/star_sols.png Graphic file (type png)
 <use ./figures/star_sols.png>
-Package pdftex.def Info: ./figures/star_sols.png  used on input line 880.
+Package pdftex.def Info: ./figures/star_sols.png  used on input line 922.
 (pdftex.def)             Requested size: 430.00462pt x 238.24182pt.
-<./figures/star_sols_z.png, id=239, 2088.80376pt x 1157.32375pt>
+<./figures/star_sols_z.png, id=265, 2088.80376pt x 1157.32375pt>
 File: ./figures/star_sols_z.png Graphic file (type png)
 <use ./figures/star_sols_z.png>
-Package pdftex.def Info: ./figures/star_sols_z.png  used on input line 881.
+Package pdftex.def Info: ./figures/star_sols_z.png  used on input line 923.
 (pdftex.def)             Requested size: 430.00462pt x 238.24182pt.
- [13 <./figures/poisson_solver_loss_sphere.png> <./figures/poisson_solver_loss_
-star.png>] [14 <./figures/sphere_shape.png (PNG copy)> <./figures/sphere_mu_m.p
-ng (PNG copy)> <./figures/sphere_sols.png (PNG copy)>] [15 <./figures/star_shap
-e.png (PNG copy)> <./figures/star_mu_m.png (PNG copy)>] [16 <./figures/star_sol
-s.png (PNG copy)> <./figures/star_sols_z.png (PNG copy)>] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 919.
-
-[17]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 919.
+ [15 <./figures/sphere_sols.png (PNG copy)>] [16 <./figures/star_shape.png (PNG
+ copy)> <./figures/star_mu_m.png (PNG copy)>] [17 <./figures/star_sols.png (PNG
+ copy)> <./figures/star_sols_z.png (PNG copy)>]
+(./jax_dips.bbl)
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 961.
+ [18]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 961.
  (./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 919.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 919.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 961.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 961.
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
-(rerunfilecheck)             Checksum: D045A9566F3DCB0E9C5F2A9CD6FD4359;1495.
+(rerunfilecheck)             Checksum: 194CD098D553707AA0A6D2C9B88711A6;1570.
 
 
 LaTeX Warning: There were undefined references.
@@ -762,48 +763,49 @@ LaTeX Warning: There were undefined references.
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 919.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 961.
  ) 
 Here is how much of TeX's memory you used:
- 10072 strings out of 483065
- 150621 string characters out of 5963550
- 443291 words of memory out of 5000000
- 24785 multiletter control sequences out of 15000+600000
+ 10080 strings out of 483065
+ 150745 string characters out of 5963550
+ 443399 words of memory out of 5000000
+ 24788 multiletter control sequences out of 15000+600000
  545259 words of font info for 76 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
- 41i,28n,42p,1006b,517s stack positions out of 5000i,500n,10000p,200000b,80000s
- </home/mistani/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
-00pk></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><
-/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/sh
-are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx8.pfb></usr/share/tex
-live/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/share/texlive/
-texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-
-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/f
-onts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
-lic/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
-fonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/c
-m/cmmi9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib
-10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/s
-hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/share/tex
-live/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/tex
-mf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
-blic/amsfonts/cm/cmsy5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmsy6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
-cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
-9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti7.pfb></usr/s
-hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti8.pfb></usr/share/te
-xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/
-texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/t
-exmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jax_dips.pdf (17 pages, 2529735 bytes).
+ 41i,28n,42p,1016b,517s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/share/texli
+ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/share/texlive/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmbx8.pfb></usr/share/texlive/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmcsc10.pfb></usr/share/texlive/texmf-dist/fonts/type1
+/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publi
+c/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmmi5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.
+pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/shar
+e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/tex
+live/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/share/texlive/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmr9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></
+usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texl
+ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texlive/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmti7.pfb></usr/share/texlive/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmti8.pfb></usr/share/texlive/texmf-dist/fonts
+/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist/fonts/type1
+/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/fonts/type1/
+public/amsfonts/symbols/msbm10.pfb></usr/share/texmf/fonts/type1/public/cm-supe
+r/sfrm1000.pfb>
+Output written on jax_dips.pdf (18 pages, 2537839 bytes).
 PDF statistics:
- 387 PDF objects out of 1000 (max. 8388607)
- 318 compressed objects within 4 object streams
- 78 named destinations out of 1000 (max. 500000)
- 213 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 403 PDF objects out of 1000 (max. 8388607)
+ 333 compressed objects within 4 object streams
+ 83 named destinations out of 1000 (max. 500000)
+ 221 words of extra memory for PDF output out of 10000 (max. 10000000)
 
