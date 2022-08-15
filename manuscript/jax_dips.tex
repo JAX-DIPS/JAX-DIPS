@@ -745,13 +745,22 @@ u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(1-\
 \end{align}
 
 Each of the two versions of the constraint \ref{eq::interfaceConstraints} offers an extra residual term to penalize the loss function
-\begin{align*}
-\mathcal{L}_{interface} = || (\hat{u}^+_{i,j} - \hat{u}^-_{i,j}) - (u^+_{i,j} - u^-_{i,j}) ||_2^2
-\end{align*}
-
+\begin{align}
+\mathcal{L}_{interface} &= \bigg|\bigg| u^+_{i,j} - u^-_{i,j} - \alpha(\mathbf{r}_{i,j}^{pr}) - \delta_{i,j}\bigg(\big(\frac{\mu^-}{\mu^+}-1\big)\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^+} \bigg) \bigg|\bigg|_2^2 \\
+& + \bigg|\bigg| u^+_{i,j} - u^-_{i,j} - \alpha(\mathbf{r}_{i,j}^{pr}) - \delta_{i,j}\bigg(\big(1-\frac{\mu^+}{\mu^-}\big)\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^-} \bigg) \bigg|\bigg|_2^2
+ \label{eq::interfaceLoss}
+\end{align}
 Note that we are representing solutions, $\hat{u}^\pm$ at all points, with neural networks and computing the normal derivatives is trivial using automatic differentiation of the network along the normal directions. 
 
-
+The usual procedure for physics-informed neural networks is applicable to other grid points farther from the interface, namely,
+\begin{align*}
+\mathcal{L}_{bulk} &= \bigg|\bigg| k^{\pm}u^{\pm} - \nabla \cdot (\mu^{\pm}\nabla u^\pm) - f^{\pm} \bigg|\bigg|_2^2 \\
+\mathcal{L}_{boundary} &= \bigg|\bigg|u(\mathbf{r}_{bc}) - \hat{u}(\mathbf{r}_{bc})\bigg|\bigg|_2^2
+\end{align*}
+Offering the overall loss function
+\begin{align*}
+\mathcal{L} = \mathcal{L}_{bulk} + \mathcal{L}_{boundary} + \mathcal{L}_{interface}
+\end{align*}
 
 
 
