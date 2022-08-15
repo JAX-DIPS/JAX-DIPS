@@ -704,7 +704,7 @@ We found that starting from a zero guess for the solution it is important to sta
 \begin{align*}
 r_{k} = r_0 \alpha^{k / T}
 \end{align*}
-where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. See figure \ref{fig::optimization} for an example of loss evolution during optimization.
+where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. %See figure \ref{fig::optimization} for an example of loss evolution during optimization.
 
 %\begin{figure}[ht]
 %\centering
@@ -718,27 +718,27 @@ where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the 
 
 
 
-\subsection{Our proposed architecture}
+\subsection{Interface induced penalty terms}
 Our proposed physics-aware PDE solver is based on the observation that the neural network models for negative and positive domains can be explicitly used as interpolation and extrapolation functions within the finite discretization schemes.  
 
-The basic idea of the finite discretization method of section \ref{sec::FD} is to impose the jump conditions on the already-available grid points in the computational cells that are crossed by the interface, instead of aspiring to impose the jump conditions exactly on the interface itself. This is achieved by a Taylor expansion
+The basic idea of the finite discretization method of section \ref{sec::FD} is to impose the jump conditions on the already-available grid points in the computational cells that are crossed by the interface, instead of aspiring to impose the jump conditions exactly on the interface itself. This is achieved by a Taylor expansion to project the interfacial jump conditions onto adjacent grid points. Using the neural network models for solutions, we are able to naturally evaluate extensions of the solution functions in a banded region around the interface as illustrated in figure \ref{fig:shapes}.
 
 
-For points on the interface we have
+Starting from the jump conditions, for points on the interface, $\mathbf{x}\in \Gamma$, we have
 \begin{align*}
 u^+ - u^- &= \alpha\\
 \mu^+\partial_n u^+ - \mu^- \partial_n u^- &= \beta
 \end{align*}
-and after Taylor expansion in space we obtain on the adjacent grid points $(i,j)$
+and after Taylor expansion in the normal direction we obtain on the adjacent grid points $(i,j)$
 \begin{align}
 u^+_{i,j} - u^-_{i,j}=[u]_{\mathbf{r}_{i,j}^{pr}} + \delta_{i,j}(\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) - \partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j})) \label{eq::taylorexpandjump}
 \end{align}
-which incorporates the jump in solutions. To incorporate jump in fluxes we can rewrite either of the normal gradients in terms of the other 
+which explicitly incorporates the jump condition in the solutions. To incorporate the jump condition in fluxes we can rewrite either of the normal gradients in terms of the other 
 \begin{align*}
 \partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) &= \frac{\mu^-}{\mu^+}\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta}{\mu^+} \\
 \partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) &= \frac{\mu^+}{\mu^-}\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) - \frac{\beta}{\mu^-} 
 \end{align*}
-which leads to two expected relationships on predictions of the two neural networks
+which leads to two relationships among predictions of the two neural networks at each grid point in the banded extrapolation region
 \begin{align*}
 u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(\frac{\mu^-}{\mu^+}-1\big)\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^+} \bigg) \\
 u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(1-\frac{\mu^+}{\mu^-}\big)\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^-} \bigg)
@@ -751,14 +751,17 @@ Each of the two versions of the constraints offers an extra residual term to pen
 \mathcal{L}_{interface} &= \bigg|\bigg| u^+_{i,j} - u^-_{i,j} - \alpha(\mathbf{r}_{i,j}^{pr}) - \delta_{i,j}\bigg(\big(1-\frac{\mu^+}{\mu^-}\big)\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^-} \bigg) \bigg|\bigg|_2^2
  \label{eq::interfaceLoss}
 \end{align}
-Note that we are representing solutions, $\hat{u}^\pm$ at all points, with neural networks and computing the normal derivatives is trivial using automatic differentiation of the network along the normal directions. 
+Note that we are representing solution functions, $\hat{u}^\pm(\mathbf{r})$, with neural networks where computing the normal derivatives is trivial using automatic differentiation of the network along the normal directions. In contrast to finite discretization methods, solutions at off-grid points is readily accessible by simply evaluating the neural network function at any desired points. Note that we can compute the projected location on the interface starting from each grid point $(i,j)$ using the level-set function:
+\begin{align*}
+\mathbf{r}_{ij}^{proj}=\mathbf{r}_{ij} - \delta_{i,j} \mathbf{n}_{i,j}
+\end{align*}
 
-The usual procedure for physics-informed neural networks is applicable to other grid points farther from the interface, namely,
+Far from interface, the usual procedure for physics-informed neural networks is applicable, namely,
 \begin{align*}
 \mathcal{L}_{bulk} &= \bigg|\bigg| k^{\pm}u^{\pm} - \nabla \cdot (\mu^{\pm}\nabla u^\pm) - f^{\pm} \bigg|\bigg|_2^2 \\
 \mathcal{L}_{boundary} &= \bigg|\bigg|u(\mathbf{r}_{bc}) - \hat{u}(\mathbf{r}_{bc})\bigg|\bigg|_2^2
 \end{align*}
-Offering the overall loss function
+hence, the overall loss function for this class of problems shall be
 \begin{align*}
 \mathcal{L} = \mathcal{L}_{bulk} + \mathcal{L}_{boundary} + \mathcal{L}_{interface}
 \end{align*}
@@ -841,7 +844,7 @@ After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty
 	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_sphere.png}
 	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_star.png}
 	\caption{Loss evolution with epochs for the sphere (left) and star (right) examples.}
-	\label{fig:shapes}
+	\label{fig:losses}
 \end{figure}
 
 
@@ -850,14 +853,14 @@ After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty
 	\includegraphics[width=0.49\linewidth]{./figures/sphere_shape.png}
 	\includegraphics[width=0.49\linewidth]{./figures/sphere_mu_m.png}
 	\caption{Illustration of three dimensional interface used (left), and $\mu^\pm$ on the $16\times 16\times 16$ grid (right).}
-	\label{fig:shapes}
+	\label{fig:sphere}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{./figures/sphere_sols.png}
 	\caption{Illustration of exact and numerical solutions.}
-	\label{fig:shapes}
+	\label{fig:sphere}
 \end{figure}
 
 
@@ -924,7 +927,7 @@ and the diffusion coefficient
 	\includegraphics[width=0.49\linewidth]{./figures/star_shape.png}
 	\includegraphics[width=0.49\linewidth]{./figures/star_mu_m.png}
 	\caption{Illustration of three dimensional interface used (left), and $\mu^\pm$ on the $32\times 32\times 32$ grid (right).}
-	\label{fig:shapes}
+	\label{fig:star}
 \end{figure}
 
 \begin{figure}
@@ -932,7 +935,7 @@ and the diffusion coefficient
 	\includegraphics[width=\linewidth]{./figures/star_sols.png}
 	\includegraphics[width=\linewidth]{./figures/star_sols_z.png}
 	\caption{Illustration of exact and numerical solutions.}
-	\label{fig:shapes}
+	\label{fig:star_sol}
 \end{figure}
 
 
