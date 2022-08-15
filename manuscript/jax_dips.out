@@ -12,9 +12,10 @@
 \BOOKMARK [2][-]{subsection.2.6}{Neural network approximators for the solution}{section.2}% 12
 \BOOKMARK [2][-]{subsection.2.7}{Differentiable solution strategy}{section.2}% 13
 \BOOKMARK [3][-]{subsubsection.2.7.1}{Gradient based optimization with learning rate annealing}{subsection.2.7}% 14
-\BOOKMARK [2][-]{subsection.2.8}{Interface induced penalty terms}{section.2}% 15
-\BOOKMARK [1][-]{section.3}{Numerical Examples}{}% 16
-\BOOKMARK [2][-]{subsection.3.1}{Case I.}{section.3}% 17
-\BOOKMARK [2][-]{subsection.3.2}{Case II.}{section.3}% 18
-\BOOKMARK [1][-]{section.4}{Conclusion \046 Future Directions}{}% 19
-\BOOKMARK [1][-]{section*.8}{References}{}% 20
+\BOOKMARK [3][-]{subsubsection.2.7.2}{Improving convergence with preconditioning}{subsection.2.7}% 15
+\BOOKMARK [2][-]{subsection.2.8}{Interface induced penalty terms}{section.2}% 16
+\BOOKMARK [1][-]{section.3}{Numerical Examples}{}% 17
+\BOOKMARK [2][-]{subsection.3.1}{Case I.}{section.3}% 18
+\BOOKMARK [2][-]{subsection.3.2}{Case II.}{section.3}% 19
+\BOOKMARK [1][-]{section.4}{Conclusion \046 Future Directions}{}% 20
+\BOOKMARK [1][-]{section*.8}{References}{}% 21
