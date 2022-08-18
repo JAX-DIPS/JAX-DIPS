@@ -28,9 +28,9 @@ def test_poisson_solver_with_jump_complex():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(32)
-    Ny = i32(32)
-    Nz = i32(32)
+    Nx = i32(16)
+    Ny = i32(16)
+    Nz = i32(16)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -216,13 +216,14 @@ def test_poisson_solver_with_jump_complex():
 
     exact_sol = vmap(evaluate_exact_solution_fn)(R)
 
+
     init_fn, solve_fn = poisson_solver.setup(
         initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
 
     t1 = time.time()
 
-    sim_state = solve_fn(gstate, sim_state)
+    sim_state = solve_fn(gstate, sim_state, algorithm=1)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
