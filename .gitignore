@@ -17,6 +17,8 @@ database_tmp/
 memory*
 workspace.code-workspace
 
+.vscode-server
+
 .python_history
 
 .cache
