@@ -42,3 +42,15 @@ Once the container is created, user can attach to this container from VS code.
 ```
 ./launch dev
 ```
+
+You can also run the container in background, by passing the `-d` flag for daemon:
+
+```
+./launch dev -d
+```
+
+You can attach to the running `jax_dips` container by 
+
+```
+./launch attach
+```
