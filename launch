@@ -13,6 +13,7 @@ DOCKER_CMD="docker run \
     -w /workspace"
 
 
+CONT_NAME=jax_dips
 usage() {
     echo "Please read README."
 }
@@ -41,6 +42,10 @@ dev() {
                 shift
                 shift
                 ;;
+	    -d|--deamon)
+                DOCKER_CMD="${DOCKER_CMD} -d"
+                shift
+                ;;
             *)
                 echo "Unknown option $1"
                 exit 1
@@ -49,7 +54,7 @@ dev() {
     done
 
     $DOCKER_CMD \
-        --name jax_dip \
+        --name ${CONT_NAME} \
         -u $(id -u):$(id -u) \
         -e PYTHONPATH=$PYTHONPATH \
         -it --rm \
@@ -58,6 +63,13 @@ dev() {
 }
 
 
+attach() {
+    DOCKER_CMD="docker exec"
+    CONTAINER_ID=$(docker ps | grep ${CONT_NAME} | cut -d' ' -f1)
+    ${DOCKER_CMD} -it ${CONTAINER_ID} /bin/bash
+    exit
+}
+
 case $1 in
     build)
         "$@"
@@ -65,6 +77,9 @@ case $1 in
     dev)
         "$@"
         exit 0
+        ;;
+    attach)
+        $@
         ;;
     *)
         usage
