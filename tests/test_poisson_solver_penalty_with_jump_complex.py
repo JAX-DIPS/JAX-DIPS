@@ -9,13 +9,17 @@ import pdb
 import time
 import os
 import sys
+from functools import partial
+
+COMPILE_BACKEND = 'gpu'
+custom_jit = partial(jit, backend=COMPILE_BACKEND)
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
-config.update("jax_enable_x64", True)
+config.update("jax_enable_x64", False)
 
 
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
@@ -45,7 +49,7 @@ def test_poisson_solver_with_jump_complex():
     R = gstate.R
 
     # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper
-    @jit
+    @custom_jit
     def exact_sol_m_fn(r):
         x = r[0]
         y = r[1]
@@ -53,7 +57,7 @@ def test_poisson_solver_with_jump_complex():
         return jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z) 
   
 
-    @jit
+    @custom_jit
     def exact_sol_p_fn(r):
         x = r[0]
         y = r[1]
@@ -62,11 +66,11 @@ def test_poisson_solver_with_jump_complex():
         return (16.0*yx3**5 - 20.0*yx3**3 + 5.0*yx3) * jnp.log(x+y+3) * jnp.cos(z) 
         
 
-    @jit
+    @custom_jit
     def dirichlet_bc_fn(r):
         return exact_sol_p_fn(r)
 
-    @jit
+    @custom_jit
     def unperturbed_phi_fn(r):
         """
         Level-set function for the interface
@@ -90,11 +94,11 @@ def test_poisson_solver_with_jump_complex():
         return phi_
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
-    @jit
+    @custom_jit
     def evaluate_exact_solution_fn(r):
         return jnp.where(phi_fn(r) >= 0, exact_sol_p_fn(r), exact_sol_m_fn(r))
 
-    @jit
+    @custom_jit
     def mu_m_fn(r):
         """
         Diffusion coefficient function in $\Omega^-$
@@ -104,7 +108,7 @@ def test_poisson_solver_with_jump_complex():
         z = r[2]
         return 10.0 * (1 + 0.2 * jnp.cos(2*jnp.pi*(x+y)) * jnp.sin(2*jnp.pi*(x-y)) * jnp.cos(z) )
 
-    @jit
+    @custom_jit
     def mu_p_fn(r):
         """
         Diffusion coefficient function in $\Omega^+$
@@ -114,14 +118,14 @@ def test_poisson_solver_with_jump_complex():
         z = r[2]
         return 1.0
 
-    @jit
+    @custom_jit
     def alpha_fn(r):
         """
         Jump in solution at interface
         """
         return exact_sol_p_fn(r) - exact_sol_m_fn(r)
 
-    @jit
+    @custom_jit
     def beta_fn(r):
         """
         Jump in flux at interface
@@ -135,21 +139,21 @@ def test_poisson_solver_with_jump_complex():
         n_vec = normal_fn(r)
         return jnp.dot(vec_1 - vec_2, n_vec) * (-1.0)
 
-    @jit
+    @custom_jit
     def k_m_fn(r):
         """
         Linear term function in $\Omega^-$
         """
         return 0.0
 
-    @jit
+    @custom_jit
     def k_p_fn(r):
         """
         Linear term function in $\Omega^+$
         """
         return 0.0
 
-    @jit
+    @custom_jit
     def initial_value_fn(r):
         x = r[0]
         y = r[1]
@@ -158,7 +162,7 @@ def test_poisson_solver_with_jump_complex():
 
 
 
-    @jit
+    @custom_jit
     def f_m_fn_(r):
         """
         Source function in $\Omega^-$
@@ -173,7 +177,7 @@ def test_poisson_solver_with_jump_complex():
             return lax.fori_loop(i32(0), i32(dim), _body_fun, 0.0)
         return laplacian_m_fn(r) * (-1.0)
 
-    @jit
+    @custom_jit
     def f_p_fn_(r):
         """
         Source function in $\Omega^+$
@@ -189,7 +193,7 @@ def test_poisson_solver_with_jump_complex():
         return laplacian_p_fn(r) * (-1.0)
 
 
-    @jit
+    @custom_jit
     def f_m_fn(r):
         x = r[0]
         y = r[1]
@@ -201,7 +205,7 @@ def test_poisson_solver_with_jump_complex():
         
         return fm
 
-    @jit
+    @custom_jit
     def f_p_fn(r):
         x = r[0]
         y = r[1]

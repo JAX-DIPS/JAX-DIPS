@@ -7,7 +7,7 @@ from src.jaxmd_modules import util
 from src.nn_solution_trainer import train
 import pdb
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 f32 = util.f32

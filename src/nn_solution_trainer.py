@@ -6,14 +6,13 @@ import optax
 import pdb
 import time
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from jax import config
 config.update("jax_debug_nans", False)
 
 from src.nn_solution_model import DoubleMLP
-
 
 
 
@@ -52,6 +51,11 @@ class Trainer:
         sol_fn =  partial(self.forward.apply, params, None)
         pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
         return pred_sol
+
+    @partial(jit, static_argnums=(0))
+    def evaluate_solution_at_point_fn(self, params, R_, phi_):
+        sol_ =  partial(self.forward.apply, params, None)(R_, phi_)
+        return sol_
 
 
     @partial(jit, static_argnums=(0))
