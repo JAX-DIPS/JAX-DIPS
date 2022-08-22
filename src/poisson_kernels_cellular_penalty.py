@@ -586,6 +586,6 @@ def poisson_solver(gstate, sim_state):
     # grad_u_mp = compute_gradient_solution_mp(params['u'])
     # return params['u'], grad_u_mp, grad_u_mp_normal_to_interface
 
-    grad_u_mp_normal_to_interface = compute_normal_gradient_solution_mp_on_interface(final_solution)
-    grad_u_mp = compute_gradient_solution_mp(final_solution)
+    grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(final_solution)
+    grad_u_mp = trainer.compute_gradient_solution_mp(final_solution)
     return final_solution, grad_u_mp, grad_u_mp_normal_to_interface
