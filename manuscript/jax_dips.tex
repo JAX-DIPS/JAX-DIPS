@@ -144,16 +144,14 @@ The workflow for training neural network surrogate models for PDEs with disconti
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=\linewidth]{./figures/jax_dips_paper.png}
-	\caption{The overall workflow to train neural network surrogate models in the finite dimensional space spanned by finite discretization methods.}
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v3.png}
+	\caption{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
 	\label{fig:proposal}
 \end{figure}
-
-
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=\linewidth]{./figures/jax_dips_paper_v2.png}
-	\caption{The overall workflow to train neural network surrogate models in the finite dimensional space spanned by finite discretization methods.}
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v2.png}
+	\caption{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.}
 	\label{fig:proposal}
 \end{figure}
 
