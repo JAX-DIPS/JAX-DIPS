@@ -144,7 +144,7 @@ The workflow for training neural network surrogate models for PDEs with disconti
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v3.png}
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v1.png}
 	\caption{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
 	\label{fig:proposal}
 \end{figure}
@@ -154,6 +154,63 @@ The workflow for training neural network surrogate models for PDEs with disconti
 	\caption{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.}
 	\label{fig:proposal}
 \end{figure}
+
+
+
+\subsection{Neural network approximators for the solution}
+
+In 1987, Hecht and Nielson \cite{hecht1987kolmogorov} applied an improved version of Kolmogorov's 1957 superposition theorem \cite{kolmogorov1957representation}, due to Sprecher \cite{sprecher1965structure}, to the field of neurocomputing and demonstrated that a $3$-layer feedforward neural network (one input layer with $n$ inputs, one hidden layer with $2n+1$ neurons, one output layer) are universal approximators for all \textit{continuous} functions from the $n$-dimensional cube to a finite $m$-dimensional real vector space; \textit{i.e.}, $f: [0,1]^n \rightarrow \mathbb{R}^m $. Recently, Ismailov (2022) \cite{ismailov2022} demonstrated existence of neural networks implementing \textit{discontinuous} functions, however efficient learning algorithms for such networks are not still available. 
+
+The solutions of interfacial PDE problems are discontinuous, with jumps appearing not only in the solution but also in the solution gradient. In light of above considerations, we define two separate neural networks to represent solution in $\Omega^-$ and $\Omega^+$ regions:
+\begin{align*}
+& u^+ = \mathcal{N}^+(\mathbf{x}): \mathbb{R}^3\cap \Omega^+ \rightarrow \mathbb{R}  & u^- = \mathcal{N}^-(\mathbf{x}): \mathbb{R}^3\cap \Omega^- \rightarrow \mathbb{R}
+\end{align*}
+
+In each network we implement two hidden layers with $10$ neurons per layer using \texttt{tanh} activation function and the output layer is a single linear neuron. Note that piecewise differentiable nonlinearities such as the \texttt{ReLU} function are inappropriate choices for representing solutions to differential equations. Weights and biases are initialized from a truncated normal distribution with zero mean and unit variance. There are a total of $322$ trainable parameters.
+
+Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function.
+
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\linewidth]{./figures/neural_network_arch.png}
+	\caption{Two neural networks are defined for the two regions of the computational domain.}
+	\label{fig:shapes}
+\end{figure}
+
+
+
+We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
+\begin{align*}
+	&\mathcal{L}(u) = \vert\vert A\hat{u}(\mathbf{x}_{ijk}\in \Omega) - b\vert\vert_2^2 + \textrm{vol}_{\mathcal{C}}\vert\vert \hat{u}(\mathbf{x}_{ijk}\in\partial \Omega) - u(\mathbf{x}_{ijk}\in\partial \Omega)\vert\vert_2^2 
+\end{align*}
+JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
+
+Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
+
+
+First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
+
+
+\subsubsection{Gradient based optimization with learning rate annealing}
+
+We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam \cite{kingma2014adam} optimizer:
+\begin{align*}
+r_{k} = r_0 \alpha^{k / T}
+\end{align*}
+where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. %See figure \ref{fig::optimization} for an example of loss evolution during optimization.
+
+%\begin{figure}[ht]
+%\centering
+%\includegraphics[width=0.85\linewidth]{figures/poisson_solver_loss_with_annealing.png}
+%\caption{Effect of annealing to dampen learning rate with number of epochs. }
+%\label{fig::optimization}
+%\end{figure}
+
+
+
+
+
 
 
 \section{Numerical Scheme for Free Boundary Problems}
@@ -721,58 +778,6 @@ hence, the overall loss function for this class of problems shall be
 \mathcal{L} = \mathcal{L}_{bulk} + \mathcal{L}_{boundary} + \mathcal{L}_{interface}
 \end{align*}
 
-
-
-
-\subsection{Neural network approximators for the solution}
-
-In 1987, Hecht and Nielson \cite{hecht1987kolmogorov} applied an improved version of Kolmogorov's 1957 superposition theorem \cite{kolmogorov1957representation}, due to Sprecher \cite{sprecher1965structure}, to the field of neurocomputing and demonstrated that a $3$-layer feedforward neural network (one input layer with $n$ inputs, one hidden layer with $2n+1$ neurons, one output layer) are universal approximators for all \textit{continuous} functions from the $n$-dimensional cube to a finite $m$-dimensional real vector space; \textit{i.e.}, $f: [0,1]^n \rightarrow \mathbb{R}^m $. Recently, Ismailov (2022) \cite{ismailov2022} demonstrated existence of neural networks implementing \textit{discontinuous} functions, however efficient learning algorithms for such networks are not still available. 
-
-The solutions of interfacial PDE problems are discontinuous, with jumps appearing not only in the solution but also in the solution gradient. In light of above considerations, we define two separate neural networks to represent solution in $\Omega^-$ and $\Omega^+$ regions:
-\begin{align*}
-& u^+ = \mathcal{N}^+(\mathbf{x}): \mathbb{R}^3\cap \Omega^+ \rightarrow \mathbb{R}  & u^- = \mathcal{N}^-(\mathbf{x}): \mathbb{R}^3\cap \Omega^- \rightarrow \mathbb{R}
-\end{align*}
-
-In each network we implement two hidden layers with $10$ neurons per layer using \texttt{tanh} activation function and the output layer is a single linear neuron. Note that piecewise differentiable nonlinearities such as the \texttt{ReLU} function are inappropriate choices for representing solutions to differential equations. Weights and biases are initialized from a truncated normal distribution with zero mean and unit variance. There are a total of $322$ trainable parameters.
-
-Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function.
-
-
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=\linewidth]{./figures/neural_network_arch.png}
-	\caption{Two neural networks are defined for the two regions of the computational domain.}
-	\label{fig:shapes}
-\end{figure}
-
-
-
-We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
-\begin{align*}
-	&\mathcal{L}(u) = \vert\vert A\hat{u}(\mathbf{x}_{ijk}\in \Omega) - b\vert\vert_2^2 + \textrm{vol}_{\mathcal{C}}\vert\vert \hat{u}(\mathbf{x}_{ijk}\in\partial \Omega) - u(\mathbf{x}_{ijk}\in\partial \Omega)\vert\vert_2^2 
-\end{align*}
-JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
-
-Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
-
-
-First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
-
-
-\subsubsection{Gradient based optimization with learning rate annealing}
-
-We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam \cite{kingma2014adam} optimizer:
-\begin{align*}
-r_{k} = r_0 \alpha^{k / T}
-\end{align*}
-where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. %See figure \ref{fig::optimization} for an example of loss evolution during optimization.
-
-%\begin{figure}[ht]
-%\centering
-%\includegraphics[width=0.85\linewidth]{figures/poisson_solver_loss_with_annealing.png}
-%\caption{Effect of annealing to dampen learning rate with number of epochs. }
-%\label{fig::optimization}
-%\end{figure}
 
 
 
