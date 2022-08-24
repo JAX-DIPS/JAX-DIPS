@@ -22,74 +22,77 @@
 \Newlabel{2}{b}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
 \newlabel{sec::introduction}{{1}{1}{Introduction}{section.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Numerical Scheme for Free Boundary Problems}{1}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Hybrid Interfacial PDE Solver Strategy}{1}{section.2}\protected@file@percent }
 \citation{MIN2007300}
 \citation{MIN2007300}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The overall workflow to train neural network surrogate models in the finite dimensional space spanned by finite discretization methods.\relax }}{2}{figure.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:proposal}{{1}{2}{The overall workflow to train neural network surrogate models in the finite dimensional space spanned by finite discretization methods.\relax }{figure.caption.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Numerical Scheme for Free Boundary Problems}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Interpolation methods}{2}{subsection.3.1}\protected@file@percent }
 \citation{osher1988fronts}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Interpolation methods}{2}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}Trilinear interpolation}{2}{subsubsection.2.1.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.2}Quadratic non-oscillatory interpolation}{2}{subsubsection.2.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Level-set method}{2}{subsection.2.2}\protected@file@percent }
 \citation{SUSSMAN1994146}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1}Trilinear interpolation}{3}{subsubsection.3.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2}Quadratic non-oscillatory interpolation}{3}{subsubsection.3.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Level-set method}{3}{subsection.3.2}\protected@file@percent }
+\newlabel{eq::sussman}{{2}{3}{Level-set method}{equation.3.2}{}}
 \citation{XIU2001658}
-\newlabel{eq::sussman}{{2}{3}{Level-set method}{equation.2.2}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Second order accurate semi-Lagrangian advection scheme}{3}{subsubsection.2.2.1}\protected@file@percent }
 \citation{shu1988efficient}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}Second order accurate semi-Lagrangian advection scheme}{4}{subsubsection.3.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.2}Godunov Hamiltonian for reinitialization}{4}{subsubsection.3.2.2}\protected@file@percent }
 \citation{shu1988efficient}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Godunov Hamiltonian for reinitialization}{4}{subsubsection.2.2.2}\protected@file@percent }
 \citation{min2007geometric}
 \citation{sallee1984middle}
 \citation{min2007geometric}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Geometric operations}{5}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.1}Integration over 3D surfaces and volumes}{5}{subsubsection.3.3.1}\protected@file@percent }
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Integration over 3D surfaces and volumes}{5}{subsection.2.3}\protected@file@percent }
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{bochkov2020solving}
 \citation{bochkov2020solving}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Cross sections of interface with grid cell faces}{6}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.2}Cross sections of interface with grid cell faces}{7}{subsubsection.3.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Approach I. Finite discretization method}{7}{subsection.3.4}\protected@file@percent }
+\newlabel{sec::FD}{{3.4}{7}{Approach I. Finite discretization method}{subsection.3.4}{}}
 \citation{bochkov2020solving}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{7}{figure.caption.1}\protected@file@percent }
-\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:grid}{{1}{7}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Finite discretization method}{7}{subsection.2.5}\protected@file@percent }
-\newlabel{sec::FD}{{2.5}{7}{Finite discretization method}{subsection.2.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{8}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:grid}{{2}{8}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Approach II. Interface induced penalty terms}{10}{subsection.3.5}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{11}{algorithm.1}\protected@file@percent }
+\newlabel{euclid}{{1}{11}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
 \citation{hecht1987kolmogorov}
 \citation{kolmogorov1957representation}
 \citation{sprecher1965structure}
 \citation{ismailov2022}
-\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{10}{algorithm.1}\protected@file@percent }
-\newlabel{euclid}{{1}{10}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
+\newlabel{eq::taylorexpandjump}{{13}{12}{Approach II. Interface induced penalty terms}{equation.3.13}{}}
+\newlabel{eq::interfaceLoss}{{15}{12}{Approach II. Interface induced penalty terms}{equation.3.15}{}}
 \citation{kingma2014adam}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Neural network approximators for the solution}{11}{subsection.2.6}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Two neural networks are defined for the two regions of the computational domain.\relax }}{11}{figure.caption.2}\protected@file@percent }
-\newlabel{fig:shapes}{{2}{11}{Two neural networks are defined for the two regions of the computational domain.\relax }{figure.caption.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.7}Differentiable solution strategy}{11}{subsection.2.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Neural network approximators for the solution}{13}{subsection.3.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Two neural networks are defined for the two regions of the computational domain.\relax }}{13}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:shapes}{{3}{13}{Two neural networks are defined for the two regions of the computational domain.\relax }{figure.caption.3}{}}
 \citation{optax2020github}
 \citation{kingma2014adam}
 \citation{gradClipping}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.7.1}Gradient based optimization with learning rate annealing}{12}{subsubsection.2.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.7.2}Improving convergence with preconditioning}{12}{subsubsection.2.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.8}Interface induced penalty terms}{12}{subsection.2.8}\protected@file@percent }
-\newlabel{eq::taylorexpandjump}{{13}{13}{Interface induced penalty terms}{equation.2.13}{}}
-\newlabel{eq::interfaceLoss}{{15}{13}{Interface induced penalty terms}{equation.2.15}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }}{14}{figure.caption.3}\protected@file@percent }
-\newlabel{fig:losses}{{3}{14}{Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }{figure.caption.3}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3}Numerical Examples}{14}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Case I.}{14}{subsection.3.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{15}{figure.caption.4}\protected@file@percent }
-\newlabel{fig:sphere}{{4}{15}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{15}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:sphere}{{5}{15}{Illustration of exact and numerical solutions.\relax }{figure.caption.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{16}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:star}{{6}{16}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Case II.}{16}{subsection.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Conclusion \& Future Directions}{16}{section.4}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{17}{figure.caption.7}\protected@file@percent }
-\newlabel{fig:star_sol}{{7}{17}{Illustration of exact and numerical solutions.\relax }{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.1}Gradient based optimization with learning rate annealing}{14}{subsubsection.3.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.2}Improving convergence with preconditioning}{14}{subsubsection.3.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Examples}{14}{section.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }}{15}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:losses}{{4}{15}{Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Case I.}{15}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II.}{15}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{16}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:sphere}{{5}{16}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{16}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:sphere}{{6}{16}{Illustration of exact and numerical solutions.\relax }{figure.caption.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{17}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:star}{{7}{17}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion \& Future Directions}{17}{section.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{18}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:star_sol}{{8}{18}{Illustration of exact and numerical solutions.\relax }{figure.caption.8}{}}
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{bochkov2020solving}{{1}{}{{}}{{}}}
@@ -110,4 +113,4 @@
 \bibcite{SUSSMAN1994146}{{16}{}{{}}{{}}}
 \bibcite{XIU2001658}{{17}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
-\@writefile{toc}{\contentsline {section}{References}{19}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{20}{section*.9}\protected@file@percent }
