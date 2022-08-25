@@ -56,6 +56,8 @@ class PDETrainer:
         x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, self.phi_cube_)
         x, y, z, self.phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
 
+        self.mu_m_cube_internal = mu_m.reshape(grid_shape)
+        self.mu_p_cube_internal = mu_p.reshape(grid_shape)
 
         self.mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
         self.mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
@@ -89,10 +91,13 @@ class PDETrainer:
         if self.algorithm==0:
             self.initialize_regression_based_algorithm()
             self.u_mp_fn = self.get_u_mp_by_regression_at_node_fn
+            self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_regression
+            self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_regression
         
         elif self.algorithm==1:
             self.u_mp_fn = self.get_u_mp_by_neural_network_at_node_fn
-
+            self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_neural_network
+            self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
 
 
 
@@ -212,8 +217,7 @@ class PDETrainer:
         self.Cm_ijk_pqm = get_c_ijk_pqm_vec(self.normal_vecs, self.D_m_mat)
         self.Cp_ijk_pqm = get_c_ijk_pqm_vec(self.normal_vecs, self.D_p_mat)
 
-        self.mu_m_cube_internal = mu_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-        self.mu_p_cube_internal = mu_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
+        
 
         self.zeta_p_ijk_pqm = ((self.mu_p_cube_internal - self.mu_m_cube_internal) / self.mu_m_cube_internal) * self.phi_cube_
         self.zeta_p_ijk_pqm = self.zeta_p_ijk_pqm[...,jnp.newaxis] * self.Cp_ijk_pqm.reshape(self.phi_cube_.shape + (-1,))
@@ -280,10 +284,15 @@ class PDETrainer:
         pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
         return pred_sol
 
-    @partial(jit, static_argnums=(0))
-    def evaluate_solution_at_point_fn(self, params, R_, phi_):
-        sol_ =  partial(self.forward.apply, params, None)(R_, phi_)
-        return sol_
+    def solution_at_point_fn(self, params, r_point, phi_point):
+        sol_fn =  partial(self.forward.apply, params, None)
+        return sol_fn(r_point, phi_point).reshape()
+
+
+    def get_sol_grad_sol_fn(self, params):
+        u_at_point_fn = partial(self.solution_at_point_fn, params)
+        grad_u_at_point_fn = grad(u_at_point_fn)
+        return u_at_point_fn, grad_u_at_point_fn
 
 
     @partial(jit, static_argnums=(0))
@@ -351,7 +360,7 @@ class PDETrainer:
         u = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
         u_cube = u.reshape(self.grid_shape)
 
-        u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z)
+        u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z, params)
 
 
         def is_box_boundary_node(i, j, k):
@@ -433,7 +442,7 @@ class PDETrainer:
 
 
     @partial(jit, static_argnums=(0))
-    def get_u_mp_by_regression_at_node_fn(self, u_cube, x, y, z, i, j, k):
+    def get_u_mp_by_regression_at_node_fn(self, u_cube, x, y, z, params, i, j, k):
         """
         This function evaluates pairs of u^+ and u^- at each grid point
         in the domain, given the neural network models.
@@ -448,16 +457,13 @@ class PDETrainer:
         def bulk_node(is_interface_, u_ijk_):
             return jnp.array([jnp.where(is_interface_ == -1, u_ijk_, 0.0), jnp.where(is_interface_ == 1, u_ijk_, 0.0)])
 
-
         def interface_node(i, j, k):
             def mu_minus_bigger_fn(i, j, k):
                 def extrapolate_u_m_from_negative_domain(i, j, k):
                     delta_ijk = self.phi_cube[i, j, k] 
-                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                    r_ijk = jnp.array([x[i-2], y[j-2], z[k-2]], dtype=f32)
                     r_m_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
                     r_m_proj = r_m_proj[jnp.newaxis]
-
-
                     curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
                     u_m = -1.0 * jnp.dot(self.gamma_m_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
                     u_m += (1.0 - self.gamma_m_ijk[i-2, j-2, k-2] + self.gamma_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
@@ -466,7 +472,7 @@ class PDETrainer:
 
                 def extrapolate_u_p_from_positive_domain(i, j, k):
                     delta_ijk = self.phi_cube[i, j, k]  
-                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                    r_ijk = jnp.array([x[i-2], y[j-2], z[k-2]], dtype=f32)
                     r_p_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
                     r_p_proj = r_p_proj[jnp.newaxis]
                     curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
@@ -482,7 +488,7 @@ class PDETrainer:
             def mu_plus_bigger_fn(i, j, k):
                 def extrapolate_u_m_from_negative_domain_(i, j, k):
                     delta_ijk = self.phi_cube[i, j, k] 
-                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                    r_ijk = jnp.array([x[i-2], y[j-2], z[k-2]], dtype=f32)
                     r_m_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
                     r_m_proj = r_m_proj[jnp.newaxis]
                     curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
@@ -493,7 +499,7 @@ class PDETrainer:
 
                 def extrapolate_u_p_from_positive_domain_(i, j, k):
                     delta_ijk = self.phi_cube[i, j, k] 
-                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                    r_ijk = jnp.array([x[i-2], y[j-2], z[k-2]], dtype=f32)
                     r_p_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
                     r_p_proj = r_p_proj[jnp.newaxis]
                     curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
@@ -516,96 +522,11 @@ class PDETrainer:
         u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
         return u_mp
 
-
-
-    @partial(jit, static_argnums=(0))
-    def get_u_mp_by_neural_network_at_node_fn(self, u_cube, x, y, z, i, j, k):
-        """
-        This function evaluates pairs of u^+ and u^- at each grid point
-        in the domain, given the neural network models.
-    
-        BIAS SLOW:
-            This function evaluates 
-                u_m = B_m : u + r_m 
-            and 
-                u_p = B_p : u + r_p
-        """
-
-        def bulk_node(is_interface_, u_ijk_):
-            return jnp.array([jnp.where(is_interface_ == -1, u_ijk_, 0.0), jnp.where(is_interface_ == 1, u_ijk_, 0.0)])
-
-
-        def interface_node(i, j, k):
-            def mu_minus_bigger_fn(i, j, k):
-                def extrapolate_u_m_from_negative_domain(i, j, k):
-                    delta_ijk = self.phi_cube[i, j, k] 
-                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
-                    r_m_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
-                    r_m_proj = r_m_proj[jnp.newaxis]
-
-
-                    curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
-                    u_m = -1.0 * jnp.dot(self.gamma_m_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
-                    u_m += (1.0 - self.gamma_m_ijk[i-2, j-2, k-2] + self.gamma_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                    u_m += -1.0 * (1.0 - self.gamma_m_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_interp_fn(r_m_proj) / self.mu_p_interp_fn(r_m_proj))
-                    return u_m
-
-                def extrapolate_u_p_from_positive_domain(i, j, k):
-                    delta_ijk = self.phi_cube[i, j, k]  
-                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
-                    r_p_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
-                    r_p_proj = r_p_proj[jnp.newaxis]
-                    curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
-                    u_p = -1.0 * jnp.dot(self.zeta_m_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
-                    u_p += (1.0 - self.zeta_m_ijk[i-2, j-2, k-2] + self.zeta_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                    u_p += self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_interp_fn(r_p_proj) / self.mu_p_interp_fn(r_p_proj)
-                    return u_p
-                phi_ijk = self.phi_cube[i, j, k]
-                u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain(i, j, k), u_cube[i-2, j-2, k-2])[0]
-                u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain(i, j, k))[0]
-                return jnp.array([u_m, u_p])
-
-            def mu_plus_bigger_fn(i, j, k):
-                def extrapolate_u_m_from_negative_domain_(i, j, k):
-                    delta_ijk = self.phi_cube[i, j, k] 
-                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
-                    r_m_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
-                    r_m_proj = r_m_proj[jnp.newaxis]
-                    curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
-                    u_m = -1.0 * jnp.dot(self.zeta_p_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
-                    u_m += (1.0 - self.zeta_p_ijk[i-2, j-2, k-2] + self.zeta_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                    u_m += (-1.0)*(self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_interp_fn(r_m_proj) / self.mu_m_interp_fn(r_m_proj) )
-                    return u_m
-
-                def extrapolate_u_p_from_positive_domain_(i, j, k):
-                    delta_ijk = self.phi_cube[i, j, k] 
-                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
-                    r_p_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
-                    r_p_proj = r_p_proj[jnp.newaxis]
-                    curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
-                    u_p = -1.0 * jnp.dot(self.gamma_p_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
-                    u_p += (1.0 - self.gamma_p_ijk[i-2, j-2, k-2] + self.gamma_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                    u_p += (1.0 - self.gamma_p_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_interp_fn(r_p_proj) / self.mu_m_interp_fn(r_p_proj))
-                    return u_p
-                phi_ijk = self.phi_cube[i, j, k]
-                u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain_(i, j, k), u_cube[i-2, j-2, k-2])[0]
-                u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain_(i, j, k))[0]
-                return jnp.array([u_m, u_p])
-
-            mu_m_ijk = self.mu_m_cube_internal[i-2, j-2, k-2]
-            mu_p_ijk = self.mu_p_cube_internal[i-2, j-2, k-2]
-            return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
-
-        u_ijk = u_cube[i-2, j-2, k-2]
-        # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
-        is_interface = self.is_cell_crossed_by_interface((i, j, k))
-        u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
-        return u_mp
 
 
 
     #Compute normal gradients for error analysis
-    def compute_normal_gradient_solution_mp_on_interface(self, u):
+    def compute_normal_gradient_solution_mp_on_interface_regression(self, u):
         """
         Given the solution field u, this function computes gradient of u along normal direction
         of the level-set function on the interface itself; at r_proj.
@@ -614,7 +535,7 @@ class PDETrainer:
         x = self.gstate.x
         y = self.gstate.y
         z = self.gstate.z
-        u_mp = vmap(self.u_mp_fn, (None, None, None, None, 0, 0, 0))(u_cube, x, y, z, self.nodes[:,0], self.nodes[:,1], self.nodes[:,2])
+        u_mp = vmap(self.u_mp_fn, (None, None, None, None, None, 0, 0, 0))(u_cube, x, y, z, None, self.nodes[:,0], self.nodes[:,1], self.nodes[:,2])
         def convolve_at_node(node):
             i,j,k = node
             curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
@@ -630,7 +551,7 @@ class PDETrainer:
 
 
 
-    def compute_gradient_solution_mp(self, u):
+    def compute_gradient_solution_mp_regression(self, u):
         """
         This function computes \nabla u^+ and \nabla u^- given a solution vector u.
         """
@@ -642,7 +563,7 @@ class PDETrainer:
             i,j,k = node
             curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
             u_curr_ngbs = self.cube_at_v(u_cube, curr_ngbs)
-            u_mp_node = self.u_mp_fn(u_cube, x, y, z, i, j, k)
+            u_mp_node = self.u_mp_fn(u_cube, x, y, z, None, i, j, k)
             dU_mp = u_curr_ngbs[:,jnp.newaxis] - u_mp_node
             grad_m = d_m_mat @ dU_mp[:,0]
             grad_p = d_p_mat @ dU_mp[:,1]
@@ -653,6 +574,89 @@ class PDETrainer:
 
 
 
+
+    @partial(jit, static_argnums=(0))
+    def get_u_mp_by_neural_network_at_node_fn(self, u_cube, x, y, z, params, i, j, k):
+        """
+        This function evaluates pairs of u^+ and u^- at each grid point
+        in the domain, given the neural network models.
+        """
+
+        u_at_point_fn, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+
+        r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+        delta_ijk = self.phi_cube[i, j, k]         
+        u_ijk = u_at_point_fn(r_ijk, delta_ijk)
+        
+
+        def bulk_node(is_interface_, u_ijk_):
+            return jnp.array([jnp.where(is_interface_ == -1, u_ijk_, 0.0), jnp.where(is_interface_ == 1, u_ijk_, 0.0)])
+
+        def interface_node(i, j, k):
+            def mu_minus_bigger_fn(i, j, k):
+                def extrapolate_u_m_from_negative_domain(i, j, k):
+                    normal_ijk = self.normal_vec_fn((i, j, k))
+                    r_m_proj = r_ijk - delta_ijk * normal_ijk
+                    r_m_proj = r_m_proj[jnp.newaxis]
+                    du_dn = jnp.dot(grad_u_at_point_fn(r_m_proj, -1), normal_ijk)
+                    u_m = u_at_point_fn(r_ijk, 1) - self.alpha_interp_fn(r_m_proj)
+                    u_m -= delta_ijk * ( (self.mu_m_interp_fn(r_m_proj) / self.mu_p_interp_fn(r_m_proj) - 1.0) *  du_dn + self.beta_interp_fn(r_m_proj)/self.mu_p_interp_fn(r_m_proj))
+                    return u_m
+
+                def extrapolate_u_p_from_positive_domain(i, j, k):
+                    normal_ijk = self.normal_vec_fn((i, j, k))
+                    r_p_proj = r_ijk - delta_ijk * normal_ijk
+                    r_p_proj = r_p_proj[jnp.newaxis]
+                    du_dn = jnp.dot(grad_u_at_point_fn(r_p_proj, -1), normal_ijk)
+                    u_p = u_at_point_fn(r_ijk, -1) + self.alpha_interp_fn(r_p_proj)
+                    u_p += delta_ijk * ( (self.mu_m_interp_fn(r_p_proj)/self.mu_p_interp_fn(r_p_proj) - 1.0) * du_dn + self.beta_interp_fn(r_p_proj)/self.mu_p_interp_fn(r_p_proj) )
+                    return u_p
+                phi_ijk = self.phi_cube[i, j, k]
+                u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain(i, j, k), u_cube[i-2, j-2, k-2])[0]
+                u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain(i, j, k))[0]
+                return jnp.array([u_m, u_p])
+
+            def mu_plus_bigger_fn(i, j, k):
+                def extrapolate_u_m_from_negative_domain_(i, j, k):
+                    normal_ijk = self.normal_vec_fn((i, j, k))
+                    r_m_proj = r_ijk - delta_ijk * normal_ijk
+                    r_m_proj = r_m_proj[jnp.newaxis]
+                    du_dn = jnp.dot(grad_u_at_point_fn(r_m_proj, 1), normal_ijk)
+                    u_m = u_at_point_fn(r_ijk, 1) - self.alpha_interp_fn(r_m_proj)
+                    u_m -= delta_ijk * ( (1 - self.mu_p_interp_fn(r_m_proj)/self.mu_m_interp_fn(r_m_proj)) * du_dn + self.beta_interp_fn(r_m_proj) / self.mu_m_interp_fn(r_m_proj) )
+                    return u_m
+
+                def extrapolate_u_p_from_positive_domain_(i, j, k):
+                    normal_ijk = self.normal_vec_fn((i, j, k))
+                    r_p_proj = r_ijk - delta_ijk * normal_ijk
+                    r_p_proj = r_p_proj[jnp.newaxis]
+                    du_dn = jnp.dot(grad_u_at_point_fn(r_p_proj, 1), normal_ijk)
+                    u_p = u_at_point_fn(r_ijk, -1) + self.alpha_interp_fn(r_p_proj)
+                    u_p += delta_ijk * ((1 - self.mu_p_interp_fn(r_p_proj)/self.mu_m_interp_fn(r_p_proj)) * du_dn + self.beta_interp_fn(r_p_proj) / self.mu_m_interp_fn(r_p_proj))
+                    return u_p
+                phi_ijk = self.phi_cube[i, j, k]
+                u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain_(i, j, k), u_cube[i-2, j-2, k-2])[0]
+                u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain_(i, j, k))[0]
+                return jnp.array([u_m, u_p])
+
+            mu_m_ijk = self.mu_m_cube_internal[i-2, j-2, k-2]
+            mu_p_ijk = self.mu_p_cube_internal[i-2, j-2, k-2]
+            return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
+
+        
+        # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
+        is_interface = self.is_cell_crossed_by_interface((i, j, k))
+        u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
+        return u_mp
+
+
+    def compute_normal_gradient_solution_mp_on_interface_neural_network(self, u):
+        pdb.set_trace()
+        pass
+
+    def compute_gradient_solution_mp_neural_network(self, u):
+        pdb.set_trace()
+        pass
 
 
 
@@ -715,12 +719,8 @@ def poisson_solver(gstate, sim_state, algorithm=0):
   
     final_solution = trainer.evaluate_solution_fn(params, gstate.R, trainer.phi_flat).reshape(-1)
 
-
     #------------- Gradients of discovered solutions are below:    
-    # grad_u_mp_normal_to_interface = compute_normal_gradient_solution_mp_on_interface(params['u'])
-    # grad_u_mp = compute_gradient_solution_mp(params['u'])
-    # return params['u'], grad_u_mp, grad_u_mp_normal_to_interface
-
     grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(final_solution)
     grad_u_mp = trainer.compute_gradient_solution_mp(final_solution)
+
     return final_solution, grad_u_mp, grad_u_mp_normal_to_interface
