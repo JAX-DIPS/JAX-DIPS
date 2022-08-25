@@ -85,7 +85,8 @@
 
 
 \begin{document}
-\title{JAX-DIPS: Differentiable Interfacial PDE Solver}
+%\title{JAX-DIPS: Differentiable Interfacial PDE Solver}
+\title{\texttt{JAX-DIPS}: Solving interfacial PDE problems with an end-to-end differentiable level-set framework}
 
 \cortext[cor]{Corresponding author: p.a.mistani@gmail.com}
 
@@ -99,7 +100,7 @@
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present an end-to-end differentiable PDE solver supporting both forward and inverse free boundary problems using the level-set method. We implemented this framework using JAX, extending support for CPU/GPU/TPU platforms. Algorithmically, our proposed framework builds on the blended inverse PDE solver architecure (BiPDE) that authors have proposed earlier \cite{pakravan2021solving}. JAX-DIPS is an open-source software package published is available at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
+	We present an end-to-end differentiable PDE solver for training surrogate neural network models for free boundary problems using the level-set method. We implemented the algorithms presented in this work in a software package in \texttt{JAX}, dubbed \texttt{JAX-DIPS} standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is an end-to-end \texttt{JAX} implementation from mesh generation to all the higher level abstractions that enables exploratory research into use of differentiable numerical methods along with traditional solvers. Algorithmically the training of the infinite dimensional surrogate model occurs in a finite dimensional space obtained by a finite volume discretization which builds upon and extends the blended inverse PDE solver architecure (BiPDE) that authors have proposed earlier \cite{pakravan2021solving}. We release \texttt{JAX-DIPS} as an open-source software package under MIT license that is available at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
 
 \end{abstract}
 
@@ -135,85 +136,7 @@ The first method attempts to span the residual space in an iterative fashion by 
 We designed \texttt{JAX-DIPS} as a modular open source library for the research community on the level-set methods for solving interfacial PDE problems. We invite the community to contribute to this library for further development of novel numerical algorithms for solving both forward and inverse interfacial PDE problems.
 
 
-
-
-\section{Hybrid Interfacial PDE Solver Strategy}
-One of the main advantages of neural networks for solving partial differential equations is to provide surrogate models that can be readily evaluated on any point of their input space. For parameterized problems, a free parameter such as the diffusion coefficient could be variable for these problems, in this case having an oracle function that evaluates solutions in near-real-time is an invaluable tool for general engineering optimization workflows. 
-
-The workflow for training neural network surrogate models for PDEs with discontinuities is illustrated in figure \ref{fig:proposal}.
-
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v1.png}
-	\caption{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
-	\label{fig:proposal}
-\end{figure}
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v2.png}
-	\caption{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.}
-	\label{fig:proposal}
-\end{figure}
-
-
-
-\subsection{Neural network approximators for the solution}
-
-In 1987, Hecht and Nielson \cite{hecht1987kolmogorov} applied an improved version of Kolmogorov's 1957 superposition theorem \cite{kolmogorov1957representation}, due to Sprecher \cite{sprecher1965structure}, to the field of neurocomputing and demonstrated that a $3$-layer feedforward neural network (one input layer with $n$ inputs, one hidden layer with $2n+1$ neurons, one output layer) are universal approximators for all \textit{continuous} functions from the $n$-dimensional cube to a finite $m$-dimensional real vector space; \textit{i.e.}, $f: [0,1]^n \rightarrow \mathbb{R}^m $. Recently, Ismailov (2022) \cite{ismailov2022} demonstrated existence of neural networks implementing \textit{discontinuous} functions, however efficient learning algorithms for such networks are not still available. 
-
-The solutions of interfacial PDE problems are discontinuous, with jumps appearing not only in the solution but also in the solution gradient. In light of above considerations, we define two separate neural networks to represent solution in $\Omega^-$ and $\Omega^+$ regions:
-\begin{align*}
-& u^+ = \mathcal{N}^+(\mathbf{x}): \mathbb{R}^3\cap \Omega^+ \rightarrow \mathbb{R}  & u^- = \mathcal{N}^-(\mathbf{x}): \mathbb{R}^3\cap \Omega^- \rightarrow \mathbb{R}
-\end{align*}
-
-In each network we implement two hidden layers with $10$ neurons per layer using \texttt{tanh} activation function and the output layer is a single linear neuron. Note that piecewise differentiable nonlinearities such as the \texttt{ReLU} function are inappropriate choices for representing solutions to differential equations. Weights and biases are initialized from a truncated normal distribution with zero mean and unit variance. There are a total of $322$ trainable parameters.
-
-Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function.
-
-
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=\linewidth]{./figures/neural_network_arch.png}
-	\caption{Two neural networks are defined for the two regions of the computational domain.}
-	\label{fig:shapes}
-\end{figure}
-
-
-
-We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
-\begin{align*}
-	&\mathcal{L}(u) = \vert\vert A\hat{u}(\mathbf{x}_{ijk}\in \Omega) - b\vert\vert_2^2 + \textrm{vol}_{\mathcal{C}}\vert\vert \hat{u}(\mathbf{x}_{ijk}\in\partial \Omega) - u(\mathbf{x}_{ijk}\in\partial \Omega)\vert\vert_2^2 
-\end{align*}
-JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
-
-Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
-
-
-First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
-
-
-\subsubsection{Gradient based optimization with learning rate annealing}
-
-We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam \cite{kingma2014adam} optimizer:
-\begin{align*}
-r_{k} = r_0 \alpha^{k / T}
-\end{align*}
-where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. %See figure \ref{fig::optimization} for an example of loss evolution during optimization.
-
-%\begin{figure}[ht]
-%\centering
-%\includegraphics[width=0.85\linewidth]{figures/poisson_solver_loss_with_annealing.png}
-%\caption{Effect of annealing to dampen learning rate with number of epochs. }
-%\label{fig::optimization}
-%\end{figure}
-
-
-
-
-
-
-
-\section{Numerical Scheme for Free Boundary Problems}
+\subsection{Life sciences are described by elliptic PDEs with free interfaces}
 Consider a closed irregular interface ($\rm \Gamma$) that partitions the computational domain ($\rm \Omega$) into interior ($\rm \Omega^-$) and exterior ($\rm \Omega^+$) subdomains; \textit{i.e.}, $\rm \Omega=\Omega^- \cup \Gamma \cup \Omega^+$. We are interested in the solutions $\rm u^\pm\in \Omega^\pm$ to the following class of linear elliptic problems in  $\rm \mathbf{x}\in\Omega^\pm$:
 \begin{align*}
 	 & k^{\pm}u^{\pm} - \nabla \cdot (\mu^{\pm}\nabla u^\pm)=f^{\pm}, & \mathbf{x}\in\Omega^\pm \\
@@ -224,6 +147,11 @@ Here $f^\pm=f(\mathbf{x} \in \Omega^\pm)$ is the spatially varying source term, 
 
 
 
+
+\section{Level-set method for free boundary problems}
+A differentiable solver for free boundary problems requires a rich data structure capable to handle several geometric operations over a given mesh. We understand the mesh as a \textit{topological} relationships between cells that discretize a domain, the geometric information of this discretization as well as the relative configuration of the interfaces with respect to the cells need to be computed. 
+
+In \texttt{JAX-DIPS} we have implemented a uniform grid that supports operations such as interpolations, interface advection, integrations over interfaces as well as in domains. We describe the numerical algorithms used in this section.
 
 
 \subsection{Interpolation methods}
@@ -431,11 +359,91 @@ For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the conside
 
 
 
+\section{Hybrid Interfacial PDE Solver Strategy}
+One of the main advantages of neural networks for solving partial differential equations is to provide surrogate models that can be readily evaluated on any point of their input space. For parameterized problems, a free parameter such as the diffusion coefficient could be variable for these problems, in this case having an oracle function that evaluates solutions in near-real-time is an invaluable tool for general engineering optimization workflows. 
+
+On the other hand, finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system often lead to bad condition number for the linear system, which can be remedied by advanced preconditioners. Preconditioners are a powerful technique to accelerate convergence of tradional numerical linear algebraic solvers. Given a poorly conditioned linear system $Ax=b$ one can obtain an equivalent system $\hat{A}\hat{x}=\hat{b}$ with accelerated convergence rate when using iterative gradient based methods. For the conjugate gradient method convergence iteration is proportional to $\sqrt{\kappa(A)}$ where $\kappa(A)$ is the condition number of matrix $A$. This is achieved by mapping the linear system with a nonsingular matrix $M$ into a new space $M^{-1} A x = M^{-1}b$ where $M^{-1}A$ has more regular spread of eigenvalues, hence a better condition number. The precondition matrix $M$ should approximate $A^{-1}$ such that $\vert I - M^{-1}A\vert < 1$. The simplest choice is the Jacobi prconditioner which amounts to using the diagonal part of $A$ as the preconditioner, $M=diag(A)$.
+
+
+
+Intuitively, condition number is caused by a separation of scales for geometric lengthscales or material properties that underly the solution patterns. One of the strengths of the presented approach is to readily enable usage of preconditioners for training neural network surrogate models. The workflow for training neural network surrogate models for PDEs with discontinuities is illustrated in figure \ref{fig:proposal}.
+
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v1.png}
+	\caption{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
+	\label{fig:proposal}
+\end{figure}
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v2.png}
+	\caption{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.}
+	\label{fig:proposal}
+\end{figure}
 
 
 
 
-\subsection{Approach I. Finite discretization method}\label{sec::FD}
+
+
+\subsection{Neural network approximators for the solution}
+
+In 1987, Hecht and Nielson \cite{hecht1987kolmogorov} applied an improved version of Kolmogorov's 1957 superposition theorem \cite{kolmogorov1957representation}, due to Sprecher \cite{sprecher1965structure}, to the field of neurocomputing and demonstrated that a $3$-layer feedforward neural network (one input layer with $n$ inputs, one hidden layer with $2n+1$ neurons, one output layer) are universal approximators for all \textit{continuous} functions from the $n$-dimensional cube to a finite $m$-dimensional real vector space; \textit{i.e.}, $f: [0,1]^n \rightarrow \mathbb{R}^m $. Recently, Ismailov (2022) \cite{ismailov2022} demonstrated existence of neural networks implementing \textit{discontinuous} functions, however efficient learning algorithms for such networks are not still available. 
+
+The solutions of interfacial PDE problems are discontinuous, with jumps appearing not only in the solution but also in the solution gradient. In light of above considerations, we define two separate neural networks to represent solution in $\Omega^-$ and $\Omega^+$ regions:
+\begin{align*}
+& u^+ = \mathcal{N}^+(\mathbf{x}): \mathbb{R}^3\cap \Omega^+ \rightarrow \mathbb{R}  & u^- = \mathcal{N}^-(\mathbf{x}): \mathbb{R}^3\cap \Omega^- \rightarrow \mathbb{R}
+\end{align*}
+
+In each network we implement two hidden layers with $10$ neurons per layer using \texttt{tanh} activation function and the output layer is a single linear neuron. Note that piecewise differentiable nonlinearities such as the \texttt{ReLU} function are inappropriate choices for representing solutions to differential equations. Weights and biases are initialized from a truncated normal distribution with zero mean and unit variance. There are a total of $322$ trainable parameters.
+
+Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function.
+
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\linewidth]{./figures/neural_network_arch.png}
+	\caption{Two neural networks are defined for the two regions of the computational domain.}
+	\label{fig:shapes}
+\end{figure}
+
+
+
+We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
+\begin{align*}
+	&\mathcal{L}(u) = \vert\vert A\hat{u}(\mathbf{x}_{ijk}\in \Omega) - b\vert\vert_2^2 + \textrm{vol}_{\mathcal{C}}\vert\vert \hat{u}(\mathbf{x}_{ijk}\in\partial \Omega) - u(\mathbf{x}_{ijk}\in\partial \Omega)\vert\vert_2^2 
+\end{align*}
+JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
+
+Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
+
+
+First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
+
+
+%\subsubsection{Gradient based optimization with learning rate annealing}
+
+We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam \cite{kingma2014adam} optimizer:
+\begin{align*}
+r_{k} = r_0 \alpha^{k / T}
+\end{align*}
+where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. %See figure \ref{fig::optimization} for an example of loss evolution during optimization.
+
+%\begin{figure}[ht]
+%\centering
+%\includegraphics[width=0.85\linewidth]{figures/poisson_solver_loss_with_annealing.png}
+%\caption{Effect of annealing to dampen learning rate with number of epochs. }
+%\label{fig::optimization}
+%\end{figure}
+
+
+
+
+
+
+
+\subsection{Approach I. Finite discretization method fused with regression extrapolation}\label{sec::FD}
 
 For spatial discretizations at the presence of jump conditions we employ the numerical algorithm proposed by \cite{bochkov2020solving} on Cartesian grids. Method of \cite{bochkov2020solving} produces second-order accurate solutions and first-order accuracte gradients in the $L^\infty$-norm, while having a compact stencil that makes it a good candidate for parallelization. Moreover, treatment of the interface jump conditions do not introduce any augmented variables, this preserves the homogeneous structure of the linear system.
 
@@ -730,8 +738,8 @@ in matrix notation we have
 \end{algorithm}
 
 
-\subsection{Approach II. Interface induced penalty terms}
-Our proposed physics-aware PDE solver is based on the observation that the neural network models for negative and positive domains can be explicitly used as interpolation and extrapolation functions within the finite discretization schemes.  
+\subsection{Approach II. Finite discretization method fused with neural extrapolation}
+Our proposed hybrid PDE solver is based on the observation that the neural network models for negative and positive domains can be explicitly used as interpolation and extrapolation functions within the finite discretization schemes.  
 
 The basic idea of the finite discretization method of section \ref{sec::FD} is to impose the jump conditions on the already-available grid points in the computational cells that are crossed by the interface, instead of aspiring to impose the jump conditions exactly on the interface itself. This is achieved by a Taylor expansion to project the interfacial jump conditions onto adjacent grid points. Using the neural network models for solutions, we are able to naturally evaluate extensions of the solution functions in a banded region around the interface as illustrated in figure \ref{fig:shapes}.
 
@@ -747,26 +755,41 @@ u^+_{i,j} - u^-_{i,j}=[u]_{\mathbf{r}_{i,j}^{pr}} + \delta_{i,j}(\partial_\mathb
 \end{align}
 which explicitly incorporates the jump condition in the solutions. To incorporate the jump condition in fluxes we can rewrite either of the normal gradients in terms of the other 
 \begin{align*}
-\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) &= \frac{\mu^-}{\mu^+}\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta}{\mu^+} \\
+\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) &= \frac{\mu^-}{\mu^+}\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta}{\mu^+}\\
 \partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) &= \frac{\mu^+}{\mu^-}\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) - \frac{\beta}{\mu^-} 
 \end{align*}
 which leads to two relationships among predictions of the two neural networks at each grid point in the banded extrapolation region
+\begin{align}
+u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(\frac{\mu^-}{\mu^+}-1\big)\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^+} \bigg)  \label{eq::extrapolate1}\\
+u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(1-\frac{\mu^+}{\mu^-}\big)\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^-} \bigg) \label{eq::extrapolate2}
+\end{align}
+
+Note that we are representing solution functions, $\hat{u}^\pm(\mathbf{r})$, with neural networks where computing the normal derivatives is trivial using automatic differentiation of the network along the normal directions. In contrast to finite discretization methods, solutions at off-grid points is readily accessible by simply evaluating the neural network function at any desired points. Note that we can compute the projected location on the interface starting from each grid point $(i,j)$ using the level-set function:
 \begin{align*}
-u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(\frac{\mu^-}{\mu^+}-1\big)\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^+} \bigg) \\
-u^+_{i,j} - u^-_{i,j}=\alpha(\mathbf{r}_{i,j}^{pr}) + \delta_{i,j}\bigg(\big(1-\frac{\mu^+}{\mu^-}\big)\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^-} \bigg)
+\mathbf{r}_{ij}^{proj}=\mathbf{r}_{ij} - \delta_{i,j} \mathbf{n}_{i,j}
 \end{align*}
 
-Each of the two versions of the constraints offers an extra residual term to penalize the loss function
+
+In the second approach, the loss function remains as before, except the unknown $u^\pm$ values are derived using equations \ref{eq::extrapolate1}--\ref{eq::extrapolate2}, instead of computing a regression-based extrapolation function based on the points in the neighborhood of interface cells: 
+
+\begin{align*}
+\mathcal{L} = & \bigg\vert\bigg\vert \sum_{s=-,+} k_{i,j}^s u_{i,j}^{s} |\mathcal{V}_{i,j}^s| - \sum_{s=-,+}\bigg( \mu_{i-\frac{1}{2},j}^s A_{i-\frac{1}{2},j}^s\frac{u_{i-1,j}^s - u_{i,j}^s}{\Delta x}     +   \mu_{i+\frac{1}{2},j}^s A_{i+\frac{1}{2},j}^s\frac{u_{i+1,j}^s - u_{i,j}^s}{\Delta x} +                                                          \\
+	 & \mu_{i, j-\frac{1}{2}}^s A_{i, j-\frac{1}{2}}^s\frac{u_{i,j-1}^s - u_{i,j}^s}{\Delta y} + \mu_{i, j+\frac{1}{2}}^s A_{i, j+\frac{1}{2}}^s\frac{u_{i,j+1}^s - u_{i,j}^s}{\Delta y} \bigg)  -  \sum_{s=-,+} f_{i,j}^{s} |\mathcal{V}_{i,j}^s| - \int_{\Gamma\cap \mathcal{V}_{i,j}} \beta d\Gamma \bigg\vert\bigg\vert_2^2
+\end{align*}
+
+
+
+
+
+\subsection{Approach III. Penalty minimization method}
+Physics-informed neural networks (PINNs) are based on minimizing a penalty function on evaluated on a point cloud, where the actual PDE constitutes the residual and automatic differentiation is used to compute the spatial derivaties in the PDE. Each of the two relations \ref{eq::extrapolate1}--\ref{eq::extrapolate2} offers an extra residual term that can be used to penalize the loss function in PINNs
 \begin{align}
 \mathcal{L}_{interface} &= \bigg|\bigg| u^+_{i,j} - u^-_{i,j} - \alpha(\mathbf{r}_{i,j}^{pr}) - \delta_{i,j}\bigg(\big(\frac{\mu^-}{\mu^+}-1\big)\partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^+} \bigg) \bigg|\bigg|_2^2 \\
 \intertext{or}
 \mathcal{L}_{interface} &= \bigg|\bigg| u^+_{i,j} - u^-_{i,j} - \alpha(\mathbf{r}_{i,j}^{pr}) - \delta_{i,j}\bigg(\big(1-\frac{\mu^+}{\mu^-}\big)\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) + \frac{\beta(\mathbf{r}_{i,j}^{pr})}{\mu^-} \bigg) \bigg|\bigg|_2^2
  \label{eq::interfaceLoss}
 \end{align}
-Note that we are representing solution functions, $\hat{u}^\pm(\mathbf{r})$, with neural networks where computing the normal derivatives is trivial using automatic differentiation of the network along the normal directions. In contrast to finite discretization methods, solutions at off-grid points is readily accessible by simply evaluating the neural network function at any desired points. Note that we can compute the projected location on the interface starting from each grid point $(i,j)$ using the level-set function:
-\begin{align*}
-\mathbf{r}_{ij}^{proj}=\mathbf{r}_{ij} - \delta_{i,j} \mathbf{n}_{i,j}
-\end{align*}
+
 
 Far from interface, the usual procedure for physics-informed neural networks is applicable, namely,
 \begin{align*}
@@ -782,10 +805,6 @@ hence, the overall loss function for this class of problems shall be
 
 
 
-\subsubsection{Improving convergence with preconditioning}
-Preconditioners are a powerful technique to accelerate convergence of tradional numerical linear algebraic solvers. Given a poorly conditioned linear system $Ax=b$ one can obtain an equivalent system $\hat{A}\hat{x}=\hat{b}$ with accelerated convergence rate when using iterative gradient based methods. For the conjugate gradient method convergence iteration is proportional to $\sqrt{\kappa(A)}$ where $\kappa(A)$ is the condition number of matrix $A$. This is achieved by mapping the linear system with a nonsingular matrix $M$ into a new space $M^{-1} A x = M^{-1}b$ where $M^{-1}A$ has more regular spread of eigenvalues, hence a better condition number.
-
-The precondition matrix $M$ should approximate $A^{-1}$ such that $\vert I - M^{-1}A\vert < 1$. The simplest choice is the Jacobi prconditioner which amounts to using the diagonal part of $A$ as the preconditioner, $M=diag(A)$.
 
 
 

@@ -22,79 +22,81 @@
 \Newlabel{2}{b}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
 \newlabel{sec::introduction}{{1}{1}{Introduction}{section.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Hybrid Interfacial PDE Solver Strategy}{1}{section.2}\protected@file@percent }
-\citation{hecht1987kolmogorov}
-\citation{kolmogorov1957representation}
-\citation{sprecher1965structure}
-\citation{ismailov2022}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.\relax }}{2}{figure.caption.1}\protected@file@percent }
-\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:proposal}{{1}{2}{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.\relax }{figure.caption.1}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.\relax }}{2}{figure.caption.2}\protected@file@percent }
-\newlabel{fig:proposal}{{2}{2}{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.\relax }{figure.caption.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Neural network approximators for the solution}{2}{subsection.2.1}\protected@file@percent }
-\citation{kingma2014adam}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Two neural networks are defined for the two regions of the computational domain.\relax }}{3}{figure.caption.3}\protected@file@percent }
-\newlabel{fig:shapes}{{3}{3}{Two neural networks are defined for the two regions of the computational domain.\relax }{figure.caption.3}{}}
-\citation{optax2020github}
-\citation{kingma2014adam}
-\citation{gradClipping}
 \citation{MIN2007300}
 \citation{MIN2007300}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}Gradient based optimization with learning rate annealing}{4}{subsubsection.2.1.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Numerical Scheme for Free Boundary Problems}{4}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Interpolation methods}{4}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1}Trilinear interpolation}{4}{subsubsection.3.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Life sciences are described by elliptic PDEs with free interfaces}{2}{subsection.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Level-set method for free boundary problems}{2}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Interpolation methods}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}Trilinear interpolation}{2}{subsubsection.2.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.2}Quadratic non-oscillatory interpolation}{2}{subsubsection.2.1.2}\protected@file@percent }
 \citation{osher1988fronts}
 \citation{SUSSMAN1994146}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2}Quadratic non-oscillatory interpolation}{5}{subsubsection.3.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Level-set method}{5}{subsection.3.2}\protected@file@percent }
-\newlabel{eq::sussman}{{2}{5}{Level-set method}{equation.3.2}{}}
 \citation{XIU2001658}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Level-set method}{3}{subsection.2.2}\protected@file@percent }
+\newlabel{eq::sussman}{{2}{3}{Level-set method}{equation.2.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Second order accurate semi-Lagrangian advection scheme}{3}{subsubsection.2.2.1}\protected@file@percent }
 \citation{shu1988efficient}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}Second order accurate semi-Lagrangian advection scheme}{6}{subsubsection.3.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.2}Godunov Hamiltonian for reinitialization}{6}{subsubsection.3.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Godunov Hamiltonian for reinitialization}{4}{subsubsection.2.2.2}\protected@file@percent }
 \citation{shu1988efficient}
 \citation{min2007geometric}
 \citation{sallee1984middle}
 \citation{min2007geometric}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Geometric operations}{7}{subsection.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.1}Integration over 3D surfaces and volumes}{7}{subsubsection.3.3.1}\protected@file@percent }
+\citation{min2007geometric}
+\citation{min2007geometric}
+\citation{min2007geometric}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Geometric operations}{5}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}Integration over 3D surfaces and volumes}{5}{subsubsection.2.3.1}\protected@file@percent }
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
-\citation{min2007geometric}
-\citation{min2007geometric}
-\citation{min2007geometric}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}Cross sections of interface with grid cell faces}{6}{subsubsection.2.3.2}\protected@file@percent }
+\citation{hecht1987kolmogorov}
+\citation{kolmogorov1957representation}
+\citation{sprecher1965structure}
+\citation{ismailov2022}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Hybrid Interfacial PDE Solver Strategy}{7}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Neural network approximators for the solution}{7}{subsection.3.1}\protected@file@percent }
+\citation{kingma2014adam}
+\citation{optax2020github}
+\citation{kingma2014adam}
+\citation{gradClipping}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.\relax }}{8}{figure.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:proposal}{{1}{8}{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.\relax }{figure.caption.1}{}}
 \citation{bochkov2020solving}
 \citation{bochkov2020solving}
 \citation{bochkov2020solving}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.2}Cross sections of interface with grid cell faces}{9}{subsubsection.3.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Approach I. Finite discretization method}{9}{subsection.3.4}\protected@file@percent }
-\newlabel{sec::FD}{{3.4}{9}{Approach I. Finite discretization method}{subsection.3.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{10}{figure.caption.4}\protected@file@percent }
-\newlabel{fig:grid}{{4}{10}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Approach II. Interface induced penalty terms}{12}{subsection.3.5}\protected@file@percent }
-\newlabel{eq::taylorexpandjump}{{13}{12}{Approach II. Interface induced penalty terms}{equation.3.13}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.\relax }}{9}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:proposal}{{2}{9}{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.\relax }{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Approach I. Finite discretization method fused with regression extrapolation}{9}{subsection.3.2}\protected@file@percent }
+\newlabel{sec::FD}{{3.2}{9}{Approach I. Finite discretization method fused with regression extrapolation}{subsection.3.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Two neural networks are defined for the two regions of the computational domain.\relax }}{10}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:shapes}{{3}{10}{Two neural networks are defined for the two regions of the computational domain.\relax }{figure.caption.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{11}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:grid}{{4}{11}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.4}{}}
 \@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{13}{algorithm.1}\protected@file@percent }
 \newlabel{euclid}{{1}{13}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
-\newlabel{eq::interfaceLoss}{{15}{14}{Approach II. Interface induced penalty terms}{equation.3.15}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.5.1}Improving convergence with preconditioning}{14}{subsubsection.3.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Examples}{14}{section.4}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }}{15}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:losses}{{5}{15}{Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Approach II. Finite discretization method fused with neural extrapolation}{14}{subsection.3.3}\protected@file@percent }
+\newlabel{eq::taylorexpandjump}{{13}{14}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.13}{}}
+\newlabel{eq::extrapolate1}{{14}{14}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.14}{}}
+\newlabel{eq::extrapolate2}{{15}{14}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.15}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Approach III. Penalty minimization method}{15}{subsection.3.4}\protected@file@percent }
+\newlabel{eq::interfaceLoss}{{17}{15}{Approach III. Penalty minimization method}{equation.3.17}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Examples}{15}{section.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Case I.}{15}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II.}{15}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }}{16}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:losses}{{5}{16}{Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }{figure.caption.5}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{16}{figure.caption.6}\protected@file@percent }
 \newlabel{fig:sphere}{{6}{16}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.6}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{16}{figure.caption.7}\protected@file@percent }
-\newlabel{fig:sphere}{{7}{16}{Illustration of exact and numerical solutions.\relax }{figure.caption.7}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{17}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:star}{{8}{17}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{17}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:sphere}{{7}{17}{Illustration of exact and numerical solutions.\relax }{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II.}{17}{subsection.4.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion \& Future Directions}{17}{section.5}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{18}{figure.caption.9}\protected@file@percent }
-\newlabel{fig:star_sol}{{9}{18}{Illustration of exact and numerical solutions.\relax }{figure.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{18}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:star}{{8}{18}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{19}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:star_sol}{{9}{19}{Illustration of exact and numerical solutions.\relax }{figure.caption.9}{}}
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{bochkov2020solving}{{1}{}{{}}{{}}}
