@@ -21,6 +21,16 @@ import pdb
 class PDETrainer:
     def __init__(self, gstate, sim_state, optimizer, algorithm=0):
         
+        self.optimizer = optimizer
+        self.gstate = gstate  
+        self.sim_state = sim_state
+
+        self.algorithm = algorithm
+        """
+        algorithm = 0: use regression to evaluate u^\pm
+        algorithm = 1: use neural network to evaluate u^\pm
+        """
+
         phi_n = sim_state.phi
         dirichlet_bc = sim_state.dirichlet_bc
         mu_m = sim_state.mu_m
@@ -34,6 +44,7 @@ class PDETrainer:
 
         xo = gstate.x; yo = gstate.y; zo = gstate.z
         dx = xo[2] - xo[1]; dy = yo[2] - yo[1]; dz = zo[2] - zo[1]
+        self.dx = dx; self.dy = dy; self.dz = dz
         Nx = xo.shape[0]; Ny = yo.shape[0]; Nz = zo.shape[0]
         grid_shape = (Nx,Ny,Nz)
         ii = jnp.arange(2, Nx+2); jj = jnp.arange(2, Ny+2); kk = jnp.arange(2, Nz+2)
@@ -57,6 +68,40 @@ class PDETrainer:
         self.f_m_cube_internal = f_m.reshape(grid_shape)
         self.f_p_cube_internal = f_p.reshape(grid_shape)
 
+        self.phi_flat = self.phi_cube_.reshape(-1)
+        self.Vol_cell_nominal = dx*dy*dz
+        self.grid_shape = grid_shape  
+
+        get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
+        self.beta_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.beta_interp_fn)
+        self.compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
+        
+        self.initialize_algorithms()
+
+
+
+
+    def initialize_algorithms(self):    
+        
+        self.normal_vec_fn = partial(self.normal_vector_fn, phi_cube=self.phi_cube, dx=self.dx, dy=self.dy, dz=self.dz)
+        self.normal_vecs = vmap(self.normal_vec_fn)(self.nodes)
+
+        if self.algorithm==0:
+            self.initialize_regression_based_algorithm()
+            self.u_mp_fn = self.get_u_mp_by_regression_at_node_fn
+        
+        elif self.algorithm==1:
+            self.u_mp_fn = self.get_u_mp_by_neural_network_at_node_fn
+
+
+
+
+
+    def initialize_regression_based_algorithm(self): 
+        dx = self.dx; dy = self.dy; dz = self.dz
+        xo = self.gstate.x; yo = self.gstate.y; zo = self.gstate.z
+        mu_m = self.sim_state.mu_m
+        mu_p = self.sim_state.mu_p
         def get_X_ijk():
             Xijk = jnp.array([[-dx, -dy, -dz],
                             [0.0, -dy, -dz],
@@ -159,15 +204,13 @@ class PDETrainer:
 
         self.D_m_mat, self.D_p_mat = D_mp_fn(self.nodes, self.phi_cube)
 
-        self.normal_vec_fn = partial(self.normal_vector_fn, phi_cube=self.phi_cube, dx=dx, dy=dy, dz=dz)
-        normal_vecs = vmap(self.normal_vec_fn)(self.nodes)
 
         def get_c_ijk_pqm(normal_ijk, D_ijk):
             return normal_ijk @ D_ijk
         get_c_ijk_pqm_vec = vmap(get_c_ijk_pqm, (0, 0))
 
-        self.Cm_ijk_pqm = get_c_ijk_pqm_vec(normal_vecs, self.D_m_mat)
-        self.Cp_ijk_pqm = get_c_ijk_pqm_vec(normal_vecs, self.D_p_mat)
+        self.Cm_ijk_pqm = get_c_ijk_pqm_vec(self.normal_vecs, self.D_m_mat)
+        self.Cp_ijk_pqm = get_c_ijk_pqm_vec(self.normal_vecs, self.D_p_mat)
 
         self.mu_m_cube_internal = mu_m.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
         self.mu_p_cube_internal = mu_p.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
@@ -192,15 +235,7 @@ class PDETrainer:
         self.gamma_m_ijk = (self.gamma_m_ijk_pqm.sum(axis=3) - self.gamma_m_ijk_pqm[:, :, :, 13]) * f32(-1.0)
 
 
-        self.optimizer = optimizer
-        self.grid_shape = grid_shape  
-        self.gstate = gstate  
-        self.phi_flat = self.phi_cube_.reshape(-1)
-        self.Vol_cell_nominal = dx*dy*dz
 
-        get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
-        self.beta_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.beta_interp_fn)
-        self.compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
 
     @staticmethod
     def normal_vector_fn(node, phi_cube, dx, dy, dz):
@@ -210,6 +245,8 @@ class PDETrainer:
         phi_z = (phi_cube[i, j, k+1] - phi_cube[i, j, k-1]) / (f32(2) * dz)
         norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
         return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm], dtype=f32)
+
+
 
     @staticmethod
     @hk.transform
@@ -226,12 +263,16 @@ class PDETrainer:
         model = DoubleMLP()
         return model(x, phi_x)
 
+
+
     @partial(jit, static_argnums=0)
     def init(self, seed=42):
         rng = random.PRNGKey(seed)
         params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)  
         opt_state = self.optimizer.init(params)
         return opt_state, params
+
+
 
     @partial(jit, static_argnums=(0))
     def evaluate_solution_fn(self, params, R_flat, phi_flat):
@@ -310,7 +351,7 @@ class PDETrainer:
         u = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
         u_cube = u.reshape(self.grid_shape)
 
-        u_mp_at_node = partial(self.get_u_mp_by_regression_at_node_fn, u_cube, x, y, z)
+        u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z)
 
 
         def is_box_boundary_node(i, j, k):
@@ -388,6 +429,8 @@ class PDETrainer:
         return lhs_rhs
 
     
+
+
 
     @partial(jit, static_argnums=(0))
     def get_u_mp_by_regression_at_node_fn(self, u_cube, x, y, z, i, j, k):
@@ -571,7 +614,7 @@ class PDETrainer:
         x = self.gstate.x
         y = self.gstate.y
         z = self.gstate.z
-        u_mp = vmap(self.get_u_mp_by_regression_at_node_fn, (None, None, None, None, 0, 0, 0))(u_cube, x, y, z, self.nodes[:,0], self.nodes[:,1], self.nodes[:,2])
+        u_mp = vmap(self.u_mp_fn, (None, None, None, None, 0, 0, 0))(u_cube, x, y, z, self.nodes[:,0], self.nodes[:,1], self.nodes[:,2])
         def convolve_at_node(node):
             i,j,k = node
             curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
@@ -599,7 +642,7 @@ class PDETrainer:
             i,j,k = node
             curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
             u_curr_ngbs = self.cube_at_v(u_cube, curr_ngbs)
-            u_mp_node = self.get_u_mp_by_regression_at_node_fn(u_cube, x, y, z, i, j, k)
+            u_mp_node = self.u_mp_fn(u_cube, x, y, z, i, j, k)
             dU_mp = u_curr_ngbs[:,jnp.newaxis] - u_mp_node
             grad_m = d_m_mat @ dU_mp[:,0]
             grad_p = d_p_mat @ dU_mp[:,1]

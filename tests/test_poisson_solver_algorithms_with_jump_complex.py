@@ -227,7 +227,7 @@ def test_poisson_solver_with_jump_complex():
 
     t1 = time.time()
 
-    sim_state = solve_fn(gstate, sim_state, algorithm=1)
+    sim_state = solve_fn(gstate, sim_state, algorithm=0)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
