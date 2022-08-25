@@ -4,6 +4,8 @@ config.update("jax_debug_nans", False)
 import optax
 import haiku as hk
 
+import numpy as onp
+
 from src import (interpolate, geometric_integrations)
 from src.jaxmd_modules.util import f32, i32
 from src.nn_solution_model import DoubleMLP
@@ -47,9 +49,9 @@ class PDETrainer:
         self.dx = dx; self.dy = dy; self.dz = dz
         Nx = xo.shape[0]; Ny = yo.shape[0]; Nz = zo.shape[0]
         grid_shape = (Nx,Ny,Nz)
-        ii = jnp.arange(2, Nx+2); jj = jnp.arange(2, Ny+2); kk = jnp.arange(2, Nz+2)
-        I, J, K = jnp.meshgrid(ii, jj, kk, indexing='ij')
-        self.nodes = jnp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1)))
+        ii = onp.arange(2, Nx+2); jj = onp.arange(2, Ny+2); kk = onp.arange(2, Nz+2)
+        I, J, K = onp.meshgrid(ii, jj, kk, indexing='ij')
+        self.nodes = jnp.array( onp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1))) )
 
 
         self.phi_cube_ = phi_n.reshape(grid_shape)
@@ -58,11 +60,18 @@ class PDETrainer:
 
         self.mu_m_cube_internal = mu_m.reshape(grid_shape)
         self.mu_p_cube_internal = mu_p.reshape(grid_shape)
-
+        
         self.mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
         self.mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
         self.alpha_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(alpha, gstate)
         self.beta_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(beta, gstate)
+
+        mu_m_over_mu_p = mu_m / mu_p
+        beta_over_mu_m = beta / mu_m
+        beta_over_mu_p = beta / mu_p
+        self.mu_m_over_mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m_over_mu_p, gstate)
+        self.beta_over_mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(beta_over_mu_m, gstate)
+        self.beta_over_mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(beta_over_mu_p, gstate)
 
         self.dirichlet_cube = dirichlet_bc.reshape(grid_shape)
         self.k_m_cube_internal = k_m.reshape(grid_shape)
@@ -80,7 +89,7 @@ class PDETrainer:
         
         self.initialize_algorithms()
 
-
+      
 
 
     def initialize_algorithms(self):    
@@ -104,9 +113,7 @@ class PDETrainer:
 
     def initialize_regression_based_algorithm(self): 
         dx = self.dx; dy = self.dy; dz = self.dz
-        xo = self.gstate.x; yo = self.gstate.y; zo = self.gstate.z
-        mu_m = self.sim_state.mu_m
-        mu_p = self.sim_state.mu_p
+        
         def get_X_ijk():
             Xijk = jnp.array([[-dx, -dy, -dz],
                             [0.0, -dy, -dz],
@@ -167,10 +174,6 @@ class PDETrainer:
             return Xijk, ngbs
 
         Xijk, self.ngbs = get_X_ijk()
-
-        def sign_pm_fn(a):
-            sgn = jnp.sign(a)
-            return jnp.sign(sgn - 0.5)
 
         def sign_p_fn(a):
             # returns 1 only if a>0, otherwise is 0
@@ -269,7 +272,7 @@ class PDETrainer:
 
 
 
-    @partial(jit, static_argnums=0)
+    # @partial(jit, static_argnums=0)
     def init(self, seed=42):
         rng = random.PRNGKey(seed)
         params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)  
@@ -315,9 +318,14 @@ class PDETrainer:
         """
             Loss function of the neural network
         """        
-        pred_sol = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
+        # jax.make_jaxpr(self.evaluate_solution_fn)(params, self.gstate.R, self.phi_flat).pretty_print()
+        # jax.make_jaxpr(self.compute_Ax_and_b_fn)(params).pretty_print()
+        
+
         lhs_rhs = self.compute_Ax_and_b_fn(params)
+
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        pred_sol = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
         sol_cube = pred_sol.reshape(self.grid_shape)      
         tot_loss = self.evaluate_loss_fn( lhs, rhs, sol_cube)
         return tot_loss
@@ -360,8 +368,11 @@ class PDETrainer:
         u = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
         u_cube = u.reshape(self.grid_shape)
 
-        u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z, params)
-
+        # u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z, params)
+        if self.algorithm==0:
+            u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z)
+        elif self.algorithm==1:
+            u_mp_at_node = partial(self.u_mp_fn, params, x, y, z)
 
         def is_box_boundary_node(i, j, k):
             """
@@ -377,46 +388,49 @@ class PDETrainer:
             i, j, k = node
 
             coeffs_ = self.compute_face_centroids_values_plus_minus_at_node(node)
-            
             coeffs = coeffs_[:12]
-            vols = coeffs_[12:14]
 
+            vols = coeffs_[12:14]
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
             
-            
             def get_lhs_at_interior_node(node):
                 i, j, k = node
-                # k_cube's don't have ghost layers
+                
                 k_m_ijk = self.k_m_cube_internal[i-2, j-2, k-2]
                 k_p_ijk = self.k_p_cube_internal[i-2, j-2, k-2]
-                u_m_ijk, u_p_ijk = u_mp_at_node(i, j, k)
+
+                u_m_ijk , u_p_ijk  = u_mp_at_node(i  , j  , k  )
+                u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j  , k  )
+                u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j  , k  )
+                u_m_ijmk, u_p_ijmk = u_mp_at_node(i  , j-1, k  )
+                u_m_ijpk, u_p_ijpk = u_mp_at_node(i  , j+1, k  )
+                u_m_ijkm, u_p_ijkm = u_mp_at_node(i  , j  , k-1)
+                u_m_ijkp, u_p_ijkp = u_mp_at_node(i  , j  , k+1)
+
                 lhs  = k_m_ijk * V_m_ijk * u_m_ijk
                 lhs += k_p_ijk * V_p_ijk * u_p_ijk
                 lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) * u_m_ijk + \
-                    (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]) * u_p_ijk
-                u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j  , k  )
-                lhs += -1.0 * coeffs[0] * u_m_imjk - coeffs[1] * u_p_imjk
-                u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j  , k  )
-                lhs += -1.0 * coeffs[2] * u_m_ipjk - coeffs[3] * u_p_ipjk
-                u_m_ijmk, u_p_ijmk = u_mp_at_node(i  , j-1, k  )
-                lhs += -1.0 * coeffs[4] * u_m_ijmk - coeffs[5] * u_p_ijmk
-                u_m_ijpk, u_p_ijpk = u_mp_at_node(i  , j+1, k  )
-                lhs += -1.0 * coeffs[6] * u_m_ijpk - coeffs[7] * u_p_ijpk
-                u_m_ijkm, u_p_ijkm = u_mp_at_node(i  , j  , k-1)
-                lhs += -1.0 * coeffs[8] * u_m_ijkm - coeffs[9] * u_p_ijkm
-                u_m_ijkp, u_p_ijkp = u_mp_at_node(i  , j  , k+1)
+                       (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]) * u_p_ijk
+                lhs += -1.0 * coeffs[0 ] * u_m_imjk - coeffs[1 ] * u_p_imjk
+                lhs += -1.0 * coeffs[2 ] * u_m_ipjk - coeffs[3 ] * u_p_ipjk
+                lhs += -1.0 * coeffs[4 ] * u_m_ijmk - coeffs[5 ] * u_p_ijmk
+                lhs += -1.0 * coeffs[6 ] * u_m_ijpk - coeffs[7 ] * u_p_ijpk
+                lhs += -1.0 * coeffs[8 ] * u_m_ijkm - coeffs[9 ] * u_p_ijkm
                 lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
+
                 return lhs
             
+
             def get_lhs_on_box_boundary(node):
                 i, j, k = node
                 lhs = u_cube[i-2, j-2, k-2] * self.Vol_cell_nominal
                 return lhs
+
             lhs = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
 
-            #--- RHS
-            
+
+            #--- RHS  
             def get_rhs_at_interior_node(node):
                 i, j, k = node
                 rhs = self.f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + self.f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
@@ -424,11 +438,9 @@ class PDETrainer:
                 return rhs
             
             def get_rhs_on_box_boundary(node):
-                """
-                Imposing Dirichlet BCs on the RHS
-                """
                 i, j, k = node
                 return self.dirichlet_cube[i-2, j-2, k-2] * self.Vol_cell_nominal
+
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
 
             return jnp.array([lhs, rhs])
@@ -442,7 +454,7 @@ class PDETrainer:
 
 
     @partial(jit, static_argnums=(0))
-    def get_u_mp_by_regression_at_node_fn(self, u_cube, x, y, z, params, i, j, k):
+    def get_u_mp_by_regression_at_node_fn(self, u_cube, x, y, z, i, j, k):
         """
         This function evaluates pairs of u^+ and u^- at each grid point
         in the domain, given the neural network models.
@@ -467,7 +479,8 @@ class PDETrainer:
                     curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
                     u_m = -1.0 * jnp.dot(self.gamma_m_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
                     u_m += (1.0 - self.gamma_m_ijk[i-2, j-2, k-2] + self.gamma_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                    u_m += -1.0 * (1.0 - self.gamma_m_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_interp_fn(r_m_proj) / self.mu_p_interp_fn(r_m_proj))
+                    # u_m += -1.0 * (1.0 - self.gamma_m_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_interp_fn(r_m_proj) / self.mu_p_interp_fn(r_m_proj))
+                    u_m += -1.0 * (1.0 - self.gamma_m_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_over_mu_p_interp_fn(r_m_proj))
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain(i, j, k):
@@ -478,7 +491,8 @@ class PDETrainer:
                     curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
                     u_p = -1.0 * jnp.dot(self.zeta_m_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
                     u_p += (1.0 - self.zeta_m_ijk[i-2, j-2, k-2] + self.zeta_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                    u_p += self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_interp_fn(r_p_proj) / self.mu_p_interp_fn(r_p_proj)
+                    # u_p += self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_interp_fn(r_p_proj) / self.mu_p_interp_fn(r_p_proj)
+                    u_p += self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_over_mu_p_interp_fn(r_p_proj)
                     return u_p
                 phi_ijk = self.phi_cube[i, j, k]
                 u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain(i, j, k), u_cube[i-2, j-2, k-2])[0]
@@ -494,7 +508,8 @@ class PDETrainer:
                     curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
                     u_m = -1.0 * jnp.dot(self.zeta_p_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
                     u_m += (1.0 - self.zeta_p_ijk[i-2, j-2, k-2] + self.zeta_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                    u_m += (-1.0)*(self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_interp_fn(r_m_proj) / self.mu_m_interp_fn(r_m_proj) )
+                    # u_m += (-1.0)*(self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_interp_fn(r_m_proj) / self.mu_m_interp_fn(r_m_proj) )
+                    u_m += (-1.0)*(self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_over_mu_m_interp_fn(r_m_proj) )
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain_(i, j, k):
@@ -505,7 +520,8 @@ class PDETrainer:
                     curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
                     u_p = -1.0 * jnp.dot(self.gamma_p_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
                     u_p += (1.0 - self.gamma_p_ijk[i-2, j-2, k-2] + self.gamma_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
-                    u_p += (1.0 - self.gamma_p_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_interp_fn(r_p_proj) / self.mu_m_interp_fn(r_p_proj))
+                    # u_p += (1.0 - self.gamma_p_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_interp_fn(r_p_proj) / self.mu_m_interp_fn(r_p_proj))
+                    u_p += (1.0 - self.gamma_p_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_over_mu_m_interp_fn(r_p_proj))
                     return u_p
                 phi_ijk = self.phi_cube[i, j, k]
                 u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain_(i, j, k), u_cube[i-2, j-2, k-2])[0]
@@ -535,7 +551,7 @@ class PDETrainer:
         x = self.gstate.x
         y = self.gstate.y
         z = self.gstate.z
-        u_mp = vmap(self.u_mp_fn, (None, None, None, None, None, 0, 0, 0))(u_cube, x, y, z, None, self.nodes[:,0], self.nodes[:,1], self.nodes[:,2])
+        u_mp = vmap(self.u_mp_fn, (None, None, None, None, 0, 0, 0))(u_cube, x, y, z, self.nodes[:,0], self.nodes[:,1], self.nodes[:,2])
         def convolve_at_node(node):
             i,j,k = node
             curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
@@ -563,7 +579,7 @@ class PDETrainer:
             i,j,k = node
             curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
             u_curr_ngbs = self.cube_at_v(u_cube, curr_ngbs)
-            u_mp_node = self.u_mp_fn(u_cube, x, y, z, None, i, j, k)
+            u_mp_node = self.u_mp_fn(u_cube, x, y, z, i, j, k)
             dU_mp = u_curr_ngbs[:,jnp.newaxis] - u_mp_node
             grad_m = d_m_mat @ dU_mp[:,0]
             grad_p = d_p_mat @ dU_mp[:,1]
@@ -576,7 +592,7 @@ class PDETrainer:
 
 
     @partial(jit, static_argnums=(0))
-    def get_u_mp_by_neural_network_at_node_fn(self, u_cube, x, y, z, params, i, j, k):
+    def get_u_mp_by_neural_network_at_node_fn(self, params, x, y, z, i, j, k):
         """
         This function evaluates pairs of u^+ and u^- at each grid point
         in the domain, given the neural network models.
@@ -600,7 +616,8 @@ class PDETrainer:
                     r_m_proj = r_m_proj[jnp.newaxis]
                     du_dn = jnp.dot(grad_u_at_point_fn(r_m_proj, -1), normal_ijk)
                     u_m = u_at_point_fn(r_ijk, 1) - self.alpha_interp_fn(r_m_proj)
-                    u_m -= delta_ijk * ( (self.mu_m_interp_fn(r_m_proj) / self.mu_p_interp_fn(r_m_proj) - 1.0) *  du_dn + self.beta_interp_fn(r_m_proj)/self.mu_p_interp_fn(r_m_proj))
+                    u_m -= delta_ijk * ( (self.mu_m_over_mu_p_interp_fn(r_m_proj) - 1.0) * du_dn + self.beta_over_mu_p_interp_fn(r_m_proj) )
+                    # u_m -= delta_ijk * ( (self.mu_m_interp_fn(r_m_proj) / self.mu_p_interp_fn(r_m_proj) - 1.0) *  du_dn + self.beta_interp_fn(r_m_proj)/self.mu_p_interp_fn(r_m_proj))
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain(i, j, k):
@@ -609,11 +626,12 @@ class PDETrainer:
                     r_p_proj = r_p_proj[jnp.newaxis]
                     du_dn = jnp.dot(grad_u_at_point_fn(r_p_proj, -1), normal_ijk)
                     u_p = u_at_point_fn(r_ijk, -1) + self.alpha_interp_fn(r_p_proj)
-                    u_p += delta_ijk * ( (self.mu_m_interp_fn(r_p_proj)/self.mu_p_interp_fn(r_p_proj) - 1.0) * du_dn + self.beta_interp_fn(r_p_proj)/self.mu_p_interp_fn(r_p_proj) )
+                    u_p += delta_ijk * ( (self.mu_m_over_mu_p_interp_fn(r_p_proj) - 1.0) * du_dn + self.beta_over_mu_p_interp_fn(r_p_proj) )
+                    # u_p += delta_ijk * ( (self.mu_m_interp_fn(r_p_proj)/self.mu_p_interp_fn(r_p_proj) - 1.0) * du_dn + self.beta_interp_fn(r_p_proj)/self.mu_p_interp_fn(r_p_proj) )
                     return u_p
-                phi_ijk = self.phi_cube[i, j, k]
-                u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain(i, j, k), u_cube[i-2, j-2, k-2])[0]
-                u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain(i, j, k))[0]
+                
+                u_m = jnp.where(delta_ijk > 0, extrapolate_u_m_from_negative_domain(i, j, k), u_ijk)[0]
+                u_p = jnp.where(delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain(i, j, k))[0]
                 return jnp.array([u_m, u_p])
 
             def mu_plus_bigger_fn(i, j, k):
@@ -623,7 +641,8 @@ class PDETrainer:
                     r_m_proj = r_m_proj[jnp.newaxis]
                     du_dn = jnp.dot(grad_u_at_point_fn(r_m_proj, 1), normal_ijk)
                     u_m = u_at_point_fn(r_ijk, 1) - self.alpha_interp_fn(r_m_proj)
-                    u_m -= delta_ijk * ( (1 - self.mu_p_interp_fn(r_m_proj)/self.mu_m_interp_fn(r_m_proj)) * du_dn + self.beta_interp_fn(r_m_proj) / self.mu_m_interp_fn(r_m_proj) )
+                    u_m -= delta_ijk * ( (1.0 - 1.0 / self.mu_m_over_mu_p_interp_fn(r_m_proj)) * du_dn + self.beta_over_mu_m_interp_fn(r_m_proj) )
+                    # u_m -= delta_ijk * ( (1 - self.mu_p_interp_fn(r_m_proj)/self.mu_m_interp_fn(r_m_proj)) * du_dn + self.beta_interp_fn(r_m_proj) / self.mu_m_interp_fn(r_m_proj) )
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain_(i, j, k):
@@ -632,18 +651,18 @@ class PDETrainer:
                     r_p_proj = r_p_proj[jnp.newaxis]
                     du_dn = jnp.dot(grad_u_at_point_fn(r_p_proj, 1), normal_ijk)
                     u_p = u_at_point_fn(r_ijk, -1) + self.alpha_interp_fn(r_p_proj)
-                    u_p += delta_ijk * ((1 - self.mu_p_interp_fn(r_p_proj)/self.mu_m_interp_fn(r_p_proj)) * du_dn + self.beta_interp_fn(r_p_proj) / self.mu_m_interp_fn(r_p_proj))
+                    u_p += delta_ijk * ( (1.0 - 1.0/self.mu_m_over_mu_p_interp_fn(r_p_proj)) * du_dn + self.beta_over_mu_m_interp_fn(r_p_proj) )
+                    # u_p += delta_ijk * ((1 - self.mu_p_interp_fn(r_p_proj)/self.mu_m_interp_fn(r_p_proj)) * du_dn + self.beta_interp_fn(r_p_proj) / self.mu_m_interp_fn(r_p_proj))
                     return u_p
-                phi_ijk = self.phi_cube[i, j, k]
-                u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain_(i, j, k), u_cube[i-2, j-2, k-2])[0]
-                u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain_(i, j, k))[0]
+
+                u_m = jnp.where(delta_ijk > 0, extrapolate_u_m_from_negative_domain_(i, j, k), u_ijk)[0]
+                u_p = jnp.where(delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain_(i, j, k))[0]
                 return jnp.array([u_m, u_p])
 
             mu_m_ijk = self.mu_m_cube_internal[i-2, j-2, k-2]
             mu_p_ijk = self.mu_p_cube_internal[i-2, j-2, k-2]
             return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
 
-        
         # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
         is_interface = self.is_cell_crossed_by_interface((i, j, k))
         u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
@@ -693,24 +712,29 @@ def poisson_solver(gstate, sim_state, algorithm=0):
     opt_state, params = trainer.init(); print_architecture(params)    
 
     num_epochs=10000
-    loss_epochs = []
-    epoch_store = []
-
     start_time = time.time()
-    for epoch in range(num_epochs):            
-        opt_state, params, loss_epoch = trainer.update(opt_state, params)            
-        print(f"epoch # {epoch} loss is {loss_epoch}")
-        loss_epochs.append(loss_epoch)
-        epoch_store.append(epoch)
 
-    # def learn(carry, epoch):
-    #     opt_state, params, loss_epoch = carry
-    #     opt_state, params, loss_epoch = trainer.update(opt_state, params)
-    #     return (opt_state, params, loss_epoch), None
-    # epochs = jnp.arange(num_epochs)
-    # (opt_state, params, loss_epoch), _ = jax.lax.scan(learn, (opt_state, params, 0.0), epochs)
+    # loss_epochs = []
+    # epoch_store = []
+    # for epoch in range(num_epochs):            
+    #     opt_state, params, loss_epoch = trainer.update(opt_state, params)            
+    #     print(f"epoch # {epoch} loss is {loss_epoch}")
+    #     loss_epochs.append(loss_epoch)
+    #     epoch_store.append(epoch)
+
+    def learn(carry, epoch):
+        opt_state, params, loss_epochs = carry
+        opt_state, params, loss_epoch = trainer.update(opt_state, params)
+        loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
+        return (opt_state, params, loss_epochs), None
+    
+    loss_epochs = jnp.zeros(num_epochs)
+    epoch_store = jnp.arange(num_epochs)
+
+    (opt_state, params, loss_epochs), _ = jax.lax.scan(learn, (opt_state, params, loss_epochs), epoch_store)
 
     end_time = time.time()
+
     print(f"solve took {end_time - start_time} (sec)")
 
 

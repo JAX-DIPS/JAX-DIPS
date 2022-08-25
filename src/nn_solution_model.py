@@ -8,10 +8,10 @@ class DoubleMLP(hk.Module):
     def __init__(self, name=None):
         super().__init__(name=name)
     
-        self.num_hidden_layers = 5
-        self.hidden_dim = 20
-        self.activation_fn = jnn.tanh 
-        self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=1.0, mean=0.0)
+        self.num_hidden_layers = 2
+        self.hidden_dim = 10
+        self.activation_fn = jnp.sin 
+        self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
 
     def __call__(self, r, phi_r):
