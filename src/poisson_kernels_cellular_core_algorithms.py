@@ -19,7 +19,7 @@ import pdb
 
 
 class PDETrainer:
-    def __init__(self, gstate, sim_state, optimizer):
+    def __init__(self, gstate, sim_state, optimizer, algorithm=0):
         
         phi_n = sim_state.phi
         dirichlet_bc = sim_state.dirichlet_bc
@@ -310,7 +310,7 @@ class PDETrainer:
         u = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
         u_cube = u.reshape(self.grid_shape)
 
-        u_mp_at_node = partial(self.get_u_mp_from_networks_at_node_fn, u_cube, x, y, z)
+        u_mp_at_node = partial(self.get_u_mp_by_regression_at_node_fn, u_cube, x, y, z)
 
 
         def is_box_boundary_node(i, j, k):
@@ -390,7 +390,7 @@ class PDETrainer:
     
 
     @partial(jit, static_argnums=(0))
-    def get_u_mp_from_networks_at_node_fn(self, u_cube, x, y, z, i, j, k):
+    def get_u_mp_by_regression_at_node_fn(self, u_cube, x, y, z, i, j, k):
         """
         This function evaluates pairs of u^+ and u^- at each grid point
         in the domain, given the neural network models.
@@ -475,47 +475,137 @@ class PDETrainer:
 
 
 
-        #Compute normal gradients for error analysis
-        def compute_normal_gradient_solution_mp_on_interface(self, u):
-            """
-            Given the solution field u, this function computes gradient of u along normal direction
-            of the level-set function on the interface itself; at r_proj.
-            """
-            u_cube = u.reshape(self.grid_shape)
-            u_mp = vmap(trainer.get_u_mp_from_networks_at_node_fn, (None, None, None, None, 0, 0, 0))(u_cube, x, y, z, self.nodes[:,0], self.nodes[:,1], self.nodes[:,2])
-            def convolve_at_node(node):
-                i,j,k = node
-                curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), trainer.ngbs)
-                u_mp_pqm = u_mp.reshape(self.phi_cube_.shape+(2,))[curr_ngbs[:,0], curr_ngbs[:,1], curr_ngbs[:,2]]
-                cm_pqm = self.Cm_ijk_pqm.reshape(self.phi_cube_.shape+ (-1,))[i-2,j-2,k-2]
-                cp_pqm = self.Cp_ijk_pqm.reshape(self.phi_cube_.shape+ (-1,))[i-2,j-2,k-2]
-                return jnp.sum(cm_pqm * u_mp_pqm[:,0]), jnp.sum(cp_pqm * u_mp_pqm[:,1])
+    @partial(jit, static_argnums=(0))
+    def get_u_mp_by_neural_network_at_node_fn(self, u_cube, x, y, z, i, j, k):
+        """
+        This function evaluates pairs of u^+ and u^- at each grid point
+        in the domain, given the neural network models.
+    
+        BIAS SLOW:
+            This function evaluates 
+                u_m = B_m : u + r_m 
+            and 
+                u_p = B_p : u + r_p
+        """
 
-            c_mp_u_mp_ngbs = vmap(convolve_at_node)(trainer.nodes)      
-            grad_n_u_m = -1.0 * self.Cm_ijk_pqm.sum(axis=1) * u_mp[:,0] + c_mp_u_mp_ngbs[0]
-            grad_n_u_p = -1.0 * self.Cp_ijk_pqm.sum(axis=1) * u_mp[:,1] + c_mp_u_mp_ngbs[1]
-            return grad_n_u_m, grad_n_u_p
+        def bulk_node(is_interface_, u_ijk_):
+            return jnp.array([jnp.where(is_interface_ == -1, u_ijk_, 0.0), jnp.where(is_interface_ == 1, u_ijk_, 0.0)])
 
 
-
-        def compute_gradient_solution_mp(self, u):
-            """
-            This function computes \nabla u^+ and \nabla u^- given a solution vector u.
-            """
-            u_cube = u.reshape(self.grid_shape)
-            def convolve_at_node(node, d_m_mat, d_p_mat):
-                i,j,k = node
-                curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
-                u_curr_ngbs = self.cube_at_v(u_cube, curr_ngbs)
-                u_mp_node = self.get_u_mp_from_networks_at_node_fn(u_cube, x, y, z, i, j, k)
-                dU_mp = u_curr_ngbs[:,jnp.newaxis] - u_mp_node
-                grad_m = d_m_mat @ dU_mp[:,0]
-                grad_p = d_p_mat @ dU_mp[:,1]
-                return grad_m, grad_p
-            return vmap(convolve_at_node, (0,0,0))(self.nodes, self.D_m_mat, self.D_p_mat)  
-        
+        def interface_node(i, j, k):
+            def mu_minus_bigger_fn(i, j, k):
+                def extrapolate_u_m_from_negative_domain(i, j, k):
+                    delta_ijk = self.phi_cube[i, j, k] 
+                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                    r_m_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
+                    r_m_proj = r_m_proj[jnp.newaxis]
 
 
+                    curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
+                    u_m = -1.0 * jnp.dot(self.gamma_m_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
+                    u_m += (1.0 - self.gamma_m_ijk[i-2, j-2, k-2] + self.gamma_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
+                    u_m += -1.0 * (1.0 - self.gamma_m_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_interp_fn(r_m_proj) / self.mu_p_interp_fn(r_m_proj))
+                    return u_m
+
+                def extrapolate_u_p_from_positive_domain(i, j, k):
+                    delta_ijk = self.phi_cube[i, j, k]  
+                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                    r_p_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
+                    r_p_proj = r_p_proj[jnp.newaxis]
+                    curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
+                    u_p = -1.0 * jnp.dot(self.zeta_m_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
+                    u_p += (1.0 - self.zeta_m_ijk[i-2, j-2, k-2] + self.zeta_m_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
+                    u_p += self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_interp_fn(r_p_proj) / self.mu_p_interp_fn(r_p_proj)
+                    return u_p
+                phi_ijk = self.phi_cube[i, j, k]
+                u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain(i, j, k), u_cube[i-2, j-2, k-2])[0]
+                u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain(i, j, k))[0]
+                return jnp.array([u_m, u_p])
+
+            def mu_plus_bigger_fn(i, j, k):
+                def extrapolate_u_m_from_negative_domain_(i, j, k):
+                    delta_ijk = self.phi_cube[i, j, k] 
+                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                    r_m_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
+                    r_m_proj = r_m_proj[jnp.newaxis]
+                    curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
+                    u_m = -1.0 * jnp.dot(self.zeta_p_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
+                    u_m += (1.0 - self.zeta_p_ijk[i-2, j-2, k-2] + self.zeta_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
+                    u_m += (-1.0)*(self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_interp_fn(r_m_proj) / self.mu_m_interp_fn(r_m_proj) )
+                    return u_m
+
+                def extrapolate_u_p_from_positive_domain_(i, j, k):
+                    delta_ijk = self.phi_cube[i, j, k] 
+                    r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
+                    r_p_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
+                    r_p_proj = r_p_proj[jnp.newaxis]
+                    curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
+                    u_p = -1.0 * jnp.dot(self.gamma_p_ijk_pqm[i-2, j-2, k-2], self.cube_at_v(u_cube, curr_ngbs))
+                    u_p += (1.0 - self.gamma_p_ijk[i-2, j-2, k-2] + self.gamma_p_ijk_pqm[i-2, j-2, k-2, 13]) * u_cube[i-2, j-2, k-2]
+                    u_p += (1.0 - self.gamma_p_ijk[i-2, j-2, k-2]) * (self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_interp_fn(r_p_proj) / self.mu_m_interp_fn(r_p_proj))
+                    return u_p
+                phi_ijk = self.phi_cube[i, j, k]
+                u_m = jnp.where(phi_ijk > 0, extrapolate_u_m_from_negative_domain_(i, j, k), u_cube[i-2, j-2, k-2])[0]
+                u_p = jnp.where(phi_ijk > 0, u_cube[i-2, j-2, k-2], extrapolate_u_p_from_positive_domain_(i, j, k))[0]
+                return jnp.array([u_m, u_p])
+
+            mu_m_ijk = self.mu_m_cube_internal[i-2, j-2, k-2]
+            mu_p_ijk = self.mu_p_cube_internal[i-2, j-2, k-2]
+            return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
+
+        u_ijk = u_cube[i-2, j-2, k-2]
+        # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
+        is_interface = self.is_cell_crossed_by_interface((i, j, k))
+        u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
+        return u_mp
+
+
+
+    #Compute normal gradients for error analysis
+    def compute_normal_gradient_solution_mp_on_interface(self, u):
+        """
+        Given the solution field u, this function computes gradient of u along normal direction
+        of the level-set function on the interface itself; at r_proj.
+        """
+        u_cube = u.reshape(self.grid_shape)
+        x = self.gstate.x
+        y = self.gstate.y
+        z = self.gstate.z
+        u_mp = vmap(self.get_u_mp_by_regression_at_node_fn, (None, None, None, None, 0, 0, 0))(u_cube, x, y, z, self.nodes[:,0], self.nodes[:,1], self.nodes[:,2])
+        def convolve_at_node(node):
+            i,j,k = node
+            curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
+            u_mp_pqm = u_mp.reshape(self.phi_cube_.shape+(2,))[curr_ngbs[:,0], curr_ngbs[:,1], curr_ngbs[:,2]]
+            cm_pqm = self.Cm_ijk_pqm.reshape(self.phi_cube_.shape+ (-1,))[i-2,j-2,k-2]
+            cp_pqm = self.Cp_ijk_pqm.reshape(self.phi_cube_.shape+ (-1,))[i-2,j-2,k-2]
+            return jnp.sum(cm_pqm * u_mp_pqm[:,0]), jnp.sum(cp_pqm * u_mp_pqm[:,1])
+
+        c_mp_u_mp_ngbs = vmap(convolve_at_node)(self.nodes)      
+        grad_n_u_m = -1.0 * self.Cm_ijk_pqm.sum(axis=1) * u_mp[:,0] + c_mp_u_mp_ngbs[0]
+        grad_n_u_p = -1.0 * self.Cp_ijk_pqm.sum(axis=1) * u_mp[:,1] + c_mp_u_mp_ngbs[1]
+        return grad_n_u_m, grad_n_u_p
+
+
+
+    def compute_gradient_solution_mp(self, u):
+        """
+        This function computes \nabla u^+ and \nabla u^- given a solution vector u.
+        """
+        u_cube = u.reshape(self.grid_shape)
+        x = self.gstate.x
+        y = self.gstate.y
+        z = self.gstate.z
+        def convolve_at_node(node, d_m_mat, d_p_mat):
+            i,j,k = node
+            curr_ngbs = jnp.add(jnp.array([i-2, j-2, k-2]), self.ngbs)
+            u_curr_ngbs = self.cube_at_v(u_cube, curr_ngbs)
+            u_mp_node = self.get_u_mp_by_regression_at_node_fn(u_cube, x, y, z, i, j, k)
+            dU_mp = u_curr_ngbs[:,jnp.newaxis] - u_mp_node
+            grad_m = d_m_mat @ dU_mp[:,0]
+            grad_p = d_p_mat @ dU_mp[:,1]
+            return grad_m, grad_p
+        return vmap(convolve_at_node, (0,0,0))(self.nodes, self.D_m_mat, self.D_p_mat)  
+    
 
 
 
@@ -525,7 +615,9 @@ class PDETrainer:
 
 
 
-def poisson_solver(gstate, sim_state):
+
+
+def poisson_solver(gstate, sim_state, algorithm=0):
 
     #--- Defining Optimizer
     decay_rate_ = 0.975
@@ -544,7 +636,7 @@ def poisson_solver(gstate, sim_state):
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
 
-    trainer = PDETrainer(gstate, sim_state, optimizer)
+    trainer = PDETrainer(gstate, sim_state, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params)    
 
     num_epochs=10000
