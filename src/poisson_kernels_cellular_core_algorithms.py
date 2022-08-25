@@ -526,7 +526,7 @@ class PDETrainer:
 
 
     #Compute normal gradients for error analysis
-    def compute_normal_gradient_solution_mp_on_interface_regression(self, u):
+    def compute_normal_gradient_solution_mp_on_interface_regression(self, u, params=None):
         """
         Given the solution field u, this function computes gradient of u along normal direction
         of the level-set function on the interface itself; at r_proj.
@@ -551,7 +551,7 @@ class PDETrainer:
 
 
 
-    def compute_gradient_solution_mp_regression(self, u):
+    def compute_gradient_solution_mp_regression(self, u, params=None):
         """
         This function computes \nabla u^+ and \nabla u^- given a solution vector u.
         """
@@ -650,13 +650,19 @@ class PDETrainer:
         return u_mp
 
 
-    def compute_normal_gradient_solution_mp_on_interface_neural_network(self, u):
-        pdb.set_trace()
-        pass
+    def compute_normal_gradient_solution_mp_on_interface_neural_network(self, u, params):
+        _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+        grad_u_p = vmap(grad_u_at_point_fn, (0, None))(self.gstate.R,  1)
+        grad_u_m = vmap(grad_u_at_point_fn, (0, None))(self.gstate.R, -1)
+        grad_n_u_m = vmap(jnp.dot, (0,0))(self.normal_vecs, grad_u_m)
+        grad_n_u_p = vmap(jnp.dot, (0,0))(self.normal_vecs, grad_u_p)
+        return grad_n_u_m, grad_n_u_p
 
-    def compute_gradient_solution_mp_neural_network(self, u):
-        pdb.set_trace()
-        pass
+    def compute_gradient_solution_mp_neural_network(self, u, params):
+        _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+        grad_u_p = vmap(grad_u_at_point_fn, (0, None))(self.gstate.R,  1)
+        grad_u_m = vmap(grad_u_at_point_fn, (0, None))(self.gstate.R, -1)
+        return grad_u_m, grad_u_p
 
 
 
@@ -720,7 +726,11 @@ def poisson_solver(gstate, sim_state, algorithm=0):
     final_solution = trainer.evaluate_solution_fn(params, gstate.R, trainer.phi_flat).reshape(-1)
 
     #------------- Gradients of discovered solutions are below:    
-    grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(final_solution)
-    grad_u_mp = trainer.compute_gradient_solution_mp(final_solution)
+    if algorithm==0:
+        grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(final_solution, None)
+        grad_u_mp = trainer.compute_gradient_solution_mp(final_solution, None)
+    elif algorithm==1:
+        grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(None, params)
+        grad_u_mp = trainer.compute_gradient_solution_mp(None, params)
 
     return final_solution, grad_u_mp, grad_u_mp_normal_to_interface

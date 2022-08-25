@@ -235,6 +235,7 @@ def test_poisson_solver_with_jump_complex():
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver.prof")
 
+    pdb.set_trace()
     log = {
         'phi': sim_state.phi,
         'U': sim_state.solution,

@@ -6,7 +6,7 @@ def print_architecture(params):
 
         num_params = 0
         for pytree in params:
-            leaves = jax.tree_leaves(pytree)
+            leaves = jax.tree_util.tree_leaves(pytree)
             cur_shape = jax.tree_map(lambda x: x.shape, params[leaves[0]])
             print(f"{repr(pytree):<45} \t has trainable parameters:\t {cur_shape}")
             shapes = [val for key, val in cur_shape.items()]
