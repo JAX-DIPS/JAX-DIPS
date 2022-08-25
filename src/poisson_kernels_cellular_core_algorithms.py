@@ -711,7 +711,7 @@ def poisson_solver(gstate, sim_state, algorithm=0):
     trainer = PDETrainer(gstate, sim_state, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params)    
 
-    num_epochs=10000
+    num_epochs=20000
     start_time = time.time()
 
     # loss_epochs = []
