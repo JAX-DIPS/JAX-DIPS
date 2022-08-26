@@ -53,6 +53,7 @@ class PDETrainer:
         I, J, K = onp.meshgrid(ii, jj, kk, indexing='ij')
         self.nodes = jnp.array( onp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1))) )
 
+        self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
 
         self.phi_cube_ = phi_n.reshape(grid_shape)
         x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, self.phi_cube_)
@@ -465,6 +466,8 @@ class PDETrainer:
             and 
                 u_p = B_p : u + r_p
         """
+        u_ijk = u_cube[i-2, j-2, k-2]
+        delta_ijk = self.phi_cube[i, j, k]
 
         def bulk_node(is_interface_, u_ijk_):
             return jnp.array([jnp.where(is_interface_ == -1, u_ijk_, 0.0), jnp.where(is_interface_ == 1, u_ijk_, 0.0)])
@@ -472,7 +475,6 @@ class PDETrainer:
         def interface_node(i, j, k):
             def mu_minus_bigger_fn(i, j, k):
                 def extrapolate_u_m_from_negative_domain(i, j, k):
-                    delta_ijk = self.phi_cube[i, j, k] 
                     r_ijk = jnp.array([x[i-2], y[j-2], z[k-2]], dtype=f32)
                     r_m_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
                     r_m_proj = r_m_proj[jnp.newaxis]
@@ -484,7 +486,6 @@ class PDETrainer:
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain(i, j, k):
-                    delta_ijk = self.phi_cube[i, j, k]  
                     r_ijk = jnp.array([x[i-2], y[j-2], z[k-2]], dtype=f32)
                     r_p_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
                     r_p_proj = r_p_proj[jnp.newaxis]
@@ -501,7 +502,6 @@ class PDETrainer:
 
             def mu_plus_bigger_fn(i, j, k):
                 def extrapolate_u_m_from_negative_domain_(i, j, k):
-                    delta_ijk = self.phi_cube[i, j, k] 
                     r_ijk = jnp.array([x[i-2], y[j-2], z[k-2]], dtype=f32)
                     r_m_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
                     r_m_proj = r_m_proj[jnp.newaxis]
@@ -513,7 +513,6 @@ class PDETrainer:
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain_(i, j, k):
-                    delta_ijk = self.phi_cube[i, j, k] 
                     r_ijk = jnp.array([x[i-2], y[j-2], z[k-2]], dtype=f32)
                     r_p_proj = r_ijk - delta_ijk * self.normal_vec_fn((i, j, k))
                     r_p_proj = r_p_proj[jnp.newaxis]
@@ -532,9 +531,10 @@ class PDETrainer:
             mu_p_ijk = self.mu_p_cube_internal[i-2, j-2, k-2]
             return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
 
-        u_ijk = u_cube[i-2, j-2, k-2]
+        
         # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
-        is_interface = self.is_cell_crossed_by_interface((i, j, k))
+        # is_interface = self.is_cell_crossed_by_interface((i, j, k))
+        is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
         u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
         return u_mp
 
@@ -664,7 +664,8 @@ class PDETrainer:
             return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
 
         # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
-        is_interface = self.is_cell_crossed_by_interface((i, j, k))
+        # is_interface = self.is_cell_crossed_by_interface((i, j, k))
+        is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
         u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
         return u_mp
 
@@ -711,7 +712,7 @@ def poisson_solver(gstate, sim_state, algorithm=0):
     trainer = PDETrainer(gstate, sim_state, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params)    
 
-    num_epochs=20000
+    num_epochs=10000
     start_time = time.time()
 
     # loss_epochs = []
