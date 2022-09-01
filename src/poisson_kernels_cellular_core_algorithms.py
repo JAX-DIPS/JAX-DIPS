@@ -533,8 +533,8 @@ class PDETrainer:
 
         
         # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
-        # is_interface = self.is_cell_crossed_by_interface((i, j, k))
-        is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
+        is_interface = self.is_cell_crossed_by_interface((i, j, k))
+        # is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
         u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
         return u_mp
 

@@ -592,16 +592,6 @@ def nonoscillatory_quadratic_interpolation_generic(c, gstate):
 
 
 
-
-
-
-
-
-
-
-
-
-
 @jit
 def which_cell_index(cond): 
     """A USEFULE utility function to find the index of True in a list, 
@@ -614,7 +604,7 @@ def which_cell_index(cond):
 
 
 
-def add_ghost_layer_3d(x, y, z, c_cube):
+def add_ghost_layer_3d_old(x, y, z, c_cube):
     """
     add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
     """
@@ -636,6 +626,54 @@ def add_ghost_layer_3d(x, y, z, c_cube):
     c_cube_gh = np.concatenate((z_layer_b, c_cube_gh, z_layer_t), axis=2)
     zz = np.concatenate((np.array([z[0] - dz_b]) , z, np.array([z[-1] + dz_t])))
     return xx, yy, zz, c_cube_gh
+
+
+
+
+
+
+
+def add_ghost_layer_3d(x, y, z, c_cube):
+    """
+    add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
+    """
+    shape_ = c_cube.shape
+    c_cube_gh = np.zeros((shape_[0]+2, shape_[1]+2, shape_[2]+2))
+    c_cube_gh = c_cube_gh.at[1:-1, 1:-1, 1:-1].set(c_cube)
+
+    dx_l = x[1] - x[0]; dx_r = x[-1] - x[-2]
+    dy_b = y[1] - y[0]; dy_t = y[-1] - y[-2]
+    dz_b = z[1] - z[0]; dz_t = z[-1] - z[-2]
+    xx = np.zeros((x.shape[0] +2))
+    yy = np.zeros((y.shape[0] +2))
+    zz = np.zeros((z.shape[0] +2))
+
+    xx = xx.at[0].set(x[0] - dx_l)
+    xx = xx.at[-1].set(x[-1] + dx_r)
+    yy = yy.at[0].set(y[0] - dy_b)
+    yy = yy.at[-1].set(y[-1] + dy_t)
+    zz = zz.at[0].set(z[0] - dz_b)
+    zz = zz.at[-1].set(z[-1] + dz_t)
+
+
+    x_layer_l = 2 * c_cube[ 0,:,:] - c_cube[ 1,:,:]
+    x_layer_r = 2 * c_cube[-1,:,:] - c_cube[-2,:,:]
+    c_cube_gh = c_cube_gh.at[0,1:-1,1:-1].set(x_layer_l)
+    c_cube_gh = c_cube_gh.at[-1,1:-1,1:-1].set(x_layer_r)
+
+    y_layer_b = 2 * c_cube_gh[:, 0,:] - c_cube_gh[:, 1,:] 
+    y_layer_t = 2 * c_cube_gh[:,-1,:] - c_cube_gh[:,-2,:]
+    c_cube_gh = c_cube_gh.at[:,0,:].set(y_layer_b)
+    c_cube_gh = c_cube_gh.at[:,-1,:].set(y_layer_t)
+
+    z_layer_b = 2 * c_cube_gh[:,:, 0] - c_cube_gh[:,:, 1]
+    z_layer_t = 2 * c_cube_gh[:,:,-1] - c_cube_gh[:,:,-2]
+    c_cube_gh = c_cube_gh.at[:,:,0].set(z_layer_b)
+    c_cube_gh = c_cube_gh.at[:,:,-1].set(z_layer_t)
+
+    return xx, yy, zz, c_cube_gh
+
+
 
 
 
