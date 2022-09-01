@@ -323,7 +323,6 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = c.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
-    # cubex = np.zeros((8,3), dtype=i32)
     dx = x[1] - x[0]
     dy = y[1] - y[0]
     dz = z[1] - z[0]
@@ -339,7 +338,7 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         return i, j, k
     
     
-    def find_lower_left_cell_idx__(point):
+    def find_lower_left_cell_idx(point):
         """
         find cell index (i,j,k) containing point
         """
@@ -355,7 +354,7 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         k = lax.cond(k <= 1, lambda p: i32(2), lambda p: p, k)
         return i, j, k
 
-    def find_lower_left_cell_idx(point):
+    def find_lower_left_cell_idx__(point):
         """
         find cell index (i,j,k) containing point
         """
@@ -469,6 +468,13 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
 
 
 
+
+
+
+
+
+
+
 def add_ghost_layer_3d(x, y, z, c_cube):
     """
     add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
@@ -480,16 +486,30 @@ def add_ghost_layer_3d(x, y, z, c_cube):
     dx_l = x[1] - x[0]; dx_r = x[-1] - x[-2]
     dy_b = y[1] - y[0]; dy_t = y[-1] - y[-2]
     dz_b = z[1] - z[0]; dz_t = z[-1] - z[-2]
+
     xx = np.zeros((x.shape[0] +2))
     yy = np.zeros((y.shape[0] +2))
     zz = np.zeros((z.shape[0] +2))
 
-    xx = xx.at[0].set(x[0] - dx_l)
-    xx = xx.at[-1].set(x[-1] + dx_r)
-    yy = yy.at[0].set(y[0] - dy_b)
-    yy = yy.at[-1].set(y[-1] + dy_t)
-    zz = zz.at[0].set(z[0] - dz_b)
-    zz = zz.at[-1].set(z[-1] + dz_t)
+    xx = xx.at[1:-1].set(x)
+    yy = yy.at[1:-1].set(y)
+    zz = zz.at[1:-1].set(z)
+
+    x_l = x[0] - dx_l
+    x_r = x[-1] + dx_r
+
+    y_b = y[0] - dy_b
+    y_t = y[-1] + dy_t
+
+    z_b = z[0] - dz_b
+    z_t = z[-1] + dz_t
+
+    xx = xx.at[0].set(x_l)
+    xx = xx.at[-1].set(x_r)
+    yy = yy.at[0].set(y_b)
+    yy = yy.at[-1].set(y_t)
+    zz = zz.at[0].set(z_b)
+    zz = zz.at[-1].set(z_t)
 
 
     x_layer_l = 2 * c_cube[ 0,:,:] - c_cube[ 1,:,:]
@@ -513,24 +533,7 @@ def add_ghost_layer_3d(x, y, z, c_cube):
 
 
 
-
-
-
-
-
-@jit
-def which_cell_index(cond): 
-    """A USEFULE utility function to find the index of True in a list, 
-    for example cond = 0.1 < gstate.x provides a list of True's and False's
-    and thie function returns the first time True appears
-    """
-    # cond = np.asarray(cond)
-    return (np.argwhere(~cond, size=1) - 1).flatten()
-
-
-
-
-def add_ghost_layer_3d_old(x, y, z, c_cube):
+def add_ghost_layer_3d__(x, y, z, c_cube):
     """
     add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
     """
@@ -560,6 +563,17 @@ def add_ghost_layer_3d_old(x, y, z, c_cube):
 
 
 
+
+
+
+@jit
+def which_cell_index(cond): 
+    """A USEFULE utility function to find the index of True in a list, 
+    for example cond = 0.1 < gstate.x provides a list of True's and False's
+    and thie function returns the first time True appears
+    """
+    # cond = np.asarray(cond)
+    return (np.argwhere(~cond, size=1) - 1).flatten()
 
 
 
@@ -639,7 +653,7 @@ def multilinear_interpolation(c, gstate):
         k = which_cell_index(np.asarray(z_p >= z))
         return i, j, k
     @jit
-    def find_lower_left_cell_idx__(point):
+    def find_lower_left_cell_idx(point):
         """
         find cell index (i,j,k) containing point
         """
@@ -659,7 +673,7 @@ def multilinear_interpolation(c, gstate):
         return i, j, k
 
     @jit
-    def find_lower_left_cell_idx(point):
+    def find_lower_left_cell_idx__(point):
         """
         find cell index (i,j,k) containing point
         """

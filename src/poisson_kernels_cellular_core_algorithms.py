@@ -728,10 +728,8 @@ def poisson_solver(gstate, sim_state, algorithm=0):
         opt_state, params, loss_epoch = trainer.update(opt_state, params)
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
         return (opt_state, params, loss_epochs), None
-    
     loss_epochs = jnp.zeros(num_epochs)
     epoch_store = jnp.arange(num_epochs)
-
     (opt_state, params, loss_epochs), _ = jax.lax.scan(learn, (opt_state, params, loss_epochs), epoch_store)
 
     end_time = time.time()
