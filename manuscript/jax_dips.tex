@@ -893,12 +893,13 @@ Table 8 of \cite{guittet2015solving} reports convergence results for the solutio
 \hline
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 \hline 
-$2^4$ &  &     & $6.08\times 10^{-2}$ & -  & $0.0483$ & $1.85$\\ 
-$2^5$ & $6.1\times 10^{-3}$  &     & $8.3 \times 10^{-2}$ & -  & $0.053$ & $2.25$\\ 
-$2^6$ & $7.74\times 10^{-5}$ &     & - & -  & - & \\ 
-$2^7$ & $1.97\times 10^{-5}$ &     & - & -  & - & \\ \hline
+$2^3$ & $3.7\times 10^{-2}$ &  -        & $3.25\times 10^{-1}$  &   -     & $0.0306$ & $1.05$ \\
+$2^4$ & $7.1\times 10^{-3}$ &  $2.38$   & $1.1\times 10^{-1}$   & $1.56$  & $0.056$  & $1.72$ \\ 
+$2^5$ & $5.9\times 10^{-3}$ &  $0.27$   & $8.36 \times 10^{-2}$ & $0.4$   & $0.053$  & $2.15$ \\ 
+$2^6$ & $4.1\times 10^{-3}$ &  $0.53$   & $6.44\times 10^{-2}$  & $0.38$  & $0.287$  & $5.57$ \\ 
+$2^7$ &   &     & - & -  & - & $32.1$ \\ \hline
 \end{tabular}
-\caption{Convergence on the solution and its gradient. VIM values are the $L^\infty$-norm over the surface of the sphere. We report $L^\infty$-norm of solution evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU.}
+\caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU.}
 \end{center}
 \end{table}
 
@@ -907,7 +908,7 @@ After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty
 
 \begin{figure}
 	\centering
-	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_sphere.png}
+	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_sphere_16x16x16.png}
 	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_star.png}
 	\caption{Loss evolution with epochs for the sphere (left) and star (right) examples.}
 	\label{fig:losses}
@@ -924,7 +925,7 @@ After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty
 
 \begin{figure}
 	\centering
-	\includegraphics[width=\linewidth]{./figures/sphere_sols_regression.png}
+	\includegraphics[width=\linewidth]{./figures/sphere_sols_regression_16x16x16.png}
 	\caption{Illustration of numerical solution and absolute error on a $16\times 16\times 16$ uniform grid using the regression based solver. Relative error is almost $1\%$. }
 	\label{fig:sphere}
 \end{figure}

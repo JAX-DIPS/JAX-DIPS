@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  2 SEP 2022 22:05
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  2 SEP 2022 23:53
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -696,68 +696,71 @@ LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
 Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
 put line 656.
  [13] [14] [15]
-<./figures/poisson_solver_loss_sphere.png, id=279, 578.16pt x 578.16pt>
-File: ./figures/poisson_solver_loss_sphere.png Graphic file (type png)
-<use ./figures/poisson_solver_loss_sphere.png>
-Package pdftex.def Info: ./figures/poisson_solver_loss_sphere.png  used on inpu
-t line 910.
+<./figures/poisson_solver_loss_sphere_16x16x16.png, id=279, 578.16pt x 578.16pt
+>
+File: ./figures/poisson_solver_loss_sphere_16x16x16.png Graphic file (type png)
+
+<use ./figures/poisson_solver_loss_sphere_16x16x16.png>
+Package pdftex.def Info: ./figures/poisson_solver_loss_sphere_16x16x16.png  use
+d on input line 911.
 (pdftex.def)             Requested size: 210.70462pt x 210.70464pt.
 <./figures/poisson_solver_loss_star.png, id=280, 578.16pt x 578.16pt>
 File: ./figures/poisson_solver_loss_star.png Graphic file (type png)
 <use ./figures/poisson_solver_loss_star.png>
 Package pdftex.def Info: ./figures/poisson_solver_loss_star.png  used on input 
-line 911.
+line 912.
 (pdftex.def)             Requested size: 210.70462pt x 210.70464pt.
 <./figures/sphere_shape.png, id=281, 2097.8375pt x 2097.8375pt>
 File: ./figures/sphere_shape.png Graphic file (type png)
 <use ./figures/sphere_shape.png>
-Package pdftex.def Info: ./figures/sphere_shape.png  used on input line 919.
+Package pdftex.def Info: ./figures/sphere_shape.png  used on input line 920.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
 <./figures/sphere_mu_m.png, id=282, 2097.8375pt x 2097.8375pt>
 File: ./figures/sphere_mu_m.png Graphic file (type png)
 <use ./figures/sphere_mu_m.png>
-Package pdftex.def Info: ./figures/sphere_mu_m.png  used on input line 920.
+Package pdftex.def Info: ./figures/sphere_mu_m.png  used on input line 921.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/sphere_sols_regression.png, id=283, 2125.9425pt x 1157.32375pt>
-File: ./figures/sphere_sols_regression.png Graphic file (type png)
-<use ./figures/sphere_sols_regression.png>
-Package pdftex.def Info: ./figures/sphere_sols_regression.png  used on input li
-ne 927.
+<./figures/sphere_sols_regression_16x16x16.png, id=283, 2125.9425pt x 1157.3237
+5pt>
+File: ./figures/sphere_sols_regression_16x16x16.png Graphic file (type png)
+<use ./figures/sphere_sols_regression_16x16x16.png>
+Package pdftex.def Info: ./figures/sphere_sols_regression_16x16x16.png  used on
+ input line 928.
 (pdftex.def)             Requested size: 430.00462pt x 234.07422pt.
 
-[16] [17 <./figures/poisson_solver_loss_sphere.png> <./figures/poisson_solver_l
-oss_star.png> <./figures/sphere_shape.png (PNG copy)> <./figures/sphere_mu_m.pn
-g (PNG copy)>]
+[16] [17 <./figures/poisson_solver_loss_sphere_16x16x16.png> <./figures/poisson
+_solver_loss_star.png> <./figures/sphere_shape.png (PNG copy)> <./figures/spher
+e_mu_m.png (PNG copy)>]
 <./figures/star_shape.png, id=301, 2097.8375pt x 2097.8375pt>
 File: ./figures/star_shape.png Graphic file (type png)
 <use ./figures/star_shape.png>
-Package pdftex.def Info: ./figures/star_shape.png  used on input line 993.
+Package pdftex.def Info: ./figures/star_shape.png  used on input line 994.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
 <./figures/star_mu_m.png, id=302, 2097.8375pt x 2097.8375pt>
 File: ./figures/star_mu_m.png Graphic file (type png)
 <use ./figures/star_mu_m.png>
-Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 994.
+Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 995.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
 <./figures/star_sols.png, id=303, 2088.80376pt x 1157.32375pt>
 File: ./figures/star_sols.png Graphic file (type png)
 <use ./figures/star_sols.png>
-Package pdftex.def Info: ./figures/star_sols.png  used on input line 1001.
+Package pdftex.def Info: ./figures/star_sols.png  used on input line 1002.
 (pdftex.def)             Requested size: 430.00462pt x 238.24182pt.
 <./figures/star_sols_z.png, id=304, 2088.80376pt x 1157.32375pt>
 File: ./figures/star_sols_z.png Graphic file (type png)
 <use ./figures/star_sols_z.png>
-Package pdftex.def Info: ./figures/star_sols_z.png  used on input line 1002.
+Package pdftex.def Info: ./figures/star_sols_z.png  used on input line 1003.
 (pdftex.def)             Requested size: 430.00462pt x 238.24182pt.
- [18 <./figures/sphere_sols_regression.png (PNG copy)>] [19 <./figures/star_sha
-pe.png (PNG copy)> <./figures/star_mu_m.png (PNG copy)>] [20 <./figures/star_so
-ls.png (PNG copy)> <./figures/star_sols_z.png (PNG copy)>]
-(./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1040.
+ [18 <./figures/sphere_sols_regression_16x16x16.png (PNG copy)>] [19 <./figures
+/star_shape.png (PNG copy)> <./figures/star_mu_m.png (PNG copy)>] [20 <./figure
+s/star_sols.png (PNG copy)> <./figures/star_sols_z.png (PNG copy)>] (./jax_dips
+.bbl)
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1041.
  [21]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1040.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1041.
  (./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1040.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1040.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1041.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1041.
 
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
 (rerunfilecheck)             Checksum: B0AC73D81749B082078C16C68F533CB9;1935.
@@ -765,11 +768,11 @@ Package rerunfilecheck Info: File `jax_dips.out' has not changed.
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1040.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1041.
  ) 
 Here is how much of TeX's memory you used:
  10117 strings out of 483065
- 151520 string characters out of 5963550
+ 151628 string characters out of 5963550
  437470 words of memory out of 5000000
  24810 multiletter control sequences out of 15000+600000
  545596 words of font info for 78 fonts, out of 8000000 for 9000
@@ -805,7 +808,7 @@ texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb></usr/share/texlive/texmf-
 dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/texlive/texmf-dist/fo
 nts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/fon
 ts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jax_dips.pdf (21 pages, 2839645 bytes).
+Output written on jax_dips.pdf (21 pages, 2840554 bytes).
 PDF statistics:
  450 PDF objects out of 1000 (max. 8388607)
  373 compressed objects within 4 object streams
