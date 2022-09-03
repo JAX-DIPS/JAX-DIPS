@@ -9,6 +9,10 @@ import pdb
 import time
 import os
 import sys
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
@@ -194,11 +198,25 @@ def test_poisson_solver_with_jump():
         initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
 
+
+    SWITCHING_INTERVAL = 3
     t1 = time.time()
 
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=0, switching_interval=3)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=0, switching_interval=SWITCHING_INTERVAL)
 
     t2 = time.time()
+    
+    plt.figure(figsize=(8, 8))
+    plt.plot(epoch_store[epoch_store%SWITCHING_INTERVAL - 1 ==0], loss_epochs[epoch_store%SWITCHING_INTERVAL - 1 ==0], color='k', label='whole domain')
+    plt.plot(epoch_store[epoch_store%SWITCHING_INTERVAL - 1 <0], loss_epochs[epoch_store%SWITCHING_INTERVAL - 1 <0], color='b', label='negative domain')
+    plt.plot(epoch_store[epoch_store%SWITCHING_INTERVAL - 1 >0], loss_epochs[epoch_store%SWITCHING_INTERVAL - 1 >0], color='r', label='positive domain')
+    plt.yscale('log')
+    plt.xlabel(r'$\rm epoch$', fontsize=20)
+    plt.ylabel(r'$\rm loss$', fontsize=20)
+    plt.legend(fontsize=20)
+    plt.savefig('tests/poisson_solver_loss.png')
+    plt.close()
+
 
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver.prof")

@@ -956,7 +956,7 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
         # opt_state, params, loss_epoch = trainer.update(opt_state, params)
         # opt_state, params, loss_epoch_m = trainer.update_m(opt_state, params)
         
-        cur_region = i32(-1)*(epoch % switching_interval)
+        cur_region = epoch % switching_interval - 1 
         opt_state, params, loss_epoch = trainer.update_region(opt_state, params, region=cur_region)
 
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
@@ -970,14 +970,24 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     print(f"solve took {end_time - start_time} (sec)")
 
 
+    # plt.figure(figsize=(8, 8))
+    # plt.plot(epoch_store, loss_epochs)
+    # plt.yscale('log')
+    # plt.xlabel('epoch', fontsize=20)
+    # plt.ylabel('loss', fontsize=20)
+    # plt.savefig('tests/poisson_solver_loss.png')
+    # plt.close()
+
     plt.figure(figsize=(8, 8))
-    plt.plot(epoch_store, loss_epochs)
+    plt.plot(epoch_store[epoch_store%switching_interval - 1 ==0], loss_epochs[epoch_store%switching_interval - 1 ==0], color='k', label='whole domain')
+    plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
+    plt.plot(epoch_store[epoch_store%switching_interval - 1 >0], loss_epochs[epoch_store%switching_interval - 1 >0], color='r', label='positive domain')
     plt.yscale('log')
-    plt.xlabel('epoch', fontsize=20)
-    plt.ylabel('loss', fontsize=20)
+    plt.xlabel(r'$\rm epoch$', fontsize=20)
+    plt.ylabel(r'$\rm loss$', fontsize=20)
+    plt.legend(fontsize=20)
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
-
   
     final_solution = trainer.evaluate_solution_fn(params, gstate.R, trainer.phi_flat).reshape(-1)
 
