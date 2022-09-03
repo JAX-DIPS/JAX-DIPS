@@ -4,6 +4,8 @@ JAX implementation of a differentiable inverse PDE solver with jump conditions o
 Advection of the level-set function by a semi-Lagrangian scheme with Sussman reinitialization on a uniform mesh with `128*128*128` grid points is demonstrated below. Note the minimal mass-loss in the level-set function after a full rotation.
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/animated_spinning.gif)
 
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/gradient_U.png)
+
 # Testing
 Do `pytest tests` from parent directory and a suite of tests will run:
 - `test_advection_semi_lagrangian`: a sphere is rotated 360 degrees around the box to replicate initial configuration. The L2 error in level-set function should be less than 1e-4 to pass. The advection is performed using semi-Lagrangian scheme with Sussman reinitialization.
