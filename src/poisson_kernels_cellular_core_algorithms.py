@@ -361,7 +361,10 @@ class PDETrainer:
         region>0: in the plus sign region
         region<0: in the negative sign region
         """
-        mask_region = (1+jnp.sign(region))*self.mask_region_p[:,jnp.newaxis,jnp.newaxis] + (1 - jnp.sign(region))*self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
+        region_sgn = jnp.sign(region)
+        mask_region = (1 + region_sgn)*self.mask_region_p[:,jnp.newaxis,jnp.newaxis] + (1 - region_sgn)*self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
+        mask_region /= (1 + region_sgn**2)
+        
         lhs = jnp.multiply(mask_region, lhs_)
         rhs = jnp.multiply(mask_region, rhs_)
 
