@@ -362,12 +362,20 @@ For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the conside
 \section{Hybrid Interfacial PDE Solver Strategy}
 One of the main advantages of neural networks for solving partial differential equations is to provide surrogate models that can be readily evaluated on any point of their input space. For parameterized problems, a free parameter such as the diffusion coefficient could be variable for these problems, in this case having an oracle function that evaluates solutions in near-real-time is an invaluable tool for general engineering optimization workflows. 
 
+
+\subsection{Preconditioners are ideal network regularizers}
 On the other hand, finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system often lead to bad condition number for the linear system, which can be remedied by advanced preconditioners. Preconditioners are a powerful technique to accelerate convergence of tradional numerical linear algebraic solvers. Given a poorly conditioned linear system $Ax=b$ one can obtain an equivalent system $\hat{A}\hat{x}=\hat{b}$ with accelerated convergence rate when using iterative gradient based methods. For the conjugate gradient method convergence iteration is proportional to $\sqrt{\kappa(A)}$ where $\kappa(A)$ is the condition number of matrix $A$. This is achieved by mapping the linear system with a nonsingular matrix $M$ into a new space $M^{-1} A x = M^{-1}b$ where $M^{-1}A$ has more regular spread of eigenvalues, hence a better condition number. The precondition matrix $M$ should approximate $A^{-1}$ such that $\vert I - M^{-1}A\vert < 1$. The simplest choice is the Jacobi prconditioner which amounts to using the diagonal part of $A$ as the preconditioner, $M=diag(A)$.
 
 
 
 Intuitively, condition number is caused by a separation of scales for geometric lengthscales or material properties that underly the solution patterns. One of the strengths of the presented approach is to readily enable usage of preconditioners for training neural network surrogate models. The workflow for training neural network surrogate models for PDEs with discontinuities is illustrated in figure \ref{fig:proposal}.
 
+In this work we use the Jacobi pre-conditioner. Basically, every element of the left-hand-side ($A u$) and right-hand-side ($b$) vectors are divided by the coefficient of the diagonal term of the matrix given by:
+\begin{align*}
+a_{ii} = \sum_{s=-,+} \bigg( k_{i,i}^s \vert \mathcal{V}_{i,i}^s\vert + (\mu_{i-\frac{1}{2},i}^s A_{i-\frac{1}{2},i}^s +  \mu_{i+\frac{1}{2},i}^s A_{i+\frac{1}{2},i}^s ) / \Delta x 
++  (\mu_{i, i-\frac{1}{2}}^s A_{i, i-\frac{1}{2}}^s +  \mu_{i, i+\frac{1}{2}}^s A_{i, i+\frac{1}{2}}^s ) / \Delta y \bigg)
+\end{align*}
+Note that we never explicitly compute the matrix, instead we compute the effect of matrix product of $A u$.  
 
 \begin{figure}[ht]
 	\centering
@@ -881,14 +889,14 @@ Table 8 of \cite{guittet2015solving} reports convergence results for the solutio
 \begin{center}
 \begin{tabular}{|l||ll|ll|c|c|}
 \hline
-& \multicolumn{2}{c|}{VIM}& \multicolumn{4}{c|}{JAX-DIPS} \\
+& \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$} & \multicolumn{2}{c|}{GPU Statistics} \\
 \hline
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 \hline 
-$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $6.08\times 10^{-2}$ & - & $0.0483$ & $1.85$\\ 
-$2^5$ & $3.04\times 10^{-4}$ & $1.99$    & - & -  & - & $2.25$\\ 
-$2^6$ & $7.74\times 10^{-5}$ & $1.98$    & - & -  & - & \\ 
-$2^7$ & $1.97\times 10^{-5}$ & $1.98$    & - & -  & - & \\ \hline
+$2^4$ &  &     & $6.08\times 10^{-2}$ & -  & $0.0483$ & $1.85$\\ 
+$2^5$ & $6.1\times 10^{-3}$  &     & $8.3 \times 10^{-2}$ & -  & $0.053$ & $2.25$\\ 
+$2^6$ & $7.74\times 10^{-5}$ &     & - & -  & - & \\ 
+$2^7$ & $1.97\times 10^{-5}$ &     & - & -  & - & \\ \hline
 \end{tabular}
 \caption{Convergence on the solution and its gradient. VIM values are the $L^\infty$-norm over the surface of the sphere. We report $L^\infty$-norm of solution evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU.}
 \end{center}
@@ -917,7 +925,7 @@ After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{./figures/sphere_sols_regression.png}
-	\caption{Illustration of numerical solution and absolute error on a $16\times 16\times 16$ uniform grid using the regression based solver. Relative error is aroung $1\%$. }
+	\caption{Illustration of numerical solution and absolute error on a $16\times 16\times 16$ uniform grid using the regression based solver. Relative error is almost $1\%$. }
 	\label{fig:sphere}
 \end{figure}
 

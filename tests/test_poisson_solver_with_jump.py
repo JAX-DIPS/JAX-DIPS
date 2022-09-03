@@ -28,9 +28,9 @@ def test_poisson_solver_with_jump():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(16)
-    Ny = i32(16)
-    Nz = i32(16)
+    Nx = i32(8)
+    Ny = i32(8)
+    Nz = i32(8)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -227,10 +227,10 @@ def test_poisson_solver_with_jump():
     io.write_vtk_manual(gstate, log)
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
-
+    rms_err = jnp.square(sim_state.solution - exact_sol).mean()**0.5
     print("\n SOLUTION ERROR\n")
 
-    print(f"L_inf error on solution everywhere in the domain is = {L_inf_err}")
+    print(f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared erros = {rms_err} ")
     
 
     """
