@@ -190,6 +190,8 @@ class PDETrainer:
             sgn = jnp.sign(a)
             return jnp.ceil(0.5 * sgn - 0.75) * (-1.0)
 
+        self.mask_region_m = sign_m_fn(self.phi_flat)
+        self.mask_region_p = sign_p_fn(self.phi_flat)
         
 
         def cube_at(cube, ind): return cube[ind[0], ind[1], ind[2]]
@@ -303,6 +305,7 @@ class PDETrainer:
         return u_at_point_fn, grad_u_at_point_fn
 
 
+    
     @partial(jit, static_argnums=(0))
     def evaluate_loss_fn(self, lhs, rhs, sol_cube):
         """
@@ -316,26 +319,128 @@ class PDETrainer:
         tot_loss += jnp.square(sol_cube[: , :, 0] - self.dirichlet_cube[ :, :, 0]).mean() * self.Vol_cell_nominal
         tot_loss += jnp.square(sol_cube[: , :,-1] - self.dirichlet_cube[ :, :,-1]).mean() * self.Vol_cell_nominal
         return tot_loss
+    
+    
+    
+    @partial(jit, static_argnums=(0))
+    def evaluate_loss_m_region_fn(self, lhs_, rhs_):
+        """
+            in the minus region only
+        """
+        mask_region = self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
+        lhs = jnp.multiply(mask_region, lhs_)
+        rhs = jnp.multiply(mask_region, rhs_)
+        loss_m = jnp.mean(optax.l2_loss(lhs, rhs))
+        return loss_m
 
 
+    @partial(jit, static_argnums=(0))
+    def evaluate_loss_p_region_fn(self, lhs_, rhs_, sol_cube):
+        """
+             in the plus region only
+        """
+        mask_region = self.mask_region_p[:,jnp.newaxis,jnp.newaxis] 
+        lhs = jnp.multiply(mask_region, lhs_)
+        rhs = jnp.multiply(mask_region, rhs_)
 
+        loss_p = jnp.mean(optax.l2_loss(lhs, rhs))
+        loss_p += jnp.square(sol_cube[ 0, :, :] - self.dirichlet_cube[ 0, :, :]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[-1, :, :] - self.dirichlet_cube[-1, :, :]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[: , 0, :] - self.dirichlet_cube[ :, 0, :]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[: ,-1, :] - self.dirichlet_cube[ :,-1, :]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[: , :, 0] - self.dirichlet_cube[ :, :, 0]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[: , :,-1] - self.dirichlet_cube[ :, :,-1]).mean() * self.Vol_cell_nominal
+        return loss_p
+
+   
+
+    @partial(jit, static_argnums=(0))
+    def evaluate_loss_region_fn(self, lhs_, rhs_, sol_cube, region=0):
+        """
+        region=0: everywhere
+        region>0: in the plus sign region
+        region<0: in the negative sign region
+        """
+        mask_region = (1+jnp.sign(region))*self.mask_region_p[:,jnp.newaxis,jnp.newaxis] + (1 - jnp.sign(region))*self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
+        lhs = jnp.multiply(mask_region, lhs_)
+        rhs = jnp.multiply(mask_region, rhs_)
+
+        loss_p = jnp.mean(optax.l2_loss(lhs, rhs))
+        loss_p += jnp.square(sol_cube[ 0, :, :] - self.dirichlet_cube[ 0, :, :]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[-1, :, :] - self.dirichlet_cube[-1, :, :]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[: , 0, :] - self.dirichlet_cube[ :, 0, :]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[: ,-1, :] - self.dirichlet_cube[ :,-1, :]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[: , :, 0] - self.dirichlet_cube[ :, :, 0]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[: , :,-1] - self.dirichlet_cube[ :, :,-1]).mean() * self.Vol_cell_nominal
+        return loss_p
+
+    def loss_region(self, params, region=0):
+        """
+        region=0: everywhere
+        region>0: in the plus sign region
+        region<0: in the negative sign region
+        """
+        lhs_rhs = self.compute_Ax_and_b_fn(params)
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        pred_sol = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
+        sol_cube = pred_sol.reshape(self.grid_shape)      
+        tot_loss = self.evaluate_loss_region_fn( lhs, rhs, sol_cube, region)
+        return tot_loss
+    
+    @partial(jit, static_argnums=(0))
+    def update_region(self, opt_state, params, region=0):      
+        """
+        region=0: everywhere
+        region>0: in the plus sign region
+        region<0: in the negative sign region
+        """
+        loss, grads = value_and_grad(self.loss_region)(params, region)
+        updates, opt_state = self.optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
+        return opt_state, params, loss
+
+
+    def loss_m(self, params):
+        lhs_rhs = self.compute_Ax_and_b_fn(params)
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)     
+        loss_m = self.evaluate_loss_m_region_fn( lhs, rhs)
+        return loss_m
+
+    def loss_p(self, params):
+        lhs_rhs = self.compute_Ax_and_b_fn(params)
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        pred_sol = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
+        sol_cube = pred_sol.reshape(self.grid_shape)      
+        loss_p = self.evaluate_loss_p_region_fn( lhs, rhs, sol_cube)
+        return loss_p
+    
     def loss(self, params):
         """
             Loss function of the neural network
         """        
         # jax.make_jaxpr(self.evaluate_solution_fn)(params, self.gstate.R, self.phi_flat).pretty_print()
         # jax.make_jaxpr(self.compute_Ax_and_b_fn)(params).pretty_print()
-        
-
         lhs_rhs = self.compute_Ax_and_b_fn(params)
-
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         pred_sol = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
         sol_cube = pred_sol.reshape(self.grid_shape)      
         tot_loss = self.evaluate_loss_fn( lhs, rhs, sol_cube)
         return tot_loss
 
+    @partial(jit, static_argnums=(0))
+    def update_m(self, opt_state, params):      
+        loss, grads = value_and_grad(self.loss_m)(params)
+        updates, opt_state = self.optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
+        return opt_state, params, loss
 
+    @partial(jit, static_argnums=(0))
+    def update_p(self, opt_state, params):      
+        loss, grads = value_and_grad(self.loss_p)(params)
+        updates, opt_state = self.optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
+        return opt_state, params, loss
+    
     @partial(jit, static_argnums=(0))
     def update(self, opt_state, params):      
         loss, grads = value_and_grad(self.loss)(params)
@@ -848,7 +953,12 @@ def poisson_solver(gstate, sim_state, algorithm=0):
 
     def learn(carry, epoch):
         opt_state, params, loss_epochs = carry
-        opt_state, params, loss_epoch = trainer.update(opt_state, params)
+        # opt_state, params, loss_epoch = trainer.update(opt_state, params)
+        # opt_state, params, loss_epoch_m = trainer.update_m(opt_state, params)
+        
+        cur_region = i32(-1)*(epoch % 3)
+        opt_state, params, loss_epoch = trainer.update_region(opt_state, params, region=cur_region)
+
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
         return (opt_state, params, loss_epochs), None
     loss_epochs = jnp.zeros(num_epochs)
