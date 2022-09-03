@@ -84,15 +84,10 @@ def setup(initial_value_fn :  Callable[..., Array],
         BETA  = beta_fn(R)
         return SState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA, None, None) 
 
-    def solve_fn(gstate, sim_state, algorithm=0):
-        # if algorithm==0:
+    def solve_fn(gstate, sim_state, algorithm=0, switching_interval=3):
         #     U_sol, grad_u_mp, grad_u_mp_normal_to_interface = poisson_kernels_cellular.poisson_solver(gstate, sim_state)
-        # elif algorithm==1:
-        U_sol, grad_u_mp, grad_u_mp_normal_to_interface = poisson_kernels_cellular_core_algorithms.poisson_solver(gstate, sim_state, algorithm)
-        # else:
-            # print("Unknown algorithm for Poisson solver was requested. Aborting.")
-            # return -1
+        U_sol, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs = poisson_kernels_cellular_core_algorithms.poisson_solver(gstate, sim_state, algorithm, switching_interval=switching_interval)
 
-        return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface)
+        return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface), epoch_store, loss_epochs
     
     return init_fn, solve_fn

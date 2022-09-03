@@ -918,7 +918,7 @@ class PDETrainer:
 
 
 
-def poisson_solver(gstate, sim_state, algorithm=0):
+def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
 
     #--- Defining Optimizer
     decay_rate_ = 0.975
@@ -956,7 +956,7 @@ def poisson_solver(gstate, sim_state, algorithm=0):
         # opt_state, params, loss_epoch = trainer.update(opt_state, params)
         # opt_state, params, loss_epoch_m = trainer.update_m(opt_state, params)
         
-        cur_region = i32(-1)*(epoch % 3)
+        cur_region = i32(-1)*(epoch % switching_interval)
         opt_state, params, loss_epoch = trainer.update_region(opt_state, params, region=cur_region)
 
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
@@ -989,4 +989,4 @@ def poisson_solver(gstate, sim_state, algorithm=0):
         grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(None, params)
         grad_u_mp = trainer.compute_gradient_solution_mp(None, params)
 
-    return final_solution, grad_u_mp, grad_u_mp_normal_to_interface
+    return final_solution, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs

@@ -227,7 +227,7 @@ def test_poisson_solver_with_jump_complex():
 
     t1 = time.time()
 
-    sim_state = solve_fn(gstate, sim_state, algorithm=0)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=0, switching_interval=3)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
