@@ -11,13 +11,16 @@
 \BOOKMARK [3][-]{subsubsection.2.3.1}{Integration over 3D surfaces and volumes}{subsection.2.3}% 11
 \BOOKMARK [3][-]{subsubsection.2.3.2}{Cross sections of interface with grid cell faces}{subsection.2.3}% 12
 \BOOKMARK [1][-]{section.3}{Hybrid Interfacial PDE Solver Strategy}{}% 13
-\BOOKMARK [2][-]{subsection.3.1}{Preconditioners are ideal network regularizers}{section.3}% 14
-\BOOKMARK [2][-]{subsection.3.2}{Neural network approximators for the solution}{section.3}% 15
-\BOOKMARK [2][-]{subsection.3.3}{Approach I. Finite discretization method fused with regression extrapolation}{section.3}% 16
-\BOOKMARK [2][-]{subsection.3.4}{Approach II. Finite discretization method fused with neural extrapolation}{section.3}% 17
-\BOOKMARK [2][-]{subsection.3.5}{Approach III. Penalty minimization method}{section.3}% 18
-\BOOKMARK [1][-]{section.4}{Numerical Examples}{}% 19
-\BOOKMARK [2][-]{subsection.4.1}{Case I.}{section.4}% 20
-\BOOKMARK [2][-]{subsection.4.2}{Case II.}{section.4}% 21
-\BOOKMARK [1][-]{section.5}{Conclusion \046 Future Directions}{}% 22
-\BOOKMARK [1][-]{section*.12}{References}{}% 23
+\BOOKMARK [2][-]{subsection.3.1}{Neural network approximators for the solution}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.2}{Approach I. Finite discretization method fused with regression extrapolation}{section.3}% 15
+\BOOKMARK [2][-]{subsection.3.3}{Approach II. Finite discretization method fused with neural extrapolation}{section.3}% 16
+\BOOKMARK [2][-]{subsection.3.4}{Approach III. Penalty minimization method}{section.3}% 17
+\BOOKMARK [1][-]{section.4}{Optimization scheme}{}% 18
+\BOOKMARK [2][-]{subsection.4.1}{Preconditioners are ideal network regularizers}{section.4}% 19
+\BOOKMARK [2][-]{subsection.4.2}{Learning rate scheduling}{section.4}% 20
+\BOOKMARK [2][-]{subsection.4.3}{Domain switching optimization scheme}{section.4}% 21
+\BOOKMARK [1][-]{section.5}{Numerical Examples}{}% 22
+\BOOKMARK [2][-]{subsection.5.1}{Case I.}{section.5}% 23
+\BOOKMARK [2][-]{subsection.5.2}{Case II.}{section.5}% 24
+\BOOKMARK [1][-]{section.6}{Conclusion \046 Future Directions}{}% 25
+\BOOKMARK [1][-]{section*.12}{References}{}% 26

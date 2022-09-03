@@ -363,32 +363,7 @@ For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the conside
 One of the main advantages of neural networks for solving partial differential equations is to provide surrogate models that can be readily evaluated on any point of their input space. For parameterized problems, a free parameter such as the diffusion coefficient could be variable for these problems, in this case having an oracle function that evaluates solutions in near-real-time is an invaluable tool for general engineering optimization workflows. 
 
 
-\subsection{Preconditioners are ideal network regularizers}
-On the other hand, finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system often lead to bad condition number for the linear system, which can be remedied by advanced preconditioners. Preconditioners are a powerful technique to accelerate convergence of tradional numerical linear algebraic solvers. Given a poorly conditioned linear system $Ax=b$ one can obtain an equivalent system $\hat{A}\hat{x}=\hat{b}$ with accelerated convergence rate when using iterative gradient based methods. For the conjugate gradient method convergence iteration is proportional to $\sqrt{\kappa(A)}$ where $\kappa(A)$ is the condition number of matrix $A$. This is achieved by mapping the linear system with a nonsingular matrix $M$ into a new space $M^{-1} A x = M^{-1}b$ where $M^{-1}A$ has more regular spread of eigenvalues, hence a better condition number. The precondition matrix $M$ should approximate $A^{-1}$ such that $\vert I - M^{-1}A\vert < 1$. The simplest choice is the Jacobi prconditioner which amounts to using the diagonal part of $A$ as the preconditioner, $M=diag(A)$.
 
-
-
-Intuitively, condition number is caused by a separation of scales for geometric lengthscales or material properties that underly the solution patterns. One of the strengths of the presented approach is to readily enable usage of preconditioners for training neural network surrogate models. The workflow for training neural network surrogate models for PDEs with discontinuities is illustrated in figure \ref{fig:proposal}.
-
-In this work we use the Jacobi pre-conditioner. Basically, every element of the left-hand-side ($A u$) and right-hand-side ($b$) vectors are divided by the coefficient of the diagonal term of the matrix given by:
-\begin{align*}
-a_{ii} = \sum_{s=-,+} \bigg( k_{i,i}^s \vert \mathcal{V}_{i,i}^s\vert + (\mu_{i-\frac{1}{2},i}^s A_{i-\frac{1}{2},i}^s +  \mu_{i+\frac{1}{2},i}^s A_{i+\frac{1}{2},i}^s ) / \Delta x 
-+  (\mu_{i, i-\frac{1}{2}}^s A_{i, i-\frac{1}{2}}^s +  \mu_{i, i+\frac{1}{2}}^s A_{i, i+\frac{1}{2}}^s ) / \Delta y \bigg)
-\end{align*}
-Note that we never explicitly compute the matrix, instead we compute the effect of matrix product of $A u$.  
-
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v1.png}
-	\caption{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
-	\label{fig:proposal}
-\end{figure}
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v2.png}
-	\caption{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.}
-	\label{fig:proposal}
-\end{figure}
 
 
 
@@ -426,24 +401,6 @@ JAX-DIPS allows for exact computation of the gradient of the loss function using
 
 Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
 
-
-First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
-
-
-%\subsubsection{Gradient based optimization with learning rate annealing}
-
-We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam \cite{kingma2014adam} optimizer:
-\begin{align*}
-r_{k} = r_0 \alpha^{k / T}
-\end{align*}
-where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. %See figure \ref{fig::optimization} for an example of loss evolution during optimization.
-
-%\begin{figure}[ht]
-%\centering
-%\includegraphics[width=0.85\linewidth]{figures/poisson_solver_loss_with_annealing.png}
-%\caption{Effect of annealing to dampen learning rate with number of epochs. }
-%\label{fig::optimization}
-%\end{figure}
 
 
 
@@ -811,11 +768,90 @@ hence, the overall loss function for this class of problems shall be
 
 
 
+\section{Optimization scheme}
+
+
+\subsection{Preconditioners are ideal network regularizers}
+Finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system often lead to bad condition number for the linear system, which can be remedied by advanced preconditioners. Preconditioners are a powerful technique to accelerate convergence of tradional numerical linear algebraic solvers. Given a poorly conditioned linear system $Ax=b$ one can obtain an equivalent system $\hat{A}\hat{x}=\hat{b}$ with accelerated convergence rate when using iterative gradient based methods. For the conjugate gradient method convergence iteration is proportional to $\sqrt{\kappa(A)}$ where $\kappa(A)$ is the condition number of matrix $A$. This is achieved by mapping the linear system with a nonsingular matrix $M$ into a new space $M^{-1} A x = M^{-1}b$ where $M^{-1}A$ has more regular spread of eigenvalues, hence a better condition number. The precondition matrix $M$ should approximate $A^{-1}$ such that $\vert I - M^{-1}A\vert < 1$. The simplest choice is the Jacobi prconditioner which amounts to using the diagonal part of $A$ as the preconditioner, $M=diag(A)$.
+
+
+
+Intuitively, condition number is caused by a separation of scales for geometric lengthscales or material properties that underly the solution patterns. One of the strengths of the presented approach is to readily enable usage of preconditioners for training neural network surrogate models. The workflow for training neural network surrogate models for PDEs with discontinuities is illustrated in figure \ref{fig:proposal}.
+
+In this work we use the Jacobi pre-conditioner. Basically, every element of the left-hand-side ($A u$) and right-hand-side ($b$) vectors are divided by the coefficient of the diagonal term of the matrix given by:
+\begin{align*}
+a_{ii} = \sum_{s=-,+} \bigg( k_{i,i}^s \vert \mathcal{V}_{i,i}^s\vert + (\mu_{i-\frac{1}{2},i}^s A_{i-\frac{1}{2},i}^s +  \mu_{i+\frac{1}{2},i}^s A_{i+\frac{1}{2},i}^s ) / \Delta x 
++  (\mu_{i, i-\frac{1}{2}}^s A_{i, i-\frac{1}{2}}^s +  \mu_{i, i+\frac{1}{2}}^s A_{i, i+\frac{1}{2}}^s ) / \Delta y \bigg)
+\end{align*}
+Note that we never explicitly compute the matrix, instead we compute the effect of matrix product of $A u$.  
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v1.png}
+	\caption{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
+	\label{fig:proposal}
+\end{figure}
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v2.png}
+	\caption{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.}
+	\label{fig:proposal}
+\end{figure}
 
 
 
 
+\subsection{Learning rate scheduling}
+First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
 
+
+%\subsubsection{Gradient based optimization with learning rate annealing}
+
+We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam \cite{kingma2014adam} optimizer:
+\begin{align*}
+r_{k} = r_0 \alpha^{k / T}
+\end{align*}
+where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. %See figure \ref{fig::optimization} for an example of loss evolution during optimization.
+
+%\begin{figure}[ht]
+%\centering
+%\includegraphics[width=0.85\linewidth]{figures/poisson_solver_loss_with_annealing.png}
+%\caption{Effect of annealing to dampen learning rate with number of epochs. }
+%\label{fig::optimization}
+%\end{figure}
+
+
+
+
+\subsection{Domain switching optimization scheme}
+The linear system suffers from worse condition number in the domain with more variability in diffusion coefficient, or where diffusion coefficient is larger. This leads to regionally imbalanced solution error where the overall error is systematically dominated by the bigger-diffusion region. 
+
+We found this problem can be drastically improved by interweaving region-specific optimization epochs inside the training pipeline. See algorithm \ref{switching}.
+
+\begin{algorithm}
+	\caption{Domain switching method. Switching interval is $\tau$.}\label{switching}
+	\begin{algorithmic}[1]
+		\Procedure{Domain Switching Optimization}{}
+		
+		\For {$epoch$ in $0\cdots$ N}		
+			\If {$epoch\ \%\ \tau > 0$}
+		
+				\If {$\mu^- > \mu^+$}
+					\State optimize $u^-_{NN}$ in $\Omega^- \cup  \Gamma_{extrapolation\ region}$ 
+				\Else
+					\State optimize $u^+_{NN}$ in $\Omega^+ \cup \Gamma_{extrapolation\ region}$ 
+				\EndIf		
+		
+			\Else
+
+				\State optimize both networks in $\Omega^- \cup \Omega^+$ 
+
+			\EndIf
+		\EndFor
+
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
 
 
 

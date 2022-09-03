@@ -360,21 +360,23 @@ class PDETrainer:
         region=0: everywhere
         region>0: in the plus sign region
         region<0: in the negative sign region
+
+        NOTE: self.mask_region_p and self.mask_region_m are both 1 on the interface.
         """
         region_sgn = jnp.sign(region)
-        mask_region = (1 + region_sgn)*self.mask_region_p[:,jnp.newaxis,jnp.newaxis] + (1 - region_sgn)*self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
-        mask_region /= (1 + region_sgn**2)
-        
+        half_region_sgn = 0.5 * region_sgn
+        mask_region = (0.5 + half_region_sgn)*self.mask_region_p[:,jnp.newaxis,jnp.newaxis] + (0.5 - half_region_sgn)*self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
+
         lhs = jnp.multiply(mask_region, lhs_)
         rhs = jnp.multiply(mask_region, rhs_)
 
         loss_p = jnp.mean(optax.l2_loss(lhs, rhs))
-        loss_p += jnp.square(sol_cube[ 0, :, :] - self.dirichlet_cube[ 0, :, :]).mean() * self.Vol_cell_nominal
-        loss_p += jnp.square(sol_cube[-1, :, :] - self.dirichlet_cube[-1, :, :]).mean() * self.Vol_cell_nominal
-        loss_p += jnp.square(sol_cube[: , 0, :] - self.dirichlet_cube[ :, 0, :]).mean() * self.Vol_cell_nominal
-        loss_p += jnp.square(sol_cube[: ,-1, :] - self.dirichlet_cube[ :,-1, :]).mean() * self.Vol_cell_nominal
-        loss_p += jnp.square(sol_cube[: , :, 0] - self.dirichlet_cube[ :, :, 0]).mean() * self.Vol_cell_nominal
-        loss_p += jnp.square(sol_cube[: , :,-1] - self.dirichlet_cube[ :, :,-1]).mean() * self.Vol_cell_nominal
+        loss_p += jnp.square(sol_cube[ 0, :, :] - self.dirichlet_cube[ 0, :, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
+        loss_p += jnp.square(sol_cube[-1, :, :] - self.dirichlet_cube[-1, :, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn) 
+        loss_p += jnp.square(sol_cube[: , 0, :] - self.dirichlet_cube[ :, 0, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
+        loss_p += jnp.square(sol_cube[: ,-1, :] - self.dirichlet_cube[ :,-1, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
+        loss_p += jnp.square(sol_cube[: , :, 0] - self.dirichlet_cube[ :, :, 0]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
+        loss_p += jnp.square(sol_cube[: , :,-1] - self.dirichlet_cube[ :, :,-1]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
         return loss_p
 
     def loss_region(self, params, region=0):
@@ -959,11 +961,14 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
         # opt_state, params, loss_epoch = trainer.update(opt_state, params)
         # opt_state, params, loss_epoch_m = trainer.update_m(opt_state, params)
         
-        cur_region = epoch % switching_interval - 1 
+        # cur_region = epoch % switching_interval - 1       # inside - outside - whole
+        cur_region = i32(-1)*(epoch % switching_interval)   # whole - inside - inside 
+
         opt_state, params, loss_epoch = trainer.update_region(opt_state, params, region=cur_region)
 
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
         return (opt_state, params, loss_epochs), None
+
     loss_epochs = jnp.zeros(num_epochs)
     epoch_store = jnp.arange(num_epochs)
     (opt_state, params, loss_epochs), _ = jax.lax.scan(learn, (opt_state, params, loss_epochs), epoch_store)
@@ -982,9 +987,11 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     # plt.close()
 
     plt.figure(figsize=(8, 8))
-    plt.plot(epoch_store[epoch_store%switching_interval - 1 ==0], loss_epochs[epoch_store%switching_interval - 1 ==0], color='k', label='whole domain')
-    plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
-    plt.plot(epoch_store[epoch_store%switching_interval - 1 >0], loss_epochs[epoch_store%switching_interval - 1 >0], color='r', label='positive domain')
+    # plt.plot(epoch_store[epoch_store%switching_interval - 1 ==0], loss_epochs[epoch_store%switching_interval - 1 ==0], color='k', label='whole domain')
+    # plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
+    # plt.plot(epoch_store[epoch_store%switching_interval - 1 >0], loss_epochs[epoch_store%switching_interval - 1 >0], color='r', label='positive domain')
+    plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
+    plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
     plt.yscale('log')
     plt.xlabel(r'$\rm epoch$', fontsize=20)
     plt.ylabel(r'$\rm loss$', fontsize=20)

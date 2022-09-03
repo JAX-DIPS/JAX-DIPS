@@ -199,23 +199,15 @@ def test_poisson_solver_with_jump():
     sim_state = init_fn(R)
 
 
-    SWITCHING_INTERVAL = 3
+    
+    SWITCHING_INTERVAL = 1
+
     t1 = time.time()
 
     sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=0, switching_interval=SWITCHING_INTERVAL)
 
     t2 = time.time()
     
-    plt.figure(figsize=(8, 8))
-    plt.plot(epoch_store[epoch_store%SWITCHING_INTERVAL - 1 ==0], loss_epochs[epoch_store%SWITCHING_INTERVAL - 1 ==0], color='k', label='whole domain')
-    plt.plot(epoch_store[epoch_store%SWITCHING_INTERVAL - 1 <0], loss_epochs[epoch_store%SWITCHING_INTERVAL - 1 <0], color='b', label='negative domain')
-    plt.plot(epoch_store[epoch_store%SWITCHING_INTERVAL - 1 >0], loss_epochs[epoch_store%SWITCHING_INTERVAL - 1 >0], color='r', label='positive domain')
-    plt.yscale('log')
-    plt.xlabel(r'$\rm epoch$', fontsize=20)
-    plt.ylabel(r'$\rm loss$', fontsize=20)
-    plt.legend(fontsize=20)
-    plt.savefig('tests/poisson_solver_loss.png')
-    plt.close()
 
 
     print(f"solve took {(t2 - t1)} seconds")
@@ -247,7 +239,7 @@ def test_poisson_solver_with_jump():
     rms_err = jnp.square(sim_state.solution - exact_sol).mean()**0.5
     print("\n SOLUTION ERROR\n")
 
-    print(f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared erros = {rms_err} ")
+    print(f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared error = {rms_err} ")
     
 
     """
