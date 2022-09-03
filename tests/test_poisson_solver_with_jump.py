@@ -1,6 +1,5 @@
 
 from jax.config import config
-from optax import lamb
 from src import io, poisson_solver, mesh, level_set
 from src.jaxmd_modules.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad, lax)
@@ -197,7 +196,7 @@ def test_poisson_solver_with_jump():
 
     t1 = time.time()
 
-    sim_state = solve_fn(gstate, sim_state)
+    sim_state = solve_fn(gstate, sim_state, algorithm=0)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()

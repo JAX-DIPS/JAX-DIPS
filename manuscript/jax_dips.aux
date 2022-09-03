@@ -81,22 +81,24 @@
 \newlabel{eq::taylorexpandjump}{{13}{14}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.13}{}}
 \newlabel{eq::extrapolate1}{{14}{14}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.14}{}}
 \newlabel{eq::extrapolate2}{{15}{14}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.15}{}}
+\citation{guittet2015solving}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Approach III. Penalty minimization method}{15}{subsection.3.4}\protected@file@percent }
 \newlabel{eq::interfaceLoss}{{17}{15}{Approach III. Penalty minimization method}{equation.3.17}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Examples}{15}{section.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Case I.}{15}{subsection.4.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }}{16}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:losses}{{5}{16}{Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }{figure.caption.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{16}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:sphere}{{6}{16}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.6}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{17}{figure.caption.7}\protected@file@percent }
-\newlabel{fig:sphere}{{7}{17}{Illustration of exact and numerical solutions.\relax }{figure.caption.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II.}{17}{subsection.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion \& Future Directions}{17}{section.5}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{18}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:star}{{8}{18}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.8}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{19}{figure.caption.9}\protected@file@percent }
-\newlabel{fig:star_sol}{{9}{19}{Illustration of exact and numerical solutions.\relax }{figure.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }}{16}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:losses}{{5}{16}{Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }{figure.caption.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution and its gradient. VIM values are the $L^\infty $-norm over the surface of the sphere. We report $L^\infty $-norm of solution evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU.\relax }}{16}{table.caption.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II.}{16}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{17}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:sphere}{{6}{17}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Illustration of numerical solution and absolute error on a $16\times 16\times 16$ uniform grid using the regression based solver. Relative error is aroung $1\%$. \relax }}{17}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:sphere}{{7}{17}{Illustration of numerical solution and absolute error on a $16\times 16\times 16$ uniform grid using the regression based solver. Relative error is aroung $1\%$. \relax }{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{18}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:star}{{8}{18}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion \& Future Directions}{18}{section.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{19}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:star_sol}{{9}{19}{Illustration of exact and numerical solutions.\relax }{figure.caption.10}{}}
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{bochkov2020solving}{{1}{}{{}}{{}}}
@@ -117,4 +119,4 @@
 \bibcite{SUSSMAN1994146}{{16}{}{{}}{{}}}
 \bibcite{XIU2001658}{{17}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
-\@writefile{toc}{\contentsline {section}{References}{20}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{21}{section*.11}\protected@file@percent }

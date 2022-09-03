@@ -21,7 +21,7 @@ import pdb
 
 
 class PDETrainer:
-    def __init__(self, gstate, sim_state, optimizer, algorithm=0):
+    def __init__(self, gstate, sim_state, optimizer, algorithm=0, precondition=1):
         
         self.optimizer = optimizer
         self.gstate = gstate  
@@ -89,6 +89,10 @@ class PDETrainer:
         self.compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
         
         self.initialize_algorithms()
+        if precondition==1:
+            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
+        elif precondition==0:
+            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
 
       
 
@@ -342,7 +346,123 @@ class PDETrainer:
 
 
     @partial(jit, static_argnums=(0))
-    def compute_Ax_and_b_fn(self, params):
+    def compute_Ax_and_b_preconditioned_fn(self, params):
+        """
+        This function calculates  A @ u for a given vector of unknowns u.
+        This evaluates the rhs in Au^k=b given estimate u^k.
+        The purpose would be to define an optimization problem with:
+
+        min || A u^k - b ||^2 
+
+        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
+
+        * PROCEDURE: 
+            first compute u = B:u + r for each node
+            then use the actual cell geometries (face areas and mu coeffs) to 
+            compute the rhs of the linear system given currently passed-in u vector
+            for solution estimate.
+
+        """
+    
+        x = self.gstate.x
+        y = self.gstate.y
+        z = self.gstate.z
+
+        Nx, Ny, Nz = self.grid_shape
+        
+        u = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
+        u_cube = u.reshape(self.grid_shape)
+
+        # u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z, params)
+        if self.algorithm==0:
+            u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z)
+        elif self.algorithm==1:
+            u_mp_at_node = partial(self.u_mp_fn, params, x, y, z)
+
+        def is_box_boundary_node(i, j, k):
+            """
+            Check if current node is on the boundary of box
+            """
+            boundary = (i-2)*(i-Nx-1)*(j-2)*(j-Ny-1)*(k-2)*(k-Nz-1)
+            return jnp.where(boundary == 0, True, False)
+
+
+
+        def evaluate_discretization_lhs_rhs_at_node(node):
+            #--- LHS
+            i, j, k = node
+
+            coeffs_ = self.compute_face_centroids_values_plus_minus_at_node(node)
+            coeffs = coeffs_[:12]
+
+            vols = coeffs_[12:14]
+            V_m_ijk = vols[0]
+            V_p_ijk = vols[1]
+            
+            def get_lhs_at_interior_node(node):
+                i, j, k = node
+                
+                k_m_ijk = self.k_m_cube_internal[i-2, j-2, k-2]
+                k_p_ijk = self.k_p_cube_internal[i-2, j-2, k-2]
+
+                u_m_ijk , u_p_ijk  = u_mp_at_node(i  , j  , k  )
+                u_m_imjk, u_p_imjk = u_mp_at_node(i-1, j  , k  )
+                u_m_ipjk, u_p_ipjk = u_mp_at_node(i+1, j  , k  )
+                u_m_ijmk, u_p_ijmk = u_mp_at_node(i  , j-1, k  )
+                u_m_ijpk, u_p_ijpk = u_mp_at_node(i  , j+1, k  )
+                u_m_ijkm, u_p_ijkm = u_mp_at_node(i  , j  , k-1)
+                u_m_ijkp, u_p_ijkp = u_mp_at_node(i  , j  , k+1)
+
+                lhs  = k_m_ijk * V_m_ijk * u_m_ijk
+                lhs += k_p_ijk * V_p_ijk * u_p_ijk
+                lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) * u_m_ijk + \
+                       (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]) * u_p_ijk
+                lhs += -1.0 * coeffs[0 ] * u_m_imjk - coeffs[1 ] * u_p_imjk
+                lhs += -1.0 * coeffs[2 ] * u_m_ipjk - coeffs[3 ] * u_p_ipjk
+                lhs += -1.0 * coeffs[4 ] * u_m_ijmk - coeffs[5 ] * u_p_ijmk
+                lhs += -1.0 * coeffs[6 ] * u_m_ijpk - coeffs[7 ] * u_p_ijpk
+                lhs += -1.0 * coeffs[8 ] * u_m_ijkm - coeffs[9 ] * u_p_ijkm
+                lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
+
+                diag_coeff = k_p_ijk * V_p_ijk + k_m_ijk * V_m_ijk + (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) + (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11])
+                return jnp.array([lhs, diag_coeff])
+            
+
+            def get_lhs_on_box_boundary(node):
+                i, j, k = node
+                lhs = u_cube[i-2, j-2, k-2] * self.Vol_cell_nominal
+                return jnp.array([lhs, self.Vol_cell_nominal])
+
+            lhs_diagcoeff = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
+            lhs, diagcoeff = jnp.split(lhs_diagcoeff, [1], 0)
+
+            #--- RHS  
+            def get_rhs_at_interior_node(node):
+                i, j, k = node
+                rhs = self.f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + self.f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
+                rhs += self.beta_integrate_over_interface_at_node(node)
+                return rhs
+            
+            def get_rhs_on_box_boundary(node):
+                i, j, k = node
+                return self.dirichlet_cube[i-2, j-2, k-2] * self.Vol_cell_nominal
+
+            rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
+
+            return jnp.array([lhs / diagcoeff, rhs / diagcoeff])
+
+        evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
+        lhs_rhs = evaluate_on_nodes_fn(self.nodes)
+        return lhs_rhs
+
+
+
+
+
+
+
+    @partial(jit, static_argnums=(0))
+    def compute_Ax_and_b_vanilla_fn(self, params):
         """
         This function calculates  A @ u for a given vector of unknowns u.
         This evaluates the rhs in Au^k=b given estimate u^k.
@@ -449,6 +569,9 @@ class PDETrainer:
         evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
         lhs_rhs = evaluate_on_nodes_fn(self.nodes)
         return lhs_rhs
+
+
+
 
     
 
@@ -712,7 +835,7 @@ def poisson_solver(gstate, sim_state, algorithm=0):
     trainer = PDETrainer(gstate, sim_state, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params)    
 
-    num_epochs=20000
+    num_epochs=10000
     start_time = time.time()
 
     # loss_epochs = []
