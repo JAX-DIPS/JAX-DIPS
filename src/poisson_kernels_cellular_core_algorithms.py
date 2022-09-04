@@ -923,8 +923,8 @@ class PDETrainer:
             return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
 
         # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
-        # is_interface = self.is_cell_crossed_by_interface((i, j, k))
-        is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
+        is_interface = self.is_cell_crossed_by_interface((i, j, k))
+        # is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
         u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
         return u_mp
 
@@ -1029,6 +1029,7 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     # plt.legend(fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.tick_params(axis='both', which='minor', labelsize=20)
+    plt.tight_layout()
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
   
