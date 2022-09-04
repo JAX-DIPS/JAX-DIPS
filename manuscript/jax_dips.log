@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  3 SEP 2022 21:01
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  3 SEP 2022 23:53
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -748,43 +748,46 @@ g (PNG copy)>] [18 <./figures/sphere_sols_regression_16x16x16.png (PNG copy)> <
 <./figures/star_shape.png, id=316, 2097.8375pt x 2097.8375pt>
 File: ./figures/star_shape.png Graphic file (type png)
 <use ./figures/star_shape.png>
-Package pdftex.def Info: ./figures/star_shape.png  used on input line 1054.
+Package pdftex.def Info: ./figures/star_shape.png  used on input line 1070.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
 <./figures/star_mu_m.png, id=317, 2097.8375pt x 2097.8375pt>
 File: ./figures/star_mu_m.png Graphic file (type png)
 <use ./figures/star_mu_m.png>
-Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 1055.
+Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 1071.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
 <./figures/star_sols.png, id=318, 2088.80376pt x 1157.32375pt>
 File: ./figures/star_sols.png Graphic file (type png)
 <use ./figures/star_sols.png>
-Package pdftex.def Info: ./figures/star_sols.png  used on input line 1062.
+Package pdftex.def Info: ./figures/star_sols.png  used on input line 1078.
 (pdftex.def)             Requested size: 430.00462pt x 238.24182pt.
 <./figures/star_sols_z.png, id=319, 2088.80376pt x 1157.32375pt>
 File: ./figures/star_sols_z.png Graphic file (type png)
 <use ./figures/star_sols_z.png>
-Package pdftex.def Info: ./figures/star_sols_z.png  used on input line 1063.
+Package pdftex.def Info: ./figures/star_sols_z.png  used on input line 1079.
 (pdftex.def)             Requested size: 430.00462pt x 238.24182pt.
  [19 <./figures/128x128x128_electric_U.png (PNG copy)>] [20 <./figures/star_sha
 pe.png (PNG copy)> <./figures/star_mu_m.png (PNG copy)>] [21 <./figures/star_so
-ls.png (PNG copy)> <./figures/star_sols_z.png (PNG copy)>] (./jax_dips.bbl)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1101.
- [22]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1101.
- (./jax_dips.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1101.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1101.
+ls.png (PNG copy)> <./figures/star_sols_z.png (PNG copy)>] [22] (./jax_dips.bbl
+)
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1117.
+ [23]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1117.
+
+(./jax_dips.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1117.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1117.
 
 Package rerunfilecheck Info: File `jax_dips.out' has not changed.
-(rerunfilecheck)             Checksum: 21C8DDBB2DBC008BD0D64DD956AFE820;2064.
+(rerunfilecheck)             Checksum: 40FCC60EC79112BA3A1CD28C91010A1E;2064.
+
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1101.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1117.
  ) 
 Here is how much of TeX's memory you used:
- 10136 strings out of 483065
- 152216 string characters out of 5963550
+ 10138 strings out of 483065
+ 152239 string characters out of 5963550
  439693 words of memory out of 5000000
  24823 multiletter control sequences out of 15000+600000
  545596 words of font info for 78 fonts, out of 8000000 for 9000
@@ -820,10 +823,10 @@ texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb></usr/share/texlive/texmf-
 dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/texlive/texmf-dist/fo
 nts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/fon
 ts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jax_dips.pdf (22 pages, 4066613 bytes).
+Output written on jax_dips.pdf (23 pages, 4068323 bytes).
 PDF statistics:
- 466 PDF objects out of 1000 (max. 8388607)
- 386 compressed objects within 4 object streams
- 98 named destinations out of 1000 (max. 500000)
+ 471 PDF objects out of 1000 (max. 8388607)
+ 390 compressed objects within 4 object streams
+ 100 named destinations out of 1000 (max. 500000)
  281 words of extra memory for PDF output out of 10000 (max. 10000000)
 

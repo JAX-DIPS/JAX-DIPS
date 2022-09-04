@@ -585,7 +585,7 @@ class PDETrainer:
 
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
 
-            return jnp.array([lhs / diagcoeff, rhs / diagcoeff])
+            return jnp.array([lhs / (1e-9 + diagcoeff), rhs / (1e-9 + diagcoeff)])
 
         evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
         lhs_rhs = evaluate_on_nodes_fn(self.nodes)

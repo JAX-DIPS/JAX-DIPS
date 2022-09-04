@@ -32,9 +32,9 @@ def test_poisson_solver_with_jump_complex():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(16)
-    Ny = i32(16)
-    Nz = i32(16)
+    Nx = i32(64)
+    Ny = i32(64)
+    Nz = i32(64)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -227,7 +227,7 @@ def test_poisson_solver_with_jump_complex():
 
     t1 = time.time()
 
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=1, switching_interval=3)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=0, switching_interval=3)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
@@ -258,10 +258,11 @@ def test_poisson_solver_with_jump_complex():
     io.write_vtk_manual(gstate, log)
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
+    rms_err = jnp.square(sim_state.solution - exact_sol).mean()**0.5
 
     print("\n SOLUTION ERROR\n")
 
-    print(f"L_inf error on solution everywhere in the domain is = {L_inf_err}")
+    print(f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared error = {rms_err} ")
     
 
     """
