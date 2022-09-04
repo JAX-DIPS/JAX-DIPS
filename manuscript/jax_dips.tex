@@ -743,6 +743,8 @@ In the second approach, the loss function remains as before, except the unknown 
 \end{align*}
 
 
+There is a major downside with this approach, that we need to compute second-order derivatives of the network during training. This slows down convergence dramatically, and the time-to-solution increases with increasing the number of neural layers. As a result we use 2 hidden layers for this approach with 10 neurons in each layer.
+
 
 
 
@@ -941,27 +943,27 @@ neural $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$}
 \hline
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 \hline 
-$2^3$ & $3.7\times 10^{-2}$ &  -        & $3.25\times 10^{-1}$  &   -     & $0.0306$ & $1.05$ \\
+$2^3$ & $4.77\times 10^{-1}$ &  -        & $4.59\times 10^{0}$  &   -     & $0.0963$ & $1.25$ \\
 $2^4$ & $7.1\times 10^{-3}$ &  $2.38$   & $1.1\times 10^{-1}$   & $1.56$  & $0.056$  & $1.72$ \\ 
 $2^5$ & $5.9\times 10^{-3}$ &  $0.27$   & $8.36 \times 10^{-2}$ & $0.4$   & $0.053$  & $2.15$ \\ 
 $2^6$ & $4.1\times 10^{-3}$ &  $0.53$   & $6.44\times 10^{-2}$  & $0.38$  & $0.287$  & $5.57$ \\ 
 $2^7$ & $2.64\times 10^{-3}$&  $0.64$   & $3.53\times 10^{-2}$  & $0.87$  & $2.125$ & $32.1$ \\ \hline
 \end{tabular}
-\caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU.}
+\caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.}
 \end{center}
 \end{table}
 
 
 
 
-After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty$-norm error of the solution is $1.72\times 10^{-1}$, corresponding to a $10\%$ relative error in the solution.
+After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty$-norm error of the solution is $1.1\times 10^{-1}$, corresponding to a $10\%$ relative error in the solution.
 
 
 \begin{figure}
 	\centering
 	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_sphere_128x128x128.png}
-	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_star.png}
-	\caption{Loss evolution with epochs for the sphere (left) and star (right) examples.}
+	\includegraphics[width=0.45\linewidth]{./figures/case_I_regression.png}
+	\caption{Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures at 5 resolutions (right).}
 	\label{fig:losses}
 \end{figure}
 

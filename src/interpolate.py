@@ -533,7 +533,7 @@ def add_ghost_layer_3d(x, y, z, c_cube):
 
 
 
-def add_ghost_layer_3d__(x, y, z, c_cube):
+def add_ghost_layer_3d_(x, y, z, c_cube):
     """
     add ghost layer around c_cube + extrapolate solutions linearly (u_m = 2*u_0 - u_p)
     """

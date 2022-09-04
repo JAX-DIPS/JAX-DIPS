@@ -109,10 +109,29 @@ class PDETrainer:
             self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_regression
         
         elif self.algorithm==1:
+            self.initialize_neural_based_algorithm()
             self.u_mp_fn = self.get_u_mp_by_neural_network_at_node_fn
             self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_neural_network
             self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
 
+
+
+    def initialize_neural_based_algorithm(self):
+        def sign_p_fn(a):
+            # returns 1 only if a>0, otherwise is 0
+            sgn = jnp.sign(a)
+            return jnp.floor(0.5 * sgn + 0.75)
+
+        def sign_m_fn(a):
+            # returns 1 only if a<0, otherwise is 0
+            sgn = jnp.sign(a)
+            return jnp.ceil(0.5 * sgn - 0.75) * (-1.0)
+
+        self.mask_region_m = sign_m_fn(self.phi_flat)
+        self.mask_region_p = sign_p_fn(self.phi_flat)
+
+        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat**2 - self.bandwidth_squared)
+        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat**2 - self.bandwidth_squared)
 
 
 
@@ -458,6 +477,7 @@ class PDETrainer:
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
+
 
 
 
@@ -962,8 +982,16 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     #     loss_epochs.append(loss_epoch)
     #     epoch_store.append(epoch)
 
-    """
+    def learn_whole(carry, epoch):
+        opt_state, params, loss_epochs = carry
+        opt_state, params, loss_epoch = trainer.update(opt_state, params)
+        loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
+        return (opt_state, params, loss_epochs), None
+    loss_epochs = jnp.zeros(num_epochs)
+    epoch_store = jnp.arange(num_epochs)
+    (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
 
+    """
     def learn_interleaved(carry, epoch):
         # cur_region = 0:everywhere, <0: interface band/inside, >0: outside interface band/outside
         opt_state, params, loss_epochs = carry
@@ -977,19 +1005,6 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     epoch_store = jnp.arange(num_epochs)
     (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_interleaved, (opt_state, params, loss_epochs), epoch_store)
     """
-
-   
-
-    def learn_whole(carry, epoch):
-        opt_state, params, loss_epochs = carry
-        opt_state, params, loss_epoch = trainer.update(opt_state, params)
-        loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
-        return (opt_state, params, loss_epochs), None
-    loss_epochs = jnp.zeros(num_epochs)
-    epoch_store = jnp.arange(num_epochs)
-    (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
-
-
     
     
     end_time = time.time()
@@ -997,7 +1012,7 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
 
 
 
-    plt.figure(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(8,8))
 
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 ==0], loss_epochs[epoch_store%switching_interval - 1 ==0], color='k', label='whole domain')
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
@@ -1006,12 +1021,14 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
     # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
     
-    plt.plot(epoch_store, loss_epochs, color='k')
+    ax.plot(epoch_store, loss_epochs, color='k')
     
-    plt.yscale('log')
-    plt.xlabel(r'$\rm epoch$', fontsize=20)
-    plt.ylabel(r'$\rm loss$', fontsize=20)
+    ax.set_yscale('log')
+    ax.set_xlabel(r'$\rm epoch$', fontsize=20)
+    ax.set_ylabel(r'$\rm loss$', fontsize=20)
     # plt.legend(fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.tick_params(axis='both', which='minor', labelsize=20)
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
   
