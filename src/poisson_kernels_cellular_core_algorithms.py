@@ -192,7 +192,12 @@ class PDETrainer:
 
         self.mask_region_m = sign_m_fn(self.phi_flat)
         self.mask_region_p = sign_p_fn(self.phi_flat)
-        
+
+        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat**2 - self.bandwidth_squared)
+        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat**2 - self.bandwidth_squared)
+        # pdb.set_trace()
+        # plt.imshow(self.mask_interface_bandwidth.reshape((16, 16, 16))[8]);  plt.colorbar(); plt.savefig('test__.png')
+        # plt.imshow((self.mask_region_m + self.mask_region_p).reshape((16,16,16))[8]); plt.colorbar(); plt.savefig('test__.png')
 
         def cube_at(cube, ind): return cube[ind[0], ind[1], ind[2]]
         self.cube_at_v = vmap(cube_at, (None, 0))
@@ -355,17 +360,18 @@ class PDETrainer:
    
 
     @partial(jit, static_argnums=(0))
-    def evaluate_loss_region_fn(self, lhs_, rhs_, sol_cube, region=0):
+    def evaluate_loss_region_fn(self, lhs_, rhs_, sol_cube, region):
         """
         region=0: everywhere
-        region>0: in the plus sign region
-        region<0: in the negative sign region
-
-        NOTE: self.mask_region_p and self.mask_region_m are both 1 on the interface.
+        region>0: in the plus sign region       / outside interface banded region
+        region<0: in the negative sign region  / in the interface banded region
         """
         region_sgn = jnp.sign(region)
         half_region_sgn = 0.5 * region_sgn
+        
+        
         mask_region = (0.5 + half_region_sgn)*self.mask_region_p[:,jnp.newaxis,jnp.newaxis] + (0.5 - half_region_sgn)*self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
+        # mask_region = (0.5 + half_region_sgn)*self.mask_non_interface_bandwidth[:, jnp.newaxis, jnp.newaxis] + (0.5 - half_region_sgn) * self.mask_interface_bandwidth[:, jnp.newaxis, jnp.newaxis]
 
         lhs = jnp.multiply(mask_region, lhs_)
         rhs = jnp.multiply(mask_region, rhs_)
@@ -379,7 +385,7 @@ class PDETrainer:
         loss_p += jnp.square(sol_cube[: , :,-1] - self.dirichlet_cube[ :, :,-1]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
         return loss_p
 
-    def loss_region(self, params, region=0):
+    def loss_region(self, params, region):
         """
         region=0: everywhere
         region>0: in the plus sign region
@@ -956,46 +962,56 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     #     loss_epochs.append(loss_epoch)
     #     epoch_store.append(epoch)
 
-    def learn(carry, epoch):
+    """
+
+    def learn_interleaved(carry, epoch):
+        # cur_region = 0:everywhere, <0: interface band/inside, >0: outside interface band/outside
         opt_state, params, loss_epochs = carry
-        # opt_state, params, loss_epoch = trainer.update(opt_state, params)
-        # opt_state, params, loss_epoch_m = trainer.update_m(opt_state, params)
-        
         # cur_region = epoch % switching_interval - 1       # inside - outside - whole
         cur_region = i32(-1)*(epoch % switching_interval)   # whole - inside - inside 
-
         opt_state, params, loss_epoch = trainer.update_region(opt_state, params, region=cur_region)
-
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
         return (opt_state, params, loss_epochs), None
 
     loss_epochs = jnp.zeros(num_epochs)
     epoch_store = jnp.arange(num_epochs)
-    (opt_state, params, loss_epochs), _ = jax.lax.scan(learn, (opt_state, params, loss_epochs), epoch_store)
+    (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_interleaved, (opt_state, params, loss_epochs), epoch_store)
+    """
 
+   
+
+    def learn_whole(carry, epoch):
+        opt_state, params, loss_epochs = carry
+        opt_state, params, loss_epoch = trainer.update(opt_state, params)
+        loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
+        return (opt_state, params, loss_epochs), None
+    loss_epochs = jnp.zeros(num_epochs)
+    epoch_store = jnp.arange(num_epochs)
+    (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
+
+
+    
+    
     end_time = time.time()
-
     print(f"solve took {end_time - start_time} (sec)")
 
 
-    # plt.figure(figsize=(8, 8))
-    # plt.plot(epoch_store, loss_epochs)
-    # plt.yscale('log')
-    # plt.xlabel('epoch', fontsize=20)
-    # plt.ylabel('loss', fontsize=20)
-    # plt.savefig('tests/poisson_solver_loss.png')
-    # plt.close()
 
     plt.figure(figsize=(8, 8))
+
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 ==0], loss_epochs[epoch_store%switching_interval - 1 ==0], color='k', label='whole domain')
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 >0], loss_epochs[epoch_store%switching_interval - 1 >0], color='r', label='positive domain')
-    plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
-    plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
+
+    # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
+    # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
+    
+    plt.plot(epoch_store, loss_epochs, color='k')
+    
     plt.yscale('log')
     plt.xlabel(r'$\rm epoch$', fontsize=20)
     plt.ylabel(r'$\rm loss$', fontsize=20)
-    plt.legend(fontsize=20)
+    # plt.legend(fontsize=20)
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
   

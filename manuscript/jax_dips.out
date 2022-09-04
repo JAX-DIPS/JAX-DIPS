@@ -18,9 +18,8 @@
 \BOOKMARK [1][-]{section.4}{Optimization scheme}{}% 18
 \BOOKMARK [2][-]{subsection.4.1}{Preconditioners are ideal network regularizers}{section.4}% 19
 \BOOKMARK [2][-]{subsection.4.2}{Learning rate scheduling}{section.4}% 20
-\BOOKMARK [2][-]{subsection.4.3}{Domain switching optimization scheme}{section.4}% 21
-\BOOKMARK [1][-]{section.5}{Numerical Examples}{}% 22
-\BOOKMARK [2][-]{subsection.5.1}{Case I.}{section.5}% 23
-\BOOKMARK [2][-]{subsection.5.2}{Case II.}{section.5}% 24
-\BOOKMARK [1][-]{section.6}{Conclusion \046 Future Directions}{}% 25
-\BOOKMARK [1][-]{section*.12}{References}{}% 26
+\BOOKMARK [1][-]{section.5}{Numerical Examples}{}% 21
+\BOOKMARK [2][-]{subsection.5.1}{Case I.}{section.5}% 22
+\BOOKMARK [2][-]{subsection.5.2}{Case II.}{section.5}% 23
+\BOOKMARK [1][-]{section.6}{Conclusion \046 Future Directions}{}% 24
+\BOOKMARK [1][-]{section*.12}{References}{}% 25

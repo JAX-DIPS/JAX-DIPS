@@ -86,25 +86,22 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.\relax }}{15}{figure.caption.4}\protected@file@percent }
 \newlabel{fig:proposal}{{4}{15}{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.\relax }{figure.caption.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Learning rate scheduling}{15}{subsection.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Domain switching optimization scheme}{15}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Numerical Examples}{15}{section.5}\protected@file@percent }
 \citation{guittet2015solving}
-\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Domain switching method. Switching interval is $\tau $.\relax }}{16}{algorithm.2}\protected@file@percent }
-\newlabel{switching}{{2}{16}{Domain switching method. Switching interval is $\tau $.\relax }{algorithm.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Numerical Examples}{16}{section.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Case I.}{16}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU.\relax }}{16}{table.caption.5}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }}{17}{figure.caption.6}\protected@file@percent }
 \newlabel{fig:losses}{{5}{17}{Loss evolution with epochs for the sphere (left) and star (right) examples.\relax }{figure.caption.6}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{17}{figure.caption.7}\protected@file@percent }
 \newlabel{fig:sphere}{{6}{17}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.7}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. \relax }}{18}{figure.caption.8}\protected@file@percent }
 \newlabel{fig:sphere}{{7}{18}{Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. \relax }{figure.caption.8}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU.\relax }}{19}{table.caption.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }}{19}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:spheregrad}{{8}{19}{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }{figure.caption.9}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Case II.}{19}{subsection.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion \& Future Directions}{19}{section.6}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }}{20}{figure.caption.9}\protected@file@percent }
-\newlabel{fig:spheregrad}{{8}{20}{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }{figure.caption.9}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{20}{figure.caption.10}\protected@file@percent }
 \newlabel{fig:star}{{9}{20}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.10}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion \& Future Directions}{20}{section.6}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Illustration of exact and numerical solutions.\relax }}{21}{figure.caption.11}\protected@file@percent }
 \newlabel{fig:star_sol}{{10}{21}{Illustration of exact and numerical solutions.\relax }{figure.caption.11}{}}
 \bibstyle{abbrv}
@@ -127,4 +124,4 @@
 \bibcite{SUSSMAN1994146}{{16}{}{{}}{{}}}
 \bibcite{XIU2001658}{{17}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
-\@writefile{toc}{\contentsline {section}{References}{23}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{22}{section*.12}\protected@file@percent }
