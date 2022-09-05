@@ -585,7 +585,7 @@ class PDETrainer:
 
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
 
-            return jnp.array([lhs / (1e-9 + diagcoeff), rhs / (1e-9 + diagcoeff)])
+            return jnp.array([lhs / (1e-6 + diagcoeff), rhs / (1e-6 + diagcoeff)])
 
         evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
         lhs_rhs = evaluate_on_nodes_fn(self.nodes)
@@ -982,6 +982,7 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     #     loss_epochs.append(loss_epoch)
     #     epoch_store.append(epoch)
 
+    """
     def learn_whole(carry, epoch):
         opt_state, params, loss_epochs = carry
         opt_state, params, loss_epoch = trainer.update(opt_state, params)
@@ -990,8 +991,8 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     loss_epochs = jnp.zeros(num_epochs)
     epoch_store = jnp.arange(num_epochs)
     (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
-
     """
+    
     def learn_interleaved(carry, epoch):
         # cur_region = 0:everywhere, <0: interface band/inside, >0: outside interface band/outside
         opt_state, params, loss_epochs = carry
@@ -1004,7 +1005,7 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     loss_epochs = jnp.zeros(num_epochs)
     epoch_store = jnp.arange(num_epochs)
     (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_interleaved, (opt_state, params, loss_epochs), epoch_store)
-    """
+    
     
     
     end_time = time.time()
@@ -1018,15 +1019,15 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 >0], loss_epochs[epoch_store%switching_interval - 1 >0], color='r', label='positive domain')
 
-    # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
-    # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
+    plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
+    plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
     
-    ax.plot(epoch_store, loss_epochs, color='k')
+    # ax.plot(epoch_store, loss_epochs, color='k')
     
     ax.set_yscale('log')
     ax.set_xlabel(r'$\rm epoch$', fontsize=20)
     ax.set_ylabel(r'$\rm loss$', fontsize=20)
-    # plt.legend(fontsize=20)
+    plt.legend(fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.tick_params(axis='both', which='minor', labelsize=20)
     plt.tight_layout()

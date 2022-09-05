@@ -86,7 +86,7 @@
 
 \begin{document}
 %\title{JAX-DIPS: Differentiable Interfacial PDE Solver}
-\title{\texttt{JAX-DIPS}: Solving interfacial PDE problems with an end-to-end differentiable level-set framework}
+\title{Differentiable framework for learning surrogate models of elliptic problems with discontinuities across irregular interfaces}
 
 \cortext[cor]{Corresponding author: p.a.mistani@gmail.com}
 
@@ -100,7 +100,7 @@
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present an end-to-end differentiable PDE solver for training surrogate neural network models for free boundary problems using the level-set method. We implemented the algorithms presented in this work in a software package in \texttt{JAX}, dubbed \texttt{JAX-DIPS} standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is an end-to-end \texttt{JAX} implementation from mesh generation to all the higher level abstractions that enables exploratory research into use of differentiable numerical methods along with traditional solvers. Algorithmically the training of the infinite dimensional surrogate model occurs in a finite dimensional space obtained by a finite volume discretization which builds upon and extends the blended inverse PDE solver architecure (BiPDE) that authors have proposed earlier \cite{pakravan2021solving}. We release \texttt{JAX-DIPS} as an open-source software package under MIT license that is available at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
+	We present an end-to-end differentiable framework for learning neural network surrogate models for the solution of elliptic partial differential equations with jump conditions across irregular sharp interfaces in three spatial dimensions. This method is based on minimization of the residual of the linear system obtained from finite discretization of the solution field with respect to trainable parameters of the neural network. We show the method is convergent such that model accuracy improves by increasing number of evaluation points in the domain. The algorithms presented in this work are implemented and released in a software package dubbed \texttt{JAX-DIPS}, standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, maintaining differentiable capability from mesh generation to the higher level discretization abstractions, thus supporting further research into use of differentiable algorithms for hybrid PDE solvers. We release \texttt{JAX-DIPS} as an open-source software package under MIT license that is available for download at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
 
 \end{abstract}
 
@@ -359,14 +359,25 @@ For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the conside
 
 
 
-\section{Hybrid Interfacial PDE Solver Strategy}
+\section{Hybrid Interfacial PDE Solver}
 One of the main advantages of neural networks for solving partial differential equations is to provide surrogate models that can be readily evaluated on any point of their input space. For parameterized problems, a free parameter such as the diffusion coefficient could be variable for these problems, in this case having an oracle function that evaluates solutions in near-real-time is an invaluable tool for general engineering optimization workflows. 
 
 
 
 
 
-
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v1.png}
+	\caption{Fully classic numerical solver is used to train neural surrogate models. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
+	\label{fig:proposal}
+\end{figure}
+%\begin{figure}[ht]
+%	\centering
+%	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v2.png}
+%	\caption{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.}
+%	\label{fig:proposal}
+%\end{figure}
 
 
 
@@ -379,9 +390,9 @@ The solutions of interfacial PDE problems are discontinuous, with jumps appearin
 & u^+ = \mathcal{N}^+(\mathbf{x}): \mathbb{R}^3\cap \Omega^+ \rightarrow \mathbb{R}  & u^- = \mathcal{N}^-(\mathbf{x}): \mathbb{R}^3\cap \Omega^- \rightarrow \mathbb{R}
 \end{align*}
 
-In each network we implement two hidden layers with $10$ neurons per layer using \texttt{tanh} activation function and the output layer is a single linear neuron. Note that piecewise differentiable nonlinearities such as the \texttt{ReLU} function are inappropriate choices for representing solutions to differential equations. Weights and biases are initialized from a truncated normal distribution with zero mean and unit variance. There are a total of $322$ trainable parameters.
+We use SIREN neural networks, where we implement fully connected feedforward architecture with \texttt{sin} activation function and the output layer is a single linear neuron. Note that piecewise differentiable nonlinearities such as the \texttt{ReLU} function are inappropriate choices for representing solutions to differential equations. Weights and biases are initialized from a truncated normal distribution with zero mean and unit variance. 
 
-Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function.
+
 
 
 \begin{figure}[ht]
@@ -391,15 +402,13 @@ Solution networks are evaluated on grid points while the parameters of these net
 	\label{fig:shapes}
 \end{figure}
 
-
-
-We define the loss function by the 2-norm of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
+Solution networks are evaluated on grid points while the parameters of these networks are optimized using the loss function. We define the loss function by the mean-squared-error (MSE) of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
 \begin{align*}
 	&\mathcal{L}(u) = \vert\vert A\hat{u}(\mathbf{x}_{ijk}\in \Omega) - b\vert\vert_2^2 + \textrm{vol}_{\mathcal{C}}\vert\vert \hat{u}(\mathbf{x}_{ijk}\in\partial \Omega) - u(\mathbf{x}_{ijk}\in\partial \Omega)\vert\vert_2^2 
 \end{align*}
-JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods (with preconditioning) such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
+JAX-DIPS allows for exact computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. This is advantageous over existing approximate iterative methods such as GMRES, Conjugate Gradient, \textit{etc}. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
 
-Solving an interfacial PDE problem on a $\rm 128\times 128 \times 128$ grid is therefore equivalent to a deep neural network architecture with $2,097,152$ trainable parameters. Besides number of trainable parameters, the computational complexity of the algebraic operations in solving a PDE system with provided discretizations closely resembles computational complexity of convolutional operations with kernel sizes equivalent to the stencil size of the discretization method (in this case $3\times 3 \times 3$).
+
 
 
 
@@ -787,18 +796,7 @@ a_{ii} = \sum_{s=-,+} \bigg( k_{i,i}^s \vert \mathcal{V}_{i,i}^s\vert + (\mu_{i-
 \end{align*}
 Note that we never explicitly compute the matrix, instead we compute the effect of matrix product of $A u$.  
 
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v1.png}
-	\caption{Workflow I: full preservation of the numerical solver to the train neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
-	\label{fig:proposal}
-\end{figure}
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v2.png}
-	\caption{Workflow II: stronger merger of the numerical solver with the neural network surrogate model. Training occurs in the finite dimensional space spanned by the finite discretization method.}
-	\label{fig:proposal}
-\end{figure}
+
 
 
 
@@ -825,35 +823,54 @@ where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the 
 
 
 
-%\subsection{Domain switching optimization scheme}
-%The linear system suffers from worse condition number in the domain with more variability in diffusion coefficient, or where diffusion coefficient is larger. This leads to regionally imbalanced solution error where the overall error is systematically dominated by the bigger-diffusion region. 
-%
-%We found this problem can be drastically improved by interweaving region-specific optimization epochs inside the training pipeline. See algorithm \ref{switching}.
-%
-%\begin{algorithm}
-%	\caption{Domain switching method. Switching interval is $\tau$.}\label{switching}
-%	\begin{algorithmic}[1]
-%		\Procedure{Domain Switching Optimization}{}
-%		
-%		\For {$epoch$ in $0\cdots$ N}		
-%			\If {$epoch\ \%\ \tau > 0$}
-%		
-%				\If {$\mu^- > \mu^+$}
-%					\State optimize $u^-_{NN}$ in $\Omega^-$ given fixed $u^+_{NN}$  
-%				\Else
-%					\State optimize $u^+_{NN}$ in $\Omega^+$ given fixed $u^-_{NN}$ 
-%				\EndIf		
-%		
-%			\Else
-%
-%				\State optimize both networks in $\Omega^- \cup \Omega^+$ 
-%
-%			\EndIf
-%		\EndFor
-%
-%		\EndProcedure
-%	\end{algorithmic}
-%\end{algorithm}
+\subsection{Domain switching optimization scheme}
+The linear system suffers from worse condition number in the domain with more variability in diffusion coefficient, or where diffusion coefficient is larger; \textit{i.e.,} the fast region. This leads to regionally unbalanced solution error where the overall error is systematically lopsided by the faster diffusion region. 
+
+We found this problem can be drastically improved by interleaving region-specific optimization epochs in the training pipeline, where only one of the networks is updated based on the loss computed in the its region. See algorithm \ref{switching} for details of the algorithm.
+
+\begin{algorithm}
+	\caption{Domain switching method. Switching interval is $\tau$.}\label{switching}
+	\begin{algorithmic}[1]
+		\Procedure{Domain Switching Optimization}{}
+		
+		\For {$epoch$ in $0\cdots$ N}	
+			\State $region = Region (epoch)$
+			
+			\If {$region > 0$}
+				\If {$\mu^- > \mu^+$}
+					\State optimize $u^-_{NN}$ in $\Omega^-$ given fixed $u^+_{NN}$  
+				\Else
+					\State optimize $u^+_{NN}$ in $\Omega^+$ given fixed $u^-_{NN}$ 
+				\EndIf	
+			\EndIf	
+			\\
+			\If {$region==0$}
+				\State optimize both networks in $\Omega^- \cup \Omega^+$ 
+			\EndIf	
+			\\
+			\If {$region < 0$}
+				\If {$\mu^- < \mu^+$}
+					\State optimize $u^-_{NN}$ in $\Omega^-$ given fixed $u^+_{NN}$  
+				\Else
+					\State optimize $u^+_{NN}$ in $\Omega^+$ given fixed $u^-_{NN}$ 
+				\EndIf					
+			\EndIf	
+				
+			
+		\EndFor
+
+		\EndProcedure
+		\\
+		\Procedure{Region}{epoch}
+			\If {$mode == \textrm{whole region} \rightarrow \textrm{fast region}$}
+				\State $region = epoch\ \%\ \tau $ 
+			\EndIf
+			\If {$mode == \textrm{fast region}\rightarrow \textrm{whole region} \rightarrow \textrm{slow region}$}
+				\State $region = \tau // 2 - epoch\ \%\ \tau  $ 
+			\EndIf
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
 
 
 
@@ -943,11 +960,11 @@ neural $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$}
 \hline
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 \hline 
-$2^3$ & $4.77\times 10^{-1}$ &  -        & $4.59\times 10^{0}$  &   -     & $0.0963$ & $1.25$ \\
-$2^4$ & $7.41\times 10^{-2}$ &  $2.38$   & $1.55\times 10^{0}$   & $1.56$  & $0.363$  & $1.41$ \\ 
-$2^5$ & $5.9\times 10^{-3}$ &  $0.27$   & $8.36 \times 10^{-2}$ & $0.4$   & $0.053$  & $2.15$ \\ 
-$2^6$ & $4.1\times 10^{-3}$ &  $0.53$   & $6.44\times 10^{-2}$  & $0.38$  & $0.287$  & $5.57$ \\ 
-$2^7$ & $2.64\times 10^{-3}$&  $0.64$   & $3.53\times 10^{-2}$  & $0.87$  & $2.125$ & $32.1$ \\ \hline
+$2^3$ & $ $ &  -     & $ $  &   -   & $ $ & $ $ \\
+$2^4$ & $ $ &  $ $   & $ $  & $ $   & $ $ & $ $ \\ 
+$2^5$ & $ $ &  $ $   & $ $  & $ $   & $ $ & $ $ \\ 
+$2^6$ & $ $ &  $ $   & $ $  & $ $   & $ $ & $ $ \\ 
+$2^7$ & $ $ &  $ $   & $ $  & $ $   & $ $ & $ $ \\ \hline
 \end{tabular}
 \caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.}
 \end{center}
@@ -1051,13 +1068,13 @@ regress $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$
 \hline
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 \hline 
-$2^3$ & $ $ &  -     & $ $   &   -   & $   $  & $   $ \\
-$2^4$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $   $ \\ 
-$2^5$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $   $ \\ 
-$2^6$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $   $ \\ 
-$2^7$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $21.02$ \\ \hline
+$2^3$ & $ 2.63$ &  -     & $ 1.15$   &   -   & $ 0.0211  $  & $  0.98 $ \\
+$2^4$ & $ 2.16\times 10^{-1} $ &  $ $   & $ 1.33 $   & $ $   & $ 0.0251  $  & $ 1.01  $ \\ 
+$2^5$ & $ 9.57\times 10^{-2} $ &  $ $   & $ 5.57\times 10^{-1} $   & $  $   & $ 0.039  $  & $ 1.30  $ \\ 
+$2^6$ & $ 3.40\times 10^{-2}$ &  $ $   & $ 6.34\times 10^{-1} $   & $ $   & $ 0.2  $  & $ 3.5 $ \\ 
+$2^7$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $21.0 $ \\ \hline
 \end{tabular}
-\caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.}
+\caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters. We use a domain switching scheme with the $\textrm{whole region} \rightarrow \textrm{fast region} \rightarrow \textrm{fast region}$ optimization sequence.}
 \end{center}
 \end{table}
 
@@ -1075,7 +1092,7 @@ $2^7$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $21.02$ \\ \hline
 
 \begin{figure}
 	\centering
-	\includegraphics[width=\linewidth]{./figures/star_sols.png}
+	\includegraphics[width=\linewidth]{./figures/star_sols_regression_64x64x64.png}
 	\includegraphics[width=\linewidth]{./figures/star_sols_z.png}
 	\caption{Illustration of exact and numerical solutions.}
 	\label{fig:star_sol}
