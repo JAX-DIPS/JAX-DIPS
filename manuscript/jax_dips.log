@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  5 SEP 2022 12:49
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  5 SEP 2022 16:17
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -659,19 +659,19 @@ Package pdftex.def Info: ./figures/jax_dips_paper_v1.png  used on input line 37
 (pdftex.def)             Requested size: 365.50655pt x 205.59119pt.
 
 [7 <./figures/jax_dips_paper_v1.png (PNG copy)>]
-<./figures/neural_network_arch.png, id=203, 963.6pt x 542.025pt>
+<./figures/neural_network_arch.png, id=198, 963.6pt x 542.025pt>
 File: ./figures/neural_network_arch.png Graphic file (type png)
 <use ./figures/neural_network_arch.png>
 Package pdftex.def Info: ./figures/neural_network_arch.png  used on input line 
 400.
 (pdftex.def)             Requested size: 430.00462pt x 241.87442pt.
  [8 <./figures/neural_network_arch.png (PNG copy)>]
-<./figures/grids_full.png, id=215, 770.88pt x 770.88pt>
+<./figures/grids_full.png, id=214, 770.88pt x 770.88pt>
 File: ./figures/grids_full.png Graphic file (type png)
 <use ./figures/grids_full.png>
 Package pdftex.def Info: ./figures/grids_full.png  used on input line 437.
 (pdftex.def)             Requested size: 193.50076pt x 193.49586pt.
-<./figures/grids.png, id=217, 770.88pt x 770.88pt>
+<./figures/grids.png, id=216, 770.88pt x 770.88pt>
 File: ./figures/grids.png Graphic file (type png)
 <use ./figures/grids.png>
 Package pdftex.def Info: ./figures/grids.png  used on input line 438.
@@ -750,19 +750,22 @@ File: ./figures/star_sols_regression_64x64x64.png Graphic file (type png)
 Package pdftex.def Info: ./figures/star_sols_regression_64x64x64.png  used on i
 nput line 1095.
 (pdftex.def)             Requested size: 430.00462pt x 234.07422pt.
-<./figures/star_sols_z.png, id=319, 2088.80376pt x 1157.32375pt>
-File: ./figures/star_sols_z.png Graphic file (type png)
-<use ./figures/star_sols_z.png>
-Package pdftex.def Info: ./figures/star_sols_z.png  used on input line 1096.
-(pdftex.def)             Requested size: 430.00462pt x 238.24182pt.
+<./figures/star_grad_sols_regression_64x64x64.png, id=319, 2179.14125pt x 1157.
+32375pt>
+File: ./figures/star_grad_sols_regression_64x64x64.png Graphic file (type png)
+<use ./figures/star_grad_sols_regression_64x64x64.png>
+Package pdftex.def Info: ./figures/star_grad_sols_regression_64x64x64.png  used
+ on input line 1096.
+(pdftex.def)             Requested size: 430.00462pt x 228.37027pt.
  [19] [20 <./figures/128x128x128_electric_U.png (PNG copy)> <./figures/star_sha
 pe.png (PNG copy)> <./figures/star_mu_m.png (PNG copy)>]
-[21 <./figures/star_sols_regression_64x64x64.png (PNG copy)> <./figures/star_so
-ls_z.png (PNG copy)>] [22] (./jax_dips.bbl)
+[21 <./figures/star_sols_regression_64x64x64.png (PNG copy)> <./figures/star_gr
+ad_sols_regression_64x64x64.png (PNG copy)>] [22] (./jax_dips.bbl)
 Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1134.
  [23]
 Package atveryend Info: Empty hook `AfterLastShipout' on input line 1134.
- (./jax_dips.aux)
+
+(./jax_dips.aux)
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1134.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1134.
 
@@ -776,12 +779,12 @@ Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1134.
  ) 
 Here is how much of TeX's memory you used:
  10138 strings out of 483065
- 152244 string characters out of 5963550
- 442749 words of memory out of 5000000
+ 152382 string characters out of 5963550
+ 443771 words of memory out of 5000000
  24824 multiletter control sequences out of 15000+600000
  545427 words of font info for 77 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
- 41i,28n,42p,1213b,520s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,28n,42p,1261b,518s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/mistani/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
 00pk></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><
 /usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/sh
@@ -812,7 +815,7 @@ exmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-d
 ist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/texlive/texmf-dist/fon
 ts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/font
 s/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jax_dips.pdf (23 pages, 3930505 bytes).
+Output written on jax_dips.pdf (23 pages, 5472601 bytes).
 PDF statistics:
  474 PDF objects out of 1000 (max. 8388607)
  394 compressed objects within 4 object streams
