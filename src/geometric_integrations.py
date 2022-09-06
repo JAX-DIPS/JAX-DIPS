@@ -1,8 +1,8 @@
-from jax import (numpy as jnp, jit, vmap, lax)
+from jax import (numpy as jnp, jit, vmap, lax, config)
 from src import (interpolate)
 import functools
 import pdb
-
+config.update("jax_debug_nans", True)
 from src.jaxmd_modules import util
 
 f32 = util.f32

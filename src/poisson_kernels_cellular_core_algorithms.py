@@ -1,6 +1,6 @@
 import jax
 from jax import (numpy as jnp, vmap, jit, grad, random, nn as jnn, value_and_grad, config)
-config.update("jax_debug_nans", False)
+config.update("jax_debug_nans", True)
 import optax
 import haiku as hk
 
