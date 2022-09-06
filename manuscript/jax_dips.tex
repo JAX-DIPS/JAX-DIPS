@@ -86,8 +86,8 @@
 
 \begin{document}
 %\title{JAX-DIPS: Differentiable Interfacial PDE Solver}
-\title{Differentiable framework for learning surrogate neural network models for solving elliptic problems with discontinuities across irregular interfaces}
-
+%\title{Differentiable framework for learning surrogate neural network models for solving elliptic problems with discontinuities across irregular interfaces}
+\title{Differentiable residual minimization framework for learning surrogate models for elliptic problems with discontinuities}
 \cortext[cor]{Corresponding author: p.a.mistani@gmail.com}
 
 
@@ -359,7 +359,7 @@ For each face, we extract vertices from $(S_i,S_j)$-pair that lie on the conside
 
 
 
-\section{Hybrid Interfacial PDE Solver}
+\section{Solving Interfacial PDEs with Differentiable Residual Minimization (DRM)}
 One of the main advantages of neural networks for solving partial differential equations is to provide surrogate models that can be readily evaluated on any point of their input space. For parameterized problems, a free parameter such as the diffusion coefficient could be variable for these problems, in this case having an oracle function that evaluates solutions in near-real-time is an invaluable tool for general engineering optimization workflows. 
 
 
@@ -1012,7 +1012,7 @@ After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty
 
 \subsection{Case II.}
 
-We use a pair of fully connected feedforward neural networks, each composed of 1 hidden layer and 100 neurons with \texttt{sine} activation function, followed  by an output layer with 1 linear neuron.
+We use a pair of fully connected feedforward neural networks, each composed of $1$ hidden layer and $100$ neurons with \texttt{sine} activation function, followed  by an output layer with $1$ linear neuron. There are a total of $1,002$ trainable parameters in the model.
 
 We consider a star-shaped interface with inner and outer radii $r_i=0.151$ and $r_e=0.911$ that is immersed in a box $\Omega:[-1,1]^3$ described by the level-set function
 
@@ -1068,11 +1068,11 @@ regress $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$
 \hline
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 \hline 
-$2^3$ & $ 2.63$ &  -     & $ 1.15$   &   -   & $ 0.0211  $  & $  0.98 $ \\
-$2^4$ & $ 2.16\times 10^{-1} $ &  $ $   & $ 1.33 $   & $ $   & $ 0.0251  $  & $ 1.01  $ \\ 
-$2^5$ & $ 4.36\times 10^{-2} $ &  $ $   & $ 3.85\times 10^{-1} $   & $  $   & $ 0.039  $  & $ 1.30  $ \\ 
-$2^6$ & $2.43\times 10^{-2} $ &  $ $   & $ 2.28\times 10^{-1}$   & $ $   & $  0.20 $  & $ 3.7 $ \\ 
-$2^7$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $21.0 $ \\ \hline
+$2^3$ & $ 1.36\times 10^{-1}$ &  -     & $ 1.27$   &   -   & $ 0.019  $  & $  0.98 $ \\
+$2^4$ & $ 7.98\times 10^{-2} $ &  $ $   & $ 8.23\times 10^{-1} $   & $ $   & $ 0.022  $  & $ 1.01  $ \\ 
+$2^5$ & $ 4.36\times 10^{-2} $ &  $ $   & $ 3.85\times 10^{-1} $   & $  $   & $ 0.032  $  & $ 1.30  $ \\ 
+$2^6$ & $2.43\times 10^{-2} $ &  $ $   & $ 2.28\times 10^{-1}$   & $ $   & $  0.200 $  & $ 3.7 $ \\ 
+$2^7$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $21.4 $ \\ \hline
 \end{tabular}
 \caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters. We use a domain switching scheme with the $\textrm{whole region} \rightarrow \textrm{fast region} \rightarrow \textrm{fast region}$ optimization sequence.}
 \end{center}
@@ -1099,7 +1099,13 @@ $2^7$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $21.0 $ \\ \hline
 \end{figure}
 
 
-
+\begin{figure}
+	\centering
+	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_star_64x64x64_regress.png}
+	\includegraphics[width=0.45\linewidth]{./figures/case_II_regression.png}
+	\caption{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).}
+	\label{fig:lossestar}
+\end{figure}
 
 \section{Conclusion \& Future Directions}
 We developed a differentiable GPU-based framework for solving partial differential equations with jump conditions across irregular interfaces in three spatial dimensions. Solutions in each domain are represented by a simple multi-layer perceptron (MLP) and Cartesian grid points of the underlying numerical discretization scheme are treated as collocation points for optimizing the unknown parameters of the MLPs. 
