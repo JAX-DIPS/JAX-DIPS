@@ -32,9 +32,12 @@ def test_poisson_solver_with_jump_complex():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(128)
-    Ny = i32(128)
-    Nz = i32(128)
+    Nx = i32(8)
+    Ny = i32(8)
+    Nz = i32(8)
+
+    ALGORITHM = 1                   # 0: regression normal derivatives, 1: neural network normal derivatives
+    SWITCHING_INTERVAL = 3
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -227,7 +230,8 @@ def test_poisson_solver_with_jump_complex():
 
     t1 = time.time()
 
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=0, switching_interval=3)
+    
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()

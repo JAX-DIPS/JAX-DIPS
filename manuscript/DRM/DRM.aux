@@ -104,9 +104,7 @@
 \newlabel{fig:star}{{8}{20}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.10}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }}{21}{figure.caption.11}\protected@file@percent }
 \newlabel{fig:star_sol}{{9}{21}{Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }{figure.caption.11}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{22}{table.caption.9}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{22}{figure.caption.12}\protected@file@percent }
-\newlabel{fig:lossestar}{{10}{22}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{22}{table.caption.9}\protected@file@percent }
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{bochkov2020solving}{{1}{}{{}}{{}}}
@@ -121,9 +119,11 @@
 \bibcite{osher1988fronts}{{10}{}{{}}{{}}}
 \bibcite{gradClipping}{{11}{}{{}}{{}}}
 \bibcite{sallee1984middle}{{12}{}{{}}{{}}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{23}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:lossestar}{{10}{23}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
+\@writefile{toc}{\contentsline {section}{References}{23}{section*.13}\protected@file@percent }
 \bibcite{shu1988efficient}{{13}{}{{}}{{}}}
 \bibcite{sprecher1965structure}{{14}{}{{}}{{}}}
 \bibcite{SUSSMAN1994146}{{15}{}{{}}{{}}}
 \bibcite{XIU2001658}{{16}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
-\@writefile{toc}{\contentsline {section}{References}{24}{section*.13}\protected@file@percent }
