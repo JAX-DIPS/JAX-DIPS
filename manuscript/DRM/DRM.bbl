@@ -1,0 +1,94 @@
+\begin{thebibliography}{10}
+
+\bibitem{bochkov2020solving}
+D.~Bochkov and F.~Gibou.
+\newblock Solving elliptic interface problems with jump conditions on cartesian
+  grids.
+\newblock {\em Journal of Computational Physics}, 407:109269, 2020.
+
+\bibitem{guittet2015solving}
+A.~Guittet, M.~Lepilliez, S.~Tanguy, and F.~Gibou.
+\newblock Solving elliptic problems with discontinuities on irregular
+  domains--the voronoi interface method.
+\newblock {\em Journal of Computational Physics}, 298:747--765, 2015.
+
+\bibitem{hecht1987kolmogorov}
+R.~Hecht-Nielsen.
+\newblock Kolmogorov’s mapping neural network existence theorem.
+\newblock In {\em Proceedings of the international conference on Neural
+  Networks}, volume~3, pages 11--14. IEEE Press New York, NY, USA, 1987.
+
+\bibitem{optax2020github}
+M.~Hessel, D.~Budden, F.~Viola, M.~Rosca, E.~Sezener, and T.~Hennigan.
+\newblock Optax: composable gradient transformation and optimisation, in jax!,
+  2020.
+
+\bibitem{ismailov2022}
+V.~Ismailov.
+\newblock A three layer neural network can represent any multivariate function,
+  2020.
+
+\bibitem{kingma2014adam}
+D.~P. Kingma and J.~Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock {\em arXiv preprint arXiv:1412.6980}, 2014.
+
+\bibitem{kolmogorov1957representation}
+A.~N. Kolmogorov.
+\newblock On the representation of continuous functions of many variables by
+  superposition of continuous functions of one variable and addition.
+\newblock In {\em Doklady Akademii Nauk}, volume 114, pages 953--956. Russian
+  Academy of Sciences, 1957.
+
+\bibitem{min2007geometric}
+C.~Min and F.~Gibou.
+\newblock Geometric integration over irregular domains with application to
+  level-set methods.
+\newblock {\em Journal of Computational Physics}, 226(2):1432--1443, 2007.
+
+\bibitem{MIN2007300}
+C.~Min and F.~Gibou.
+\newblock A second order accurate level set method on non-graded adaptive
+  cartesian grids.
+\newblock {\em Journal of Computational Physics}, 225(1):300--321, 2007.
+
+\bibitem{osher1988fronts}
+S.~Osher and J.~A. Sethian.
+\newblock Fronts propagating with curvature-dependent speed: Algorithms based
+  on hamilton-jacobi formulations.
+\newblock {\em Journal of computational physics}, 79(1):12--49, 1988.
+
+\bibitem{gradClipping}
+R.~Pascanu, T.~Mikolov, and Y.~Bengio.
+\newblock On the difficulty of training recurrent neural networks, 2012.
+
+\bibitem{sallee1984middle}
+J.~F. Sallee.
+\newblock The middle-cut triangulations of the n-cube.
+\newblock {\em SIAM Journal on Algebraic Discrete Methods}, 5(3):407--419,
+  1984.
+
+\bibitem{shu1988efficient}
+C.-W. Shu and S.~Osher.
+\newblock Efficient implementation of essentially non-oscillatory
+  shock-capturing schemes.
+\newblock {\em Journal of computational physics}, 77(2):439--471, 1988.
+
+\bibitem{sprecher1965structure}
+D.~A. Sprecher.
+\newblock On the structure of continuous functions of several variables.
+\newblock {\em Transactions of the American Mathematical Society},
+  115:340--355, 1965.
+
+\bibitem{SUSSMAN1994146}
+M.~Sussman, P.~Smereka, and S.~Osher.
+\newblock A level set approach for computing solutions to incompressible
+  two-phase flow.
+\newblock {\em Journal of Computational Physics}, 114(1):146--159, 1994.
+
+\bibitem{XIU2001658}
+D.~Xiu and G.~E. Karniadakis.
+\newblock A semi-lagrangian high-order method for navier–stokes equations.
+\newblock {\em Journal of Computational Physics}, 172(2):658--684, 2001.
+
+\end{thebibliography}

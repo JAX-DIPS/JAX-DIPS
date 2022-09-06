@@ -1,0 +1,361 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  5 SEP 2022 17:36
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**SoftwareX_JAX-DIPS.tex
+(./SoftwareX_JAX-DIPS.tex
+LaTeX2e <2020-02-02> patch level 2
+L3 programming layer <2020-02-14>
+(/usr/share/texlive/texmf-dist/tex/latex/elsarticle/elsarticle.cls
+Document Class: elsarticle 2019/02/25, 3.2: Elsevier Ltd
+\@bls=\dimen134
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size12.clo
+File: size12.clo 2019/12/20 v1.4l Standard LaTeX file (size option)
+)
+\c@part=\count167
+\c@section=\count168
+\c@subsection=\count169
+\c@subsubsection=\count170
+\c@paragraph=\count171
+\c@subparagraph=\count172
+\c@figure=\count173
+\c@table=\count174
+\abovecaptionskip=\skip47
+\belowcaptionskip=\skip48
+\bibindent=\dimen135
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2019/11/30 v1.2a Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 2014/10/28 v1.15 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2019/11/30 v1.4a Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2016/01/03 v1.10 sin cos tan (DPC)
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 105.
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def
+File: pdftex.def 2018/01/08 v1.0l Graphics/color driver for pdftex
+))
+\Gin@req@height=\dimen136
+\Gin@req@width=\dimen137
+)
+\c@tnote=\count175
+\c@fnote=\count176
+\c@cnote=\count177
+\c@ead=\count178
+\c@author=\count179
+\@eadauthor=\toks15
+\c@affn=\count180
+\absbox=\box45
+\elsarticlehighlightsbox=\box46
+\elsarticlegrabsbox=\box47
+\keybox=\box48
+\Columnwidth=\dimen138
+\space@left=\dimen139
+\els@boxa=\box49
+\els@boxb=\box50
+\leftMargin=\dimen140
+\@enLab=\toks16
+\@sep=\skip49
+\@@sep=\skip50
+
+(./SoftwareX_JAX-DIPS.spl)
+(/usr/share/texlive/texmf-dist/tex/latex/natbib/natbib.sty
+Package: natbib 2010/09/13 8.31b (PWD, AO)
+\bibhang=\skip51
+\bibsep=\skip52
+LaTeX Info: Redefining \cite on input line 694.
+\c@NAT@ctr=\count181
+)
+\splwrite=\write3
+\openout3 = `SoftwareX_JAX-DIPS.spl'.
+
+\appnamewidth=\dimen141
+)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\@emptytoks=\toks17
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+))
+(/usr/share/texlive/texmf-dist/tex/latex/lineno/lineno.sty
+Package: lineno 2005/11/02 line numbers on paragraphs v4.41
+\linenopenalty=\count182
+\output=\toks18
+\linenoprevgraf=\count183
+\linenumbersep=\dimen142
+\linenumberwidth=\dimen143
+\c@linenumber=\count184
+\c@pagewiselinenumber=\count185
+\c@LN@truepage=\count186
+\c@internallinenumber=\count187
+\c@internallinenumbers=\count188
+\quotelinenumbersep=\dimen144
+\bframerule=\dimen145
+\bframesep=\dimen146
+\bframebox=\box51
+LaTeX Info: Redefining \\ on input line 3056.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count189
+\float@exts=\toks19
+\float@box=\box52
+\@float@everytoks=\toks20
+\@floatcapt=\box53
+)
+\@float@every@table=\toks21
+
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdfmode.def
+File: l3backend-pdfmode.def 2020-02-03 L3 backend support: PDF mode
+\l__kernel_color_stack_int=\count190
+\l__pdf_internal_box=\box54
+)
+(./SoftwareX_JAX-DIPS.aux
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+
+LaTeX Warning: Label `' multiply defined.
+
+)
+\openout1 = `SoftwareX_JAX-DIPS.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 46.
+LaTeX Font Info:    ... okay on input line 46.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 46.
+LaTeX Font Info:    ... okay on input line 46.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 46.
+LaTeX Font Info:    ... okay on input line 46.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 46.
+LaTeX Font Info:    ... okay on input line 46.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 46.
+LaTeX Font Info:    ... okay on input line 46.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 46.
+LaTeX Font Info:    ... okay on input line 46.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 46.
+LaTeX Font Info:    ... okay on input line 46.
+ (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count191
+\scratchdimen=\dimen147
+\scratchbox=\box55
+\nofMPsegments=\count192
+\nofMParguments=\count193
+\everyMPshowfont=\toks22
+\MPscratchCnt=\count194
+\MPscratchDim=\dimen148
+\MPnumerator=\count195
+\makeMPintoPDFobject=\count196
+\everyMPtoPDFconversion=\toks23
+) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
+85.
+
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
+))
+LaTeX Font Info:    Trying to load font information for U+msa on input line 108
+.
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 108
+.
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+Underfull \hbox (badness 10000) in paragraph at lines 125--126
+[]\OT1/cmr/m/n/12 For ex-am-ple: $\OML/cmm/m/it/12 https \OT1/cmr/m/n/12 :
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 127--128
+[]\OT1/cmr/m/n/12 For ex-am-ple: $\OML/cmm/m/it/12 https \OT1/cmr/m/n/12 :
+ []
+
+
+Overfull \hbox (47.03732pt too wide) in paragraph at lines 127--128
+\OML/cmm/m/it/12 ==codeocean:com=\OT1/cmr/m/n/12 2017\OML/cmm/m/it/12 =\OT1/cmr
+/m/n/12 07\OML/cmm/m/it/12 =\OT1/cmr/m/n/12 30\OML/cmm/m/it/12 =neurospeech \OM
+S/cmsy/m/n/12 ^^@
+ []
+
+
+Underfull \hbox (badness 3525) in paragraph at lines 127--128
+\OML/cmm/m/it/12 colon \OMS/cmsy/m/n/12 ^^@ \OML/cmm/m/it/12 an \OMS/cmsy/m/n/1
+2 ^^@ \OML/cmm/m/it/12 open \OMS/cmsy/m/n/12 ^^@ \OML/cmm/m/it/12 source \OMS/c
+msy/m/n/12 ^^@
+ []
+
+
+Underfull \hbox (badness 4316) in paragraph at lines 127--128
+\OML/cmm/m/it/12 software \OMS/cmsy/m/n/12 ^^@ \OML/cmm/m/it/12 for \OMS/cmsy/m
+/n/12 ^^@ \OML/cmm/m/it/12 parkinson \OMS/cmsy/m/n/12 ^^@
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 137--138
+[]\OT1/cmr/m/n/12 For ex-am-ple: $\OML/cmm/m/it/12 http \OT1/cmr/m/n/12 :
+ []
+
+
+Overfull \hbox (3.0088pt too wide) in paragraph at lines 137--138
+\OML/cmm/m/it/12 ==mozart:github:io=documentation=$| 
+ []
+
+
+Overfull \hbox (35.70529pt too wide) in paragraph at lines 119--144
+[][]
+ []
+
+
+Overfull \hbox (2.61108pt too wide) has occurred while \output is active
+[] 
+ []
+
+[1
+
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2]
+Overfull \hbox (2.85606pt too wide) in paragraph at lines 201--202
+\OML/cmm/m/it/12 apps:sciverse:com=GadgetVideoPodcastPlayerWeb=verification$\OT
+1/cmr/m/n/12 . This tool
+ []
+
+[3]
+Underfull \hbox (badness 6559) in paragraph at lines 274--274
+[]\OT1/cmr/bx/n/12 (Executable) soft-ware meta-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 278--279
+[]\OT1/cmr/m/n/12 For ex-am-ple: $\OML/cmm/m/it/12 https \OT1/cmr/m/n/12 :
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 278--279
+\OML/cmm/m/it/12 ==github:com=combogenomics=$
+ []
+
+
+Underfull \hbox (badness 1728) in paragraph at lines 278--279
+\OML/cmm/m/it/12 DuctApe=releases=tag=DuctApe \OMS/cmsy/m/n/12 ^^@
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 282--282
+[]\OT1/cmr/m/n/12 Computing plat-forms/Operating
+ []
+
+
+Underfull \hbox (badness 7168) in paragraph at lines 282--283
+\OT1/cmr/m/n/12 Linux, OS X, Mi-crosoft Win-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 286--287
+[]\OT1/cmr/m/n/12 For ex-am-ple: $\OML/cmm/m/it/12 http \OT1/cmr/m/n/12 :
+ []
+
+
+Overfull \hbox (3.0088pt too wide) in paragraph at lines 286--287
+\OML/cmm/m/it/12 ==mozart:github:io=documentation=$| 
+ []
+
+
+Overfull \hbox (35.70529pt too wide) in paragraph at lines 272--293
+[][]
+ []
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[4] [5] (./SoftwareX_JAX-DIPS.aux)
+
+LaTeX Warning: There were multiply-defined labels.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 2577 strings out of 483065
+ 33637 string characters out of 5963550
+ 265995 words of memory out of 5000000
+ 17603 multiletter control sequences out of 15000+600000
+ 540799 words of font info for 57 fonts, out of 8000000 for 9000
+ 81 hyphenation exceptions out of 8191
+ 38i,10n,34p,610b,235s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></us
+r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/shar
+e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texli
+ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmss8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
+cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
+8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></usr/
+share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti7.pfb></usr/share/t
+exlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
+Output written on SoftwareX_JAX-DIPS.pdf (5 pages, 169714 bytes).
+PDF statistics:
+ 80 PDF objects out of 1000 (max. 8388607)
+ 57 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+
