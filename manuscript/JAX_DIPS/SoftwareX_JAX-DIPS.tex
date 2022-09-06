@@ -37,7 +37,7 @@
 %% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
 %% for the whole article with \linenumbers.
 \usepackage{lineno}
-
+\usepackage{hyperref}
 \usepackage{float}
 \restylefloat{table}
 
@@ -67,7 +67,7 @@
 %% \address{Address\fnref{label3}}
 %% \fntext[label3]{}
 
-\title{\texttt{JAX-DIPS}: Differentiable Interfacial PDE Solver}
+\title{\texttt{JAX-DIPS}: differentiable interfacial PDE solver for training neural network surrogate models}
 
 %% use optional labels to link authors explicitly to addresses:
 %% \author[label1,label2]{}
@@ -91,17 +91,15 @@
 %% Text of abstract 
 Ca. 100 words
 
+This work presents a software package for solving elliptic partial differential equations with jump conditions across irregular interfaces using neural network surrogate models. The differentiable interfacial PDE solver, dubbed \texttt{JAX-DIPS}, is purely developed in \texttt{JAX} \cite{jax2018github} and offers end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations and interpolations, thus facilitating research into differentiable algorithms for developing hybrid PDE solvers. We release \texttt{JAX-DIPS} as an open-source software package under MIT license that is available for download at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}
+ 
 \end{abstract}
 
 \begin{keyword}
-%% keywords here, in the form: keyword \sep keyword
+
 
 level-set method\sep free boundary problems\sep inverse problems\sep jump conditions\sep
 differentiable programming
-%% PACS codes here, in the form: \PACS code \sep code
-
-%% MSC codes here, in the form: \MSC code \sep code
-%% or \MSC[2008] code \sep code (2000 is the default)
 
 \end{keyword}
 
