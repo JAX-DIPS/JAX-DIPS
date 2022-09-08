@@ -571,7 +571,7 @@ class PDETrainer:
 
             lhs_diagcoeff = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
             lhs, diagcoeff = jnp.split(lhs_diagcoeff, [1], 0)
-
+            diagcoeff_ = jnp.sqrt(diagcoeff*diagcoeff)
             #--- RHS  
             def get_rhs_at_interior_node(node):
                 i, j, k = node
@@ -585,7 +585,7 @@ class PDETrainer:
 
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
 
-            return jnp.array([lhs / (1e-6 + diagcoeff), rhs / (1e-6 + diagcoeff)])
+            return jnp.array([lhs / (1e-13 + diagcoeff_), rhs / (1e-13 + diagcoeff_)])
 
         evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
         lhs_rhs = evaluate_on_nodes_fn(self.nodes)
@@ -999,6 +999,7 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
         # cur_region = epoch % switching_interval - 1       # inside - outside - whole
         cur_region = i32(-1)*(epoch % switching_interval)   # whole - inside - inside 
         opt_state, params, loss_epoch = trainer.update_region(opt_state, params, region=cur_region)
+        # opt_state, params, loss_epoch = trainer.update(opt_state, params)
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
         return (opt_state, params, loss_epochs), None
 
