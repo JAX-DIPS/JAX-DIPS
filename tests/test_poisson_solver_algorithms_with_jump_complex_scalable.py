@@ -1,6 +1,6 @@
 
 from jax.config import config
-from src import io, poisson_solver, mesh, level_set
+from src import io, poisson_solver_scalable, mesh, level_set
 from src.jaxmd_modules.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad, lax)
 import jax
@@ -32,9 +32,9 @@ def test_poisson_solver_with_jump_complex():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(16)
-    Ny = i32(16)
-    Nz = i32(16)
+    Nx = i32(1024)
+    Ny = i32(1024)
+    Nz = i32(1024)
 
     ALGORITHM = 0                   # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
@@ -224,9 +224,9 @@ def test_poisson_solver_with_jump_complex():
     exact_sol = vmap(evaluate_exact_solution_fn)(R)
 
 
-    init_fn, solve_fn = poisson_solver.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
+    init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
-
+   
     t1 = time.time()
 
     
@@ -236,7 +236,7 @@ def test_poisson_solver_with_jump_complex():
     t2 = time.time()
 
     print(f"solve took {(t2 - t1)} seconds")
-    jax.profiler.save_device_memory_profile("memory_poisson_solver.prof")
+    jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
 
     log = {
         'phi': sim_state.phi,

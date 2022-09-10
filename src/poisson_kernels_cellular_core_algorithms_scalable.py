@@ -21,11 +21,11 @@ import pdb
 
 
 class PDETrainer:
-    def __init__(self, gstate, sim_state, optimizer, algorithm=0, precondition=1):
-        
+    def __init__(self, gstate, sim_state_fn, optimizer, algorithm=0, precondition=1):
+
         self.optimizer = optimizer
         self.gstate = gstate  
-        self.sim_state = sim_state
+        self.sim_state_fn = sim_state_fn
 
         self.algorithm = algorithm
         """
@@ -33,16 +33,16 @@ class PDETrainer:
         algorithm = 1: use neural network to evaluate u^\pm
         """
 
-        phi_n = sim_state.phi
-        dirichlet_bc = sim_state.dirichlet_bc
-        mu_m = sim_state.mu_m
-        mu_p = sim_state.mu_p
-        k_m = sim_state.k_m
-        k_p = sim_state.k_p
-        f_m = sim_state.f_m
-        f_p = sim_state.f_p
-        alpha = sim_state.alpha
-        beta = sim_state.beta
+        # phi_n = sim_state.phi
+        # dirichlet_bc = sim_state.dirichlet_bc
+        # mu_m = sim_state.mu_m
+        # mu_p = sim_state.mu_p
+        # k_m = sim_state.k_m
+        # k_p = sim_state.k_p
+        # f_m = sim_state.f_m
+        # f_p = sim_state.f_p
+        # alpha = sim_state.alpha
+        # beta = sim_state.beta
 
         xo = gstate.x; yo = gstate.y; zo = gstate.z
         dx = xo[2] - xo[1]; dy = yo[2] - yo[1]; dz = zo[2] - zo[1]
@@ -950,7 +950,7 @@ class PDETrainer:
 
 
 
-def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
+def poisson_solver(gstate, sim_state_fn, algorithm=0, switching_interval=3):
 
     #--- Defining Optimizer
     decay_rate_ = 0.975
@@ -969,7 +969,7 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
 
-    trainer = PDETrainer(gstate, sim_state, optimizer, algorithm)
+    trainer = PDETrainer(gstate, sim_state_fn, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params)    
 
     num_epochs=10000
