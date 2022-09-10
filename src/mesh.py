@@ -29,6 +29,9 @@ class GridState(object):
     y: Array
     z: Array
     R: Array
+    dx: float
+    dy: float
+    dz: float
 
     def shape(self):
         return self.x.shape + self.y.shape + self.z.shape
@@ -38,16 +41,21 @@ class GridState(object):
 def construct(dimension : int) -> Mesher:
 
     def init_fn_2d(x, y):
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
         X, Y = np.meshgrid(x, y, indexing='ij')
         X = X.flatten(); Y = Y.flatten()
         R = np.column_stack((X, Y))
-        return GridState(x, y, None, R)
+        return GridState(x, y, None, R, dx, dy, None)
 
     def init_fn_3d(x, y, z):
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+        dz = z[1] - z[0]
         X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
         X = X.flatten(); Y = Y.flatten(); Z = Z.flatten()
         R = np.column_stack((X, Y, Z))
-        return GridState(x, y, z, R)
+        return GridState(x, y, z, R, dx, dy, dz)
 
     def point3d_at(gstate, idx):
         i = idx[0]; j = idx[1]; k = idx[2]

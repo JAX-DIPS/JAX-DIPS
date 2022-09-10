@@ -21,7 +21,7 @@ import pdb
 
 
 class PDETrainer:
-    def __init__(self, gstate, sim_state_fn, optimizer, algorithm=0, precondition=1):
+    def __init__(self, gstate, sim_state, sim_state_fn, optimizer, algorithm=0, precondition=1):
 
         self.optimizer = optimizer
         self.gstate = gstate  
@@ -43,17 +43,23 @@ class PDETrainer:
         # f_p = sim_state.f_p
         # alpha = sim_state.alpha
         # beta = sim_state.beta
-
+        
+        """ Grid Info """
         xo = gstate.x; yo = gstate.y; zo = gstate.z
-        dx = xo[2] - xo[1]; dy = yo[2] - yo[1]; dz = zo[2] - zo[1]
-        self.dx = dx; self.dy = dy; self.dz = dz
-        Nx = xo.shape[0]; Ny = yo.shape[0]; Nz = zo.shape[0]
-        grid_shape = (Nx,Ny,Nz)
+        self.dx = gstate.dx; self.dy = gstate.dy; self.dz = gstate.dz
+        grid_shape = gstate.shape()
+        Nx, Ny, Nz = grid_shape
+        self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
+
+        """ Evaluation Nodes """
         ii = onp.arange(2, Nx+2); jj = onp.arange(2, Ny+2); kk = onp.arange(2, Nz+2)
         I, J, K = onp.meshgrid(ii, jj, kk, indexing='ij')
         self.nodes = jnp.array( onp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1))) )
 
-        self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
+        
+
+        pdb.set_trace()
+
 
         self.phi_cube_ = phi_n.reshape(grid_shape)
         x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, self.phi_cube_)
@@ -950,7 +956,7 @@ class PDETrainer:
 
 
 
-def poisson_solver(gstate, sim_state_fn, algorithm=0, switching_interval=3):
+def poisson_solver(gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3):
 
     #--- Defining Optimizer
     decay_rate_ = 0.975
@@ -969,7 +975,7 @@ def poisson_solver(gstate, sim_state_fn, algorithm=0, switching_interval=3):
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
 
-    trainer = PDETrainer(gstate, sim_state_fn, optimizer, algorithm)
+    trainer = PDETrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params)    
 
     num_epochs=10000

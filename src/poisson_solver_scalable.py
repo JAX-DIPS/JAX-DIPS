@@ -108,7 +108,7 @@ def setup(initial_value_fn :  Callable[..., Array],
         return sim_state
 
     def solve_fn(gstate, sim_state, algorithm=0, switching_interval=3):
-        U_sol, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs = poisson_kernels_cellular_core_algorithms_scalable.poisson_solver(gstate, sim_state_fn, algorithm, switching_interval=switching_interval)
+        U_sol, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs = poisson_kernels_cellular_core_algorithms_scalable.poisson_solver(gstate, sim_state, sim_state_fn, algorithm, switching_interval=switching_interval)
 
         return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface), epoch_store, loss_epochs
     

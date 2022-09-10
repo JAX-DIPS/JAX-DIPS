@@ -50,7 +50,7 @@ def test_poisson_solver_with_jump_complex():
     init_mesh_fn, coord_at = mesh.construct(dim)
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
-
+    
     # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper
     @custom_jit
     def exact_sol_m_fn(r):
