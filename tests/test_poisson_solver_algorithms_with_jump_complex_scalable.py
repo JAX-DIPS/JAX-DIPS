@@ -249,7 +249,7 @@ def test_poisson_solver_with_jump_complex():
     t1 = time.time()
 
     
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
@@ -267,16 +267,18 @@ def test_poisson_solver_with_jump_complex():
         'mu_m': sim_state.mu_m,
         'mu_p': sim_state.mu_p,
         'f_m': sim_state.f_m,
-        'f_p': sim_state.f_p,
-        'grad_um_x': sim_state.grad_solution[0][:,0],
-        'grad_um_y': sim_state.grad_solution[0][:,1],
-        'grad_um_z': sim_state.grad_solution[0][:,2],
-        'grad_up_x': sim_state.grad_solution[1][:,0],
-        'grad_up_y': sim_state.grad_solution[1][:,1],
-        'grad_up_z': sim_state.grad_solution[1][:,2],
-        'grad_um_n': sim_state.grad_normal_solution[0],
-        'grad_up_n': sim_state.grad_normal_solution[1]
+        'f_p': sim_state.f_p
     }
+    # ,
+    #     'grad_um_x': sim_state.grad_solution[0][:,0],
+    #     'grad_um_y': sim_state.grad_solution[0][:,1],
+    #     'grad_um_z': sim_state.grad_solution[0][:,2],
+    #     'grad_up_x': sim_state.grad_solution[1][:,0],
+    #     'grad_up_y': sim_state.grad_solution[1][:,1],
+    #     'grad_up_z': sim_state.grad_solution[1][:,2],
+    #     'grad_um_n': sim_state.grad_normal_solution[0],
+    #     'grad_up_n': sim_state.grad_normal_solution[1]
+    # }
     io.write_vtk_manual(gstate, log)
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
@@ -285,7 +287,7 @@ def test_poisson_solver_with_jump_complex():
     print("\n SOLUTION ERROR\n")
 
     print(f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared error = {rms_err} ")
-    
+    pdb.set_trace()
 
     """
     MASK the solution over sphere only

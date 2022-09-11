@@ -23,7 +23,7 @@ class PDETrainer:
     """
         This is a completely local point-based Poisson solver.
     """
-    def __init__(self, gstate, sim_state, sim_state_fn, optimizer, algorithm=0, precondition=1):
+    def __init__(self, gstate, eval_gstate, sim_state, sim_state_fn, optimizer, algorithm=0, precondition=1):
         """
             algorithm = 0: use regression to evaluate u^\pm
             algorithm = 1: use neural network to evaluate u^\pm
@@ -31,6 +31,7 @@ class PDETrainer:
 
         self.optimizer = optimizer
         self.gstate = gstate  
+        self.eval_gstate = eval_gstate
         self.sim_state_fn = sim_state_fn
         self.sim_state = sim_state
         self.algorithm = algorithm
@@ -76,65 +77,41 @@ class PDETrainer:
         self.compute_face_centroids_values_plus_minus_at_point = geometric_integrations_per_point.compute_cell_faces_areas_values(get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
         
         
-        
+        """ Evaluation/Training Grid Set """
+        self.cell_dx = self.eval_gstate.dx
+        self.cell_dy = self.eval_gstate.dy
+        self.cell_dz = self.eval_gstate.dz
+        self.Vol_cell_nominal =  self.cell_dx * self.cell_dy * self.cell_dz
 
-        """ initialize configurated solver """
-        if self.algorithm==0:
-            self.u_mp_fn = self.get_u_mp_by_regression_at_point_fn
-            self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_regression
-            self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_regression
+        self.Xijk = jnp.array([ [-self.cell_dx, -self.cell_dy, -self.cell_dz],
+                                [          0.0, -self.cell_dy, -self.cell_dz],
+                                [ self.cell_dx, -self.cell_dy, -self.cell_dz],
+                                [-self.cell_dx,           0.0, -self.cell_dz],
+                                [0.0          ,           0.0, -self.cell_dz],
+                                [ self.cell_dx,           0.0, -self.cell_dz],
+                                [-self.cell_dx,  self.cell_dy, -self.cell_dz],
+                                [          0.0,  self.cell_dy, -self.cell_dz],
+                                [ self.cell_dx,  self.cell_dy, -self.cell_dz],
+                                [-self.cell_dx, -self.cell_dy,           0.0],
+                                [          0.0, -self.cell_dy,           0.0],
+                                [ self.cell_dx, -self.cell_dy,           0.0],
+                                [-self.cell_dx,           0.0,           0.0],
+                                [          0.0,           0.0,           0.0],
+                                [ self.cell_dx,           0.0,           0.0],
+                                [-self.cell_dx,  self.cell_dy,           0.0],
+                                [          0.0,  self.cell_dy,           0.0],
+                                [ self.cell_dx,  self.cell_dy,           0.0],
+                                [-self.cell_dx, -self.cell_dy,  self.cell_dz],
+                                [          0.0, -self.cell_dy,  self.cell_dz],
+                                [ self.cell_dx, -self.cell_dy,  self.cell_dz],
+                                [-self.cell_dx,           0.0,  self.cell_dz],
+                                [          0.0,           0.0,  self.cell_dz],
+                                [ self.cell_dx,           0.0,  self.cell_dz],
+                                [-self.cell_dx,  self.cell_dy,  self.cell_dz],
+                                [          0.0,  self.cell_dy,  self.cell_dz],
+                                [ self.cell_dx,  self.cell_dy,  self.cell_dz]], dtype=f32)
 
-        elif self.algorithm==1:
-            self.initialize_neural_based_algorithm()
-            self.u_mp_fn = self.get_u_mp_by_neural_network_at_node_fn
-            self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_neural_network
-            self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
-
-
-        if precondition==1:
-            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
-        elif precondition==0:
-            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
-
-
-
-
-
-    def set_eval_cell_size(self, dx, dy, dz):
-        self.cell_dx = dx
-        self.cell_dy = dy
-        self.cell_dz = dz
-        self.Vol_cell_nominal =  dx * dy * dz
-
-        self.Xijk = jnp.array([[-dx, -dy, -dz],
-                                [0.0, -dy, -dz],
-                                [dx, -dy, -dz],
-                                [-dx, 0.0, -dz],
-                                [0.0, 0.0, -dz],
-                                [dx, 0.0, -dz],
-                                [-dx,  dy, -dz],
-                                [0.0,  dy, -dz],
-                                [dx,  dy, -dz],
-                                [-dx, -dy, 0.0],
-                                [0.0, -dy, 0.0],
-                                [dx, -dy, 0.0],
-                                [-dx, 0.0, 0.0],
-                                [0.0, 0.0, 0.0],
-                                [dx, 0.0, 0.0],
-                                [-dx,  dy, 0.0],
-                                [0.0,  dy, 0.0],
-                                [dx,  dy, 0.0],
-                                [-dx, -dy,  dz],
-                                [0.0, -dy,  dz],
-                                [dx, -dy,  dz],
-                                [-dx, 0.0,  dz],
-                                [0.0, 0.0,  dz],
-                                [dx, 0.0,  dz],
-                                [-dx,  dy,  dz],
-                                [0.0,  dy,  dz],
-                                [dx,  dy,  dz]], dtype=f32)
-
-        self.ngbs = jnp.array([[-1, -1, -1],
+        self.ngbs = jnp.array([ [-1, -1, -1],
                                 [0, -1, -1],
                                 [1, -1, -1],
                                 [-1,  0, -1],
@@ -162,6 +139,27 @@ class PDETrainer:
                                 [0,  1,  1],
                                 [1,  1,  1]], dtype=i32)
         
+
+
+        
+
+        """ initialize configurated solver """
+        if self.algorithm==0:
+            self.u_mp_fn = self.get_u_mp_by_regression_at_point_fn
+            self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_regression
+            self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_regression
+
+        elif self.algorithm==1:
+            self.initialize_neural_based_algorithm()
+            self.u_mp_fn = self.get_u_mp_by_neural_network_at_node_fn
+            self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_neural_network
+            self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
+
+
+        if precondition==1:
+            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
+        elif precondition==0:
+            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
 
 
 
@@ -292,7 +290,8 @@ class PDETrainer:
 
 
     @partial(jit, static_argnums=(0))
-    def evaluate_solution_fn(self, params, R_flat, phi_flat):
+    def evaluate_solution_fn(self, params, R_flat):
+        phi_flat = self.phi_interp_fn(R_flat)
         sol_fn =  partial(self.forward.apply, params, None)
         pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
         return pred_sol
@@ -333,18 +332,12 @@ class PDETrainer:
         lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, pointset_gstate.R, pointset_gstate.dx, pointset_gstate.dy, pointset_gstate.dz)   
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
 
-        phi_xmin_bc = self.phi_interp_fn(pointset_gstate.R_xmin_boundary)
-        pred_sol_xmin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_xmin_boundary, phi_xmin_bc)
-        phi_xmax_bc = self.phi_interp_fn(pointset_gstate.R_xmax_boundary)
-        pred_sol_xmax_bc = self.evaluate_solution_fn(params, pointset_gstate.R_xmax_boundary, phi_xmax_bc)
-        phi_ymin_bc = self.phi_interp_fn(pointset_gstate.R_ymin_boundary)
-        pred_sol_ymin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_ymin_boundary, phi_ymin_bc)
-        phi_ymax_bc = self.phi_interp_fn(pointset_gstate.R_ymax_boundary)
-        pred_sol_ymax_bc = self.evaluate_solution_fn(params, pointset_gstate.R_ymax_boundary, phi_ymax_bc)
-        phi_zmin_bc = self.phi_interp_fn(pointset_gstate.R_zmin_boundary)
-        pred_sol_zmin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_zmin_boundary, phi_zmin_bc)
-        phi_zmax_bc = self.phi_interp_fn(pointset_gstate.R_zmax_boundary)
-        pred_sol_zmax_bc = self.evaluate_solution_fn(params, pointset_gstate.R_zmax_boundary, phi_zmax_bc)
+        pred_sol_xmin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_xmin_boundary)
+        pred_sol_xmax_bc = self.evaluate_solution_fn(params, pointset_gstate.R_xmax_boundary)
+        pred_sol_ymin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_ymin_boundary)
+        pred_sol_ymax_bc = self.evaluate_solution_fn(params, pointset_gstate.R_ymax_boundary)
+        pred_sol_zmin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_zmin_boundary)
+        pred_sol_zmax_bc = self.evaluate_solution_fn(params, pointset_gstate.R_zmax_boundary)
 
         tot_loss = self.evaluate_loss_fn( lhs, rhs, pred_sol_xmin_bc, pred_sol_xmax_bc, pred_sol_ymin_bc, pred_sol_ymax_bc, pred_sol_zmin_bc, pred_sol_zmax_bc)
         return tot_loss
@@ -352,8 +345,8 @@ class PDETrainer:
    
     
     @partial(jit, static_argnums=(0))
-    def update(self, opt_state, params, pointset_gstate):      
-        loss, grads = value_and_grad(self.loss)(params, pointset_gstate)
+    def update(self, opt_state, params, eval_gstate):      
+        loss, grads = value_and_grad(self.loss)(params, eval_gstate)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
@@ -494,7 +487,7 @@ class PDETrainer:
 
         Nx, Ny, Nz = self.grid_shape
         
-        u = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
+        u = self.evaluate_solution_fn(params, self.gstate.R)
         u_cube = u.reshape(self.grid_shape)
 
         # u_mp_at_node = partial(self.u_mp_fn, u_cube, x, y, z, params)
@@ -601,8 +594,7 @@ class PDETrainer:
         u_ijk = self.solution_at_point_fn(params, point, delta_ijk)
 
         curr_vertices = jnp.add(point, self.Xijk)
-        phi_vertices = self.phi_interp_fn(curr_vertices)
-        u_cube_ijk = self.evaluate_solution_fn(params, curr_vertices, phi_vertices)
+        u_cube_ijk = self.evaluate_solution_fn(params, curr_vertices)
         
         normal_ijk, gamma_m_ijk, gamma_m_ijk_pqm, gamma_p_ijk, gamma_p_ijk_pqm, zeta_m_ijk , zeta_m_ijk_pqm , zeta_p_ijk , zeta_p_ijk_pqm = self.get_regression_coeffs_at_point(point, dx, dy, dz)
         
@@ -812,7 +804,7 @@ class PDETrainer:
 
 
 
-def poisson_solver(gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3):
+def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3):
 
     #--- Defining Optimizer
     decay_rate_ = 0.975
@@ -831,8 +823,7 @@ def poisson_solver(gstate, sim_state, sim_state_fn, algorithm=0, switching_inter
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
 
-    trainer = PDETrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
-    trainer.set_eval_cell_size(gstate.dx, gstate.dy, gstate.dz)
+    trainer = PDETrainer(gstate, eval_gstate, sim_state, sim_state_fn, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params)    
 
     num_epochs=10000
@@ -849,7 +840,7 @@ def poisson_solver(gstate, sim_state, sim_state_fn, algorithm=0, switching_inter
     
     def learn_whole(carry, epoch):
         opt_state, params, loss_epochs = carry
-        opt_state, params, loss_epoch = trainer.update(opt_state, params, gstate)
+        opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
         return (opt_state, params, loss_epochs), None
     loss_epochs = jnp.zeros(num_epochs)
@@ -872,10 +863,10 @@ def poisson_solver(gstate, sim_state, sim_state_fn, algorithm=0, switching_inter
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 >0], loss_epochs[epoch_store%switching_interval - 1 >0], color='r', label='positive domain')
 
-    plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
-    plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
+    # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
+    # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
     
-    # ax.plot(epoch_store, loss_epochs, color='k')
+    ax.plot(epoch_store, loss_epochs, color='k')
     
     ax.set_yscale('log')
     ax.set_xlabel(r'$\rm epoch$', fontsize=20)
@@ -887,7 +878,7 @@ def poisson_solver(gstate, sim_state, sim_state_fn, algorithm=0, switching_inter
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
   
-    final_solution = trainer.evaluate_solution_fn(params, gstate.R, trainer.phi_flat).reshape(-1)
+    final_solution = trainer.evaluate_solution_fn(params, eval_gstate.R).reshape(-1)
 
     #------------- Gradients of discovered solutions are below:    
     if algorithm==0:
