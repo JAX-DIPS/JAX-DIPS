@@ -22,73 +22,65 @@ import pdb
 
 class PDETrainer:
     def __init__(self, gstate, sim_state, sim_state_fn, optimizer, algorithm=0, precondition=1):
-
-        self.optimizer = optimizer
-        self.gstate = gstate  
-        self.sim_state_fn = sim_state_fn
-
-        self.algorithm = algorithm
         """
         algorithm = 0: use regression to evaluate u^\pm
         algorithm = 1: use neural network to evaluate u^\pm
         """
 
-        # phi_n = sim_state.phi
-        # dirichlet_bc = sim_state.dirichlet_bc
-        # mu_m = sim_state.mu_m
-        # mu_p = sim_state.mu_p
-        # k_m = sim_state.k_m
-        # k_p = sim_state.k_p
-        # f_m = sim_state.f_m
-        # f_p = sim_state.f_p
-        # alpha = sim_state.alpha
-        # beta = sim_state.beta
+        self.optimizer = optimizer
+        self.gstate = gstate  
+        self.sim_state_fn = sim_state_fn
+        self.sim_state = sim_state
+        self.algorithm = algorithm
         
         """ Grid Info """
         xo = gstate.x; yo = gstate.y; zo = gstate.z
         self.dx = gstate.dx; self.dy = gstate.dy; self.dz = gstate.dz
-        grid_shape = gstate.shape()
-        Nx, Ny, Nz = grid_shape
+        self.grid_shape = gstate.shape()
+        Nx, Ny, Nz = self.grid_shape
         self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
+        self.Vol_cell_nominal = self.dx*self.dy*self.dz
 
         """ Evaluation Nodes """
         ii = onp.arange(2, Nx+2); jj = onp.arange(2, Ny+2); kk = onp.arange(2, Nz+2)
         I, J, K = onp.meshgrid(ii, jj, kk, indexing='ij')
         self.nodes = jnp.array( onp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1))) )
 
+        """ functions for the method """
+        self.mu_m_interp_fn = sim_state_fn.mu_m_fn   
+        self.mu_p_interp_fn = sim_state_fn.mu_p_fn   
+        self.alpha_interp_fn = sim_state_fn.alpha_fn 
+        self.beta_interp_fn = sim_state_fn.beta_fn   
+
+        self.mu_m_over_mu_p_interp_fn = lambda r: sim_state_fn.mu_m_fn(r) / sim_state_fn.mu_p_fn(r) 
+        self.beta_over_mu_m_interp_fn = lambda r: sim_state_fn.beta_fn(r) / sim_state_fn.mu_m_fn(r)
+        self.beta_over_mu_p_interp_fn = lambda r: sim_state_fn.beta_fn(r) / sim_state_fn.mu_p_fn(r)
         
+        """ The level set function or its interpolant """
+        self.phi_interp_fn = sim_state_fn.phi_fn 
+        # self.phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(sim_state.phi, gstate)
 
         pdb.set_trace()
 
 
-        self.phi_cube_ = phi_n.reshape(grid_shape)
+
+        self.phi_cube_ = sim_state.phi.reshape(self.grid_shape) 
         x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, self.phi_cube_)
         x, y, z, self.phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
-
-        self.mu_m_cube_internal = mu_m.reshape(grid_shape)
-        self.mu_p_cube_internal = mu_p.reshape(grid_shape)
-        
-        self.mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
-        self.mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
-        self.alpha_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(alpha, gstate)
-        self.beta_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(beta, gstate)
-
-        mu_m_over_mu_p = mu_m / mu_p
-        beta_over_mu_m = beta / mu_m
-        beta_over_mu_p = beta / mu_p
-        self.mu_m_over_mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m_over_mu_p, gstate)
-        self.beta_over_mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(beta_over_mu_m, gstate)
-        self.beta_over_mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(beta_over_mu_p, gstate)
-
-        self.dirichlet_cube = dirichlet_bc.reshape(grid_shape)
-        self.k_m_cube_internal = k_m.reshape(grid_shape)
-        self.k_p_cube_internal = k_p.reshape(grid_shape)
-        self.f_m_cube_internal = f_m.reshape(grid_shape)
-        self.f_p_cube_internal = f_p.reshape(grid_shape)
-
         self.phi_flat = self.phi_cube_.reshape(-1)
-        self.Vol_cell_nominal = dx*dy*dz
-        self.grid_shape = grid_shape  
+
+        
+
+        # self.mu_m_cube_internal = mu_m.reshape(self.grid_shape)
+        # self.mu_p_cube_internal = mu_p.reshape(self.grid_shape)
+        # self.dirichlet_cube = dirichlet_bc.reshape(self.grid_shape)
+        # self.k_m_cube_internal = k_m.reshape(self.grid_shape)
+        # self.k_p_cube_internal = k_p.reshape(self.grid_shape)
+        # self.f_m_cube_internal = f_m.reshape(self.grid_shape)
+        # self.f_p_cube_internal = f_p.reshape(self.grid_shape)
+
+       
+     
 
         get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
         self.beta_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.beta_interp_fn)
