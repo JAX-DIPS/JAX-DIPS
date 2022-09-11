@@ -71,9 +71,9 @@ class PDETrainer:
         
 
         """ Geometric operations per point """
-        get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(self.phi_interp_fn)
-        self.beta_integrate_over_interface_at_point, _ = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.beta_interp_fn)
-        self.compute_face_centroids_values_plus_minus_at_point = geometric_integrations_per_point.compute_cell_faces_areas_values(get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
+        self.get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(self.phi_interp_fn)
+        self.beta_integrate_over_interface_at_point, self.beta_integrate_in_negative_domain = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(self.get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.beta_interp_fn)
+        self.compute_face_centroids_values_plus_minus_at_point = geometric_integrations_per_point.compute_cell_faces_areas_values(self.get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
         
         
         """ Evaluation/Training Grid Set """
@@ -393,7 +393,7 @@ class PDETrainer:
             vols = coeffs_[12:14]
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
-            
+
             
             def get_lhs_at_interior_point(point):
                 point_ijk = point
@@ -427,7 +427,7 @@ class PDETrainer:
                 lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
 
                 diag_coeff = k_p_ijk * V_p_ijk + k_m_ijk * V_m_ijk + (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) + (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11])
-                return jnp.array([lhs, diag_coeff])
+                return jnp.array([lhs.reshape(), diag_coeff.reshape()])
             
 
             def get_lhs_on_box_boundary(point):
@@ -831,12 +831,17 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     loss_epochs = []
     epoch_store = []
     for epoch in range(num_epochs):            
+
+        # pdb.set_trace()
+        # u_mp = vmap(trainer.get_u_mp_by_regression_at_point_fn, (None, None, None, None, 0))(params, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz, eval_gstate.R)
+
         opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)   
-        
+
         """ for testing"""
-        lhs_rhs = vmap(trainer.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)  
-        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)       
-        pdb.set_trace()
+        # lhs_rhs = vmap(trainer.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)  
+        # lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)       
+        # pdb.set_trace()
+
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)

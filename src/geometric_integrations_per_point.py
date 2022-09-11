@@ -280,7 +280,16 @@ def get_vertices_of_cell_intersection_with_interface(phi_interp_fn):
 
 
 
+@jit
+def vol_fn(A):
+    tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) 
+    vol_tmp = (1.0 / 6.0) * jnp.sqrt(jnp.abs(jnp.nan_to_num(tmp)))
+    return vol_tmp
 
+@jit
+def area_fn(A):
+    tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T )   
+    return 0.5 * jnp.sqrt(jnp.abs(jnp.nan_to_num(tmp)))
 
 
 def integrate_over_gamma_and_omega_m(get_vertices_fn, is_point_cell_crossed_by_interface, u_interp_fn):
@@ -296,22 +305,22 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_point_cell_crossed_by_i
         S4_Gamma = pieces[3]
         S5_Gamma = pieces[4]
         
-        vol_fn = lambda A: 0.5 * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
-        
-        integral  = vol_fn(S1_Gamma[0]) * u_interp_fn(S1_Gamma[0]).mean()
-        integral += vol_fn(S1_Gamma[1]) * u_interp_fn(S1_Gamma[1]).mean()
+        # vol_fn = lambda A: 0.5 * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
+       
+        integral  = area_fn(S1_Gamma[0]) * u_interp_fn(S1_Gamma[0]).mean()
+        integral += area_fn(S1_Gamma[1]) * u_interp_fn(S1_Gamma[1]).mean()
 
-        integral += vol_fn(S2_Gamma[0]) * u_interp_fn(S2_Gamma[0]).mean()
-        integral += vol_fn(S2_Gamma[1]) * u_interp_fn(S2_Gamma[1]).mean()
+        integral += area_fn(S2_Gamma[0]) * u_interp_fn(S2_Gamma[0]).mean()
+        integral += area_fn(S2_Gamma[1]) * u_interp_fn(S2_Gamma[1]).mean()
 
-        integral += vol_fn(S3_Gamma[0]) * u_interp_fn(S3_Gamma[0]).mean()
-        integral += vol_fn(S3_Gamma[1]) * u_interp_fn(S3_Gamma[1]).mean()
+        integral += area_fn(S3_Gamma[0]) * u_interp_fn(S3_Gamma[0]).mean()
+        integral += area_fn(S3_Gamma[1]) * u_interp_fn(S3_Gamma[1]).mean()
 
-        integral += vol_fn(S4_Gamma[0]) * u_interp_fn(S4_Gamma[0]).mean()
-        integral += vol_fn(S4_Gamma[1]) * u_interp_fn(S4_Gamma[1]).mean()
+        integral += area_fn(S4_Gamma[0]) * u_interp_fn(S4_Gamma[0]).mean()
+        integral += area_fn(S4_Gamma[1]) * u_interp_fn(S4_Gamma[1]).mean()
 
-        integral += vol_fn(S5_Gamma[0]) * u_interp_fn(S5_Gamma[0]).mean()
-        integral += vol_fn(S5_Gamma[1]) * u_interp_fn(S5_Gamma[1]).mean()
+        integral += area_fn(S5_Gamma[0]) * u_interp_fn(S5_Gamma[0]).mean()
+        integral += area_fn(S5_Gamma[1]) * u_interp_fn(S5_Gamma[1]).mean()
 
         return integral
     
@@ -336,8 +345,8 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_point_cell_crossed_by_i
         S4_Omega_m = pieces[8]
         S5_Omega_m = pieces[9]
 
-        vol_fn = lambda A: (1.0 / 6.0) * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
-
+        # vol_fn = lambda A: (1.0 / 6.0) * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
+        
         integral  = vol_fn(S1_Omega_m[0]) * u_interp_fn(S1_Omega_m[0]).mean()
         integral += vol_fn(S1_Omega_m[1]) * u_interp_fn(S1_Omega_m[1]).mean()
         integral += vol_fn(S1_Omega_m[2]) * u_interp_fn(S1_Omega_m[2]).mean()
@@ -491,7 +500,7 @@ def compute_cell_faces_areas_values(get_vertices_fn, is_point_cell_crossed_by_in
         
         #---- this number is used to keep track of garbage points in area_from_partitions function below
         # fiducial_point = jnp.rint((xo[-1] - xo[0])*100)
-        fiducial_point = jnp.rint(dx*1000)
+        fiducial_point = jnp.rint(200)
 
         def compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2):
 
