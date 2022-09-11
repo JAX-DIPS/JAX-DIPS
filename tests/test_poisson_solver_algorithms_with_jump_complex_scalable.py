@@ -257,19 +257,19 @@ def test_poisson_solver_with_jump_complex():
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
 
-    log = {
-        'phi': sim_state.phi,
-        'U': sim_state.solution,
-        'U_exact': exact_sol,
-        'U-U_exact': sim_state.solution - exact_sol,
-        'alpha': sim_state.alpha,
-        'beta': sim_state.beta,
-        'mu_m': sim_state.mu_m,
-        'mu_p': sim_state.mu_p,
-        'f_m': sim_state.f_m,
-        'f_p': sim_state.f_p
-    }
-    # ,
+   
+    log = {'phi': sim_state.phi, 'U': sim_state.solution, 'U_exact': exact_sol, 'U-U_exact': sim_state.solution - exact_sol}
+    # log = {
+    #     'phi': sim_state.phi,
+    #     'U': sim_state.solution,
+    #     'U_exact': exact_sol,
+    #     'U-U_exact': sim_state.solution - exact_sol,
+    #     'alpha': sim_state.alpha,
+    #     'beta': sim_state.beta,
+    #     'mu_m': sim_state.mu_m,
+    #     'mu_p': sim_state.mu_p,
+    #     'f_m': sim_state.f_m,
+    #     'f_p': sim_state.f_p,
     #     'grad_um_x': sim_state.grad_solution[0][:,0],
     #     'grad_um_y': sim_state.grad_solution[0][:,1],
     #     'grad_um_z': sim_state.grad_solution[0][:,2],

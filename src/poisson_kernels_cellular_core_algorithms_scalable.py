@@ -1,4 +1,3 @@
-from tkinter import PhotoImage
 import jax
 from jax import (numpy as jnp, vmap, jit, grad, random, value_and_grad, config)
 config.update("jax_debug_nans", True)
@@ -57,9 +56,9 @@ class PDETrainer:
         self.alpha_interp_fn = self.sim_state_fn.alpha_fn 
         self.beta_interp_fn = self.sim_state_fn.beta_fn   
 
-        self.mu_m_over_mu_p_interp_fn = lambda r: self.sim_state_fn.mu_m_fn(r) / self.sim_state_fn.mu_p_fn(r) 
-        self.beta_over_mu_m_interp_fn = lambda r: self.sim_state_fn.beta_fn(r) / self.sim_state_fn.mu_m_fn(r)
-        self.beta_over_mu_p_interp_fn = lambda r: self.sim_state_fn.beta_fn(r) / self.sim_state_fn.mu_p_fn(r)
+        self.mu_m_over_mu_p_interp_fn = lambda r: self.mu_m_interp_fn(r) / self.mu_p_interp_fn(r) 
+        self.beta_over_mu_m_interp_fn = lambda r: self.beta_interp_fn(r) / self.mu_m_interp_fn(r)
+        self.beta_over_mu_p_interp_fn = lambda r: self.beta_interp_fn(r) / self.mu_p_interp_fn(r)
         
 
         """ The level set function or its interpolant (if is free boundary) """
@@ -382,8 +381,7 @@ class PDETrainer:
             """
             x, y, z = point
             boundary = (x - self.gstate.xmin())*(x - self.gstate.xmax()) * (y - self.gstate.ymin())*(y-self.gstate.ymax()) * (z - self.gstate.zmin())*(z - self.gstate.zmax())
-            boundary /= self.gstate.dx * self.gstate.dy * self.gstate.dz
-            return jnp.where(boundary*boundary < 1e-12, True, False)
+            return jnp.where(abs(boundary) < 1e-6*self.gstate.dx, True, False)
 
 
 
@@ -395,6 +393,7 @@ class PDETrainer:
             vols = coeffs_[12:14]
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
+            
             
             def get_lhs_at_interior_point(point):
                 point_ijk = point
@@ -829,23 +828,28 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     num_epochs=10000
     start_time = time.time()
 
-    # loss_epochs = []
-    # epoch_store = []
-    # for epoch in range(num_epochs):            
-    #     opt_state, params, loss_epoch = trainer.update(opt_state, params)            
-    #     print(f"epoch # {epoch} loss is {loss_epoch}")
-    #     loss_epochs.append(loss_epoch)
-    #     epoch_store.append(epoch)
+    loss_epochs = []
+    epoch_store = []
+    for epoch in range(num_epochs):            
+        opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)   
+        
+        """ for testing"""
+        lhs_rhs = vmap(trainer.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)  
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)       
+        pdb.set_trace()
+        print(f"epoch # {epoch} loss is {loss_epoch}")
+        loss_epochs.append(loss_epoch)
+        epoch_store.append(epoch)
 
     
-    def learn_whole(carry, epoch):
-        opt_state, params, loss_epochs = carry
-        opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)
-        loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
-        return (opt_state, params, loss_epochs), None
-    loss_epochs = jnp.zeros(num_epochs)
-    epoch_store = jnp.arange(num_epochs)
-    (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
+    # def learn_whole(carry, epoch):
+    #     opt_state, params, loss_epochs = carry
+    #     opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)
+    #     loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
+    #     return (opt_state, params, loss_epochs), None
+    # loss_epochs = jnp.zeros(num_epochs)
+    # epoch_store = jnp.arange(num_epochs)
+    # (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
     
     
    
