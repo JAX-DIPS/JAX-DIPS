@@ -32,9 +32,24 @@ class GridState(object):
     dx: float
     dy: float
     dz: float
+    R_xmin_boundary: Array
+    R_xmax_boundary: Array 
+    R_ymin_boundary: Array 
+    R_ymax_boundary: Array 
+    R_zmin_boundary: Array 
+    R_zmax_boundary: Array
 
     def shape(self):
         return self.x.shape + self.y.shape + self.z.shape
+
+    def xmin(self): return self.x[0]
+    def xmax(self): return self.x[-1]
+    def ymin(self): return self.y[0]
+    def ymax(self): return self.y[-1]
+    def zmin(self): return self.z[0]
+    def zmax(self): return self.z[-1]
+
+    
 
 
 
@@ -43,19 +58,33 @@ def construct(dimension : int) -> Mesher:
     def init_fn_2d(x, y):
         dx = x[1] - x[0]
         dy = y[1] - y[0]
-        X, Y = np.meshgrid(x, y, indexing='ij')
-        X = X.flatten(); Y = Y.flatten()
+        X_, Y_ = np.meshgrid(x, y, indexing='ij')
+        X = X_.flatten(); Y = Y_.flatten()
         R = np.column_stack((X, Y))
-        return GridState(x, y, None, R, dx, dy, None)
+        R_xmin_boundary = np.column_stack((X_[0,:].flatten(), Y_[0,:].flatten()))
+        R_xmax_boundary = np.column_stack((X_[-1,:].flatten(), Y_[-1,:].flatten()))
+
+        R_ymin_boundary = np.column_stack((X_[:,0].flatten(), Y_[:,0].flatten()))
+        R_ymax_boundary = np.column_stack((X_[:,-1].flatten(), Y_[:,-1].flatten()))
+        return GridState(x, y, None, R, dx, dy, None, R_xmin_boundary, R_xmax_boundary, R_ymin_boundary, R_ymax_boundary, None, None)
 
     def init_fn_3d(x, y, z):
         dx = x[1] - x[0]
         dy = y[1] - y[0]
         dz = z[1] - z[0]
-        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-        X = X.flatten(); Y = Y.flatten(); Z = Z.flatten()
+        X_, Y_, Z_ = np.meshgrid(x, y, z, indexing='ij')
+        X = X_.flatten(); Y = Y_.flatten(); Z = Z_.flatten()
         R = np.column_stack((X, Y, Z))
-        return GridState(x, y, z, R, dx, dy, dz)
+        R_xmin_boundary = np.column_stack((X_[0,:,:].flatten(), Y_[0,:,:].flatten(), Z_[0,:,:].flatten()))
+        R_xmax_boundary = np.column_stack((X_[-1,:,:].flatten(), Y_[-1,:,:].flatten(), Z_[-1,:,:].flatten()))
+
+        R_ymin_boundary = np.column_stack((X_[:,0,:].flatten(), Y_[:,0,:].flatten(), Z_[:,0,:].flatten()))
+        R_ymax_boundary = np.column_stack((X_[:,-1,:].flatten(), Y_[:,-1,:].flatten(), Z_[:,-1,:].flatten()))
+
+        R_zmin_boundary = np.column_stack((X_[:,:,0].flatten(), Y_[:,:,0].flatten(), Z_[:,:,0].flatten()))
+        R_zmax_boundary = np.column_stack((X_[:,:,-1].flatten(), Y_[:,:,-1].flatten(), Z_[:,:,-1].flatten()))
+
+        return GridState(x, y, z, R, dx, dy, dz, R_xmin_boundary, R_xmax_boundary, R_ymin_boundary, R_ymax_boundary, R_zmin_boundary, R_zmax_boundary)
 
     def point3d_at(gstate, idx):
         i = idx[0]; j = idx[1]; k = idx[2]

@@ -375,7 +375,7 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_point_cell_crossed_by_i
 
 
 
-def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_point_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn):
+def compute_cell_faces_areas_values(get_vertices_fn, is_point_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn):
     """
     This function identifies centroids of each face in the positive and negative domain and on the interface,
     and evaluates values of some coefficient (diffusion coefficient, etc) on those centroids. 
