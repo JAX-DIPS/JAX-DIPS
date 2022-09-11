@@ -93,14 +93,14 @@
 
 \author[1]{Pouria A. Mistani\thanks{corresponding author} $^{\dagger,}$}
 \author[2]{Samira Pakravan$^{\dagger,}$}
-\author[1]{Rajesh Ilango}
+%\author[1]{Rajesh Ilango}
 \author[2]{Frederic G. Gibou}
 
 \address[1]{NVIDIA Corporation, Santa Clara, CA 95051, USA}
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present an end-to-end differentiable method for learning neural network surrogate models for the solution of elliptic partial differential equations with jump conditions across irregular sharp interfaces in three spatial dimensions. This method is based on minimization of the residual of the linear system obtained from finite discretization of the solution field with respect to trainable parameters of the neural network. We show the method is convergent such that model accuracy improves by increasing number of evaluation points in the domain. The algorithms presented in this work are implemented and released in a software package dubbed \texttt{JAX-DIPS}, standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers. We release \texttt{JAX-DIPS} as an open-source software package under MIT license that is available for download at \href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}.
+	We present an end-to-end differentiable method for learning neural network surrogate models for the solution of elliptic partial differential equations with jump conditions across irregular sharp interfaces in three spatial dimensions. This method is based on minimization of the residual of the linear system obtained from finite discretization of the solution field with respect to trainable parameters of the neural network. We show the method is convergent such that model accuracy improves by increasing number of evaluation points in the domain. The algorithms presented in this work are implemented and released in a software package dubbed \texttt{JAX-DIPS}, standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
 
 \end{abstract}
 

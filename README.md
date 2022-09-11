@@ -56,3 +56,8 @@ You can attach to the running `jax_dips` container by
 ```
 ./launch attach
 ```
+
+
+
+# Copyright
+All rights reserved. JAX-DIPS is a proprietary software owned by Pouria Akbari Mistani and Samira Pakravan. 
