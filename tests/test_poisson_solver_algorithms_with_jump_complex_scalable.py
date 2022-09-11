@@ -47,18 +47,18 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 
 
 def test_poisson_solver_with_jump_complex():
+    ALGORITHM = 0                   # 0: regression normal derivatives, 1: neural network normal derivatives
+    SWITCHING_INTERVAL = 3
+
 
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
+    
+    # --------- Grid nodes
     Nx = i32(16)
     Ny = i32(16)
     Nz = i32(16)
-
-    ALGORITHM = 0                   # 0: regression normal derivatives, 1: neural network normal derivatives
-    SWITCHING_INTERVAL = 3
-
-    # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
@@ -69,6 +69,11 @@ def test_poisson_solver_with_jump_complex():
     init_mesh_fn, coord_at = mesh.construct(dim)
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
+    
+    exc = jnp.linspace(xmin, xmax, 256, dtype=f32)
+    eyc = jnp.linspace(ymin, ymax, 256, dtype=f32)
+    ezc = jnp.linspace(zmin, zmax, 256, dtype=f32)
+    eval_gstate = init_mesh_fn(exc, eyc, ezc)
     
     # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper
     @custom_jit
@@ -249,7 +254,7 @@ def test_poisson_solver_with_jump_complex():
     t1 = time.time()
 
     
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()

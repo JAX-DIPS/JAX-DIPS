@@ -324,11 +324,11 @@ class PDETrainer:
     
 
     
-    def loss(self, params, pointset_gstate):
+    def loss(self, params, points, pointset_gstate):
         """
             Loss function of the neural network
         """     
-        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, pointset_gstate.R, pointset_gstate.dx, pointset_gstate.dy, pointset_gstate.dz)   
+        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, pointset_gstate.dx, pointset_gstate.dy, pointset_gstate.dz)   
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
 
         pred_sol_xmin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_xmin_boundary)
@@ -344,8 +344,8 @@ class PDETrainer:
    
     
     @partial(jit, static_argnums=(0))
-    def update(self, opt_state, params, eval_gstate):      
-        loss, grads = value_and_grad(self.loss)(params, eval_gstate)
+    def update(self, opt_state, params, points, pointset_gstate):      
+        loss, grads = value_and_grad(self.loss)(params, points, pointset_gstate)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
@@ -802,6 +802,30 @@ class PDETrainer:
 
 
 
+class DatasetDict:
+    def __init__(self,
+                 x_dict,
+                 batch_size=64):
+        self.batch_size = batch_size
+        self.x_dict = x_dict
+        self._len = None
+        self._counter = 0
+        
+    def __iter__(self):
+        self._idx = 0
+        self._len = len(self.x_dict)
+        return self
+    
+    def __next__(self):
+        if self._idx >= self._len:
+            raise StopIteration
+ 
+        data_x = self.x_dict[self._idx: min(self._len, self._idx + self.batch_size)]
+    
+        self._idx += self.batch_size
+        self._counter += 1
+        return data_x
+
 
 def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3):
 
@@ -825,26 +849,44 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     trainer = PDETrainer(gstate, eval_gstate, sim_state, sim_state_fn, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params)    
 
-    num_epochs=10000
-    start_time = time.time()
 
+
+    num_epochs=1
+    start_time = time.time()
+    
+    
     loss_epochs = []
     epoch_store = []
+    BATCHSIZE_A6000 = 100000
     for epoch in range(num_epochs):            
-
-        # pdb.set_trace()
-        # u_mp = vmap(trainer.get_u_mp_by_regression_at_point_fn, (None, None, None, None, 0))(params, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz, eval_gstate.R)
-
-        opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)   
-
-        """ for testing"""
-        # lhs_rhs = vmap(trainer.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)  
-        # lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)       
-        # pdb.set_trace()
-
+        ds_iter = DatasetDict(eval_gstate.R, batch_size=BATCHSIZE_A6000)
+        for x in ds_iter:
+            opt_state, params, loss_epoch = trainer.update(opt_state, params, x, eval_gstate)   
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
+
+    
+
+    #----- HALF JITTED
+    # BATCHSIZE_A6000 = 100000
+    # NUMDATA = len(eval_gstate.R)
+    # num_batches = jnp.ceil(NUMDATA // BATCHSIZE_A6000)
+    # def learn_whole_batched(carry, batch_idx):
+    #     opt_state, params, egstate = carry
+    #     x = egstate.R[batch_idx: jnp.min(jnp.array([NUMDATA, batch_idx + BATCHSIZE_A6000]))]
+    #     opt_state, params, loss_epoch = trainer.update(opt_state, params, x, egstate)
+    #     return (opt_state, params, loss_epoch, egstate), None
+    # epoch_store = []
+    # loss_epochs = []
+    # loss_epochs = jnp.zeros(num_epochs)
+    # batch_store = jnp.arange(num_batches)
+    # for epoch in range(num_epochs):
+    #     (opt_state, params, loss_epoch, eval_gstate), _ = jax.lax.scan(learn_whole_batched, (opt_state, params, eval_gstate), batch_store)
+    #     loss_epochs.append(loss_epoch)
+    #     epoch_store.append(epoch)
+    #     print(f"epoch # {epoch} loss is {loss_epoch}")
+ 
 
     
     # def learn_whole(carry, epoch):
