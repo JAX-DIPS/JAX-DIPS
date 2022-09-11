@@ -245,7 +245,7 @@ def test_poisson_solver_with_jump_complex():
         return f_p
 
 
-    exact_sol = vmap(evaluate_exact_solution_fn)(R)
+    
 
 
     init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
@@ -262,8 +262,13 @@ def test_poisson_solver_with_jump_complex():
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
 
-   
-    log = {'phi': sim_state.phi, 'U': sim_state.solution, 'U_exact': exact_sol, 'U-U_exact': sim_state.solution - exact_sol}
+    
+    eval_phi = vmap(phi_fn)(eval_gstate.R)
+    exact_sol = vmap(evaluate_exact_solution_fn)(eval_gstate.R)
+    log = {'phi': eval_phi, 'U': sim_state.solution, 'U_exact': exact_sol, 'U-U_exact': sim_state.solution - exact_sol}
+    io.write_vtk_manual(eval_gstate, log)
+    
+
     # log = {
     #     'phi': sim_state.phi,
     #     'U': sim_state.solution,
@@ -284,7 +289,7 @@ def test_poisson_solver_with_jump_complex():
     #     'grad_um_n': sim_state.grad_normal_solution[0],
     #     'grad_up_n': sim_state.grad_normal_solution[1]
     # }
-    io.write_vtk_manual(gstate, log)
+    # io.write_vtk_manual(gstate, log)
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     rms_err = jnp.square(sim_state.solution - exact_sol).mean()**0.5

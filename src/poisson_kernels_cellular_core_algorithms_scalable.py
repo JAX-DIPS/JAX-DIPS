@@ -819,12 +819,12 @@ class DatasetDict:
     def __next__(self):
         if self._idx >= self._len:
             raise StopIteration
- 
         data_x = self.x_dict[self._idx: min(self._len, self._idx + self.batch_size)]
-    
         self._idx += self.batch_size
         self._counter += 1
         return data_x
+
+
 
 
 def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3):
@@ -857,7 +857,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     
     loss_epochs = []
     epoch_store = []
-    BATCHSIZE_A6000 = 100000
+    BATCHSIZE_A6000 = 200000
     for epoch in range(num_epochs):            
         ds_iter = DatasetDict(eval_gstate.R, batch_size=BATCHSIZE_A6000)
         for x in ds_iter:
