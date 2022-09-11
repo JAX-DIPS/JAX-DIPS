@@ -6,7 +6,7 @@ import haiku as hk
 
 import numpy as onp
 
-from src import (interpolate, geometric_integrations)
+from src import (interpolate, geometric_integrations_per_point)
 from src.jaxmd_modules.util import f32, i32
 from src.nn_solution_model import DoubleMLP
 from src.utils import print_architecture
@@ -21,10 +21,13 @@ import pdb
 
 
 class PDETrainer:
+    """
+        This is a completely local point-based Poisson solver.
+    """
     def __init__(self, gstate, sim_state, sim_state_fn, optimizer, algorithm=0, precondition=1):
         """
-        algorithm = 0: use regression to evaluate u^\pm
-        algorithm = 1: use neural network to evaluate u^\pm
+            algorithm = 0: use regression to evaluate u^\pm
+            algorithm = 1: use neural network to evaluate u^\pm
         """
 
         self.optimizer = optimizer
@@ -33,79 +36,52 @@ class PDETrainer:
         self.sim_state = sim_state
         self.algorithm = algorithm
         
+        
         """ Grid Info """
-        xo = gstate.x; yo = gstate.y; zo = gstate.z
-        self.dx = gstate.dx; self.dy = gstate.dy; self.dz = gstate.dz
-        self.grid_shape = gstate.shape()
-        Nx, Ny, Nz = self.grid_shape
+        self.dx = self.gstate.dx; self.dy = self.gstate.dy; self.dz = self.gstate.dz
+        self.grid_shape = self.gstate.shape()
+        self.Nx, self.Ny, self.Nz = self.grid_shape
         self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
         self.Vol_cell_nominal = self.dx*self.dy*self.dz
 
-        """ Evaluation Nodes """
-        ii = onp.arange(2, Nx+2); jj = onp.arange(2, Ny+2); kk = onp.arange(2, Nz+2)
-        I, J, K = onp.meshgrid(ii, jj, kk, indexing='ij')
-        self.nodes = jnp.array( onp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1))) )
 
-        """ functions for the method """
-        self.mu_m_interp_fn = sim_state_fn.mu_m_fn   
-        self.mu_p_interp_fn = sim_state_fn.mu_p_fn   
-        self.alpha_interp_fn = sim_state_fn.alpha_fn 
-        self.beta_interp_fn = sim_state_fn.beta_fn   
-
-        self.mu_m_over_mu_p_interp_fn = lambda r: sim_state_fn.mu_m_fn(r) / sim_state_fn.mu_p_fn(r) 
-        self.beta_over_mu_m_interp_fn = lambda r: sim_state_fn.beta_fn(r) / sim_state_fn.mu_m_fn(r)
-        self.beta_over_mu_p_interp_fn = lambda r: sim_state_fn.beta_fn(r) / sim_state_fn.mu_p_fn(r)
         
-        """ The level set function or its interpolant """
-        self.phi_interp_fn = sim_state_fn.phi_fn 
-        # self.phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(sim_state.phi, gstate)
+        """ functions for the method """
+        self.mu_m_interp_fn = self.sim_state_fn.mu_m_fn   
+        self.mu_p_interp_fn = self.sim_state_fn.mu_p_fn   
+        self.alpha_interp_fn = self.sim_state_fn.alpha_fn 
+        self.beta_interp_fn = self.sim_state_fn.beta_fn   
 
+        self.mu_m_over_mu_p_interp_fn = lambda r: self.sim_state_fn.mu_m_fn(r) / self.sim_state_fn.mu_p_fn(r) 
+        self.beta_over_mu_m_interp_fn = lambda r: self.sim_state_fn.beta_fn(r) / self.sim_state_fn.mu_m_fn(r)
+        self.beta_over_mu_p_interp_fn = lambda r: self.sim_state_fn.beta_fn(r) / self.sim_state_fn.mu_p_fn(r)
+        
+
+        """ The level set function or its interpolant """
+        # self.phi_cube_ = sim_state.phi.reshape(self.grid_shape) 
+        # x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, self.phi_cube_)
+        # x, y, z, self.phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
+        # self.phi_flat = self.phi_cube_.reshape(-1)
+        # self.phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(self.sim_state.phi, self.gstate)
+        self.phi_interp_fn = self.sim_state_fn.phi_fn 
+        
+
+        """ Geometric operations per point """
+        self.normal_fn = partial(self.normal_point_fn, dx=self.dx, dy=self.dy, dz=self.dz)
+
+        get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(self.phi_interp_fn)
+        self.beta_integrate_over_interface_at_point, _ = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.beta_interp_fn)
+        self.compute_face_centroids_values_plus_minus_at_point = geometric_integrations_per_point.compute_cell_faces_areas_values(self.gstate, get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
+        
+        
         pdb.set_trace()
 
-
-
-        self.phi_cube_ = sim_state.phi.reshape(self.grid_shape) 
-        x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, self.phi_cube_)
-        x, y, z, self.phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
-        self.phi_flat = self.phi_cube_.reshape(-1)
-
-        
-
-        # self.mu_m_cube_internal = mu_m.reshape(self.grid_shape)
-        # self.mu_p_cube_internal = mu_p.reshape(self.grid_shape)
-        # self.dirichlet_cube = dirichlet_bc.reshape(self.grid_shape)
-        # self.k_m_cube_internal = k_m.reshape(self.grid_shape)
-        # self.k_p_cube_internal = k_p.reshape(self.grid_shape)
-        # self.f_m_cube_internal = f_m.reshape(self.grid_shape)
-        # self.f_p_cube_internal = f_p.reshape(self.grid_shape)
-
-       
-     
-
-        get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
-        self.beta_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.beta_interp_fn)
-        self.compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
-        
-        self.initialize_algorithms()
-        if precondition==1:
-            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
-        elif precondition==0:
-            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
-
-      
-
-
-    def initialize_algorithms(self):    
-        
-        self.normal_vec_fn = partial(self.normal_vector_fn, phi_cube=self.phi_cube, dx=self.dx, dy=self.dy, dz=self.dz)
-        self.normal_vecs = vmap(self.normal_vec_fn)(self.nodes)
-
+        """ initialize configurated solver """
         if self.algorithm==0:
             self.initialize_regression_based_algorithm()
             self.u_mp_fn = self.get_u_mp_by_regression_at_node_fn
             self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_regression
             self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_regression
-        
         elif self.algorithm==1:
             self.initialize_neural_based_algorithm()
             self.u_mp_fn = self.get_u_mp_by_neural_network_at_node_fn
@@ -113,6 +89,39 @@ class PDETrainer:
             self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
 
 
+        if precondition==1:
+            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
+        elif precondition==0:
+            self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
+
+
+
+
+
+    def normal_point_fn(self, point, dx, dy, dz):
+        """
+            Evaluate normal vector at a given point based on interpolated values
+            of the level set function at the face-centers of a 3D cell centered at the
+            point with each side length given by dx, dy, dz.
+        """
+        point_ip1_j_k = (point[0] + f32(0.5)*dx, point[1], point[2])
+        point_im1_j_k = (point[0] - f32(0.5)*dx, point[1], point[2])
+        phi_x = (self.phi_interp_fn(point_ip1_j_k) - self.phi_interp_fn(point_im1_j_k) ) / (dx) 
+        
+        point_i_jp1_k = (point[0], point[1] + f32(0.5)*dy, point[2])
+        point_i_jm1_k = (point[0], point[1] - f32(0.5)*dy, point[2])
+        phi_y = (self.phi_interp_fn(point_i_jp1_k) - self.phi_interp_fn(point_i_jm1_k) ) / (dy) 
+        
+        point_i_j_kp1 = (point[0], point[1], point[2] + f32(0.5)*dz)
+        point_i_j_km1 = (point[0], point[1], point[2] - f32(0.5)*dz)
+        phi_z = (self.phi_interp_fn(point_i_j_kp1) - self.phi_interp_fn(point_i_j_km1) ) / (dz) 
+        
+        norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
+        return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm], dtype=f32)
+
+
+
+   
 
     def initialize_neural_based_algorithm(self):
         def sign_p_fn(a):
@@ -273,14 +282,7 @@ class PDETrainer:
 
 
 
-    @staticmethod
-    def normal_vector_fn(node, phi_cube, dx, dy, dz):
-        i, j, k = node
-        phi_x = (phi_cube[i+1, j, k] - phi_cube[i-1, j, k]) / (f32(2) * dx)
-        phi_y = (phi_cube[i, j+1, k] - phi_cube[i, j-1, k]) / (f32(2) * dy)
-        phi_z = (phi_cube[i, j, k+1] - phi_cube[i, j, k-1]) / (f32(2) * dz)
-        norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
-        return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm], dtype=f32)
+    
 
 
 
@@ -526,7 +528,7 @@ class PDETrainer:
             #--- LHS
             i, j, k = node
 
-            coeffs_ = self.compute_face_centroids_values_plus_minus_at_node(node)
+            coeffs_ = self.compute_face_centroids_values_plus_minus_at_point(node)
             coeffs = coeffs_[:12]
 
             vols = coeffs_[12:14]
@@ -574,7 +576,7 @@ class PDETrainer:
             def get_rhs_at_interior_node(node):
                 i, j, k = node
                 rhs = self.f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + self.f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
-                rhs += self.beta_integrate_over_interface_at_node(node)
+                rhs += self.beta_integrate_over_interface_at_point(node)
                 return rhs
             
             def get_rhs_on_box_boundary(node):
@@ -643,7 +645,7 @@ class PDETrainer:
             #--- LHS
             i, j, k = node
 
-            coeffs_ = self.compute_face_centroids_values_plus_minus_at_node(node)
+            coeffs_ = self.compute_face_centroids_values_plus_minus_at_point(node)
             coeffs = coeffs_[:12]
 
             vols = coeffs_[12:14]
@@ -690,7 +692,7 @@ class PDETrainer:
             def get_rhs_at_interior_node(node):
                 i, j, k = node
                 rhs = self.f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + self.f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
-                rhs += self.beta_integrate_over_interface_at_node(node)
+                rhs += self.beta_integrate_over_interface_at_point(node)
                 return rhs
             
             def get_rhs_on_box_boundary(node):
