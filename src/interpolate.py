@@ -17,15 +17,6 @@
   Primary Author: mistani
 
 """
-
-"""Utilities for constructing various interpolating functions.
-
-This code was adapted from the way learning rate schedules are are built in JAX.
-"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from jax._src.api import vmap
 
 

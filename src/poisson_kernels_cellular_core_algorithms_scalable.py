@@ -19,12 +19,12 @@
 """
 
 import jax
-from jax import (numpy as jnp, vmap, jit, grad, random, value_and_grad, config)
-config.update("jax_debug_nans", True)
+from jax import (numpy as jnp, vmap, pmap, jit, grad, random, value_and_grad, config)
+config.update("jax_debug_nans", False)
 import optax
 import haiku as hk
 
-from src import (interpolate, geometric_integrations_per_point)
+from src import (interpolate, geometric_integrations_per_point, mesh)
 from src.jaxmd_modules.util import f32, i32
 from src.nn_solution_model import DoubleMLP
 from src.utils import print_architecture
@@ -328,27 +328,28 @@ class PDETrainer:
 
     
     @partial(jit, static_argnums=(0))
-    def evaluate_loss_fn(self, lhs, rhs, pred_sol_xmin_bc, pred_sol_xmax_bc, pred_sol_ymin_bc, pred_sol_ymax_bc, pred_sol_zmin_bc, pred_sol_zmax_bc):
+    def evaluate_loss_fn(self, lhs, rhs, Vol_cell_nominal, pred_sol_xmin_bc, pred_sol_xmax_bc, pred_sol_ymin_bc, pred_sol_ymax_bc, pred_sol_zmin_bc, pred_sol_zmax_bc):
         """
             Weighted L2 loss
         """
         tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
-        tot_loss += jnp.square(pred_sol_xmin_bc - self.dir_bc_fn(self.gstate.R_xmin_boundary)).mean() * self.Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol_xmax_bc - self.dir_bc_fn(self.gstate.R_xmax_boundary)).mean() * self.Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol_ymin_bc - self.dir_bc_fn(self.gstate.R_ymin_boundary)).mean() * self.Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol_ymax_bc - self.dir_bc_fn(self.gstate.R_ymax_boundary)).mean() * self.Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol_zmin_bc - self.dir_bc_fn(self.gstate.R_zmin_boundary)).mean() * self.Vol_cell_nominal
-        tot_loss += jnp.square(pred_sol_zmax_bc - self.dir_bc_fn(self.gstate.R_zmax_boundary)).mean() * self.Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol_xmin_bc - self.dir_bc_fn(self.gstate.R_xmin_boundary)).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol_xmax_bc - self.dir_bc_fn(self.gstate.R_xmax_boundary)).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol_ymin_bc - self.dir_bc_fn(self.gstate.R_ymin_boundary)).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol_ymax_bc - self.dir_bc_fn(self.gstate.R_ymax_boundary)).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol_zmin_bc - self.dir_bc_fn(self.gstate.R_zmin_boundary)).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol_zmax_bc - self.dir_bc_fn(self.gstate.R_zmax_boundary)).mean() * Vol_cell_nominal
         return tot_loss
     
     
 
     
-    def loss(self, params, points, pointset_gstate):
+    def loss(self, params, points, dx, dy, dz, pointset_gstate):
         """
             Loss function of the neural network
         """     
-        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, pointset_gstate.dx, pointset_gstate.dy, pointset_gstate.dz)   
+        Vol_cell_nominal = dx * dy * dz
+        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)   
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
 
         pred_sol_xmin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_xmin_boundary)
@@ -358,14 +359,14 @@ class PDETrainer:
         pred_sol_zmin_bc = self.evaluate_solution_fn(params, pointset_gstate.R_zmin_boundary)
         pred_sol_zmax_bc = self.evaluate_solution_fn(params, pointset_gstate.R_zmax_boundary)
 
-        tot_loss = self.evaluate_loss_fn( lhs, rhs, pred_sol_xmin_bc, pred_sol_xmax_bc, pred_sol_ymin_bc, pred_sol_ymax_bc, pred_sol_zmin_bc, pred_sol_zmax_bc)
+        tot_loss = self.evaluate_loss_fn( lhs, rhs, Vol_cell_nominal, pred_sol_xmin_bc, pred_sol_xmax_bc, pred_sol_ymin_bc, pred_sol_ymax_bc, pred_sol_zmin_bc, pred_sol_zmax_bc)
         return tot_loss
 
    
     
     @partial(jit, static_argnums=(0))
-    def update(self, opt_state, params, points, pointset_gstate):      
-        loss, grads = value_and_grad(self.loss)(params, points, pointset_gstate)
+    def update(self, opt_state, params, points, dx, dy, dz, pointset_gstate):      
+        loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz, pointset_gstate)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
@@ -413,6 +414,7 @@ class PDETrainer:
             vols = coeffs_[12:14]
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
+            Vol_cell_nominal = dx * dy * dz
 
             
             def get_lhs_at_interior_point(point):
@@ -451,14 +453,14 @@ class PDETrainer:
             
 
             def get_lhs_on_box_boundary(point):
-                lhs = self.sim_state_fn.dir_bc_fn(point[jnp.newaxis]).reshape() * self.Vol_cell_nominal
-                return jnp.array([lhs, self.Vol_cell_nominal])
+                lhs = self.sim_state_fn.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
+                return jnp.array([lhs, Vol_cell_nominal])
 
             
 
             lhs_diagcoeff = jnp.where(is_box_boundary_point(point), get_lhs_on_box_boundary(point), get_lhs_at_interior_point(point))
             lhs, diagcoeff = jnp.split(lhs_diagcoeff, [1], 0)
-            diagcoeff_ = jnp.sqrt(diagcoeff*diagcoeff)
+            
             #--- RHS  
             def get_rhs_at_interior_point(point):
                 rhs = self.f_m_interp_fn(point[jnp.newaxis]) * V_m_ijk  + self.f_p_interp_fn(point[jnp.newaxis]) * V_p_ijk
@@ -466,11 +468,11 @@ class PDETrainer:
                 return rhs
             
             def get_rhs_on_box_boundary(point):
-                return self.sim_state_fn.dir_bc_fn(point[jnp.newaxis]).reshape() * self.Vol_cell_nominal
+                return self.sim_state_fn.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
 
             rhs = jnp.where(is_box_boundary_point(point), get_rhs_on_box_boundary(point), get_rhs_at_interior_point(point))
 
-            return jnp.array([lhs / (1e-13 + diagcoeff_), rhs / (1e-13 + diagcoeff_)])
+            return jnp.array([lhs / (1e-13 + diagcoeff), rhs / (1e-13 + diagcoeff)])
         
         lhs_rhs = evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz)
         return lhs_rhs
@@ -871,20 +873,54 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
 
 
 
-    num_epochs=10
+    num_epochs=3000
     start_time = time.time()
-    
     
     loss_epochs = []
     epoch_store = []
     BATCHSIZE_A6000 = 200000
-    for epoch in range(num_epochs):            
-        ds_iter = DatasetDict(eval_gstate.R, batch_size=BATCHSIZE_A6000)
+    Nx = 16; Ny = 16; Nz = 16
+    xc = jnp.linspace(eval_gstate.xmin(), eval_gstate.xmax(), Nx, dtype=f32)
+    yc = jnp.linspace(eval_gstate.ymin(), eval_gstate.ymax(), Ny, dtype=f32)
+    zc = jnp.linspace(eval_gstate.zmin(), eval_gstate.zmax(), Nz, dtype=f32)
+    init_mesh_fn, coord_at = mesh.construct(3)
+    train_gstate = init_mesh_fn(xc, yc, zc)
+    
+    key = random.PRNGKey(0)
+    Lx = (train_gstate.xmax() - train_gstate.xmin())
+    Ly = (train_gstate.ymax() - train_gstate.ymin())
+    Lz = (train_gstate.zmax() - train_gstate.zmin())
+    LL = jnp.array([[Lx, Ly, Lz]])
+    @jit
+    def move_train_points(points):
+        cov = jnp.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])*0.003
+        mean = jnp.array([0.0,0.0, 0.0])
+        Rnew = points + jax.random.multivariate_normal(key, mean, cov, shape=(len(points),))    
+        new_points = Rnew - jnp.floor(Rnew / LL ) * LL - 0.5*LL
+        return new_points
+    
+    train_points = train_gstate.R
+    train_dx = train_gstate.dx
+    train_dy = train_gstate.dy
+    train_dz = train_gstate.dz
+    for epoch in range(num_epochs):   
+        if epoch % 4==0:
+            train_dx = train_gstate.dx * 0.25
+            train_dy = train_gstate.dy * 0.25
+            train_dz = train_gstate.dz * 0.25
+        else:
+            # train_points = move_train_points(train_points)
+            train_dx *= 0.50
+            train_dy *= 0.50
+            train_dz *= 0.50
+        ds_iter = DatasetDict(train_points, batch_size=BATCHSIZE_A6000)
         for x in ds_iter:
-            opt_state, params, loss_epoch = trainer.update(opt_state, params, x, eval_gstate)   
+            opt_state, params, loss_epoch = trainer.update(opt_state, params, x, train_dx, train_dy, train_dz, train_gstate)   
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
+
+        
 
     
 
@@ -937,7 +973,10 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
     # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
     
-    ax.plot(epoch_store, loss_epochs, color='k')
+    ax.plot(epoch_store[epoch_store%4==0], loss_epochs[epoch_store%4==0], color='k', label=r'$\rm level=6$')
+    ax.plot(epoch_store[epoch_store%4==1], loss_epochs[epoch_store%4==1], color='b', label=r'$\rm level=7$')
+    ax.plot(epoch_store[epoch_store%4==2], loss_epochs[epoch_store%4==2], color='r', label=r'$\rm level=8$')
+    ax.plot(epoch_store[epoch_store%4==3], loss_epochs[epoch_store%4==3], color='g', label=r'$\rm level=9$')
     
     ax.set_yscale('log')
     ax.set_xlabel(r'$\rm epoch$', fontsize=20)
