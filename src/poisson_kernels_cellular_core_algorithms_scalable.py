@@ -880,7 +880,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     loss_epochs = []
     epoch_store = []
     BATCHSIZE_A6000 = 200000
-    Nx = 16; Ny = 16; Nz = 16
+    Nx = 64; Ny = 64; Nz = 64
     xc = jnp.linspace(eval_gstate.xmin(), eval_gstate.xmax(), Nx, dtype=f32)
     yc = jnp.linspace(eval_gstate.ymin(), eval_gstate.ymax(), Ny, dtype=f32)
     zc = jnp.linspace(eval_gstate.zmin(), eval_gstate.zmax(), Nz, dtype=f32)
@@ -975,10 +975,10 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
     # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
     
-    ax.plot(epoch_store[epoch_store%4==0], loss_epochs[epoch_store%4==0], color='k', label=r'$\rm level=6$')
-    ax.plot(epoch_store[epoch_store%4==1], loss_epochs[epoch_store%4==1], color='b', label=r'$\rm level=7$')
-    ax.plot(epoch_store[epoch_store%4==2], loss_epochs[epoch_store%4==2], color='r', label=r'$\rm level=8$')
-    ax.plot(epoch_store[epoch_store%4==3], loss_epochs[epoch_store%4==3], color='g', label=r'$\rm level=9$')
+    ax.plot(epoch_store[epoch_store%4==0], loss_epochs[epoch_store%4==0], color='k', label=r'$\rm Nx=\ $'+str(Nx))
+    ax.plot(epoch_store[epoch_store%4==1], loss_epochs[epoch_store%4==1], color='b', label=r'$\rm Nx=\ $'+str(Nx+1))
+    ax.plot(epoch_store[epoch_store%4==2], loss_epochs[epoch_store%4==2], color='r', label=r'$\rm Nx=\ $'+str(Nx+2))
+    ax.plot(epoch_store[epoch_store%4==3], loss_epochs[epoch_store%4==3], color='g', label=r'$\rm Nx=\ $'+str(Nx+3))
     
     ax.set_yscale('log')
     ax.set_xlabel(r'$\rm epoch$', fontsize=20)
