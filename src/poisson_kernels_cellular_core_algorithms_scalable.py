@@ -687,7 +687,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     
     """ Training Parameters """
     NUM_EPOCHS=1000
-    BATCHSIZE = 64*64
+    BATCHSIZE = 32*32*32
     
     loss_epochs = []
     epoch_store = []
@@ -706,22 +706,24 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         DD = partial(train_data.DatasetDictMGPU, batch_size=global_batch_size, drop_remainder=True, shuffle=True)
     else:
         update_fn = trainer.update
-        DD = partial(train_data.DatasetDict, batch_size=BATCHSIZE)
+        # DD = partial(train_data.DatasetDict, batch_size=BATCHSIZE)
+        DD = train_data.DatasetDict(batch_size=BATCHSIZE, x_data=train_points, dx=train_dx, dy=train_dy, dz=train_dz)
+        batched_training_data = DD.get_batched_data()
     
     start_time = time.time()
-    for epoch in range(NUM_EPOCHS):   
-    
-        # train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-        # train_points = TD.move_train_points(train_points, train_dx, train_dy, train_dz)
-        ds_iter = DD(train_points)
+    pdb.set_trace()
+    #for epoch in range(NUM_EPOCHS):   
+        # #train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+        # #train_points = TD.move_train_points(train_points, train_dx, train_dy, train_dz)
+        # ds_iter = DD(train_points)
         
-        for x in ds_iter:
-            if MULTI_GPU: x = jax.tree_map(split, x)
-            opt_state, params, loss_epoch = update_fn(opt_state, params, x, train_dx, train_dy, train_dz, boundary_points) 
+        # for x in ds_iter:
+        #    if MULTI_GPU: x = jax.tree_map(split, x)
+        #    opt_state, params, loss_epoch = update_fn(opt_state, params, x, train_dx, train_dy, train_dz, boundary_points) 
               
-        print(f"epoch # {epoch} loss is {loss_epoch}")
-        loss_epochs.append(loss_epoch)
-        epoch_store.append(epoch)
+        #print(f"epoch # {epoch} loss is {loss_epoch}")
+        #loss_epochs.append(loss_epoch)
+        #epoch_store.append(epoch)
 
     epoch_store = onp.array(epoch_store)
     loss_epochs = onp.array(loss_epochs)

@@ -11,19 +11,19 @@ import pdb
 
 class DatasetDictMGPU:
     def __init__(self,
-                 x_dict,
+                 x_data,
                  batch_size=64,
                  drop_remainder: bool = False,
                  shuffle: bool = False):
         self.batch_size = batch_size
-        self.x_dict = x_dict
+        self.x_data = x_data
         self._len = None
         self.drop_remainder = drop_remainder
         self.shuffle = shuffle
         
     def __iter__(self):
         self._idx = 0
-        self._len = len(self.x_dict)
+        self._len = len(self.x_data)
         self._order = onp.arange(self._len)
         if self.shuffle:
             onp.random.shuffle(self._order)
@@ -40,63 +40,86 @@ class DatasetDictMGPU:
         data_x = {}
         batch_idx = self._order[self._idx: min(self._len, self._idx + self.batch_size)]
         
-        data_x = self.x_dict[batch_idx]
+        data_x = self.x_data[batch_idx]
         self._idx += self.batch_size
         return data_x
 
 
 
-class DatasetDict:
+class DatasetDict_:
     def __init__(self,
-                 x_dict,
+                 x_data,
                  batch_size):
         
-        self.x_dict = x_dict
-        self._len = len(x_dict)
-        
-        common_divisor = int(onp.round(self._len**(1/3)))
-        block_size = self._len // common_divisor
-        
-        self.batch_size = batch_size #block_size
-        
+        self.x_data = x_data
+        self._len = len(x_data)        
+        self.batch_size = batch_size 
         self.num_batches = self._len // self.batch_size
-        self.gpu_data = x_dict.reshape((self.num_batches, self.batch_size,-1 ))
+        
+        self.gpu_data = x_data.reshape((self.num_batches, self.batch_size,-1 ))
         self._batch_counter = 0
+
+    def __iter__(self):
+        self._idx = 0
+        self._len = len(self.x_data)
+        return self
+    
+    def __next__(self):
+        if self._idx >= self._len:
+            raise StopIteration        
+        self._idx += self.batch_size
+        self._batch_counter += 1
+        return self.gpu_data[self._batch_counter - 1]
+    
+    
+    
+class DatasetDict:
+    def __init__(self,
+                 x_data,
+                 batch_size, dx, dy, dz):
         
-        # self.gpu_padded_batches()
+        self.x_data = x_data
+        self._len = len(x_data)        
+        self.batch_size = batch_size 
+        self.num_batches = int(onp.ceil(self._len / self.batch_size))
+        self._batch_counter = 0
+        self.gpu_padded_batches(dx, dy, dz)
         
         
-    def gpu_padded_batches(self):
+    def gpu_padded_batches(self, dx, dy, dz):
         """
             Pads the data in case it cannot be just folded exactly.
         """
-        _length = self.x_dict.shape[0]
-        self.num_batches = int(onp.ceil(_length / self.batch_size))
-        self.last_batch_size = _length % self.batch_size
+        self.last_batch_size = self._len % self.batch_size
         self.batched_data = jnp.zeros((self.num_batches, self.batch_size, 3))
         for batch_id in range(self.num_batches-1):
-            self.batched_data = self.batched_data.at[batch_id].set(self.x_dict[batch_id: min(_length, batch_id + self.batch_size)])        
-        self.batched_data = self.batched_data.at[self.num_batches-1, 0:self.last_batch_size,:].set(self.x_dict[self.num_batches-1: self.num_batches-1 + self.last_batch_size])
-        return self.batched_data, self.last_batch_size
-
+            self.batched_data = self.batched_data.at[batch_id].set(self.x_data[batch_id: min(self._len, batch_id + self.batch_size)])        
+        self.batched_data = self.batched_data.at[self.num_batches-1, 0:self.last_batch_size,:].set(self.x_data[self.num_batches-1: self.num_batches-1 + self.last_batch_size])
+ 
+        num_missing_points = self.batch_size - self.last_batch_size
+        cov = jnp.array([[dx, 0.0, 0.0], [0.0, dy, 0.0], [0.0, 0.0, dz]])*0.5
+        mean = jnp.array([0.0,0.0, 0.0])
+        key = random.PRNGKey(0)
+        Rnew = self.x_data[:num_missing_points] + random.multivariate_normal(key, mean, cov, shape=(num_missing_points,))
+        self.batched_data = self.batched_data.at[self.num_batches-1, self.last_batch_size:,:].set(Rnew)       
+        
+   
+    def get_batched_data(self):
+        return self.batched_data
+    
         
     def __iter__(self):
         self._idx = 0
-        self._len = len(self.x_dict)
+        self._len = len(self.x_data)
         return self
     
     def __next__(self):
         if self._idx >= self._len:
             raise StopIteration
-        # data_x = self.x_dict[self._idx: min(self._len, self._idx + self.batch_size)]
-        
         self._idx += self.batch_size
         self._batch_counter += 1
-        # if self._batch_counter == self.num_batches:
-        #     data_x = self.batched_data[self._batch_counter - 1]
-        # else:
-        #     data_x = self.batched_data[self._batch_counter - 1][:self.last_batch_size]
-        return self.gpu_data[self._batch_counter - 1]
+        return self.batched_data[self._batch_counter - 1]
+    
 
 
 
