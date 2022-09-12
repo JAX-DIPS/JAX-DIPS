@@ -39,6 +39,9 @@ import time
 import pdb
 
 
+MULTI_GPU = False
+
+
 class PDETrainer:
     """
         This is a completely local point-based Poisson solver.
@@ -343,34 +346,14 @@ class PDETrainer:
         tot_loss += jnp.square(pred_sol_boundaries - bc_sol).mean() * Vol_cell_nominal 
         return tot_loss
     
-    
-    
-    
-    @partial(jit, static_argnums=(0))
-    def loss_at_points(self, params, points, dx, dy, dz):
-        """
-            Loss function of the neural network
-        """     
-        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)   
-        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        points_loss = jnp.mean(optax.l2_loss(lhs, rhs))
-        return points_loss
-        # Vol_cell_nominal = dx * dy * dz
-        # pred_sol_boundaries = self.evaluate_solution_fn(params, boundary_points)
-        # bc_sol = self.dir_bc_fn(boundary_points)
-        # tot_loss += jnp.square(pred_sol_boundaries - bc_sol).mean() * Vol_cell_nominal
-        # return tot_loss
+       
 
    
     
     @partial(jit, static_argnums=(0))
-    def update(self, opt_state, params, points, dx, dy, dz, boundary_points):      
-        # loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz, boundary_points)
-        
-        
-        loss, grads = value_and_grad(self.loss_at_points)(params, points, dx, dy, dz)
-        # pdb.set_trace()
-        
+    def update(self, opt_state, params, points, dx, dy, dz, boundary_points):              
+        loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz, boundary_points)
+        """ Muli-GPU """
         # grads = jax.lax.pmean(grads, axis_name='num_devices')
         # loss = jax.lax.pmean(loss, axis_name='num_devices')
 
@@ -409,7 +392,7 @@ class PDETrainer:
             """
             x, y, z = point
             boundary = (x - self.gstate.xmin())*(x - self.gstate.xmax()) * (y - self.gstate.ymin())*(y-self.gstate.ymax()) * (z - self.gstate.zmin())*(z - self.gstate.zmax())
-            return jnp.where(abs(boundary) < 1e-6*self.gstate.dx, True, False)
+            return jnp.where(abs(boundary) < 1e-6*dx, True, False)
 
 
 
@@ -478,7 +461,7 @@ class PDETrainer:
                 return self.sim_state_fn.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
 
             rhs = jnp.where(is_box_boundary_point(point), get_rhs_on_box_boundary(point), get_rhs_at_interior_point(point))
-
+            
             return jnp.array([lhs / (1e-13 + diagcoeff), rhs / (1e-13 + diagcoeff)])
         
         lhs_rhs = evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz)
@@ -690,7 +673,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     #---------------------
 
     
-    TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), 64, 64, 64)
+    TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), 32, 32, 32)
     train_points = TD.gstate.R
     train_dx = TD.gstate.dx
     train_dy = TD.gstate.dy
@@ -704,20 +687,37 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     
     """ Training Parameters """
     NUM_EPOCHS=1000
+    BATCHSIZE = 64*64
     
     loss_epochs = []
     epoch_store = []
     
-    # update_fn = pmap(vmap(trainer.update, ), axis_name='num_devices')
+     
+    if MULTI_GPU:
+        """ Multi-GPU Training """
+        n_devices = jax.local_device_count()
+        global_batch_size = BATCHSIZE * n_devices
+        def split(arr):
+            """Splits the first axis of `arr` evenly across the number of devices."""
+            return arr.reshape(n_devices, arr.shape[0] // n_devices, *arr.shape[1:])
+        params = jax.tree_map(lambda x: jnp.array([x] * n_devices), params)
+        opt_state = jax.tree_map(lambda x: jnp.array([x] * n_devices), opt_state)
+        update_fn = pmap(vmap(trainer.update, in_axes=(0, 0, None, None, None, None, None)), axis_name='num_devices', in_axes=(None, None, 0, None, None, None, None))
+        DD = partial(train_data.DatasetDictMGPU, batch_size=global_batch_size, drop_remainder=True, shuffle=True)
+    else:
+        update_fn = trainer.update
+        DD = partial(train_data.DatasetDict, batch_size=BATCHSIZE)
+    
     start_time = time.time()
     for epoch in range(NUM_EPOCHS):   
     
         # train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
         # train_points = TD.move_train_points(train_points, train_dx, train_dy, train_dz)
-        ds_iter = TD.batch(train_points)
+        ds_iter = DD(train_points)
         
         for x in ds_iter:
-            opt_state, params, loss_epoch = trainer.update(opt_state, params, x, train_dx, train_dy, train_dz, boundary_points) 
+            if MULTI_GPU: x = jax.tree_map(split, x)
+            opt_state, params, loss_epoch = update_fn(opt_state, params, x, train_dx, train_dy, train_dz, boundary_points) 
               
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)

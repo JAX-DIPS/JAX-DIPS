@@ -9,10 +9,47 @@ import pdb
 
 
 
+class DatasetDictMGPU:
+    def __init__(self,
+                 x_dict,
+                 batch_size=64,
+                 drop_remainder: bool = False,
+                 shuffle: bool = False):
+        self.batch_size = batch_size
+        self.x_dict = x_dict
+        self._len = None
+        self.drop_remainder = drop_remainder
+        self.shuffle = shuffle
+        
+    def __iter__(self):
+        self._idx = 0
+        self._len = len(self.x_dict)
+        self._order = onp.arange(self._len)
+        if self.shuffle:
+            onp.random.shuffle(self._order)
+        return self
+    
+    def __next__(self):
+        max_idx = self._len
+        if self.drop_remainder:
+            max_idx -= self.batch_size
+
+        if self._idx >= max_idx:
+            raise StopIteration
+      
+        data_x = {}
+        batch_idx = self._order[self._idx: min(self._len, self._idx + self.batch_size)]
+        
+        data_x = self.x_dict[batch_idx]
+        self._idx += self.batch_size
+        return data_x
+
+
 
 class DatasetDict:
     def __init__(self,
-                 x_dict):
+                 x_dict,
+                 batch_size):
         
         self.x_dict = x_dict
         self._len = len(x_dict)
@@ -20,7 +57,7 @@ class DatasetDict:
         common_divisor = int(onp.round(self._len**(1/3)))
         block_size = self._len // common_divisor
         
-        self.batch_size = 64*64*32 #block_size
+        self.batch_size = batch_size #block_size
         
         self.num_batches = self._len // self.batch_size
         self.gpu_data = x_dict.reshape((self.num_batches, self.batch_size,-1 ))
@@ -30,7 +67,8 @@ class DatasetDict:
         
         
     def gpu_padded_batches(self):
-        """Pads the data in case it cannot be just folded exactly.
+        """
+            Pads the data in case it cannot be just folded exactly.
         """
         _length = self.x_dict.shape[0]
         self.num_batches = int(onp.ceil(_length / self.batch_size))
@@ -91,11 +129,6 @@ class TrainData:
             Rnew = points + random.multivariate_normal(self.key, mean, cov, shape=(len(points),))    
             new_points = Rnew - jnp.floor(Rnew / self.LL ) * self.LL - 0.5*self.LL
             return new_points
-        
-
-        def batch(self, points):
-            ds_iter = DatasetDict(points)
-            return ds_iter        
         
         
         def alternate_res(self, epoch, train_dx, train_dy, train_dz):
