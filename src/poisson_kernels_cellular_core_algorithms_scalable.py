@@ -32,6 +32,7 @@ from src.utils import print_architecture
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as onp
 
 from functools import partial
 import time
@@ -892,8 +893,8 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     Lz = (train_gstate.zmax() - train_gstate.zmin())
     LL = jnp.array([[Lx, Ly, Lz]])
     @jit
-    def move_train_points(points):
-        cov = jnp.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])*0.003
+    def move_train_points(points, dx, dy, dz):
+        cov = jnp.array([[dx, 0.0, 0.0], [0.0, dy, 0.0], [0.0, 0.0, dz]])*0.5
         mean = jnp.array([0.0,0.0, 0.0])
         Rnew = points + jax.random.multivariate_normal(key, mean, cov, shape=(len(points),))    
         new_points = Rnew - jnp.floor(Rnew / LL ) * LL - 0.5*LL
@@ -909,7 +910,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
             train_dy = train_gstate.dy * 0.25
             train_dz = train_gstate.dz * 0.25
         else:
-            # train_points = move_train_points(train_points)
+            # train_points = move_train_points(train_points, train_dx, train_dy, train_dz)
             train_dx *= 0.50
             train_dy *= 0.50
             train_dz *= 0.50
@@ -920,7 +921,8 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
 
-        
+    epoch_store = onp.array(epoch_store)
+    loss_epochs = onp.array(loss_epochs)
 
     
 
