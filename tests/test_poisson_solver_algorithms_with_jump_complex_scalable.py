@@ -265,7 +265,8 @@ def test_poisson_solver_with_jump_complex():
     
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     exact_sol = vmap(evaluate_exact_solution_fn)(eval_gstate.R)
-    log = {'phi': eval_phi, 'U': sim_state.solution, 'U_exact': exact_sol, 'U-U_exact': sim_state.solution - exact_sol}
+    error = sim_state.solution - exact_sol
+    log = {'phi': eval_phi, 'U': sim_state.solution, 'U_exact': exact_sol, 'U-U_exact': error}
     io.write_vtk_manual(eval_gstate, log)
     
 
