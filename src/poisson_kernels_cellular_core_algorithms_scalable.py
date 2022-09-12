@@ -24,7 +24,7 @@ config.update("jax_debug_nans", False)
 import optax
 import haiku as hk
 
-from src import (interpolate, geometric_integrations_per_point, mesh)
+from src import (interpolate, geometric_integrations_per_point, train_data)
 from src.jaxmd_modules.util import f32, i32
 from src.nn_solution_model import DoubleMLP
 from src.utils import print_architecture
@@ -825,28 +825,6 @@ class PDETrainer:
 
 
 
-class DatasetDict:
-    def __init__(self,
-                 x_dict,
-                 batch_size=64):
-        self.batch_size = batch_size
-        self.x_dict = x_dict
-        self._len = None
-        self._counter = 0
-        
-    def __iter__(self):
-        self._idx = 0
-        self._len = len(self.x_dict)
-        return self
-    
-    def __next__(self):
-        if self._idx >= self._len:
-            raise StopIteration
-        data_x = self.x_dict[self._idx: min(self._len, self._idx + self.batch_size)]
-        self._idx += self.batch_size
-        self._counter += 1
-        return data_x
-
 
 
 
@@ -873,50 +851,32 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     opt_state, params = trainer.init(); print_architecture(params)    
 
 
-
-    num_epochs=3000
-    start_time = time.time()
     
+    
+
+    """ Training Parameters """
+    NUM_EPOCHS=1000
+    BATCHSIZE_A6000 = 200000
+    
+    TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), 64, 64, 64)
+    train_points = TD.gstate.R
+    train_dx = TD.gstate.dx
+    train_dy = TD.gstate.dy
+    train_dz = TD.gstate.dz
+
     loss_epochs = []
     epoch_store = []
-    BATCHSIZE_A6000 = 200000
-    Nx = 64; Ny = 64; Nz = 64
-    xc = jnp.linspace(eval_gstate.xmin(), eval_gstate.xmax(), Nx, dtype=f32)
-    yc = jnp.linspace(eval_gstate.ymin(), eval_gstate.ymax(), Ny, dtype=f32)
-    zc = jnp.linspace(eval_gstate.zmin(), eval_gstate.zmax(), Nz, dtype=f32)
-    init_mesh_fn, coord_at = mesh.construct(3)
-    train_gstate = init_mesh_fn(xc, yc, zc)
+      
+    start_time = time.time()
+    for epoch in range(NUM_EPOCHS):   
     
-    key = random.PRNGKey(0)
-    Lx = (train_gstate.xmax() - train_gstate.xmin())
-    Ly = (train_gstate.ymax() - train_gstate.ymin())
-    Lz = (train_gstate.zmax() - train_gstate.zmin())
-    LL = jnp.array([[Lx, Ly, Lz]])
-    @jit
-    def move_train_points(points, dx, dy, dz):
-        cov = jnp.array([[dx, 0.0, 0.0], [0.0, dy, 0.0], [0.0, 0.0, dz]])*0.5
-        mean = jnp.array([0.0,0.0, 0.0])
-        Rnew = points + jax.random.multivariate_normal(key, mean, cov, shape=(len(points),))    
-        new_points = Rnew - jnp.floor(Rnew / LL ) * LL - 0.5*LL
-        return new_points
-    
-    train_points = train_gstate.R
-    train_dx = train_gstate.dx
-    train_dy = train_gstate.dy
-    train_dz = train_gstate.dz
-    for epoch in range(num_epochs):   
-        if epoch % 4==0:
-            train_dx = train_gstate.dx * 0.25
-            train_dy = train_gstate.dy * 0.25
-            train_dz = train_gstate.dz * 0.25
-        else:
-            # train_points = move_train_points(train_points, train_dx, train_dy, train_dz)
-            train_dx *= 0.50
-            train_dy *= 0.50
-            train_dz *= 0.50
-        ds_iter = DatasetDict(train_points, batch_size=BATCHSIZE_A6000)
+        # train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+        # train_points = TD.move_train_points(train_points, train_dx, train_dy, train_dz)
+        ds_iter = TD.batch(train_points, BATCHSIZE_A6000)
+        
         for x in ds_iter:
-            opt_state, params, loss_epoch = trainer.update(opt_state, params, x, train_dx, train_dy, train_dz, train_gstate)   
+            opt_state, params, loss_epoch = trainer.update(opt_state, params, x, train_dx, train_dy, train_dz, TD.gstate) 
+              
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
@@ -937,9 +897,9 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     #     return (opt_state, params, loss_epoch, egstate), None
     # epoch_store = []
     # loss_epochs = []
-    # loss_epochs = jnp.zeros(num_epochs)
+    # loss_epochs = jnp.zeros(NUM_EPOCHS)
     # batch_store = jnp.arange(num_batches)
-    # for epoch in range(num_epochs):
+    # for epoch in range(NUM_EPOCHS):
     #     (opt_state, params, loss_epoch, eval_gstate), _ = jax.lax.scan(learn_whole_batched, (opt_state, params, eval_gstate), batch_store)
     #     loss_epochs.append(loss_epoch)
     #     epoch_store.append(epoch)
@@ -952,14 +912,10 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     #     opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)
     #     loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
     #     return (opt_state, params, loss_epochs), None
-    # loss_epochs = jnp.zeros(num_epochs)
-    # epoch_store = jnp.arange(num_epochs)
+    # loss_epochs = jnp.zeros(NUM_EPOCHS)
+    # epoch_store = jnp.arange(NUM_EPOCHS)
     # (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
-    
-    
-   
-    
-    
+
     
     end_time = time.time()
     print(f"solve took {end_time - start_time} (sec)")
@@ -975,10 +931,14 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
     # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
     
-    ax.plot(epoch_store[epoch_store%4==0], loss_epochs[epoch_store%4==0], color='k', label=r'$\rm Nx=\ $'+str(Nx))
-    ax.plot(epoch_store[epoch_store%4==1], loss_epochs[epoch_store%4==1], color='b', label=r'$\rm Nx=\ $'+str(Nx+1))
-    ax.plot(epoch_store[epoch_store%4==2], loss_epochs[epoch_store%4==2], color='r', label=r'$\rm Nx=\ $'+str(Nx+2))
-    ax.plot(epoch_store[epoch_store%4==3], loss_epochs[epoch_store%4==3], color='g', label=r'$\rm Nx=\ $'+str(Nx+3))
+    if TD.alt_res:
+        ax.plot(epoch_store[epoch_store%4==0], loss_epochs[epoch_store%4==0], color='k', label=r'$\rm level=\ $'+str(TD.base_level    ))
+        ax.plot(epoch_store[epoch_store%4==1], loss_epochs[epoch_store%4==1], color='b', label=r'$\rm level=\ $'+str(TD.base_level + 1))
+        ax.plot(epoch_store[epoch_store%4==2], loss_epochs[epoch_store%4==2], color='r', label=r'$\rm level=\ $'+str(TD.base_level + 2))
+        ax.plot(epoch_store[epoch_store%4==3], loss_epochs[epoch_store%4==3], color='g', label=r'$\rm level=\ $'+str(TD.base_level + 3))
+    
+    else:
+        ax.plot(epoch_store, loss_epochs, color='k', label=r'$\rm level\ =\ $'+str(TD.base_level    ))
     
     ax.set_yscale('log')
     ax.set_xlabel(r'$\rm epoch$', fontsize=20)
