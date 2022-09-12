@@ -26,3 +26,8 @@ workspace.code-workspace
 .cache
 .config
 .nv
+
+.gitconfig
+.ssh
+.gnupg
+.local
