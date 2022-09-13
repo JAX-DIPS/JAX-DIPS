@@ -67,9 +67,9 @@ def test_poisson_solver_with_jump_complex():
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
     #----------  Evaluation Mesh for Visualization
-    exc = jnp.linspace(xmin, xmax, 32, dtype=f32)
-    eyc = jnp.linspace(ymin, ymax, 32, dtype=f32)
-    ezc = jnp.linspace(zmin, zmax, 32, dtype=f32)
+    exc = jnp.linspace(xmin, xmax, 256, dtype=f32)
+    eyc = jnp.linspace(ymin, ymax, 256, dtype=f32)
+    ezc = jnp.linspace(zmin, zmax, 256, dtype=f32)
     eval_gstate = init_mesh_fn(exc, eyc, ezc)
     
     # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper

@@ -677,9 +677,9 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
     """ Training Parameters """
-    NUM_EPOCHS=1000
-    BATCHSIZE = 32*32*32
-    Nx_tr = Ny_tr = Nz_tr = 32
+    NUM_EPOCHS=100
+    BATCHSIZE = 64*64*32
+    Nx_tr = Ny_tr = Nz_tr = 512
     
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
     train_points = TD.gstate.R
@@ -688,16 +688,11 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     train_dz = TD.gstate.dz
     boundary_points = TD.boundary_points
 
-
     trainer = PDETrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params) 
     
-        
-    
-    
     loss_epochs = []
-    epoch_store = []
-    
+    epoch_store = []    
      
     if MULTI_GPU:
         """ Multi-GPU Training """
@@ -713,7 +708,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     else:
         update_fn = trainer.update
         # DD = partial(train_data.DatasetDict, batch_size=BATCHSIZE)
-        DD = train_data.DatasetDict(batch_size=BATCHSIZE, x_data=train_points) #, dx=train_dx, dy=train_dy, dz=train_dz)
+        DD = train_data.DatasetDict(batch_size=BATCHSIZE, x_data=train_points)
         batched_training_data = DD.get_batched_data()
     
     
