@@ -50,9 +50,9 @@ def test_poisson_solver_with_jump_complex():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(16)
-    Ny = i32(16)
-    Nz = i32(16)
+    Nx = i32(32)
+    Ny = i32(32)
+    Nz = i32(32)
 
     ALGORITHM = 0                   # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3

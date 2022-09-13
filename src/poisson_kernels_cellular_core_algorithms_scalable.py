@@ -342,7 +342,7 @@ class PDETrainer:
         tot_loss = jnp.mean(optax.l2_loss(lhs, rhs)) 
         pred_sol_boundaries = self.evaluate_solution_fn(params, boundary_points) 
         bc_sol = self.dir_bc_fn(boundary_points)
-        tot_loss += jnp.square(pred_sol_boundaries - bc_sol).mean() * Vol_cell_nominal
+        tot_loss += jnp.square(pred_sol_boundaries - bc_sol).mean() * Vol_cell_nominal * 10.0
         return tot_loss
     
        
@@ -355,7 +355,6 @@ class PDETrainer:
         """ Muli-GPU """
         # grads = jax.lax.pmean(grads, axis_name='num_devices')
         # loss = jax.lax.pmean(loss, axis_name='num_devices')
-
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
@@ -390,8 +389,10 @@ class PDETrainer:
             Check if current node is on the boundary of box
             """
             x, y, z = point
-            boundary = (x - self.xmin)*(x - self.xmax) * (y - self.ymin)*(y-self.ymax) * (z - self.zmin)*(z - self.zmax)
-            return jnp.where(abs(boundary) < (1e-6*dx)**6, True, False)
+            boundary  = jnp.where(abs(x-self.xmin)<1e-6*dx, 0, 1) * jnp.where(abs(x-self.xmax)<1e-6*dx, 0, 1) 
+            boundary *= jnp.where(abs(y-self.ymin)<1e-6*dy, 0, 1) * jnp.where(abs(y-self.ymax)<1e-6*dy, 0, 1) 
+            boundary *= jnp.where(abs(z-self.zmin)<1e-6*dz, 0, 1) * jnp.where(abs(z-self.zmax)<1e-6*dz, 0, 1) 
+            return jnp.where(boundary==0, True, False)
 
 
 
@@ -442,7 +443,9 @@ class PDETrainer:
             
 
             def get_lhs_on_box_boundary(point):
-                lhs = self.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
+                phi_boundary = self.phi_interp_fn(point[jnp.newaxis])
+                u_boundary = self.solution_at_point_fn(params, point, phi_boundary)
+                lhs = u_boundary * Vol_cell_nominal
                 return jnp.array([lhs, Vol_cell_nominal])
 
             
@@ -713,18 +716,23 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         DD = train_data.DatasetDict(batch_size=BATCHSIZE, x_data=train_points) #, dx=train_dx, dy=train_dy, dz=train_dz)
         batched_training_data = DD.get_batched_data()
     
-    start_time = time.time()
     
+    # lhs_rhs = vmap(trainer.compute_Ax_and_b_preconditioned_fn, (None, 0, None, None, None))(params, train_points, train_dx, train_dy, train_dz)
+    # u_mp = vmap(trainer.get_u_mp_by_regression_at_point_fn, (None, None, None, None, 0))(params, train_dx, train_dy, train_dz, train_points)
+    # pdb.set_trace()
+    
+    
+    start_time = time.time()
     def learn_one_batch(carry, data_batch):
-        opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
+        opt_state, params, loss_epoch, train_dx, train_dy, train_dz, boundary_points = carry
         opt_state, params, loss_epoch_ = update_fn(opt_state, params, data_batch, train_dx, train_dy, train_dz, boundary_points)
         loss_epoch += loss_epoch_
-        return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
+        return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz, boundary_points), None
     
     for epoch in range(NUM_EPOCHS):
         loss_epoch = 0.0
         # train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-        (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
+        (opt_state, params, loss_epoch, train_dx, train_dy, train_dz, boundary_points), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz, boundary_points), batched_training_data)
         loss_epoch /= DD.num_batches
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)

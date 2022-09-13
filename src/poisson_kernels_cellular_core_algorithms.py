@@ -292,6 +292,8 @@ class PDETrainer:
 
         self.gamma_p_ijk = (self.gamma_p_ijk_pqm.sum(axis=3) - self.gamma_p_ijk_pqm[:, :, :, 13]) * f32(-1.0)
         self.gamma_m_ijk = (self.gamma_m_ijk_pqm.sum(axis=3) - self.gamma_m_ijk_pqm[:, :, :, 13]) * f32(-1.0)
+        
+      
 
 
 
@@ -1016,6 +1018,11 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     epoch_store = jnp.arange(num_epochs)
     (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
     """
+    lhs_rhs = trainer.compute_Ax_and_b_preconditioned_fn(params)
+    uu = trainer.evaluate_solution_fn(params, trainer.gstate.R, trainer.phi_flat)
+    u_cube = uu.reshape(trainer.grid_shape)
+    u_mp = vmap(trainer.get_u_mp_by_regression_at_node_fn, (None, None, None, None, 0, 0, 0))(u_cube, trainer.gstate.x, trainer.gstate.y, trainer.gstate.z, trainer.nodes[:,0], trainer.nodes[:,1], trainer.nodes[:,2])
+    pdb.set_trace()
     
     def learn_interleaved(carry, epoch):
         # cur_region = 0:everywhere, <0: interface band/inside, >0: outside interface band/outside
