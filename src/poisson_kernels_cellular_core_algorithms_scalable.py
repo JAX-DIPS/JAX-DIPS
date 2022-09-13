@@ -689,7 +689,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     trainer = PDETrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params) 
     
-    
+        
     
     
     loss_epochs = []
@@ -710,7 +710,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     else:
         update_fn = trainer.update
         # DD = partial(train_data.DatasetDict, batch_size=BATCHSIZE)
-        DD = train_data.DatasetDict(batch_size=BATCHSIZE, x_data=train_points, dx=train_dx, dy=train_dy, dz=train_dz)
+        DD = train_data.DatasetDict(batch_size=BATCHSIZE, x_data=train_points) #, dx=train_dx, dy=train_dy, dz=train_dz)
         batched_training_data = DD.get_batched_data()
     
     start_time = time.time()

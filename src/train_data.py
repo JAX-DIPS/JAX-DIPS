@@ -72,36 +72,46 @@ class DatasetDict_:
         return self.gpu_data[self._batch_counter - 1]
     
     
-    
+
+def generate_random_points_like(x_data, num_missing_points):
+    key = random.PRNGKey(0)
+    cov = jnp.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    mean = jnp.array([0.0,0.0, 0.0])
+    dR = random.multivariate_normal(key, mean, cov, shape=(num_missing_points,))
+    Rnew = (x_data.min() + (x_data.max() - x_data.min()) * (dR - dR.min()) / (dR.max() - dR.min()))
+    return Rnew
+
+
 class DatasetDict:
     def __init__(self,
                  x_data,
-                 batch_size, dx, dy, dz):
+                 batch_size):
         
         self.x_data = x_data
         self._len = len(x_data)        
         self.batch_size = batch_size 
-        self.num_batches = int(onp.ceil(self._len / self.batch_size))
+        self.extra_batch = int(jnp.heaviside(self._len % self.batch_size, 0))
+        self.num_batches = self._len // self.batch_size 
         self._batch_counter = 0
-        self.gpu_padded_batches(dx, dy, dz)
+        self.gpu_padded_batches()
         
         
-    def gpu_padded_batches(self, dx, dy, dz):
+    def gpu_padded_batches(self):
         """
             Pads the data in case it cannot be just folded exactly.
+            The padded values are randomly scattered points inside the domain.
+            dx, dy, dz are used to ensure
         """
         self.last_batch_size = self._len % self.batch_size
-        self.batched_data = jnp.zeros((self.num_batches, self.batch_size, 3))
-        for batch_id in range(self.num_batches-1):
-            self.batched_data = self.batched_data.at[batch_id].set(self.x_data[batch_id: min(self._len, batch_id + self.batch_size)])        
-        self.batched_data = self.batched_data.at[self.num_batches-1, 0:self.last_batch_size,:].set(self.x_data[self.num_batches-1: self.num_batches-1 + self.last_batch_size])
- 
-        num_missing_points = self.batch_size - self.last_batch_size
-        cov = jnp.array([[dx, 0.0, 0.0], [0.0, dy, 0.0], [0.0, 0.0, dz]])*0.5
-        mean = jnp.array([0.0,0.0, 0.0])
-        key = random.PRNGKey(0)
-        Rnew = self.x_data[:num_missing_points] + random.multivariate_normal(key, mean, cov, shape=(num_missing_points,))
-        self.batched_data = self.batched_data.at[self.num_batches-1, self.last_batch_size:,:].set(Rnew)       
+        self.batched_data = jnp.zeros((self.num_batches + self.extra_batch , self.batch_size, 3))
+        for batch_id in range(self.num_batches):
+            self.batched_data = self.batched_data.at[batch_id].set(self.x_data[batch_id*self.batch_size: min(self._len, (batch_id+1)*self.batch_size)])        
+        
+        if self.extra_batch==1:
+            self.batched_data = self.batched_data.at[self.num_batches, 0:self.last_batch_size,:].set(self.x_data[self.num_batches*self.batch_size: self.num_batches*self.batch_size + self.last_batch_size])
+            num_missing_points = self.batch_size - self.last_batch_size
+            Rnew = generate_random_points_like(self.x_data, num_missing_points)
+            self.batched_data = self.batched_data.at[self.num_batches, -self.last_batch_size:,:].set(Rnew)       
         
    
     def get_batched_data(self):

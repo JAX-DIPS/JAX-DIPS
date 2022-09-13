@@ -57,9 +57,9 @@ def test_poisson_solver_with_jump_complex():
     init_mesh_fn, coord_at = mesh.construct(dim)
     
     # --------- Grid nodes
-    Nx = i32(16)
-    Ny = i32(16)
-    Nz = i32(16)
+    Nx = i32(32)
+    Ny = i32(32)
+    Nz = i32(32)
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
@@ -67,9 +67,9 @@ def test_poisson_solver_with_jump_complex():
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
     #----------  Evaluation Mesh for Visualization
-    exc = jnp.linspace(xmin, xmax, 64, dtype=f32)
-    eyc = jnp.linspace(ymin, ymax, 64, dtype=f32)
-    ezc = jnp.linspace(zmin, zmax, 64, dtype=f32)
+    exc = jnp.linspace(xmin, xmax, 32, dtype=f32)
+    eyc = jnp.linspace(ymin, ymax, 32, dtype=f32)
+    ezc = jnp.linspace(zmin, zmax, 32, dtype=f32)
     eval_gstate = init_mesh_fn(exc, eyc, ezc)
     
     # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper
@@ -115,7 +115,7 @@ def test_poisson_solver_with_jump_complex():
         phi_  = jnp.sqrt(x**2 + y**2 + z**2)
         phi_ += -1.0*r0 * (1.0 + ((x**2 + y**2)/(x**2 + y**2 + z**2))**2 * core ) 
 
-        return jnp.nan_to_num(phi_)
+        return jnp.nan_to_num(phi_, -r0*core)
     
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
