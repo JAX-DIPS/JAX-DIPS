@@ -32,7 +32,7 @@ class DoubleMLP(hk.Module):
         self.num_hidden_layers = 1
         self.hidden_dim = 100
         self.activation_fn = jnp.sin 
-        self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
+        self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.05, mean=0.0)
         
         self.L = 3
         self.args = 2**jnp.arange(self.L) * jnp.pi

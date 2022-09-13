@@ -186,17 +186,17 @@ class PDETrainer:
             of the level set function at the face-centers of a 3D cell centered at the
             point with each side length given by dx, dy, dz.
         """
-        point_ip1_j_k = jnp.array([[point[0] + f32(0.5)*dx, point[1], point[2]]])
-        point_im1_j_k = jnp.array([[point[0] - f32(0.5)*dx, point[1], point[2]]])
-        phi_x = (self.phi_interp_fn(point_ip1_j_k) - self.phi_interp_fn(point_im1_j_k) ) / (dx) 
+        point_ip1_j_k = jnp.array([[point[0] + dx, point[1], point[2]]])
+        point_im1_j_k = jnp.array([[point[0] - dx, point[1], point[2]]])
+        phi_x = (self.phi_interp_fn(point_ip1_j_k) - self.phi_interp_fn(point_im1_j_k) ) / (2 * dx) 
         
-        point_i_jp1_k = jnp.array([[point[0], point[1] + f32(0.5)*dy, point[2]]])
-        point_i_jm1_k = jnp.array([[point[0], point[1] - f32(0.5)*dy, point[2]]])
-        phi_y = (self.phi_interp_fn(point_i_jp1_k) - self.phi_interp_fn(point_i_jm1_k) ) / (dy) 
+        point_i_jp1_k = jnp.array([[point[0], point[1] + dy, point[2]]])
+        point_i_jm1_k = jnp.array([[point[0], point[1] - dy, point[2]]])
+        phi_y = (self.phi_interp_fn(point_i_jp1_k) - self.phi_interp_fn(point_i_jm1_k) ) / (2 * dy) 
         
-        point_i_j_kp1 = jnp.array([[point[0], point[1], point[2] + f32(0.5)*dz]])
-        point_i_j_km1 = jnp.array([[point[0], point[1], point[2] - f32(0.5)*dz]])
-        phi_z = (self.phi_interp_fn(point_i_j_kp1) - self.phi_interp_fn(point_i_j_km1) ) / (dz) 
+        point_i_j_kp1 = jnp.array([[point[0], point[1], point[2] + dz]])
+        point_i_j_km1 = jnp.array([[point[0], point[1], point[2] - dz]])
+        phi_z = (self.phi_interp_fn(point_i_j_kp1) - self.phi_interp_fn(point_i_j_km1) ) / (2 * dz) 
         
         norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
         return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm], dtype=f32)
@@ -674,9 +674,9 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
     """ Training Parameters """
-    NUM_EPOCHS=10
+    NUM_EPOCHS=1000
     BATCHSIZE = 32*32*32
-    Nx_tr = Ny_tr = Nz_tr = 64
+    Nx_tr = Ny_tr = Nz_tr = 32
     
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
     train_points = TD.gstate.R
