@@ -57,9 +57,9 @@ def test_poisson_solver_with_jump_complex():
     init_mesh_fn, coord_at = mesh.construct(dim)
     
     # --------- Grid nodes
-    Nx = i32(32)
-    Ny = i32(32)
-    Nz = i32(32)
+    Nx = i32(64)
+    Ny = i32(64)
+    Nz = i32(64)
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
