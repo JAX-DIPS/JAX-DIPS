@@ -592,7 +592,7 @@ class PDETrainer:
 
             lhs_diagcoeff = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
             lhs, diagcoeff = jnp.split(lhs_diagcoeff, [1], 0)
-            diagcoeff_ = jnp.sqrt(diagcoeff*diagcoeff)
+            # diagcoeff_ = jnp.sqrt(diagcoeff*diagcoeff)
             #--- RHS  
             def get_rhs_at_interior_node(node):
                 i, j, k = node
@@ -605,8 +605,10 @@ class PDETrainer:
                 return self.dirichlet_cube[i-2, j-2, k-2] * self.Vol_cell_nominal
 
             rhs = jnp.where(is_box_boundary_node(i, j, k), get_rhs_on_box_boundary(node), get_rhs_at_interior_node(node))
-
-            return jnp.array([lhs / (1e-13 + diagcoeff_), rhs / (1e-13 + diagcoeff_)])
+            lhs_over_diag = jnp.nan_to_num(lhs / diagcoeff)
+            rhs_over_diag = jnp.nan_to_num(rhs / diagcoeff)
+            return jnp.array([lhs_over_diag, rhs_over_diag])
+            # return jnp.array([lhs / (1e-13 + diagcoeff_), rhs / (1e-13 + diagcoeff_)])
 
         evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
         

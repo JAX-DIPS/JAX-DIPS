@@ -61,6 +61,9 @@ class PDETrainer:
         
         """ Grid Info """
         # self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
+        self.xmin = gstate.xmin(); self.xmax = gstate.xmax()
+        self.ymin = gstate.ymin(); self.ymax = gstate.ymax()
+        self.zmin = gstate.zmin(); self.zmax = gstate.zmax()
         
 
 
@@ -138,7 +141,6 @@ class PDETrainer:
         self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_neural_network
         self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
 
-
         if precondition==1:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
         elif precondition==0:
@@ -147,32 +149,32 @@ class PDETrainer:
 
 
     def get_Xijk(self, cell_dx, cell_dy, cell_dz):
-        Xijk = jnp.array([ [-cell_dx, -cell_dy, -cell_dz],
-                            [          0.0, -cell_dy, -cell_dz],
+        Xijk = jnp.array([  [-cell_dx, -cell_dy, -cell_dz],
+                            [     0.0, -cell_dy, -cell_dz],
                             [ cell_dx, -cell_dy, -cell_dz],
-                            [-cell_dx,           0.0, -cell_dz],
-                            [0.0          ,           0.0, -cell_dz],
-                            [ cell_dx,           0.0, -cell_dz],
+                            [-cell_dx,      0.0, -cell_dz],
+                            [     0.0,      0.0, -cell_dz],
+                            [ cell_dx,      0.0, -cell_dz],
                             [-cell_dx,  cell_dy, -cell_dz],
-                            [          0.0,  cell_dy, -cell_dz],
+                            [     0.0,  cell_dy, -cell_dz],
                             [ cell_dx,  cell_dy, -cell_dz],
-                            [-cell_dx, -cell_dy,           0.0],
-                            [          0.0, -cell_dy,           0.0],
-                            [ cell_dx, -cell_dy,           0.0],
-                            [-cell_dx,           0.0,           0.0],
-                            [          0.0,           0.0,           0.0],
-                            [ cell_dx,           0.0,           0.0],
-                            [-cell_dx,  cell_dy,           0.0],
-                            [          0.0,  cell_dy,           0.0],
-                            [ cell_dx,  cell_dy,           0.0],
+                            [-cell_dx, -cell_dy,      0.0],
+                            [     0.0, -cell_dy,      0.0],
+                            [ cell_dx, -cell_dy,      0.0],
+                            [-cell_dx,      0.0,      0.0],
+                            [     0.0,      0.0,      0.0],
+                            [ cell_dx,      0.0,      0.0],
+                            [-cell_dx,  cell_dy,      0.0],
+                            [     0.0,  cell_dy,      0.0],
+                            [ cell_dx,  cell_dy,      0.0],
                             [-cell_dx, -cell_dy,  cell_dz],
-                            [          0.0, -cell_dy,  cell_dz],
+                            [     0.0, -cell_dy,  cell_dz],
                             [ cell_dx, -cell_dy,  cell_dz],
-                            [-cell_dx,           0.0,  cell_dz],
-                            [          0.0,           0.0,  cell_dz],
-                            [ cell_dx,           0.0,  cell_dz],
+                            [-cell_dx,      0.0,  cell_dz],
+                            [     0.0,      0.0,  cell_dz],
+                            [ cell_dx,      0.0,  cell_dz],
                             [-cell_dx,  cell_dy,  cell_dz],
-                            [          0.0,  cell_dy,  cell_dz],
+                            [     0.0,  cell_dy,  cell_dz],
                             [ cell_dx,  cell_dy,  cell_dz]], dtype=f32)
         return Xijk
 
@@ -388,8 +390,8 @@ class PDETrainer:
             Check if current node is on the boundary of box
             """
             x, y, z = point
-            boundary = (x - self.gstate.xmin())*(x - self.gstate.xmax()) * (y - self.gstate.ymin())*(y-self.gstate.ymax()) * (z - self.gstate.zmin())*(z - self.gstate.zmax())
-            return jnp.where(abs(boundary) < 1e-6*dx, True, False)
+            boundary = (x - self.xmin)*(x - self.xmax) * (y - self.ymin)*(y-self.ymax) * (z - self.zmin)*(z - self.zmax)
+            return jnp.where(abs(boundary) < (1e-6*dx)**6, True, False)
 
 
 
@@ -406,12 +408,12 @@ class PDETrainer:
             
             def get_lhs_at_interior_point(point):
                 point_ijk = point
-                point_imjk = jnp.array([point[0] - 0.5*dx, point[1], point[2]], dtype=f32)
-                point_ipjk = jnp.array([point[0] + 0.5*dx, point[1], point[2]], dtype=f32)
-                point_ijmk = jnp.array([point[0], point[1] - 0.5*dy, point[2]], dtype=f32)
-                point_ijpk = jnp.array([point[0], point[1] + 0.5*dy, point[2]], dtype=f32)
-                point_ijkm = jnp.array([point[0], point[1], point[2] - 0.5*dz], dtype=f32)
-                point_ijkp = jnp.array([point[0], point[1], point[2] + 0.5*dz], dtype=f32)
+                point_imjk = jnp.array([point[0] - dx, point[1], point[2]], dtype=f32)
+                point_ipjk = jnp.array([point[0] + dx, point[1], point[2]], dtype=f32)
+                point_ijmk = jnp.array([point[0], point[1] - dy, point[2]], dtype=f32)
+                point_ijpk = jnp.array([point[0], point[1] + dy, point[2]], dtype=f32)
+                point_ijkm = jnp.array([point[0], point[1], point[2] - dz], dtype=f32)
+                point_ijkp = jnp.array([point[0], point[1], point[2] + dz], dtype=f32)
 
                 k_m_ijk = self.k_m_interp_fn(point[jnp.newaxis]) 
                 k_p_ijk = self.k_p_interp_fn(point[jnp.newaxis])
@@ -440,7 +442,7 @@ class PDETrainer:
             
 
             def get_lhs_on_box_boundary(point):
-                lhs = self.sim_state_fn.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
+                lhs = self.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
                 return jnp.array([lhs, Vol_cell_nominal])
 
             
@@ -455,7 +457,7 @@ class PDETrainer:
                 return rhs
             
             def get_rhs_on_box_boundary(point):
-                return self.sim_state_fn.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
+                return self.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
 
             rhs = jnp.where(is_box_boundary_point(point), get_rhs_on_box_boundary(point), get_rhs_at_interior_point(point))
             lhs_over_diag = jnp.nan_to_num(lhs / diagcoeff)
