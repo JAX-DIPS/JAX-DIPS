@@ -60,10 +60,7 @@ class PDETrainer:
         
         
         """ Grid Info """
-        self.dx = self.gstate.dx; self.dy = self.gstate.dy; self.dz = self.gstate.dz
-        self.grid_shape = self.gstate.shape()
-        self.Nx, self.Ny, self.Nz = self.grid_shape
-        self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
+        # self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
         
 
 
@@ -340,10 +337,10 @@ class PDETrainer:
         Vol_cell_nominal = dx * dy * dz
         lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)   
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
-        pred_sol_boundaries = self.evaluate_solution_fn(params, boundary_points)
+        tot_loss = jnp.mean(optax.l2_loss(lhs, rhs)) 
+        pred_sol_boundaries = self.evaluate_solution_fn(params, boundary_points) 
         bc_sol = self.dir_bc_fn(boundary_points)
-        tot_loss += jnp.square(pred_sol_boundaries - bc_sol).mean() * Vol_cell_nominal 
+        tot_loss += jnp.square(pred_sol_boundaries - bc_sol).mean() * Vol_cell_nominal
         return tot_loss
     
        
@@ -461,8 +458,9 @@ class PDETrainer:
                 return self.sim_state_fn.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
 
             rhs = jnp.where(is_box_boundary_point(point), get_rhs_on_box_boundary(point), get_rhs_at_interior_point(point))
-            
-            return jnp.array([lhs / (1e-13 + diagcoeff), rhs / (1e-13 + diagcoeff)])
+            lhs_over_diag = jnp.nan_to_num(lhs / diagcoeff)
+            rhs_over_diag = jnp.nan_to_num(rhs / diagcoeff)
+            return jnp.array([lhs_over_diag, rhs_over_diag])
         
         lhs_rhs = evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz)
         return lhs_rhs
@@ -656,8 +654,8 @@ class PDETrainer:
 def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3):
 
     #--- Defining Optimizer
-    decay_rate_ = 0.975
     learning_rate = 1e-2
+    decay_rate_ = 0.975
     scheduler = optax.exponential_decay(
         init_value=learning_rate,
         transition_steps=100,
@@ -668,12 +666,17 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
                             optax.scale_by_schedule(scheduler), 
                             optax.scale(-1.0) 
     )
+    #--------
     # optimizer = optax.adam(learning_rate)
+    #--------
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
-
+    """ Training Parameters """
+    NUM_EPOCHS=10
+    BATCHSIZE = 32*32*32
+    Nx_tr = Ny_tr = Nz_tr = 64
     
-    TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), 32, 32, 32)
+    TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
     train_points = TD.gstate.R
     train_dx = TD.gstate.dx
     train_dy = TD.gstate.dy
@@ -685,9 +688,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     opt_state, params = trainer.init(); print_architecture(params) 
     
     
-    """ Training Parameters """
-    NUM_EPOCHS=10000
-    BATCHSIZE = 32*32*32
+    
     
     loss_epochs = []
     epoch_store = []
@@ -713,14 +714,15 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     start_time = time.time()
     
     def learn_one_batch(carry, data_batch):
-        opt_state, params, loss_epoch = carry
+        opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
         opt_state, params, loss_epoch_ = update_fn(opt_state, params, data_batch, train_dx, train_dy, train_dz, boundary_points)
         loss_epoch += loss_epoch_
-        return (opt_state, params, loss_epoch), None
+        return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
     
     for epoch in range(NUM_EPOCHS):
         loss_epoch = 0.0
-        (opt_state, params, loss_epoch), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch), batched_training_data)
+        # train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+        (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
         loss_epoch /= DD.num_batches
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)

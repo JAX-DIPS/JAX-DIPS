@@ -124,9 +124,8 @@ class DatasetDict:
 
 
 class TrainData:
-        def __init__(self, xmin, xmax, ymin, ymax, zmin, zmax, Nx=64, Ny=64, Nz=64, num_devices=1) -> None:
+        def __init__(self, xmin, xmax, ymin, ymax, zmin, zmax, Nx=64, Ny=64, Nz=64) -> None:
             """ Training GSTATE """
-            self.num_devices = num_devices
             self.Nx = Nx; self.Ny = Ny; self.Nz = Nz
             xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
             yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
