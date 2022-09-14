@@ -88,28 +88,26 @@ class DatasetDict:
                  batch_size,
                  num_gpus = 1):
         
+        self.x_data = x_data
+        
+        self._len = len(x_data)
         self.batch_size = batch_size
         self.num_gpus = num_gpus
         
-        self.x_data = x_data
-        
-        self._len = len(x_data)      
-        
-        self._len_per_gpu = self._len // self.num_gpus + int(jnp.heaviside(self._len % self.num_gpus, 0))
-         
+        self._len_per_gpu = int(onp.ceil(self._len / self.num_gpus))                    #self._len // self.num_gpus + int(jnp.heaviside(self._len % self.num_gpus, 0))
+        # self.extra_points_per_gpu = self._len_per_gpu * self.num_gpus - self._len
         
         if self.batch_size > self._len_per_gpu:
             self.batch_size = self._len_per_gpu
             
+            
         self.extra_batch_per_gpu = int(jnp.heaviside(self._len_per_gpu % self.batch_size, 0))
         self.num_batches_per_gpu = self._len_per_gpu // self.batch_size 
-        
-        self._batch_counter = 0
-        
         self.gpu_padded_batches()
      
         if self.num_gpus == 1 : self.batched_data = self.batched_data.reshape(self.batched_data.shape[1:]) 
         
+        self._batch_counter = 0
         
     def gpu_padded_batches(self):
         """
@@ -126,9 +124,12 @@ class DatasetDict:
             for batch_id in range(self.num_batches_per_gpu):
                 data_begin_idx = gpu * (self.num_batches_per_gpu * self.batch_size + self.extra_batch_per_gpu * self.last_batch_size ) + batch_id*self.batch_size 
                 data_end_idx   = data_begin_idx + self.batch_size
-                data_slice = self.x_data[ data_begin_idx : data_end_idx]      
-                self.batched_data = self.batched_data.at[gpu, batch_id].set(data_slice)        
                 
+                data_slice = self.x_data[ data_begin_idx : data_end_idx]      
+                try:
+                    self.batched_data = self.batched_data.at[gpu, batch_id].set(data_slice)        
+                except:
+                    pdb.set_trace()
             if self.extra_batch_per_gpu==1:
                 
                 data_begin_idx = data_end_idx # gpu * (self.num_batches_per_gpu * self.batch_size + self.extra_batch_per_gpu * self.last_batch_size) + self.num_batches_per_gpu*self.batch_size 
