@@ -686,11 +686,14 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     #--------
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
+    
+    
     """ Training Parameters """
+    MULTI_GPU = False    
     NUM_EPOCHS=1000
-    BATCH_SIZE = 64*64*32
-    Nx_tr = Ny_tr = Nz_tr = 128
-    MULTI_GPU = True
+    BATCH_SIZE = 32*32*16
+    Nx_tr = Ny_tr = Nz_tr = 32
+    
     
     
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
@@ -698,7 +701,6 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     train_dx = TD.gstate.dx
     train_dy = TD.gstate.dy
     train_dz = TD.gstate.dz
-
 
     trainer = PDETrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
     opt_state, params = trainer.init(); print_architecture(params) 
@@ -737,21 +739,25 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     for epoch in range(NUM_EPOCHS):
         if MULTI_GPU:
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0 )
+            for i in range(num_batches):
+                opt_state, params, loss_epoch_ = update_fn(opt_state, params, batched_training_data[:,i,...], train_dx, train_dy, train_dz)
+                loss_epoch += loss_epoch_
         else:
             loss_epoch = 0.0
-        # train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-        # (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
-        
-        for i in range(num_batches):
-            opt_state, params, loss_epoch_ = update_fn(opt_state, params, batched_training_data[:,i,...], train_dx, train_dy, train_dz)
-            loss_epoch += loss_epoch_
+            train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
         
         loss_epoch /= num_batches
         print(f"epoch # {epoch} loss is {jnp.mean(loss_epoch)}")  # mean is to support multi-gpu as well.
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
     
-    if MULTI_GPU: params = jax.device_get(jax.tree_map(lambda x: x[0], params))
+    if MULTI_GPU: 
+        params = jax.device_get(jax.tree_map(lambda x: x[0], params))
+    
+    
+    
+    
     
     #for epoch in range(NUM_EPOCHS):   
         # #train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
