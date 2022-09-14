@@ -128,9 +128,12 @@ class DatasetDict:
     def split_over_devices(self):
         import jax
         def split(arr):
-            """Splits the first axis of `self.batched_data` evenly across the number of devices."""
-            return arr.reshape(self.num_gpus, arr.shape[0] // self.num_gpus, *arr.shape[1:])
-        pdb.set_trace()
+            """
+                Splits the second axis of `self.batched_data` evenly across the number of devices.
+                first axis is the mini-batch dimension, second is the gpu device, third & fourth are the points.
+            """
+            return arr.reshape( arr.shape[0] // self.num_gpus, self.num_gpus, *arr.shape[1:])
+        
         self.batched_data = jax.tree_map(split, self.batched_data)
         
         
