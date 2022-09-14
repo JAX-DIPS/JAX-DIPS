@@ -709,25 +709,22 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     if MULTI_GPU:
         """ Multi-GPU Training """
         n_devices = jax.local_device_count()
-        GLOBAL_BATCH_SIZE = BATCH_SIZE * n_devices
         train_dx = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dx)
         train_dy = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dy)
         train_dz = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dz)
-        
         params = jax.tree_map(lambda x: jnp.array([x] * n_devices), params)
         opt_state = jax.tree_map(lambda x: jnp.array([x] * n_devices), opt_state)
-        # params = jax.device_put_replicated(params, devices=jax.devices())
-        # opt_state = jax.device_put_replicated(opt_state, devices=jax.devices())
-        # update_fn = pmap(vmap(trainer.update_multi_gpu, in_axes=(0, 0, None, None, None, None)), axis_name='num_devices', in_axes=(None, None, 0, None, None, None))
-        update_fn = pmap(trainer.update_multi_gpu, in_axes=(0, 0, 0, 0, 0, 0), axis_name='num_devices')
         DD = train_data.DatasetDict(batch_size=BATCH_SIZE, x_data=train_points, num_gpus=n_devices)
         batched_training_data = DD.get_batched_data()
+        update_fn = pmap(trainer.update_multi_gpu, in_axes=(0, 0, 0, 0, 0, 0), axis_name='num_devices')
+        
     else:
-        update_fn = trainer.update
+        """ Single GPU """
         DD = train_data.DatasetDict(batch_size=BATCH_SIZE, x_data=train_points)
         batched_training_data = DD.get_batched_data()
+        update_fn = trainer.update
     
-    pdb.set_trace()
+    num_batches = batched_training_data.shape[1]
     
     start_time = time.time()
 
@@ -743,9 +740,13 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         else:
             loss_epoch = 0.0
         # train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+        # (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
         
-        (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
-        loss_epoch /= DD.num_batches
+        for i in range(num_batches):
+            opt_state, params, loss_epoch_ = update_fn(opt_state, params, batched_training_data[:,i,...], train_dx, train_dy, train_dz)
+            loss_epoch += loss_epoch_
+        
+        loss_epoch /= num_batches
         print(f"epoch # {epoch} loss is {jnp.mean(loss_epoch)}")  # mean is to support multi-gpu as well.
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
