@@ -87,20 +87,28 @@ class DatasetDict:
                  x_data,
                  batch_size,
                  num_gpus = 1):
-        self.num_gpus = num_gpus
-        self.x_data = x_data
-        self._len = len(x_data)        
-        self.batch_size = batch_size 
         
-        if self.batch_size > self._len:
-            self.batch_size = self._len
+        self.batch_size = batch_size
+        self.num_gpus = num_gpus
+        
+        self.x_data = x_data
+        
+        self._len = len(x_data)      
+        
+        self._len_per_gpu = self._len // self.num_gpus + int(jnp.heaviside(self._len % self.num_gpus, 0))
+         
+        
+        if self.batch_size > self._len_per_gpu:
+            self.batch_size = self._len_per_gpu
             
-        self.extra_batch = int(jnp.heaviside(self._len % self.batch_size, 0))
-        self.num_batches = self._len // self.batch_size 
+        self.extra_batch_per_gpu = int(jnp.heaviside(self._len_per_gpu % self.batch_size, 0))
+        self.num_batches_per_gpu = self._len_per_gpu // self.batch_size 
+        
         self._batch_counter = 0
         
         self.gpu_padded_batches()
-        if self.num_gpus > 1 : self.split_over_devices()
+     
+        if self.num_gpus == 1 : self.batched_data = self.batched_data.reshape(self.batched_data.shape[1:]) 
         
         
     def gpu_padded_batches(self):
@@ -109,16 +117,33 @@ class DatasetDict:
             The padded values are randomly scattered points inside the domain.
             dx, dy, dz are used to ensure
         """
-        self.last_batch_size = self._len % self.batch_size
-        self.batched_data = jnp.zeros((self.num_batches + self.extra_batch , self.batch_size, 3))
-        for batch_id in range(self.num_batches):
-            self.batched_data = self.batched_data.at[batch_id].set(self.x_data[batch_id*self.batch_size: min(self._len, (batch_id+1)*self.batch_size)])        
+        self.last_batch_size = self._len_per_gpu % self.batch_size
         
-        if self.extra_batch==1:
-            self.batched_data = self.batched_data.at[self.num_batches, 0:self.last_batch_size,:].set(self.x_data[self.num_batches*self.batch_size: self.num_batches*self.batch_size + self.last_batch_size])
-            num_missing_points = self.batch_size - self.last_batch_size
-            Rnew = generate_random_points_like(self.x_data, num_missing_points)
-            self.batched_data = self.batched_data.at[self.num_batches, -num_missing_points:,:].set(Rnew)       
+        self.batched_data = jnp.zeros((self.num_gpus, self.num_batches_per_gpu + self.extra_batch_per_gpu , self.batch_size, 3))
+        
+        for gpu in range(self.num_gpus):
+            
+            for batch_id in range(self.num_batches_per_gpu):
+                data_begin_idx = gpu * (self.num_batches_per_gpu * self.batch_size + self.extra_batch_per_gpu * self.last_batch_size ) + batch_id*self.batch_size 
+                data_end_idx   = data_begin_idx + self.batch_size
+                data_slice = self.x_data[ data_begin_idx : data_end_idx]      
+                self.batched_data = self.batched_data.at[gpu, batch_id].set(data_slice)        
+                
+            if self.extra_batch_per_gpu==1:
+                
+                data_begin_idx = data_end_idx # gpu * (self.num_batches_per_gpu * self.batch_size + self.extra_batch_per_gpu * self.last_batch_size) + self.num_batches_per_gpu*self.batch_size 
+                if gpu==self.num_gpus-1:
+                    data_end_idx = self._len
+                else:
+                    data_end_idx   = data_begin_idx + self.last_batch_size
+                data_slice = self.x_data[data_begin_idx : data_end_idx]
+                
+                self.batched_data = self.batched_data.at[gpu, self.num_batches_per_gpu, 0:data_end_idx - data_begin_idx,:].set(data_slice)
+                   
+                num_missing_points = self.batch_size - (data_end_idx - data_begin_idx)
+                Rnew = generate_random_points_like(self.x_data, num_missing_points)
+                self.batched_data = self.batched_data.at[gpu, self.num_batches_per_gpu, -num_missing_points:,:].set(Rnew)
+                   
         
    
     def get_batched_data(self):
@@ -133,7 +158,7 @@ class DatasetDict:
                 first axis is the mini-batch dimension, second is the gpu device, third & fourth are the points.
             """
             return arr.reshape( arr.shape[0] // self.num_gpus, self.num_gpus, *arr.shape[1:])
-        
+        pdb.set_trace()
         self.batched_data = jax.tree_map(split, self.batched_data)
         
         
