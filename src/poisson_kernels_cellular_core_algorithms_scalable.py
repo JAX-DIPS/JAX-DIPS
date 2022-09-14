@@ -38,8 +38,10 @@ from functools import partial
 import time
 import pdb
 
+import os
+# os.environ["XLA_FLAGS"] = '--xla_force_host_platform_device_count=8' # Use 8 CPU devices
 
-MULTI_GPU = True
+MULTI_GPU = False
 
 
 class PDETrainer:
@@ -348,9 +350,18 @@ class PDETrainer:
     @partial(jit, static_argnums=(0))
     def update(self, opt_state, params, points, dx, dy, dz):              
         loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
+        updates, opt_state = self.optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
+        return opt_state, params, loss
+    
+    
+    
+    @partial(jit, static_argnums=(0))
+    def update_multi_gpu(self, opt_state, params, points, dx, dy, dz):              
+        loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
         """ Muli-GPU """
-        # grads = jax.lax.pmean(grads, axis_name='num_devices')
-        # loss = jax.lax.pmean(loss, axis_name='num_devices')
+        grads = jax.lax.pmean(grads, axis_name='num_devices')
+        loss = jax.lax.pmean(loss, axis_name='num_devices')
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
@@ -674,8 +685,8 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     #---------------------
     """ Training Parameters """
     NUM_EPOCHS=100
-    BATCHSIZE = 64*64*32
-    Nx_tr = Ny_tr = Nz_tr = 64
+    BATCH_SIZE = 64*64*32
+    Nx_tr = Ny_tr = Nz_tr = 128
     
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
     train_points = TD.gstate.R
@@ -693,22 +704,18 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     if MULTI_GPU:
         """ Multi-GPU Training """
         n_devices = jax.local_device_count()
-        global_batch_size = BATCHSIZE * n_devices
-        def split(arr):
-            """Splits the first axis of `arr` evenly across the number of devices."""
-            return arr.reshape(n_devices, arr.shape[0] // n_devices, *arr.shape[1:])
+        GLOBAL_BATCH_SIZE = BATCH_SIZE * n_devices
         params = jax.tree_map(lambda x: jnp.array([x] * n_devices), params)
         opt_state = jax.tree_map(lambda x: jnp.array([x] * n_devices), opt_state)
-        update_fn = pmap(vmap(trainer.update, in_axes=(0, 0, None, None, None, None, None)), axis_name='num_devices', in_axes=(None, None, 0, None, None, None, None))
-        DD = partial(train_data.DatasetDictMGPU, batch_size=global_batch_size, drop_remainder=True, shuffle=True)
+        # update_fn = pmap(vmap(trainer.update_multi_gpu, in_axes=(0, 0, None, None, None, None)), axis_name='num_devices', in_axes=(None, None, 0, None, None, None))
+        update_fn = pmap(vmap(trainer.update_multi_gpu, in_axes=(0, 0, None, None, None, None)), axis_name='num_devices', in_axes=(None, None, 0, None, None, None))
+        DD = train_data.DatasetDict(batch_size=GLOBAL_BATCH_SIZE, x_data=train_points, num_gpus=n_devices)
+        batched_training_data = DD.get_batched_data()
     else:
         update_fn = trainer.update
-        # DD = partial(train_data.DatasetDict, batch_size=BATCHSIZE)
-        DD = train_data.DatasetDict(batch_size=BATCHSIZE, x_data=train_points)
+        DD = train_data.DatasetDict(batch_size=BATCH_SIZE, x_data=train_points)
         batched_training_data = DD.get_batched_data()
     
-    
-    pdb.set_trace()
     
     
     start_time = time.time()
@@ -746,12 +753,12 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     
 
     #----- HALF JITTED
-    # BATCHSIZE_A6000 = 100000
+    # BATCH_SIZE_A6000 = 100000
     # NUMDATA = len(eval_gstate.R)
-    # num_batches = jnp.ceil(NUMDATA // BATCHSIZE_A6000)
+    # num_batches = jnp.ceil(NUMDATA // BATCH_SIZE_A6000)
     # def learn_whole_batched(carry, batch_idx):
     #     opt_state, params, egstate = carry
-    #     x = egstate.R[batch_idx: jnp.min(jnp.array([NUMDATA, batch_idx + BATCHSIZE_A6000]))]
+    #     x = egstate.R[batch_idx: jnp.min(jnp.array([NUMDATA, batch_idx + BATCH_SIZE_A6000]))]
     #     opt_state, params, loss_epoch = trainer.update(opt_state, params, x, egstate)
     #     return (opt_state, params, loss_epoch, egstate), None
     # epoch_store = []

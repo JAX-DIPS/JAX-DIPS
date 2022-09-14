@@ -85,15 +85,22 @@ def generate_random_points_like(x_data, num_missing_points):
 class DatasetDict:
     def __init__(self,
                  x_data,
-                 batch_size):
-        
+                 batch_size,
+                 num_gpus = 1):
+        self.num_gpus = num_gpus
         self.x_data = x_data
         self._len = len(x_data)        
         self.batch_size = batch_size 
+        
+        if self.batch_size > self._len:
+            self.batch_size = self._len
+            
         self.extra_batch = int(jnp.heaviside(self._len % self.batch_size, 0))
         self.num_batches = self._len // self.batch_size 
         self._batch_counter = 0
+        
         self.gpu_padded_batches()
+        if self.num_gpus > 1 : self.split_over_devices()
         
         
     def gpu_padded_batches(self):
@@ -111,12 +118,21 @@ class DatasetDict:
             self.batched_data = self.batched_data.at[self.num_batches, 0:self.last_batch_size,:].set(self.x_data[self.num_batches*self.batch_size: self.num_batches*self.batch_size + self.last_batch_size])
             num_missing_points = self.batch_size - self.last_batch_size
             Rnew = generate_random_points_like(self.x_data, num_missing_points)
-            self.batched_data = self.batched_data.at[self.num_batches, -self.last_batch_size:,:].set(Rnew)       
+            self.batched_data = self.batched_data.at[self.num_batches, -num_missing_points:,:].set(Rnew)       
         
    
     def get_batched_data(self):
         return self.batched_data
     
+    
+    def split_over_devices(self):
+        import jax
+        def split(arr):
+            """Splits the first axis of `self.batched_data` evenly across the number of devices."""
+            return arr.reshape(self.num_gpus, arr.shape[0] // self.num_gpus, *arr.shape[1:])
+        self.batched_data = jax.tree_map(split, self.batched_data)
+        
+        
         
     def __iter__(self):
         self._idx = 0
