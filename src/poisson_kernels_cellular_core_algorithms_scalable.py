@@ -41,7 +41,7 @@ import pdb
 import os
 # os.environ["XLA_FLAGS"] = '--xla_force_host_platform_device_count=8' # Use 8 CPU devices
 
-MULTI_GPU = False
+
 
 
 class PDETrainer:
@@ -362,6 +362,7 @@ class PDETrainer:
         """ Muli-GPU """
         grads = jax.lax.pmean(grads, axis_name='num_devices')
         loss = jax.lax.pmean(loss, axis_name='num_devices')
+        
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
@@ -684,9 +685,11 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     # optimizer = optax.rmsprop(learning_rate) 
     #---------------------
     """ Training Parameters """
-    NUM_EPOCHS=100
+    NUM_EPOCHS=1000
     BATCH_SIZE = 64*64*32
     Nx_tr = Ny_tr = Nz_tr = 128
+    MULTI_GPU = False
+    
     
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
     train_points = TD.gstate.R
@@ -705,10 +708,10 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         """ Multi-GPU Training """
         n_devices = jax.local_device_count()
         GLOBAL_BATCH_SIZE = BATCH_SIZE * n_devices
-        params = jax.tree_map(lambda x: jnp.array([x] * n_devices), params)
-        opt_state = jax.tree_map(lambda x: jnp.array([x] * n_devices), opt_state)
+        # params = jax.tree_map(lambda x: jnp.array([x] * n_devices), params)
+        # opt_state = jax.tree_map(lambda x: jnp.array([x] * n_devices), opt_state)
         # update_fn = pmap(vmap(trainer.update_multi_gpu, in_axes=(0, 0, None, None, None, None)), axis_name='num_devices', in_axes=(None, None, 0, None, None, None))
-        update_fn = pmap(vmap(trainer.update_multi_gpu, in_axes=(0, 0, None, None, None, None)), axis_name='num_devices', in_axes=(None, None, 0, None, None, None))
+        update_fn = pmap(trainer.update_multi_gpu, in_axes=(None, None, 0, None, None, None), axis_name='num_devices')
         DD = train_data.DatasetDict(batch_size=GLOBAL_BATCH_SIZE, x_data=train_points, num_gpus=n_devices)
         batched_training_data = DD.get_batched_data()
     else:
@@ -719,6 +722,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     
     
     start_time = time.time()
+
     def learn_one_batch(carry, data_batch):
         opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
         opt_state, params, loss_epoch_ = update_fn(opt_state, params, data_batch, train_dx, train_dy, train_dz)
@@ -733,6 +737,13 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
+    
+    
+    
+    
+    
+    
+    
     
     #for epoch in range(NUM_EPOCHS):   
         # #train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)

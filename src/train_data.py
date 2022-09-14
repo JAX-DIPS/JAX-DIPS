@@ -130,6 +130,7 @@ class DatasetDict:
         def split(arr):
             """Splits the first axis of `self.batched_data` evenly across the number of devices."""
             return arr.reshape(self.num_gpus, arr.shape[0] // self.num_gpus, *arr.shape[1:])
+        pdb.set_trace()
         self.batched_data = jax.tree_map(split, self.batched_data)
         
         
