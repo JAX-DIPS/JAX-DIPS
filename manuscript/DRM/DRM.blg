@@ -4,47 +4,47 @@ The top-level auxiliary file: DRM.aux
 The style file: abbrv.bst
 Database file #1: references.bib
 Warning--entry type for "optax2020github" isn't style-file defined
---line 212 of file references.bib
+--line 265 of file references.bib
 Warning--can't use both volume and number fields in kolmogorov1957representation
-You've used 17 entries,
+You've used 22 entries,
             2118 wiz_defined-function locations,
-            603 strings with 6532 characters,
-and the built_in function-call counts, 5594 in all, are:
-= -- 559
-> -- 236
-< -- 4
-+ -- 98
-- -- 76
-* -- 395
-:= -- 922
-add.period$ -- 50
-call.type$ -- 17
-change.case$ -- 89
+            631 strings with 7219 characters,
+and the built_in function-call counts, 7559 in all, are:
+= -- 772
+> -- 301
+< -- 6
++ -- 123
+- -- 96
+* -- 527
+:= -- 1219
+add.period$ -- 67
+call.type$ -- 22
+change.case$ -- 114
 chr.to.int$ -- 0
-cite$ -- 18
-duplicate$ -- 196
-empty$ -- 457
-format.name$ -- 76
-if$ -- 1168
+cite$ -- 23
+duplicate$ -- 275
+empty$ -- 624
+format.name$ -- 96
+if$ -- 1602
 int.to.chr$ -- 0
-int.to.str$ -- 17
-missing$ -- 14
-newline$ -- 85
-num.names$ -- 34
-pop$ -- 85
+int.to.str$ -- 22
+missing$ -- 19
+newline$ -- 110
+num.names$ -- 44
+pop$ -- 110
 preamble$ -- 1
-purify$ -- 72
+purify$ -- 92
 quote$ -- 0
-skip$ -- 149
+skip$ -- 211
 stack$ -- 0
-substring$ -- 405
-swap$ -- 38
-text.length$ -- 4
+substring$ -- 581
+swap$ -- 63
+text.length$ -- 6
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 68
+type$ -- 88
 warning$ -- 1
-while$ -- 58
-width$ -- 19
-write$ -- 183
+while$ -- 80
+width$ -- 24
+write$ -- 240
 (There were 2 warnings)

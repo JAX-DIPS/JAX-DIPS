@@ -6,6 +6,25 @@ D.~Bochkov and F.~Gibou.
   grids.
 \newblock {\em Journal of Computational Physics}, 407:109269, 2020.
 
+\bibitem{chua1988cellularA}
+L.~O. Chua and L.~Yang.
+\newblock Cellular neural networks: Applications.
+\newblock {\em IEEE Transactions on circuits and systems}, 35(10):1273--1290,
+  1988.
+
+\bibitem{chua1988cellular}
+L.~O. Chua and L.~Yang.
+\newblock Cellular neural networks: Theory.
+\newblock {\em IEEE Transactions on circuits and systems}, 35(10):1257--1272,
+  1988.
+
+\bibitem{gobovic1993design}
+D.~Gobovic and M.~Zaghloul.
+\newblock Design of locally connected cmos neural cells to solve the
+  steady-state heat flow problem.
+\newblock In {\em Proceedings of 36th Midwest Symposium on Circuits and
+  Systems}, pages 755--757. IEEE, 1993.
+
 \bibitem{guittet2015solving}
 A.~Guittet, M.~Lepilliez, S.~Tanguy, and F.~Gibou.
 \newblock Solving elliptic problems with discontinuities on irregular
@@ -45,6 +64,11 @@ I.~E. Lagaris, A.~Likas, and D.~I. Fotiadis.
 \newblock Artificial neural networks for solving ordinary and partial
   differential equations.
 \newblock {\em IEEE transactions on neural networks}, 9(5):987--1000, 1998.
+
+\bibitem{lee1990neural}
+H.~Lee and I.~S. Kang.
+\newblock Neural algorithm for solving differential equations.
+\newblock {\em Journal of Computational Physics}, 91(1):110--131, 1990.
 
 \bibitem{min2007geometric}
 C.~Min and F.~Gibou.
@@ -91,6 +115,12 @@ M.~Sussman, P.~Smereka, and S.~Osher.
 \newblock A level set approach for computing solutions to incompressible
   two-phase flow.
 \newblock {\em Journal of Computational Physics}, 114(1):146--159, 1994.
+
+\bibitem{wang1990structured}
+L.~Wang and J.~M. Mendel.
+\newblock Structured trainable networks for matrix algebra.
+\newblock In {\em 1990 IJCNN International Joint Conference on Neural
+  Networks}, pages 125--132. IEEE, 1990.
 
 \bibitem{XIU2001658}
 D.~Xiu and G.~E. Karniadakis.

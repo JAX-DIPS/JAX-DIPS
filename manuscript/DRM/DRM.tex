@@ -89,7 +89,7 @@
 %\title{Differentiable framework for learning surrogate neural network models for solving elliptic problems with discontinuities across irregular interfaces}
 %\title{Differentiable residual minimization method for learning surrogate models for elliptic problems with irregular discontinuities}
 
-\title{JAX-DIPS: A scalable neural-numeric framework for solving elliptic problems with discontinuities across irregular interfaces}
+\title{JAX-DIPS: A scalable neuro-symbolic framework for solving elliptic problems with discontinuities across irregular interfaces}
 
 \cortext[cor]{Corresponding author: p.a.mistani@gmail.com}
 
@@ -103,7 +103,7 @@
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present a scalable strategy for development of mesh-free hybrid neural-numeric partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical methods. The presented differentiable residual minimization method (hereby dubbed DRM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply DRM to the challenging class of elliptic problems with jump conditions across irregular sharp interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and released in a software package named \texttt{JAX-DIPS}, standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
+	We present a scalable strategy for development of mesh-free hybrid neuro-symbolic partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical methods. The presented differentiable residual minimization method (hereby dubbed DRM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply DRM to the challenging class of elliptic problems with jump conditions across irregular sharp interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and released in a software package named \texttt{JAX-DIPS}, standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
 
 \end{abstract}
 
@@ -125,7 +125,20 @@
 \section{Introduction}
 \label{sec::introduction}
 
-Neural networks can learn solution manifolds of partial differential equations; first demonstrated by Lagaris \textit{et al.} (1998) \cite{lagaris1998artificial}. 
+In early 1990s, artificial neural networks have been studied for solving partial differential equations by (i) mapping the algebraic operations of the discretized PDE systems onto specialized Hopfield or cellular neural network architectures and minimizing the network energy \cite{lee1990neural,gobovic1993design,chua1988cellular,chua1988cellularA}, or (ii) treating the whole neural network as the basic approximation unit whose parameters are adjusted to minimize a specialized error function that includes the differential equation itself with its boundary/initial conditions \cite{lagaris1998artificial}. 
+
+%Earlier works by Lee and Kang (1988) \cite{lee1990neural} explored the idea of mapping the linear system obtained from finite difference discretization onto the architecture of a locally connected Hopfield neural network \cite{lee1990neural} or, more broadly, cellular neural networks \cite{gobovic1993design,chua1988cellular,chua1988cellularA}. 
+
+In the first category, neurons output the discretized solution values over a set number of grid points and minimizing the network energy drives the neuronal values towards the solution of the linear system at the mesh points. 
+
+
+The fundamental benefits of neural computing in solving PDEs has been to tame the computational costs or parallelizability of algebraic operations arising in finite discretization methods \cite{wang1990structured}, or building mesh-free numerical methods that could benefit from often unstructured observational data points.
+
+
+
+
+Neural networks can learn solution manifolds of partial differential equations.
+ 
 
 rather than solution values on a finite set of discretization points, offering a fundamental ability . 
 
