@@ -40,6 +40,12 @@ A.~N. Kolmogorov.
 \newblock In {\em Doklady Akademii Nauk}, volume 114, pages 953--956. Russian
   Academy of Sciences, 1957.
 
+\bibitem{lagaris1998artificial}
+I.~E. Lagaris, A.~Likas, and D.~I. Fotiadis.
+\newblock Artificial neural networks for solving ordinary and partial
+  differential equations.
+\newblock {\em IEEE transactions on neural networks}, 9(5):987--1000, 1998.
+
 \bibitem{min2007geometric}
 C.~Min and F.~Gibou.
 \newblock Geometric integration over irregular domains with application to

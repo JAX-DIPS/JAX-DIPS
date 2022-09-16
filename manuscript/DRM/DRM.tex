@@ -87,7 +87,10 @@
 \begin{document}
 %\title{JAX-DIPS: Differentiable Interfacial PDE Solver}
 %\title{Differentiable framework for learning surrogate neural network models for solving elliptic problems with discontinuities across irregular interfaces}
-\title{Differentiable residual minimization method for learning surrogate models for elliptic problems with irregular discontinuities}
+%\title{Differentiable residual minimization method for learning surrogate models for elliptic problems with irregular discontinuities}
+
+\title{JAX-DIPS: A scalable neural-numeric framework for solving elliptic problems with discontinuities across irregular interfaces}
+
 \cortext[cor]{Corresponding author: p.a.mistani@gmail.com}
 
 
@@ -100,12 +103,12 @@
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present an end-to-end differentiable method for learning neural network surrogate models for the solution of elliptic partial differential equations with jump conditions across irregular sharp interfaces in three spatial dimensions. This method is based on minimization of the residual of the linear system obtained from finite discretization of the solution field with respect to trainable parameters of the neural network. We show the method is convergent such that model accuracy improves by increasing number of evaluation points in the domain. The algorithms presented in this work are implemented and released in a software package dubbed \texttt{JAX-DIPS}, standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
+	We present a scalable strategy for development of mesh-free hybrid neural-numeric partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical methods. The presented differentiable residual minimization method (hereby dubbed DRM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply DRM to the challenging class of elliptic problems with jump conditions across irregular sharp interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and released in a software package named \texttt{JAX-DIPS}, standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
 
 \end{abstract}
 
 \begin{keyword}
-	level-set method \sep free boundary problems \sep inverse problems \sep jump conditions \sep differentiable programming
+	level-set method \sep free boundary problems \sep surrogate models \sep jump conditions \sep differentiable programming \sep neural networks
 \end{keyword}
 
 \maketitle
@@ -121,6 +124,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 \label{sec::introduction}
+
+Neural networks can learn solution manifolds of partial differential equations; first demonstrated by Lagaris \textit{et al.} (1998) \cite{lagaris1998artificial}. 
+
+rather than solution values on a finite set of discretization points, offering a fundamental ability . 
+
+
 Differentiable programming ...
 
 DTO vs OTD: we are doing DTO which is Discretize then Optimize paradigm. OTD is the traditional adjoint methods.
@@ -148,7 +157,8 @@ Here $f^\pm=f(\mathbf{x} \in \Omega^\pm)$ is the spatially varying source term, 
 
 
 
-\section{Level-set method for free boundary problems}
+%\section{Level-set method for free boundary problems}
+\section{Dynamic Geometry Representation}
 A differentiable solver for free boundary problems requires a rich data structure capable to handle several geometric operations over a given mesh. We understand the mesh as a \textit{topological} relationships between cells that discretize a domain, the geometric information of this discretization as well as the relative configuration of the interfaces with respect to the cells need to be computed. 
 
 In \texttt{JAX-DIPS} we have implemented a uniform grid that supports operations such as interpolations, interface advection, integrations over interfaces as well as in domains. We describe the numerical algorithms used in this section.
@@ -369,6 +379,7 @@ One of the main advantages of neural networks for solving partial differential e
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_v1.png}
+	\includegraphics[width=0.85\linewidth]{./figures/jax_dips_paper_kernel.png}
 	\caption{Fully classic numerical solver is used to train neural surrogate models. Training occurs in the finite dimensional space spanned by the finite discretization methods.}
 	\label{fig:proposal}
 \end{figure}

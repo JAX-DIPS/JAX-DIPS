@@ -1,6 +1,6 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}% 1
 \BOOKMARK [2][-]{subsection.1.1}{Life sciences are described by elliptic PDEs with free interfaces}{section.1}% 2
-\BOOKMARK [1][-]{section.2}{Level-set method for free boundary problems}{}% 3
+\BOOKMARK [1][-]{section.2}{Dynamic Geometry Representation}{}% 3
 \BOOKMARK [2][-]{subsection.2.1}{Interpolation methods}{section.2}% 4
 \BOOKMARK [3][-]{subsubsection.2.1.1}{Trilinear interpolation}{subsection.2.1}% 5
 \BOOKMARK [3][-]{subsubsection.2.1.2}{Quadratic non-oscillatory interpolation}{subsection.2.1}% 6
