@@ -120,16 +120,25 @@ class DatasetDict:
         self.batched_data = jnp.zeros((self.num_gpus, self.num_batches_per_gpu + self.extra_batch_per_gpu , self.batch_size, 3))
         
         for gpu in range(self.num_gpus):
-            
+
             for batch_id in range(self.num_batches_per_gpu):
-                data_begin_idx = gpu * (self.num_batches_per_gpu * self.batch_size + self.extra_batch_per_gpu * self.last_batch_size ) + batch_id*self.batch_size 
-                data_end_idx   = data_begin_idx + self.batch_size
-                
-                data_slice = self.x_data[ data_begin_idx : data_end_idx]      
-                try:
-                    self.batched_data = self.batched_data.at[gpu, batch_id].set(data_slice)        
-                except:
-                    pdb.set_trace()
+                data_begin_idx = gpu * (self.num_batches_per_gpu * self.batch_size + self.extra_batch_per_gpu * self.last_batch_size ) + batch_id*self.batch_size
+                data_end_idx = min(data_begin_idx + self.batch_size, self._len)
+
+                data_slice = self.x_data[ data_begin_idx : data_end_idx]
+                if data_slice.shape[0] < self.batch_size:
+                    # Readjust data_slice's size to make sure merging it to
+                    # batched_data does not fail due to shape mismatch
+                    padding = generate_random_points_like(self.x_data,
+                                                          self.batch_size - data_slice.shape[0])
+                    # TODO: Revisit to replace concatenate with writing in 2 steps
+                    data_slice = jnp.concatenate((data_slice, padding))
+
+                self.batched_data = self.batched_data.at[gpu, batch_id].set(data_slice)
+
+            # TODO: This may not be required. Talk to Pouria to understand how
+            #       block is used. Ideally the last batch will be of different
+            #       size the that can be addressed in the previous block.
             if self.extra_batch_per_gpu==1:
                 
                 data_begin_idx = data_end_idx # gpu * (self.num_batches_per_gpu * self.batch_size + self.extra_batch_per_gpu * self.last_batch_size) + self.num_batches_per_gpu*self.batch_size 
