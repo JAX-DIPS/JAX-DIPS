@@ -17,6 +17,11 @@ T.~Belytschko, N.~Mo{\"e}s, S.~Usui, and C.~Parimi.
 \newblock {\em International Journal for Numerical Methods in Engineering},
   50(4):993--1013, 2001.
 
+\bibitem{berg2017neural}
+J.~Berg and K.~Nystr{\"o}m.
+\newblock Neural network augmented inverse problems for pdes.
+\newblock {\em arXiv preprint arXiv:1712.09685}, 2017.
+
 \bibitem{BOCHKOV2020109269}
 D.~Bochkov and F.~Gibou.
 \newblock Solving elliptic interface problems with jump conditions on cartesian
@@ -63,6 +68,12 @@ R.~Crockett, P.~Colella, and D.~T. Graves.
 \newblock A cartesian grid embedded boundary method for solving the poisson and
   heat equations with discontinuous coefficients in three dimensions.
 \newblock {\em Journal of Computational Physics}, 230(7):2451--2469, 2011.
+
+\bibitem{dal2020data}
+N.~Dal~Santo, S.~Deparis, and L.~Pegolotti.
+\newblock Data driven approximation of parametrized pdes by reduced basis and
+  neural networks.
+\newblock {\em Journal of Computational Physics}, 416:109550, 2020.
 
 \bibitem{ewing1999immersed}
 R.~E. Ewing, Z.~Li, T.~Lin, and Y.~Lin.
@@ -164,6 +175,12 @@ X.-D. Liu, R.~P. Fedkiw, and M.~Kang.
   irregular domains.
 \newblock {\em Journal of computational Physics}, 160(1):151--178, 2000.
 
+\bibitem{lu2020extracting}
+P.~Y. Lu, S.~Kim, and M.~Solja{\v{c}}i{\'c}.
+\newblock Extracting interpretable physical parameters from spatiotemporal
+  systems using unsupervised learning.
+\newblock {\em Physical Review X}, 10(3):031056, 2020.
+
 \bibitem{min2007geometric}
 C.~Min and F.~Gibou.
 \newblock Geometric integration over irregular domains with application to
@@ -211,6 +228,11 @@ S.~Osher and J.~A. Sethian.
 G.~Y. Ouaknin, N.~Laachi, K.~Delaney, G.~H. Fredrickson, and F.~Gibou.
 \newblock Level-set strategy for inverse dsa-lithography.
 \newblock {\em Journal of Computational Physics}, 375:1159--1178, 2018.
+
+\bibitem{pakravan2021solving}
+S.~Pakravan, P.~A. Mistani, M.~A. Aragon-Calvo, and F.~Gibou.
+\newblock Solving inverse-pde problems with physics-aware neural networks.
+\newblock {\em Journal of Computational Physics}, 440:110414, 2021.
 
 \bibitem{gradClipping}
 R.~Pascanu, T.~Mikolov, and Y.~Bengio.

@@ -3,56 +3,48 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: DRM.aux
 The style file: abbrv.bst
 Database file #1: references.bib
-Repeated entry---line 405 of file references.bib
- : @article{guittet2015solving
- :                            ,
-I'm skipping whatever remains of this entry
-Repeated entry---line 526 of file references.bib
- : @article{bochkov2020solving
- :                            ,
-I'm skipping whatever remains of this entry
 Warning--entry type for "optax2020github" isn't style-file defined
---line 594 of file references.bib
+--line 607 of file references.bib
 Warning--can't use both volume and number fields in kolmogorov1957representation
-You've used 46 entries,
+You've used 50 entries,
             2118 wiz_defined-function locations,
-            775 strings with 11809 characters,
-and the built_in function-call counts, 16221 in all, are:
-= -- 1624
-> -- 772
+            796 strings with 12479 characters,
+and the built_in function-call counts, 17508 in all, are:
+= -- 1745
+> -- 844
 < -- 5
-+ -- 321
-- -- 256
-* -- 1253
-:= -- 2703
-add.period$ -- 138
-call.type$ -- 46
-change.case$ -- 266
++ -- 349
+- -- 280
+* -- 1350
+:= -- 2931
+add.period$ -- 150
+call.type$ -- 50
+change.case$ -- 290
 chr.to.int$ -- 0
-cite$ -- 47
-duplicate$ -- 525
-empty$ -- 1238
-format.name$ -- 256
-if$ -- 3313
+cite$ -- 51
+duplicate$ -- 568
+empty$ -- 1331
+format.name$ -- 280
+if$ -- 3571
 int.to.chr$ -- 0
-int.to.str$ -- 46
-missing$ -- 43
-newline$ -- 230
-num.names$ -- 92
-pop$ -- 213
+int.to.str$ -- 50
+missing$ -- 47
+newline$ -- 250
+num.names$ -- 100
+pop$ -- 231
 preamble$ -- 1
-purify$ -- 220
+purify$ -- 240
 quote$ -- 0
-skip$ -- 375
+skip$ -- 404
 stack$ -- 0
-substring$ -- 1256
-swap$ -- 77
+substring$ -- 1330
+swap$ -- 81
 text.length$ -- 5
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 184
+type$ -- 200
 warning$ -- 1
-while$ -- 166
-width$ -- 48
-write$ -- 501
-(There were 2 error messages)
+while$ -- 177
+width$ -- 52
+write$ -- 544
+(There were 2 warnings)
