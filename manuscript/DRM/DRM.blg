@@ -3,48 +3,56 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: DRM.aux
 The style file: abbrv.bst
 Database file #1: references.bib
+Repeated entry---line 391 of file references.bib
+ : @article{guittet2015solving
+ :                            ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 512 of file references.bib
+ : @article{bochkov2020solving
+ :                            ,
+I'm skipping whatever remains of this entry
 Warning--entry type for "optax2020github" isn't style-file defined
---line 313 of file references.bib
+--line 580 of file references.bib
 Warning--can't use both volume and number fields in kolmogorov1957representation
-You've used 25 entries,
+You've used 45 entries,
             2118 wiz_defined-function locations,
-            651 strings with 7763 characters,
-and the built_in function-call counts, 8681 in all, are:
-= -- 881
-> -- 360
-< -- 6
-+ -- 146
-- -- 116
-* -- 615
-:= -- 1409
-add.period$ -- 76
-call.type$ -- 25
-change.case$ -- 133
+            772 strings with 11742 characters,
+and the built_in function-call counts, 15915 in all, are:
+= -- 1594
+> -- 759
+< -- 5
++ -- 316
+- -- 252
+* -- 1232
+:= -- 2650
+add.period$ -- 135
+call.type$ -- 45
+change.case$ -- 261
 chr.to.int$ -- 0
-cite$ -- 26
-duplicate$ -- 310
-empty$ -- 706
-format.name$ -- 116
-if$ -- 1833
+cite$ -- 46
+duplicate$ -- 514
+empty$ -- 1213
+format.name$ -- 252
+if$ -- 3250
 int.to.chr$ -- 0
-int.to.str$ -- 25
-missing$ -- 22
-newline$ -- 125
-num.names$ -- 50
-pop$ -- 123
+int.to.str$ -- 45
+missing$ -- 42
+newline$ -- 225
+num.names$ -- 90
+pop$ -- 210
 preamble$ -- 1
-purify$ -- 108
+purify$ -- 216
 quote$ -- 0
-skip$ -- 235
+skip$ -- 367
 stack$ -- 0
-substring$ -- 670
-swap$ -- 68
-text.length$ -- 6
+substring$ -- 1233
+swap$ -- 76
+text.length$ -- 5
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 100
+type$ -- 180
 warning$ -- 1
-while$ -- 89
-width$ -- 27
-write$ -- 273
-(There were 2 warnings)
+while$ -- 163
+width$ -- 47
+write$ -- 490
+(There were 2 error messages)

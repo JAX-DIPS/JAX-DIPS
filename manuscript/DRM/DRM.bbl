@@ -1,10 +1,44 @@
 \begin{thebibliography}{10}
 
+\bibitem{adams2002immersed}
+L.~Adams and Z.~Li.
+\newblock The immersed interface/multigrid methods for interface problems.
+\newblock {\em SIAM Journal on Scientific Computing}, 24(2):463--479, 2002.
+
+\bibitem{babuvska1970finite}
+I.~Babu{\v{s}}ka.
+\newblock The finite element method for elliptic equations with discontinuous
+  coefficients.
+\newblock {\em Computing}, 5(3):207--213, 1970.
+
+\bibitem{belytschko2001arbitrary}
+T.~Belytschko, N.~Mo{\"e}s, S.~Usui, and C.~Parimi.
+\newblock Arbitrary discontinuities in finite elements.
+\newblock {\em International Journal for Numerical Methods in Engineering},
+  50(4):993--1013, 2001.
+
 \bibitem{bochkov2020solving}
 D.~Bochkov and F.~Gibou.
 \newblock Solving elliptic interface problems with jump conditions on cartesian
   grids.
 \newblock {\em Journal of Computational Physics}, 407:109269, 2020.
+
+\bibitem{bochkov2021non}
+D.~Bochkov and F.~Gibou.
+\newblock A non-parametric shape optimization approach for solving inverse
+  problems in directed self-assembly of block copolymers.
+\newblock {\em arXiv preprint arXiv:2112.09615}, 2021.
+
+\bibitem{bochkov2021sharp}
+D.~Bochkov, T.~Pollock, and F.~Gibou.
+\newblock Sharp-interface simulations of multicomponent alloy solidification.
+\newblock {\em arXiv preprint arXiv:2112.08650}, 2021.
+
+\bibitem{bramble1996finite}
+J.~H. Bramble and J.~T. King.
+\newblock A finite element method for interface problems in domains with smooth
+  boundaries and interfaces.
+\newblock {\em Advances in Computational Mathematics}, 6(1):109--138, 1996.
 
 \bibitem{chua1988cellularA}
 L.~O. Chua and L.~Yang.
@@ -18,12 +52,42 @@ L.~O. Chua and L.~Yang.
 \newblock {\em IEEE Transactions on circuits and systems}, 35(10):1257--1272,
   1988.
 
+\bibitem{crockett2011cartesian}
+R.~Crockett, P.~Colella, and D.~T. Graves.
+\newblock A cartesian grid embedded boundary method for solving the poisson and
+  heat equations with discontinuous coefficients in three dimensions.
+\newblock {\em Journal of Computational Physics}, 230(7):2451--2469, 2011.
+
+\bibitem{ewing1999immersed}
+R.~E. Ewing, Z.~Li, T.~Lin, and Y.~Lin.
+\newblock The immersed finite volume element methods for the elliptic interface
+  problems.
+\newblock {\em Mathematics and Computers in Simulation}, 50(1-4):63--76, 1999.
+
+\bibitem{fedkiw1999non}
+R.~P. Fedkiw, T.~Aslam, B.~Merriman, and S.~Osher.
+\newblock A non-oscillatory eulerian approach to interfaces in multimaterial
+  flows (the ghost fluid method).
+\newblock {\em Journal of computational physics}, 152(2):457--492, 1999.
+
+\bibitem{galatsis2010patterning}
+K.~Galatsis, K.~L. Wang, M.~Ozkan, C.~S. Ozkan, Y.~Huang, J.~P. Chang, H.~G.
+  Monbouquette, Y.~Chen, P.~Nealey, and Y.~Botros.
+\newblock Patterning and templating for nanoelectronics.
+\newblock {\em Advanced Materials}, 22(6):769--778, 2010.
+
 \bibitem{gobovic1993design}
 D.~Gobovic and M.~Zaghloul.
 \newblock Design of locally connected cmos neural cells to solve the
   steady-state heat flow problem.
 \newblock In {\em Proceedings of 36th Midwest Symposium on Circuits and
   Systems}, pages 755--757. IEEE, 1993.
+
+\bibitem{gong2008immersed}
+Y.~Gong, B.~Li, and Z.~Li.
+\newblock Immersed-interface finite-element methods for elliptic interface
+  problems with nonhomogeneous jump conditions.
+\newblock {\em SIAM Journal on Numerical Analysis}, 46(1):472--495, 2008.
 
 \bibitem{guittet2015solving}
 A.~Guittet, M.~Lepilliez, S.~Tanguy, and F.~Gibou.
@@ -70,17 +134,29 @@ H.~Lee and I.~S. Kang.
 \newblock Neural algorithm for solving differential equations.
 \newblock {\em Journal of Computational Physics}, 91(1):110--131, 1990.
 
-\bibitem{long2019pde}
-Z.~Long, Y.~Lu, and B.~Dong.
-\newblock Pde-net 2.0: Learning pdes from data with a numeric-symbolic hybrid
-  deep network.
-\newblock {\em Journal of Computational Physics}, 399:108925, 2019.
+\bibitem{leveque1994immersed}
+R.~J. LeVeque and Z.~Li.
+\newblock The immersed interface method for elliptic equations with
+  discontinuous coefficients and singular sources.
+\newblock {\em SIAM Journal on Numerical Analysis}, 31(4):1019--1044, 1994.
 
-\bibitem{long2018pde}
-Z.~Long, Y.~Lu, X.~Ma, and B.~Dong.
-\newblock Pde-net: Learning pdes from data.
-\newblock In {\em International Conference on Machine Learning}, pages
-  3208--3216. PMLR, 2018.
+\bibitem{lew2008discontinuous}
+A.~J. Lew and G.~C. Buscaglia.
+\newblock A discontinuous-galerkin-based immersed boundary method.
+\newblock {\em International Journal for Numerical Methods in Engineering},
+  76(4):427--454, 2008.
+
+\bibitem{li2003new}
+Z.~Li, T.~Lin, and X.~Wu.
+\newblock New cartesian grid methods for interface problems using the finite
+  element formulation.
+\newblock {\em Numerische Mathematik}, 96(1):61--98, 2003.
+
+\bibitem{liu2000boundary}
+X.-D. Liu, R.~P. Fedkiw, and M.~Kang.
+\newblock A boundary condition capturing method for poisson's equation on
+  irregular domains.
+\newblock {\em Journal of computational Physics}, 160(1):151--178, 2000.
 
 \bibitem{min2007geometric}
 C.~Min and F.~Gibou.
@@ -94,11 +170,41 @@ C.~Min and F.~Gibou.
   cartesian grids.
 \newblock {\em Journal of Computational Physics}, 225(1):300--321, 2007.
 
+\bibitem{MirzadehPB}
+M.~{Mirzadeh}, M.~{Theillard}, and F.~{Gibou}.
+\newblock {A second-order discretization of the nonlinear Poisson-Boltzmann
+  equation over irregular geometries using non-graded adaptive Cartesian
+  grids}.
+\newblock {\em Journal of Computational Physics}, 230(5):2125--2140, Mar. 2011.
+
+\bibitem{MISTANI2018150}
+P.~Mistani, A.~Guittet, D.~Bochkov, J.~Schneider, D.~Margetis, C.~Ratsch, and
+  F.~Gibou.
+\newblock The island dynamics model on parallel quadtree grids.
+\newblock {\em Journal of Computational Physics}, 361:150--166, 2018.
+
+\bibitem{mistani2019parallel}
+P.~Mistani, A.~Guittet, C.~Poignard, and F.~Gibou.
+\newblock A parallel voronoi-based approach for mesoscale simulations of cell
+  aggregate electropermeabilization.
+\newblock {\em Journal of Computational Physics}, 380:48--64, 2019.
+
+\bibitem{moes1999finite}
+N.~Mo{\"e}s, J.~Dolbow, and T.~Belytschko.
+\newblock A finite element method for crack growth without remeshing.
+\newblock {\em International journal for numerical methods in engineering},
+  46(1):131--150, 1999.
+
 \bibitem{osher1988fronts}
 S.~Osher and J.~A. Sethian.
 \newblock Fronts propagating with curvature-dependent speed: Algorithms based
   on hamilton-jacobi formulations.
 \newblock {\em Journal of computational physics}, 79(1):12--49, 1988.
+
+\bibitem{ouaknin2018level}
+G.~Y. Ouaknin, N.~Laachi, K.~Delaney, G.~H. Fredrickson, and F.~Gibou.
+\newblock Level-set strategy for inverse dsa-lithography.
+\newblock {\em Journal of Computational Physics}, 375:1159--1178, 2018.
 
 \bibitem{gradClipping}
 R.~Pascanu, T.~Mikolov, and Y.~Bengio.
@@ -116,6 +222,12 @@ J.~F. Sallee.
 \newblock The middle-cut triangulations of the n-cube.
 \newblock {\em SIAM Journal on Algebraic Discrete Methods}, 5(3):407--419,
   1984.
+
+\bibitem{sharp1990calculating}
+K.~A. Sharp and B.~Honig.
+\newblock Calculating total electrostatic energies with the nonlinear
+  poisson-boltzmann equation.
+\newblock {\em Journal of Physical Chemistry}, 94(19):7684--7692, 1990.
 
 \bibitem{shu1988efficient}
 C.-W. Shu and S.~Osher.
@@ -140,6 +252,12 @@ M.~Sussman, P.~Smereka, and S.~Osher.
 \newblock A level set approach for computing solutions to incompressible
   two-phase flow.
 \newblock {\em Journal of Computational Physics}, 114(1):146--159, 1994.
+
+\bibitem{theillard2015sharp}
+M.~Theillard, F.~Gibou, and T.~Pollock.
+\newblock A sharp computational method for the simulation of the solidification
+  of binary alloys.
+\newblock {\em Journal of scientific computing}, 63(2):330--354, 2015.
 
 \bibitem{XIU2001658}
 D.~Xiu and G.~E. Karniadakis.
