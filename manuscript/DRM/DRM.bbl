@@ -17,6 +17,12 @@ T.~Belytschko, N.~Mo{\"e}s, S.~Usui, and C.~Parimi.
 \newblock {\em International Journal for Numerical Methods in Engineering},
   50(4):993--1013, 2001.
 
+\bibitem{BOCHKOV2020109269}
+D.~Bochkov and F.~Gibou.
+\newblock Solving elliptic interface problems with jump conditions on cartesian
+  grids.
+\newblock {\em Journal of Computational Physics}, 407:109269, 2020.
+
 \bibitem{bochkov2020solving}
 D.~Bochkov and F.~Gibou.
 \newblock Solving elliptic interface problems with jump conditions on cartesian
