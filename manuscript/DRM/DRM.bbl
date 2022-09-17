@@ -70,6 +70,18 @@ H.~Lee and I.~S. Kang.
 \newblock Neural algorithm for solving differential equations.
 \newblock {\em Journal of Computational Physics}, 91(1):110--131, 1990.
 
+\bibitem{long2019pde}
+Z.~Long, Y.~Lu, and B.~Dong.
+\newblock Pde-net 2.0: Learning pdes from data with a numeric-symbolic hybrid
+  deep network.
+\newblock {\em Journal of Computational Physics}, 399:108925, 2019.
+
+\bibitem{long2018pde}
+Z.~Long, Y.~Lu, X.~Ma, and B.~Dong.
+\newblock Pde-net: Learning pdes from data.
+\newblock In {\em International Conference on Machine Learning}, pages
+  3208--3216. PMLR, 2018.
+
 \bibitem{min2007geometric}
 C.~Min and F.~Gibou.
 \newblock Geometric integration over irregular domains with application to
@@ -92,6 +104,13 @@ S.~Osher and J.~A. Sethian.
 R.~Pascanu, T.~Mikolov, and Y.~Bengio.
 \newblock On the difficulty of training recurrent neural networks, 2012.
 
+\bibitem{RAISSI2019686}
+M.~Raissi, P.~Perdikaris, and G.~Karniadakis.
+\newblock Physics-informed neural networks: A deep learning framework for
+  solving forward and inverse problems involving nonlinear partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 378:686--707, 2019.
+
 \bibitem{sallee1984middle}
 J.~F. Sallee.
 \newblock The middle-cut triangulations of the n-cube.
@@ -104,6 +123,12 @@ C.-W. Shu and S.~Osher.
   shock-capturing schemes.
 \newblock {\em Journal of computational physics}, 77(2):439--471, 1988.
 
+\bibitem{SIRIGNANO20181339}
+J.~Sirignano and K.~Spiliopoulos.
+\newblock Dgm: A deep learning algorithm for solving partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 375:1339--1364, 2018.
+
 \bibitem{sprecher1965structure}
 D.~A. Sprecher.
 \newblock On the structure of continuous functions of several variables.
@@ -115,12 +140,6 @@ M.~Sussman, P.~Smereka, and S.~Osher.
 \newblock A level set approach for computing solutions to incompressible
   two-phase flow.
 \newblock {\em Journal of Computational Physics}, 114(1):146--159, 1994.
-
-\bibitem{wang1990structured}
-L.~Wang and J.~M. Mendel.
-\newblock Structured trainable networks for matrix algebra.
-\newblock In {\em 1990 IJCNN International Joint Conference on Neural
-  Networks}, pages 125--132. IEEE, 1990.
 
 \bibitem{XIU2001658}
 D.~Xiu and G.~E. Karniadakis.

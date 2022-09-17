@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  16 SEP 2022 17:18
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  16 SEP 2022 19:28
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -616,167 +616,167 @@ Overfull \hbox (2.22221pt too wide) has occurred while \output is active
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 138.
+(hyperref)                removing `math shift' on input line 135.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `superscript' on input line 138.
+(hyperref)                removing `superscript' on input line 135.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\dagger' on input line 138.
+(hyperref)                removing `\dagger' on input line 135.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 138.
+(hyperref)                removing `math shift' on input line 135.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 138.
+(hyperref)                removing `math shift' on input line 135.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `superscript' on input line 138.
+(hyperref)                removing `superscript' on input line 135.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\dagger' on input line 138.
+(hyperref)                removing `\dagger' on input line 135.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 138.
+(hyperref)                removing `math shift' on input line 135.
 
 [1
 
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2] [3] [4] [5] [6]
-<./figures/jax_dips_paper_v1.png, id=197, 963.6pt x 542.025pt>
+<./figures/jax_dips_paper_v1.png, id=200, 963.6pt x 542.025pt>
 File: ./figures/jax_dips_paper_v1.png Graphic file (type png)
 <use ./figures/jax_dips_paper_v1.png>
-Package pdftex.def Info: ./figures/jax_dips_paper_v1.png  used on input line 39
-6.
+Package pdftex.def Info: ./figures/jax_dips_paper_v1.png  used on input line 38
+5.
 (pdftex.def)             Requested size: 365.50655pt x 205.59119pt.
-<./figures/jax_dips_paper_kernel.png, id=198, 963.6pt x 542.025pt>
+<./figures/jax_dips_paper_kernel.png, id=201, 963.6pt x 542.025pt>
 File: ./figures/jax_dips_paper_kernel.png Graphic file (type png)
 <use ./figures/jax_dips_paper_kernel.png>
 Package pdftex.def Info: ./figures/jax_dips_paper_kernel.png  used on input lin
-e 397.
+e 386.
 (pdftex.def)             Requested size: 365.50655pt x 205.59119pt.
 
 [7] [8 <./figures/jax_dips_paper_v1.png (PNG copy)> <./figures/jax_dips_paper_k
 ernel.png (PNG copy)>]
-<./figures/neural_network_arch.png, id=219, 963.6pt x 542.025pt>
+<./figures/neural_network_arch.png, id=222, 963.6pt x 542.025pt>
 File: ./figures/neural_network_arch.png Graphic file (type png)
 <use ./figures/neural_network_arch.png>
 Package pdftex.def Info: ./figures/neural_network_arch.png  used on input line 
-426.
+415.
 (pdftex.def)             Requested size: 430.00462pt x 241.87442pt.
  [9 <./figures/neural_network_arch.png (PNG copy)>]
-<./figures/grids_full.png, id=231, 770.88pt x 770.88pt>
+<./figures/grids_full.png, id=234, 770.88pt x 770.88pt>
 File: ./figures/grids_full.png Graphic file (type png)
 <use ./figures/grids_full.png>
-Package pdftex.def Info: ./figures/grids_full.png  used on input line 463.
+Package pdftex.def Info: ./figures/grids_full.png  used on input line 452.
 (pdftex.def)             Requested size: 193.50076pt x 193.49586pt.
-<./figures/grids.png, id=233, 770.88pt x 770.88pt>
+<./figures/grids.png, id=236, 770.88pt x 770.88pt>
 File: ./figures/grids.png Graphic file (type png)
 <use ./figures/grids.png>
-Package pdftex.def Info: ./figures/grids.png  used on input line 464.
+Package pdftex.def Info: ./figures/grids.png  used on input line 453.
 (pdftex.def)             Requested size: 193.50076pt x 193.49586pt.
 
 [10 <./figures/grids_full.png> <./figures/grids.png>] [11]
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <7> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 585.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 574.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 585.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 574.
 Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
-put line 648.
+put line 637.
  [12] [13] [14]
 [15] [16]
-<./figures/poisson_solver_loss_sphere_128x128x128.png, id=304, 578.16pt x 578.1
+<./figures/poisson_solver_loss_sphere_128x128x128.png, id=307, 578.16pt x 578.1
 6pt>
 File: ./figures/poisson_solver_loss_sphere_128x128x128.png Graphic file (type p
 ng)
 <use ./figures/poisson_solver_loss_sphere_128x128x128.png>
 Package pdftex.def Info: ./figures/poisson_solver_loss_sphere_128x128x128.png  
-used on input line 1007.
+used on input line 996.
 (pdftex.def)             Requested size: 210.70462pt x 210.70464pt.
-<./figures/case_I_regression.png, id=305, 578.16pt x 578.16pt>
+<./figures/case_I_regression.png, id=308, 578.16pt x 578.16pt>
 File: ./figures/case_I_regression.png Graphic file (type png)
 <use ./figures/case_I_regression.png>
-Package pdftex.def Info: ./figures/case_I_regression.png  used on input line 10
-08.
+Package pdftex.def Info: ./figures/case_I_regression.png  used on input line 99
+7.
 (pdftex.def)             Requested size: 193.50076pt x 193.49292pt.
-<./figures/sphere_shape.png, id=306, 2097.8375pt x 2097.8375pt>
+<./figures/sphere_shape.png, id=309, 2097.8375pt x 2097.8375pt>
 File: ./figures/sphere_shape.png Graphic file (type png)
 <use ./figures/sphere_shape.png>
-Package pdftex.def Info: ./figures/sphere_shape.png  used on input line 1016.
+Package pdftex.def Info: ./figures/sphere_shape.png  used on input line 1005.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/sphere_mu_m.png, id=307, 2097.8375pt x 2097.8375pt>
+<./figures/sphere_mu_m.png, id=310, 2097.8375pt x 2097.8375pt>
 File: ./figures/sphere_mu_m.png Graphic file (type png)
 <use ./figures/sphere_mu_m.png>
-Package pdftex.def Info: ./figures/sphere_mu_m.png  used on input line 1017.
+Package pdftex.def Info: ./figures/sphere_mu_m.png  used on input line 1006.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/sphere_sols_regression_16x16x16.png, id=308, 2125.9425pt x 1157.3237
+<./figures/sphere_sols_regression_16x16x16.png, id=311, 2125.9425pt x 1157.3237
 5pt>
 File: ./figures/sphere_sols_regression_16x16x16.png Graphic file (type png)
 <use ./figures/sphere_sols_regression_16x16x16.png>
 Package pdftex.def Info: ./figures/sphere_sols_regression_16x16x16.png  used on
- input line 1024.
+ input line 1013.
 (pdftex.def)             Requested size: 430.00462pt x 234.07422pt.
-<./figures/sphere_sols_regression_128x128x128.png, id=309, 2125.9425pt x 1157.3
+<./figures/sphere_sols_regression_128x128x128.png, id=312, 2125.9425pt x 1157.3
 2375pt>
 File: ./figures/sphere_sols_regression_128x128x128.png Graphic file (type png)
 <use ./figures/sphere_sols_regression_128x128x128.png>
 Package pdftex.def Info: ./figures/sphere_sols_regression_128x128x128.png  used
- on input line 1025.
+ on input line 1014.
 (pdftex.def)             Requested size: 430.00462pt x 234.07422pt.
-<./figures/128x128x128_electric_U.png, id=310, 1938.24126pt x 1157.32375pt>
+<./figures/128x128x128_electric_U.png, id=313, 1938.24126pt x 1157.32375pt>
 File: ./figures/128x128x128_electric_U.png Graphic file (type png)
 <use ./figures/128x128x128_electric_U.png>
 Package pdftex.def Info: ./figures/128x128x128_electric_U.png  used on input li
-ne 1033.
+ne 1022.
 (pdftex.def)             Requested size: 430.00462pt x 256.74878pt.
  [17] [18 <./figures/poisson_solver_loss_sphere_128x128x128.png> <./figures/cas
 e_I_regression.png> <./figures/sphere_shape.png (PNG copy)> <./figures/sphere_m
 u_m.png (PNG copy)>] [19 <./figures/sphere_sols_regression_16x16x16.png (PNG co
 py)> <./figures/sphere_sols_regression_128x128x128.png (PNG copy)>]
-<./figures/star_shape.png, id=333, 2097.8375pt x 2097.8375pt>
+<./figures/star_shape.png, id=336, 2097.8375pt x 2097.8375pt>
 File: ./figures/star_shape.png Graphic file (type png)
 <use ./figures/star_shape.png>
-Package pdftex.def Info: ./figures/star_shape.png  used on input line 1125.
+Package pdftex.def Info: ./figures/star_shape.png  used on input line 1114.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/star_mu_m.png, id=334, 2097.8375pt x 2097.8375pt>
+<./figures/star_mu_m.png, id=337, 2097.8375pt x 2097.8375pt>
 File: ./figures/star_mu_m.png Graphic file (type png)
 <use ./figures/star_mu_m.png>
-Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 1126.
+Package pdftex.def Info: ./figures/star_mu_m.png  used on input line 1115.
 (pdftex.def)             Requested size: 210.70462pt x 210.69232pt.
-<./figures/star_sols_regression_64x64x64.png, id=335, 2125.9425pt x 1157.32375p
+<./figures/star_sols_regression_64x64x64.png, id=338, 2125.9425pt x 1157.32375p
 t>
 File: ./figures/star_sols_regression_64x64x64.png Graphic file (type png)
 <use ./figures/star_sols_regression_64x64x64.png>
 Package pdftex.def Info: ./figures/star_sols_regression_64x64x64.png  used on i
-nput line 1133.
+nput line 1122.
 (pdftex.def)             Requested size: 430.00462pt x 234.07422pt.
-<./figures/star_grad_sols_regression_64x64x64.png, id=336, 2179.14125pt x 1157.
+<./figures/star_grad_sols_regression_64x64x64.png, id=339, 2179.14125pt x 1157.
 32375pt>
 File: ./figures/star_grad_sols_regression_64x64x64.png Graphic file (type png)
 <use ./figures/star_grad_sols_regression_64x64x64.png>
 Package pdftex.def Info: ./figures/star_grad_sols_regression_64x64x64.png  used
- on input line 1134.
+ on input line 1123.
 (pdftex.def)             Requested size: 430.00462pt x 228.37027pt.
-<./figures/poisson_solver_loss_star_64x64x64_regress.png, id=337, 578.16pt x 57
+<./figures/poisson_solver_loss_star_64x64x64_regress.png, id=340, 578.16pt x 57
 8.16pt>
 File: ./figures/poisson_solver_loss_star_64x64x64_regress.png Graphic file (typ
 e png)
 <use ./figures/poisson_solver_loss_star_64x64x64_regress.png>
 Package pdftex.def Info: ./figures/poisson_solver_loss_star_64x64x64_regress.pn
-g  used on input line 1142.
+g  used on input line 1131.
 (pdftex.def)             Requested size: 210.70462pt x 210.70464pt.
-<./figures/case_II_regression.png, id=338, 578.16pt x 578.16pt>
+<./figures/case_II_regression.png, id=341, 578.16pt x 578.16pt>
 File: ./figures/case_II_regression.png Graphic file (type png)
 <use ./figures/case_II_regression.png>
 Package pdftex.def Info: ./figures/case_II_regression.png  used on input line 1
-143.
+132.
 (pdftex.def)             Requested size: 193.50076pt x 193.49292pt.
 
 [20] [21 <./figures/128x128x128_electric_U.png (PNG copy)> <./figures/star_shap
@@ -784,12 +784,12 @@ e.png (PNG copy)> <./figures/star_mu_m.png (PNG copy)>] [22 <./figures/star_sol
 s_regression_64x64x64.png (PNG copy)> <./figures/star_grad_sols_regression_64x6
 4x64.png (PNG copy)>] [23] (./DRM.bbl [24 <./figures/poisson_solver_loss_star_6
 4x64x64_regress.png> <./figures/case_II_regression.png>])
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1178.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1167.
  [25]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1178.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1167.
  (./DRM.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1178.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1178.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1167.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1167.
 
 Package rerunfilecheck Info: File `DRM.out' has not changed.
 (rerunfilecheck)             Checksum: 9ECBD3E7C9CE2C811D384834D9AEB0AB;2151.
@@ -797,16 +797,16 @@ Package rerunfilecheck Info: File `DRM.out' has not changed.
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1178.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1167.
  ) 
 Here is how much of TeX's memory you used:
- 10180 strings out of 483065
- 153559 string characters out of 5963550
- 442971 words of memory out of 5000000
- 24855 multiletter control sequences out of 15000+600000
+ 10192 strings out of 483065
+ 153782 string characters out of 5963550
+ 444019 words of memory out of 5000000
+ 24864 multiletter control sequences out of 15000+600000
  545427 words of font info for 77 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
- 41i,28n,42p,1488b,518s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,28n,42p,1575b,518s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/mistani/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
 00pk></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><
 /usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/sh
@@ -837,10 +837,10 @@ exmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-d
 ist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/texlive/texmf-dist/fon
 ts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/font
 s/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on DRM.pdf (25 pages, 5684008 bytes).
+Output written on DRM.pdf (25 pages, 5684896 bytes).
 PDF statistics:
- 503 PDF objects out of 1000 (max. 8388607)
- 415 compressed objects within 5 object streams
- 109 named destinations out of 1000 (max. 500000)
+ 508 PDF objects out of 1000 (max. 8388607)
+ 420 compressed objects within 5 object streams
+ 112 named destinations out of 1000 (max. 500000)
  299 words of extra memory for PDF output out of 10000 (max. 10000000)
 
