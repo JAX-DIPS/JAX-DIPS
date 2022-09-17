@@ -8,8 +8,9 @@ DOCKER_CMD="docker run \
     -v /etc/passwd:/etc/passwd:ro \
     -v /etc/group:/etc/group:ro \
     -v /etc/shadow:/etc/shadow:ro \
+    -v ${HOME}:/home \
     -v $(pwd):/workspace \
-    -e HOME=/workspace \
+    -e HOME=/home \
     -w /workspace"
 
 
