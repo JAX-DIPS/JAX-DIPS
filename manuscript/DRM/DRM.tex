@@ -125,12 +125,14 @@
 \section{Introduction}
 \label{sec::introduction}
 
-In early 1990s, artificial neural networks have been studied for solving partial differential equations by (i) mapping the algebraic operations of the discretized PDE systems onto specialized Hopfield or cellular neural network architectures and minimizing the network energy \cite{lee1990neural,gobovic1993design,chua1988cellular,chua1988cellularA}, or (ii) treating the whole neural network as the basic approximation unit whose parameters are adjusted to minimize a specialized error function that includes the differential equation itself with its boundary/initial conditions \cite{lagaris1998artificial}. 
+Since early 1990s, artificial neural networks have been studied for solving partial differential equations by (i) mapping the algebraic operations of the discretized PDE systems onto specialized Hopfield or cellular neural network architectures and minimizing the network energy, or (ii) treating the whole neural network as the basic approximation unit whose parameters are adjusted to minimize a specialized error function that includes the differential equation itself with its boundary/initial conditions. 
 
 %Earlier works by Lee and Kang (1988) \cite{lee1990neural} explored the idea of mapping the linear system obtained from finite difference discretization onto the architecture of a locally connected Hopfield neural network \cite{lee1990neural} or, more broadly, cellular neural networks \cite{gobovic1993design,chua1988cellular,chua1988cellularA}. 
 
-In the first category, neurons output the discretized solution values over a set number of grid points and minimizing the network energy drives the neuronal values towards the solution of the linear system at the mesh points. 
+In the first category, neurons output the discretized solution values over a set number of grid points and minimizing the network energy drives the neuronal values towards the solution of the linear system at the mesh points. In this case, the neural network energy is the residual of the finite discretization method summed over all neurons of the network \cite{lee1990neural}. Although the convergence properties of the finite discretization methods gaurantee and control quality of the obtained solutions, the computational costs grow by increasing resolution or dimensionality. Interestingly, due to the regular and sparse structure of the finite discretizations, such neural network PDE solvers have been implemented on VLSI analog CMOS circuits \cite{gobovic1993design,chua1988cellular,chua1988cellularA}.
 
+
+The second strategy proposed by Lagaris \textit{et al.} \cite{lagaris1998artificial} relies on the function approximation capabilities of the neural networks.
 
 The fundamental benefits of neural computing in solving PDEs has been to tame the computational costs or parallelizability of algebraic operations arising in finite discretization methods \cite{wang1990structured}, or building mesh-free numerical methods that could benefit from often unstructured observational data points.
 
