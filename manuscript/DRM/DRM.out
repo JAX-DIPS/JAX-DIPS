@@ -3,27 +3,28 @@
 \BOOKMARK [2][-]{subsection.1.2}{Literature on relevant finite discretization methods}{section.1}% 3
 \BOOKMARK [2][-]{subsection.1.3}{Literature on solving PDEs with neural networks}{section.1}% 4
 \BOOKMARK [1][-]{section.2}{Neural Bootstrapping Method}{}% 5
-\BOOKMARK [1][-]{section.3}{Dynamic Geometry Representation}{}% 6
-\BOOKMARK [2][-]{subsection.3.1}{Interpolation methods}{section.3}% 7
-\BOOKMARK [3][-]{subsubsection.3.1.1}{Trilinear interpolation}{subsection.3.1}% 8
-\BOOKMARK [3][-]{subsubsection.3.1.2}{Quadratic non-oscillatory interpolation}{subsection.3.1}% 9
-\BOOKMARK [2][-]{subsection.3.2}{Level-set method}{section.3}% 10
-\BOOKMARK [3][-]{subsubsection.3.2.1}{Second order accurate semi-Lagrangian advection scheme}{subsection.3.2}% 11
-\BOOKMARK [3][-]{subsubsection.3.2.2}{Godunov Hamiltonian for reinitialization}{subsection.3.2}% 12
-\BOOKMARK [2][-]{subsection.3.3}{Geometric operations}{section.3}% 13
-\BOOKMARK [3][-]{subsubsection.3.3.1}{Integration over 3D surfaces and volumes}{subsection.3.3}% 14
-\BOOKMARK [3][-]{subsubsection.3.3.2}{Cross sections of interface with grid cell faces}{subsection.3.3}% 15
-\BOOKMARK [1][-]{section.4}{Differentiable Residual Minimization \(DRM\) Method}{}% 16
-\BOOKMARK [2][-]{subsection.4.1}{Neural network approximators for the solution}{section.4}% 17
-\BOOKMARK [2][-]{subsection.4.2}{Approach I. Finite discretization method fused with regression extrapolation}{section.4}% 18
-\BOOKMARK [2][-]{subsection.4.3}{Approach II. Finite discretization method fused with neural extrapolation}{section.4}% 19
-\BOOKMARK [2][-]{subsection.4.4}{Approach III. Penalty minimization method}{section.4}% 20
-\BOOKMARK [1][-]{section.5}{Optimization scheme}{}% 21
-\BOOKMARK [2][-]{subsection.5.1}{Preconditioners are ideal network regularizers}{section.5}% 22
-\BOOKMARK [2][-]{subsection.5.2}{Learning rate scheduling}{section.5}% 23
-\BOOKMARK [2][-]{subsection.5.3}{Domain switching optimization scheme}{section.5}% 24
-\BOOKMARK [1][-]{section.6}{Numerical Examples}{}% 25
-\BOOKMARK [2][-]{subsection.6.1}{Case I.}{section.6}% 26
-\BOOKMARK [2][-]{subsection.6.2}{Case II.}{section.6}% 27
-\BOOKMARK [1][-]{section.7}{Conclusion \046 Future Directions}{}% 28
-\BOOKMARK [1][-]{section*.13}{References}{}% 29
+\BOOKMARK [2][-]{subsection.2.1}{Preconditioners are ideal network regularizers}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.2}{Learning rate scheduling}{section.2}% 7
+\BOOKMARK [1][-]{section.3}{JAX-DIPS: Differentiable Interfacial PDE Solver}{}% 8
+\BOOKMARK [2][-]{subsection.3.1}{Interpolation methods}{section.3}% 9
+\BOOKMARK [3][-]{subsubsection.3.1.1}{Trilinear interpolation}{subsection.3.1}% 10
+\BOOKMARK [3][-]{subsubsection.3.1.2}{Quadratic non-oscillatory interpolation}{subsection.3.1}% 11
+\BOOKMARK [2][-]{subsection.3.2}{Level-set method}{section.3}% 12
+\BOOKMARK [3][-]{subsubsection.3.2.1}{Second order accurate semi-Lagrangian advection scheme}{subsection.3.2}% 13
+\BOOKMARK [3][-]{subsubsection.3.2.2}{Godunov Hamiltonian for reinitialization}{subsection.3.2}% 14
+\BOOKMARK [2][-]{subsection.3.3}{Geometric integration}{section.3}% 15
+\BOOKMARK [3][-]{subsubsection.3.3.1}{Integration over 3D surfaces and volumes}{subsection.3.3}% 16
+\BOOKMARK [3][-]{subsubsection.3.3.2}{Cross sections of interface with grid cell faces}{subsection.3.3}% 17
+\BOOKMARK [2][-]{subsection.3.4}{Neural network approximators for the solution}{section.3}% 18
+\BOOKMARK [2][-]{subsection.3.5}{Approach I. Finite discretization method fused with regression extrapolation}{section.3}% 19
+\BOOKMARK [2][-]{subsection.3.6}{Approach II. Finite discretization method fused with neural extrapolation}{section.3}% 20
+\BOOKMARK [1][-]{section.4}{Optimization Scheme}{}% 21
+\BOOKMARK [2][-]{subsection.4.1}{Preconditioners are ideal network regularizers}{section.4}% 22
+\BOOKMARK [2][-]{subsection.4.2}{Learning rate scheduling}{section.4}% 23
+\BOOKMARK [2][-]{subsection.4.3}{Domain switching optimization scheme}{section.4}% 24
+\BOOKMARK [1][-]{section.5}{Numerical Examples}{}% 25
+\BOOKMARK [2][-]{subsection.5.1}{Case I.}{section.5}% 26
+\BOOKMARK [2][-]{subsection.5.2}{Case II.}{section.5}% 27
+\BOOKMARK [1][-]{section.6}{Conclusion \046 Future Directions}{}% 28
+\BOOKMARK [1][-]{section*.15}{References}{}% 29
+\BOOKMARK [1][-]{appendix.A}{Solving interface problems with physics-informed neural networks}{}% 30
