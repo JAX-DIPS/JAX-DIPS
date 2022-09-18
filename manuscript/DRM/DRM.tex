@@ -89,7 +89,9 @@
 %\title{Differentiable framework for learning surrogate neural network models for solving elliptic problems with discontinuities across irregular interfaces}
 %\title{Differentiable residual minimization method for learning surrogate models for elliptic problems with irregular discontinuities}
 
-\title{JAX-DIPS: Neuro-symbolic bootstrapping method for solving elliptic problems with discontinuities across irregular interfaces}
+%\title{JAX-DIPS: Neuro-symbolic bootstrapping method for solving elliptic problems with discontinuities across irregular interfaces}
+\title{JAX-DIPS: Neural bootstrapping of finite discretization methods and application to elliptic problems with discontinuities}
+
 
 \cortext[cor]{Corresponding author: p.a.mistani@gmail.com}
 
@@ -103,7 +105,7 @@
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present a scalable strategy for development of mesh-free hybrid neuro-symbolic partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical solvers. The presented neuro-symbolic bootstrapping method (hereby dubbed NSBM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply NSBM to the challenging class of elliptic problems with jump conditions across irregular sharp interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and released in a software package named \texttt{JAX-DIPS} (\href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}), standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
+	We present a scalable strategy for development of mesh-free hybrid neuro-symbolic partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution functions and operators of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical solvers. The presented neural bootstrapping method (hereby dubbed NBM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply NBM to the important class of elliptic problems with jump conditions across irregular interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and released in a software package named \texttt{JAX-DIPS} (\href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}), standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
 
 \end{abstract}
 
@@ -165,10 +167,10 @@ Neural networks are not only universal approximators of continuous functions, bu
 
 
 
-\subsection{Our contributions}
-In this work we propose a novel algorithm for solving PDEs based on deep neural networks by lifting any existing mesh-based finite discretization method off of its underlying grid and extend it into a mesh-free method that can be applied to high dimensional problems on unstructured random points in an embarrasingly parallel format. We call our method Neuro-Symbolic Bootstrapping Method (NSBM). Bootstrapping is a technique by which a simple computer program activates a more complicated system of programs.
 
+In this work we propose a novel algorithm for solving PDEs based on deep neural networks by lifting any existing mesh-based finite discretization method off of its underlying grid and extend it into a mesh-free method that can be applied to high dimensional problems on unstructured random points in an embarrasingly parallel fashion. 
 
+\section{Neural Bootstrapping Method}
 
 JAX-DIPS Poisson problem solver provides the two sides of $A u =b$ which is obtained after discretization of the governing PDE problem over a uniform 3D grid. Two solution schemes for the forwards problem are possible: (1) using usual iterative methods having left-hand-side and right-hand-side of the PDE discretization, and (2) using autodifferentiation across loss function (difference between lhs and rhs in 2-norm) with respect to a given estimate for the solution vector on the underlying grid $\rm u_{ijk}$. Both approaches focus on minimizing the residual over the grid points
 \begin{align*}
