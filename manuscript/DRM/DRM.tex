@@ -174,34 +174,47 @@ In this work we propose a novel algorithm for solving PDEs based on deep neural 
 
 
 
-\section{Neural Bootstrapping Method} \label{sec:nbm}
+\section{Neural Bootstrapping Method (NBM)} \label{sec:nbm}
 
-\begin{figure}
-	\centering
-	\includegraphics[width=\textwidth]{./figures/jax_dips_paper_kernel.png}
-    \caption{NBM kernels are applied on each collocation point per thread. Kernel operations involve considering implicit compute cells at different resolutions according to the bootstrapped finite discretization method to evaluate the discretization residual.}
-    \label{fig:nbm_kernel}
-\end{figure}
 %\begin{figure}
-%     \centering
-%     \begin{subfigure}[b]{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{./figures/jax_dips_paper_kernel.png}
-%         \caption{NBM kernel is applied on each collocation point. Kernel involves construction of implicit compute cells at different resolutions according to the bootstrapped finite discretization method to evaluate the discretization residual.}
-%         \label{fig:nbm_kernel}
-%     \end{subfigure}
-%     \hfill
-%     \begin{subfigure}[b]{\textwidth}
-%         \centering
-%         \includegraphics[width=\textwidth]{./figures/jax_dips_paper_v1.png}
-%         \caption{$y=5/x$}
-%         \label{fig:trainingloop}
-%     \end{subfigure}
-%        \caption{Overall design of the neural bootstrapping method.}
-%        \label{fig:nbm}
+%	\centering
+%	\includegraphics[width=\textwidth]{./figures/jax_dips_paper_kernel.png}
+%    \caption{NBM kernels are applied on each collocation point per thread. Kernel operations involve considering implicit compute cells at different resolutions according to the bootstrapped finite discretization method to evaluate the discretization residual.}
+%    \label{fig:nbm_kernel}
 %\end{figure}
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{./figures/jax_dips_paper_kernel.png}
+         \caption{NBM kernels compute residual contribution by each collocation point per thread. Kernel operations involve considering implicit cells at different resolutions according to the bootstrapped finite discretization method.}
+         \label{fig:nbm_kernel}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{./figures/jax_dips_paper_v1.png}
+         \caption{NBM outer training layout. Geometric information is managed by a mesh oracle that is often a structured mesh at much lower resolution that stores the level-set funcion. The pointwise evaluations at each implicit cell is locally preconditioned based on the geometry of the interfaces crossing the implicit cells. The training loop involves automatic differentiation across the assembly of the linear system performed by the NBM kernels.}
+         \label{fig:trainingloop}
+     \end{subfigure}
+        \caption{Neural Bootstrapping Method (NBM).}
+        \label{fig:nbm}
+\end{figure}
 
-One of the main advantages of neural networks for solving partial differential equations is to provide surrogate models that can be readily evaluated on any point of their input space. For parameterized problems, a free parameter such as the diffusion coefficient could be variable for these problems, in this case having an oracle function that evaluates solutions in near-real-time is an invaluable tool for general engineering optimization workflows. 
+
+Figure \ref{fig:nbm} illustrates schematic of the proposed algorithm. Neural networks are used as surrogates for the solution function that are iteratively adjusted to minimize discretization residuals at a set of randomly sampled points and at arbitrary resolutions. The key idea is that neural netwroks can be evaluated over vertices of any discretization stencils centered at any point in the domain effectively emulating the effect of any structured mesh without ever matreializing the mesh. Therefore, we use neural networks to bootstrap mesh based finite discretization (FD) methods to compile mesh free numerical methods.
+
+Operations in NBM kernels are:
+\begin{enumerate}
+
+\item A compute cell is implicitly constructed at any input coordinate and at a specified resolution. At the presence of discontinuities a coarse mesh encapsulates an interpolant for the level-set function whose intersection with the implicit cell is calculated to obtain necessary geometric information for the FD kernel and preconditioner.
+
+\item FD kernel is applied on the compute cell where the solution values are evaluated by the neural network. Each kernel contributes a linear system residual $r_p = ||A u_p - b||$ at a point $p$.
+
+\end{enumerate}
+
+We convolve the complex discretization kernels over neural network values evaluated at structured compact stencils, 
+
 
 
 
@@ -217,13 +230,13 @@ The first method attempts to span the residual space in an iterative fashion by 
 
 We designed \texttt{JAX-DIPS} as a modular open source library for the research community on the level-set methods for solving interfacial PDE problems. We invite the community to contribute to this library for further development of novel numerical algorithms for solving both forward and inverse interfacial PDE problems.
 
-
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=\textwidth]{./figures/jax_dips_paper_v1.png}
-    \caption{Training loop.}
-    \label{fig:nbm_solver}
-\end{figure}
+%
+%\begin{figure}[ht]
+%	\centering
+%	\includegraphics[width=\textwidth]{./figures/jax_dips_paper_v1.png}
+%    \caption{Training loop.}
+%    \label{fig:nbm_solver}
+%\end{figure}
 \subsection{Preconditioners are ideal network regularizers}
 Finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system often lead to bad condition number for the linear system, which can be remedied by advanced preconditioners. Preconditioners are a powerful technique to accelerate convergence of tradional numerical linear algebraic solvers. Given a poorly conditioned linear system $Ax=b$ one can obtain an equivalent system $\hat{A}\hat{x}=\hat{b}$ with accelerated convergence rate when using iterative gradient based methods. For the conjugate gradient method convergence iteration is proportional to $\sqrt{\kappa(A)}$ where $\kappa(A)$ is the condition number of matrix $A$. This is achieved by mapping the linear system with a nonsingular matrix $M$ into a new space $M^{-1} A x = M^{-1}b$ where $M^{-1}A$ has more regular spread of eigenvalues, hence a better condition number. The precondition matrix $M$ should approximate $A^{-1}$ such that $\vert I - M^{-1}A\vert < 1$. The simplest choice is the Jacobi prconditioner which amounts to using the diagonal part of $A$ as the preconditioner, $M=diag(A)$.
 
@@ -874,15 +887,10 @@ There is a major downside with this approach, that we need to compute second-ord
 
 
 
-\section{Optimization Scheme}
+\subsection{Optimization scheme}
 
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=\textwidth]{./figures/jax_dips_paper_v1.png}
-    \caption{Training loop.}
-    \label{fig:nbm_solver}
-\end{figure}
-\subsection{Preconditioners are ideal network regularizers}
+
+\subsubsection{Preconditioners are ideal network regularizers}
 Finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system often lead to bad condition number for the linear system, which can be remedied by advanced preconditioners. Preconditioners are a powerful technique to accelerate convergence of tradional numerical linear algebraic solvers. Given a poorly conditioned linear system $Ax=b$ one can obtain an equivalent system $\hat{A}\hat{x}=\hat{b}$ with accelerated convergence rate when using iterative gradient based methods. For the conjugate gradient method convergence iteration is proportional to $\sqrt{\kappa(A)}$ where $\kappa(A)$ is the condition number of matrix $A$. This is achieved by mapping the linear system with a nonsingular matrix $M$ into a new space $M^{-1} A x = M^{-1}b$ where $M^{-1}A$ has more regular spread of eigenvalues, hence a better condition number. The precondition matrix $M$ should approximate $A^{-1}$ such that $\vert I - M^{-1}A\vert < 1$. The simplest choice is the Jacobi prconditioner which amounts to using the diagonal part of $A$ as the preconditioner, $M=diag(A)$.
 
 
@@ -901,7 +909,7 @@ Note that we never explicitly compute the matrix, instead we compute the effect 
 
 
 
-\subsection{Learning rate scheduling}
+\subsubsection{Learning rate scheduling}
 First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
 
 
@@ -923,7 +931,7 @@ where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the 
 
 
 
-\subsection{Domain switching optimization scheme}
+\subsubsection{Domain switching optimization scheme}
 The linear system suffers from worse condition number in the domain with more variability in diffusion coefficient, or where diffusion coefficient is larger; \textit{i.e.,} the fast region. This leads to regionally unbalanced solution error where the overall error is systematically lopsided by the faster diffusion region. 
 
 We found this problem can be drastically improved by interleaving region-specific optimization epochs in the training pipeline, where only one of the networks is updated based on the loss computed in the its region. See algorithm \ref{switching} for details of the algorithm.
@@ -975,7 +983,7 @@ We found this problem can be drastically improved by interleaving region-specifi
 
 
 
-\section{Numerical Examples} \label{sec:examples}
+\section{Numerical Results} \label{sec:examples}
 
 We consider solution to the problem
 \begin{align*}
@@ -1219,7 +1227,7 @@ $2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
 	\label{fig:lossestar}
 \end{figure}
 
-\section{Conclusion \& Future Directions} \label{sec:conc}
+\section{Conclusion} \label{sec:conc}
 We developed a differentiable GPU-based framework for solving partial differential equations with jump conditions across irregular interfaces in three spatial dimensions. Solutions in each domain are represented by a simple multi-layer perceptron (MLP) and Cartesian grid points of the underlying numerical discretization scheme are treated as collocation points for optimizing the unknown parameters of the MLPs. 
 
 
