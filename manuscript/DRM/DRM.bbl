@@ -316,6 +316,12 @@ J.~F. Sallee.
 \newblock {\em SIAM Journal on Algebraic Discrete Methods}, 5(3):407--419,
   1984.
 
+\bibitem{shallue2018measuring}
+C.~J. Shallue, J.~Lee, J.~Antognini, J.~Sohl-Dickstein, R.~Frostig, and G.~E.
+  Dahl.
+\newblock Measuring the effects of data parallelism on neural network training.
+\newblock {\em arXiv preprint arXiv:1811.03600}, 2018.
+
 \bibitem{sharp1990calculating}
 K.~A. Sharp and B.~Honig.
 \newblock Calculating total electrostatic energies with the nonlinear

@@ -64,32 +64,28 @@
 \newlabel{sub@fig:trainingloop}{{b}{4}{NBM outer training layout. Geometric information is managed by a mesh oracle that is often a structured mesh at much lower resolution that stores the level-set funcion. The pointwise evaluations at each implicit cell is locally preconditioned based on the geometry of the interfaces crossing the implicit cells. The training loop involves automatic differentiation across the assembly of the linear system performed by the NBM kernels.\relax }{figure.caption.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Neural Bootstrapping Method (NBM).\relax }}{4}{figure.caption.1}\protected@file@percent }
 \newlabel{fig:nbm}{{1}{4}{Neural Bootstrapping Method (NBM).\relax }{figure.caption.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Preconditioners are ideal network regularizers}{5}{subsection.2.1}\protected@file@percent }
-\citation{optax2020github}
-\citation{kingma2014adam}
-\citation{gradClipping}
+\citation{shallue2018measuring}
 \citation{MIN2007300}
 \citation{MIN2007300}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Learning rate scheduling}{6}{subsection.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}JAX-DIPS: Differentiable Interfacial PDE Solver}{6}{section.3}\protected@file@percent }
-\newlabel{sec:dips}{{3}{6}{JAX-DIPS: Differentiable Interfacial PDE Solver}{section.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Interpolation methods}{6}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1}Trilinear interpolation}{6}{subsubsection.3.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}JAX-DIPS: Differentiable Interfacial PDE Solver}{5}{section.3}\protected@file@percent }
+\newlabel{sec:dips}{{3}{5}{JAX-DIPS: Differentiable Interfacial PDE Solver}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Interpolation methods}{5}{subsection.3.1}\protected@file@percent }
 \citation{osher1988fronts}
 \citation{SUSSMAN1994146}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2}Quadratic non-oscillatory interpolation}{7}{subsubsection.3.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Level-set method}{7}{subsection.3.2}\protected@file@percent }
-\newlabel{eq::sussman}{{2}{7}{Level-set method}{equation.3.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1}Trilinear interpolation}{6}{subsubsection.3.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2}Quadratic non-oscillatory interpolation}{6}{subsubsection.3.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Level-set method}{6}{subsection.3.2}\protected@file@percent }
+\newlabel{eq::sussman}{{2}{6}{Level-set method}{equation.3.2}{}}
 \citation{XIU2001658}
 \citation{shu1988efficient}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}Second order accurate semi-Lagrangian advection scheme}{8}{subsubsection.3.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.2}Godunov Hamiltonian for reinitialization}{8}{subsubsection.3.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}Second order accurate semi-Lagrangian advection scheme}{7}{subsubsection.3.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.2}Godunov Hamiltonian for reinitialization}{7}{subsubsection.3.2.2}\protected@file@percent }
 \citation{shu1988efficient}
 \citation{min2007geometric}
 \citation{sallee1984middle}
 \citation{min2007geometric}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Geometric integration}{9}{subsection.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.1}Integration over 3D surfaces and volumes}{9}{subsubsection.3.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Geometric integration}{8}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.1}Integration over 3D surfaces and volumes}{8}{subsubsection.3.3.1}\protected@file@percent }
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
@@ -101,54 +97,50 @@
 \citation{kolmogorov1957representation}
 \citation{sprecher1965structure}
 \citation{ismailov2022}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.2}Cross sections of interface with grid cell faces}{10}{subsubsection.3.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Neural network approximators for the solution}{10}{subsection.3.4}\protected@file@percent }
 \citation{kingma2014adam}
 \citation{bochkov2020solving}
 \citation{bochkov2020solving}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.2}Cross sections of interface with grid cell faces}{11}{subsubsection.3.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Neural network approximators for the solution}{11}{subsection.3.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Two neural networks are defined for the two regions of the computational domain.\relax }}{11}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:shapes}{{2}{11}{Two neural networks are defined for the two regions of the computational domain.\relax }{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Approach I. Finite discretization method fused with regression extrapolation}{11}{subsection.3.5}\protected@file@percent }
+\newlabel{sec::FD}{{3.5}{11}{Approach I. Finite discretization method fused with regression extrapolation}{subsection.3.5}{}}
 \citation{bochkov2020solving}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Two neural networks are defined for the two regions of the computational domain.\relax }}{12}{figure.caption.2}\protected@file@percent }
-\newlabel{fig:shapes}{{2}{12}{Two neural networks are defined for the two regions of the computational domain.\relax }{figure.caption.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Approach I. Finite discretization method fused with regression extrapolation}{12}{subsection.3.5}\protected@file@percent }
-\newlabel{sec::FD}{{3.5}{12}{Approach I. Finite discretization method fused with regression extrapolation}{subsection.3.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{13}{figure.caption.3}\protected@file@percent }
-\newlabel{fig:grid}{{3}{13}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Approach II. Finite discretization method fused with neural extrapolation}{15}{subsection.3.6}\protected@file@percent }
-\newlabel{eq::taylorexpandjump}{{13}{15}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.13}{}}
-\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{16}{algorithm.1}\protected@file@percent }
-\newlabel{euclid}{{1}{16}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
-\newlabel{eq::extrapolate1}{{14}{17}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.14}{}}
-\newlabel{eq::extrapolate2}{{15}{17}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.15}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Optimization scheme}{17}{subsection.3.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.1}Preconditioners are ideal network regularizers}{17}{subsubsection.3.7.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{12}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:grid}{{3}{12}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.3}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{15}{algorithm.1}\protected@file@percent }
+\newlabel{euclid}{{1}{15}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Approach II. Finite discretization method fused with neural extrapolation}{16}{subsection.3.6}\protected@file@percent }
+\newlabel{eq::taylorexpandjump}{{13}{16}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.13}{}}
+\newlabel{eq::extrapolate1}{{14}{16}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.14}{}}
+\newlabel{eq::extrapolate2}{{15}{16}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.15}{}}
 \citation{optax2020github}
 \citation{kingma2014adam}
 \citation{gradClipping}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.2}Learning rate scheduling}{18}{subsubsection.3.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.3}Domain switching optimization scheme}{18}{subsubsection.3.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Optimization scheme}{17}{subsection.3.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.1}Preconditioners are ideal network regularizers}{17}{subsubsection.3.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.2}Learning rate scheduling}{17}{subsubsection.3.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.3}Domain switching optimization scheme}{17}{subsubsection.3.7.3}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Domain switching method. Switching interval is $\tau $.\relax }}{18}{algorithm.2}\protected@file@percent }
+\newlabel{switching}{{2}{18}{Domain switching method. Switching interval is $\tau $.\relax }{algorithm.2}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Results}{18}{section.4}\protected@file@percent }
 \newlabel{sec:examples}{{4}{18}{Numerical Results}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Case I.}{18}{subsection.4.1}\protected@file@percent }
 \citation{guittet2015solving}
-\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Domain switching method. Switching interval is $\tau $.\relax }}{19}{algorithm.2}\protected@file@percent }
-\newlabel{switching}{{2}{19}{Domain switching method. Switching interval is $\tau $.\relax }{algorithm.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Case I.}{19}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }}{19}{table.caption.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II.}{19}{subsection.4.2}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{20}{figure.caption.5}\protected@file@percent }
 \newlabel{fig:losses}{{4}{20}{Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.5}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{20}{figure.caption.6}\protected@file@percent }
 \newlabel{fig:sphere}{{5}{20}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.6}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. \relax }}{21}{figure.caption.7}\protected@file@percent }
 \newlabel{fig:sphere}{{6}{21}{Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. \relax }{figure.caption.7}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }}{22}{table.caption.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II.}{22}{subsection.4.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }}{23}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:spheregrad}{{7}{23}{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }{figure.caption.8}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{23}{figure.caption.10}\protected@file@percent }
-\newlabel{fig:star}{{8}{23}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.10}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }}{24}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:star_sol}{{9}{24}{Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }{figure.caption.11}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{25}{table.caption.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{25}{section.5}\protected@file@percent }
-\newlabel{sec:conc}{{5}{25}{Conclusion}{section.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }}{22}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:spheregrad}{{7}{22}{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{22}{section.5}\protected@file@percent }
+\newlabel{sec:conc}{{5}{22}{Conclusion}{section.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{23}{table.caption.9}\protected@file@percent }
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{adams2002immersed}{{1}{}{{}}{{}}}
@@ -163,9 +155,11 @@
 \bibcite{bochkov2021sharp}{{10}{}{{}}{{}}}
 \bibcite{jax2018github}{{11}{}{{}}{{}}}
 \bibcite{bramble1996finite}{{12}{}{{}}{{}}}
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{26}{figure.caption.12}\protected@file@percent }
-\newlabel{fig:lossestar}{{10}{26}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
-\@writefile{toc}{\contentsline {section}{References}{26}{section*.13}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{24}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:star}{{8}{24}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.10}{}}
+\@writefile{toc}{\contentsline {section}{References}{24}{section*.13}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }}{25}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:star_sol}{{9}{25}{Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }{figure.caption.11}{}}
 \bibcite{chen1995universal}{{13}{}{{}}{{}}}
 \bibcite{chua1988cellularA}{{14}{}{{}}{{}}}
 \bibcite{chua1988cellular}{{15}{}{{}}{{}}}
@@ -176,6 +170,8 @@
 \bibcite{fedkiw1999non}{{20}{}{{}}{{}}}
 \bibcite{galatsis2010patterning}{{21}{}{{}}{{}}}
 \bibcite{gobovic1993design}{{22}{}{{}}{{}}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{26}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:lossestar}{{10}{26}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
 \bibcite{gong2008immersed}{{23}{}{{}}{{}}}
 \bibcite{guittet2015solving}{{24}{}{{}}{{}}}
 \bibcite{hecht1987kolmogorov}{{25}{}{{}}{{}}}
@@ -208,16 +204,17 @@
 \bibcite{gradClipping}{{52}{}{{}}{{}}}
 \bibcite{RAISSI2019686}{{53}{}{{}}{{}}}
 \bibcite{sallee1984middle}{{54}{}{{}}{{}}}
-\bibcite{sharp1990calculating}{{55}{}{{}}{{}}}
-\bibcite{shu1988efficient}{{56}{}{{}}{{}}}
-\bibcite{SIRIGNANO20181339}{{57}{}{{}}{{}}}
-\bibcite{sprecher1965structure}{{58}{}{{}}{{}}}
-\bibcite{SUSSMAN1994146}{{59}{}{{}}{{}}}
-\bibcite{theillard2015sharp}{{60}{}{{}}{{}}}
-\bibcite{um2020solver}{{61}{}{{}}{{}}}
-\bibcite{XIU2001658}{{62}{}{{}}{{}}}
-\bibcite{yu2018deep}{{63}{}{{}}{{}}}
-\@writefile{toc}{\let\numberline\tmptocnumberline}
+\bibcite{shallue2018measuring}{{55}{}{{}}{{}}}
+\bibcite{sharp1990calculating}{{56}{}{{}}{{}}}
+\bibcite{shu1988efficient}{{57}{}{{}}{{}}}
+\bibcite{SIRIGNANO20181339}{{58}{}{{}}{{}}}
+\bibcite{sprecher1965structure}{{59}{}{{}}{{}}}
+\bibcite{SUSSMAN1994146}{{60}{}{{}}{{}}}
+\bibcite{theillard2015sharp}{{61}{}{{}}{{}}}
+\bibcite{um2020solver}{{62}{}{{}}{{}}}
+\bibcite{XIU2001658}{{63}{}{{}}{{}}}
+\bibcite{yu2018deep}{{64}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
-\@writefile{toc}{\contentsline {section}{\numberline {Appendix \nobreakspace  {}A}Solving interface problems with physics-informed neural networks}{30}{appendix.A}\protected@file@percent }
-\newlabel{eq::interfaceLoss}{{A.2}{30}{Solving interface problems with physics-informed neural networks}{equation.A.2}{}}
+\@writefile{toc}{\let\numberline\tmptocnumberline}
+\@writefile{toc}{\contentsline {section}{\numberline {Appendix \nobreakspace  {}A}Solving interface problems with physics-informed neural networks}{29}{appendix.A}\protected@file@percent }
+\newlabel{eq::interfaceLoss}{{A.2}{29}{Solving interface problems with physics-informed neural networks}{equation.A.2}{}}

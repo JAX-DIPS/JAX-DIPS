@@ -204,83 +204,35 @@ In this work we propose a novel algorithm for solving PDEs based on deep neural 
 
 Figure \ref{fig:nbm} illustrates schematic of the proposed algorithm. Neural networks are used as surrogates for the solution function that are iteratively adjusted to minimize discretization residuals at a set of randomly sampled points and at arbitrary resolutions. The key idea is that neural netwroks can be evaluated over vertices of any discretization stencils centered at any point in the domain effectively emulating the effect of any structured mesh without ever matreializing the mesh. Therefore, we use neural networks to bootstrap mesh based finite discretization (FD) methods to compile mesh free numerical methods.
 
-Operations in NBM kernels are:
+Operations in differentiable NBM kernels are:
 \begin{enumerate}
 
 \item A compute cell is implicitly constructed at any input coordinate and at a specified resolution. At the presence of discontinuities a coarse mesh encapsulates an interpolant for the level-set function whose intersection with the implicit cell is calculated to obtain necessary geometric information for the FD kernel and preconditioner.
 
-\item FD kernel is applied on the compute cell where the solution values are evaluated by the neural network. Each kernel contributes a linear system residual $r_p = ||A u_p - b||$ at a point $p$.
+\item FD kernel is applied on the compute cell where the solution values are evaluated by the neural network. Each kernel contributes a local linear system $L^2$-norm residual $r_p = ||A u_p - b||$ at a point $p$.
+
+\item Residulas are preconditioned using common preconditioners to balance relative magnitude of contributions from different points and set them on equal level of importance before summing to produce a global loss value.
+
+\item Gradient based optimization methods used in machine learning are applied to adjust neural network parameters. The automatic differentiation loop passes across the NBM kernels, see figure \ref{fig:trainingloop}.
 
 \end{enumerate}
 
-We convolve the complex discretization kernels over neural network values evaluated at structured compact stencils, 
+NBM is a simple technique to train neural networks with differential equations that offers several capabilities:
+
+\begin{itemize}
+\item FD methods offer gauranteed accuracy and controllable convergence properties for the training of neural network surrogate models. These are critical features for solving real-world complex physical systems using neural networks.
+
+\item NBM offers a straightforward path for applying mesh-based FD methods on unstructured random points. This is an important ability for augmenting observational data in the training pipelines.
+
+\item The algorithm is highly parallelizable and is ideally suited for GPU-accelerated computing paradigm. 
+
+\item Multi-GPU parallel solution of PDE systems is reduced to the much simpler problem of data-parallel training using existing machine learning frameworks. Data parallelism involves distributing collocation points across multiple processors to compute gradient updates and then aggregating these locally computed updates \cite{shallue2018measuring}.
 
 
+\end{itemize}
 
 
-
-
-JAX-DIPS Poisson problem solver provides the two sides of $A u =b$ which is obtained after discretization of the governing PDE problem over a uniform 3D grid. Two solution schemes for the forwards problem are possible: (1) using usual iterative methods having left-hand-side and right-hand-side of the PDE discretization, and (2) using autodifferentiation across loss function (difference between lhs and rhs in 2-norm) with respect to a given estimate for the solution vector on the underlying grid $\rm u_{ijk}$. Both approaches focus on minimizing the residual over the grid points
-\begin{align*}
-	\min_{u_{ijk}} \vert\vert Au -b \vert \vert^2_2
-\end{align*}
-The first method attempts to span the residual space in an iterative fashion by \textit{estimating} the gradient of the minimizing function, while the second method offered in JAX-DIPS is directly computing the exact gradient of the minimizing function with respect to the current estimate for solution. Therefore, the advantage of this method is fewer iterations and faster convergence specially for irregular geometries where the condition number of the linear system leads to much difficulties that need to be resolved by complex preconditioning and increased number of iterations.
-
-
-
-We designed \texttt{JAX-DIPS} as a modular open source library for the research community on the level-set methods for solving interfacial PDE problems. We invite the community to contribute to this library for further development of novel numerical algorithms for solving both forward and inverse interfacial PDE problems.
-
-%
-%\begin{figure}[ht]
-%	\centering
-%	\includegraphics[width=\textwidth]{./figures/jax_dips_paper_v1.png}
-%    \caption{Training loop.}
-%    \label{fig:nbm_solver}
-%\end{figure}
-\subsection{Preconditioners are ideal network regularizers}
-Finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system often lead to bad condition number for the linear system, which can be remedied by advanced preconditioners. Preconditioners are a powerful technique to accelerate convergence of tradional numerical linear algebraic solvers. Given a poorly conditioned linear system $Ax=b$ one can obtain an equivalent system $\hat{A}\hat{x}=\hat{b}$ with accelerated convergence rate when using iterative gradient based methods. For the conjugate gradient method convergence iteration is proportional to $\sqrt{\kappa(A)}$ where $\kappa(A)$ is the condition number of matrix $A$. This is achieved by mapping the linear system with a nonsingular matrix $M$ into a new space $M^{-1} A x = M^{-1}b$ where $M^{-1}A$ has more regular spread of eigenvalues, hence a better condition number. The precondition matrix $M$ should approximate $A^{-1}$ such that $\vert I - M^{-1}A\vert < 1$. The simplest choice is the Jacobi prconditioner which amounts to using the diagonal part of $A$ as the preconditioner, $M=diag(A)$.
-
-
-
-Intuitively, condition number is caused by a separation of scales for geometric lengthscales or material properties that underly the solution patterns. One of the strengths of the presented approach is to readily enable usage of preconditioners for training neural network surrogate models. The workflow for training neural network surrogate models for PDEs with discontinuities is illustrated in figure \ref{fig:proposal}.
-
-In this work we use the Jacobi pre-conditioner. Basically, every element of the left-hand-side ($A u$) and right-hand-side ($b$) vectors are divided by the coefficient of the diagonal term of the matrix given by:
-\begin{align*}
-a_{ii} = \sum_{s=-,+} \bigg( k_{i,i}^s \vert \mathcal{V}_{i,i}^s\vert + (\mu_{i-\frac{1}{2},i}^s A_{i-\frac{1}{2},i}^s +  \mu_{i+\frac{1}{2},i}^s A_{i+\frac{1}{2},i}^s ) / \Delta x 
-+  (\mu_{i, i-\frac{1}{2}}^s A_{i, i-\frac{1}{2}}^s +  \mu_{i, i+\frac{1}{2}}^s A_{i, i+\frac{1}{2}}^s ) / \Delta y \bigg)
-\end{align*}
-Note that we never explicitly compute the matrix, instead we compute the effect of matrix product of $A u$.  
-
-
-
-
-
-
-\subsection{Learning rate scheduling}
-First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam, RMSProp, etc. Second order methods such as Newton or BFGS are certainly faster convergence but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on build a basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
-
-
-%\subsubsection{Gradient based optimization with learning rate annealing}
-
-We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam \cite{kingma2014adam} optimizer:
-\begin{align*}
-r_{k} = r_0 \alpha^{k / T}
-\end{align*}
-where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the decay rate, and $T$ is the decay count-scale. By default, we set $T=100$, $\alpha=0.975$, starting from an initial value of $r_0=10^{-2}$ and clip gradients by maximum global gradient norm (to a value $1$) \cite{gradClipping} before applying the Adam updates in each step. We note a larger decay rate, \textit{e.g.} $\alpha=0.98$, leads to small oscillations after $10000$ steps and although similar levels of accuracy can be achieved at much less iterations, here we report results with the more robust decay rate. 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+In the remainder of this manuscript we present details of applying NBM to solving elliptic problems with discontinuities across irregular interfaces.
 
 
 
@@ -294,6 +246,8 @@ where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the 
 %\section{Level-set method for free boundary problems}
 %\section{Geometric Primitives}
 \section{JAX-DIPS: Differentiable Interfacial PDE Solver} \label{sec:dips}
+We designed \texttt{JAX-DIPS} as a modular open source library for the research community on the level-set methods for solving interfacial PDE problems. We invite the community to contribute to this library for further development of novel numerical algorithms for solving both forward and inverse interfacial PDE problems.
+
 A differentiable solver for free boundary problems requires a rich data structure capable to handle several geometric operations over a given mesh. We understand the mesh as a \textit{topological} relationships between cells that discretize a domain, the geometric information of this discretization as well as the relative configuration of the interfaces with respect to the cells need to be computed. 
 
 In \texttt{JAX-DIPS} we have implemented a uniform grid that supports operations such as interpolations, interface advection, integrations over interfaces as well as in domains. We describe the numerical algorithms used in this section.
