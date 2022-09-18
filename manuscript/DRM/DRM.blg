@@ -3,48 +3,50 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: DRM.aux
 The style file: abbrv.bst
 Database file #1: references.bib
+Warning--entry type for "jax2018github" isn't style-file defined
+--line 90 of file references.bib
 Warning--entry type for "optax2020github" isn't style-file defined
---line 607 of file references.bib
+--line 719 of file references.bib
 Warning--can't use both volume and number fields in kolmogorov1957representation
-You've used 50 entries,
+You've used 63 entries,
             2118 wiz_defined-function locations,
-            796 strings with 12479 characters,
-and the built_in function-call counts, 17508 in all, are:
-= -- 1745
-> -- 844
-< -- 5
-+ -- 349
-- -- 280
-* -- 1350
-:= -- 2931
-add.period$ -- 150
-call.type$ -- 50
-change.case$ -- 290
+            856 strings with 15296 characters,
+and the built_in function-call counts, 22057 in all, are:
+= -- 2151
+> -- 1193
+< -- 6
++ -- 487
+- -- 404
+* -- 1705
+:= -- 3757
+add.period$ -- 188
+call.type$ -- 63
+change.case$ -- 390
 chr.to.int$ -- 0
-cite$ -- 51
-duplicate$ -- 568
-empty$ -- 1331
-format.name$ -- 280
-if$ -- 3571
+cite$ -- 64
+duplicate$ -- 702
+empty$ -- 1597
+format.name$ -- 404
+if$ -- 4450
 int.to.chr$ -- 0
-int.to.str$ -- 50
-missing$ -- 47
-newline$ -- 250
-num.names$ -- 100
-pop$ -- 231
+int.to.str$ -- 63
+missing$ -- 59
+newline$ -- 314
+num.names$ -- 126
+pop$ -- 329
 preamble$ -- 1
-purify$ -- 240
+purify$ -- 327
 quote$ -- 0
-skip$ -- 404
+skip$ -- 502
 stack$ -- 0
-substring$ -- 1330
-swap$ -- 81
-text.length$ -- 5
+substring$ -- 1468
+swap$ -- 96
+text.length$ -- 6
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 200
+type$ -- 252
 warning$ -- 1
-while$ -- 177
-width$ -- 52
-write$ -- 544
-(There were 2 warnings)
+while$ -- 209
+width$ -- 65
+write$ -- 678
+(There were 3 warnings)

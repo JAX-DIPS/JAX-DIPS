@@ -43,42 +43,52 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Literature on relevant finite discretization methods}{2}{subsection.1.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Literature on solving PDEs with neural networks}{2}{subsection.1.3}\protected@file@percent }
 \citation{SIRIGNANO20181339}
+\citation{yu2018deep}
+\citation{jax2018github}
+\citation{holl2020phiflow}
+\citation{Kochkov2021-ML-CFD}
+\citation{bezgin2022jax}
 \citation{pakravan2021solving,dal2020data,lu2020extracting}
 \citation{berg2017neural}
+\citation{um2020solver}
+\citation{de2018end,holl2020learning}
+\citation{chen1995universal}
+\citation{lu2019deeponet,bhattacharya2020model,li2020neural,li2020fourier}
+\citation{pakravan2021solving}
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.4}Our contributions}{3}{subsection.1.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2}Dynamic Geometry Representation}{3}{section.2}\protected@file@percent }
 \citation{MIN2007300}
 \citation{MIN2007300}
 \citation{osher1988fronts}
-\citation{SUSSMAN1994146}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Dynamic Geometry Representation}{4}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Interpolation methods}{4}{subsection.2.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}Trilinear interpolation}{4}{subsubsection.2.1.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.2}Quadratic non-oscillatory interpolation}{4}{subsubsection.2.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Level-set method}{4}{subsection.2.2}\protected@file@percent }
+\citation{SUSSMAN1994146}
 \citation{XIU2001658}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Level-set method}{5}{subsection.2.2}\protected@file@percent }
 \newlabel{eq::sussman}{{2}{5}{Level-set method}{equation.2.2}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Second order accurate semi-Lagrangian advection scheme}{5}{subsubsection.2.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Godunov Hamiltonian for reinitialization}{5}{subsubsection.2.2.2}\protected@file@percent }
 \citation{shu1988efficient}
 \citation{shu1988efficient}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Godunov Hamiltonian for reinitialization}{6}{subsubsection.2.2.2}\protected@file@percent }
 \citation{min2007geometric}
 \citation{sallee1984middle}
 \citation{min2007geometric}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Geometric operations}{6}{subsection.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}Integration over 3D surfaces and volumes}{6}{subsubsection.2.3.1}\protected@file@percent }
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
 \citation{min2007geometric}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Geometric operations}{7}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}Integration over 3D surfaces and volumes}{7}{subsubsection.2.3.1}\protected@file@percent }
 \citation{min2007geometric}
 \citation{min2007geometric}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}Cross sections of interface with grid cell faces}{8}{subsubsection.2.3.2}\protected@file@percent }
 \citation{hecht1987kolmogorov}
 \citation{kolmogorov1957representation}
 \citation{sprecher1965structure}
 \citation{ismailov2022}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}Cross sections of interface with grid cell faces}{8}{subsubsection.2.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Differentiable Residual Minimization (DRM) Method}{8}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Differentiable Residual Minimization (DRM) Method}{9}{section.3}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Fully classic numerical solver is used to train neural surrogate models. Training occurs in the finite dimensional space spanned by the finite discretization methods.\relax }}{9}{figure.caption.1}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{fig:proposal}{{1}{9}{Fully classic numerical solver is used to train neural surrogate models. Training occurs in the finite dimensional space spanned by the finite discretization methods.\relax }{figure.caption.1}{}}
@@ -135,53 +145,66 @@
 \bibcite{babuvska1970finite}{{2}{}{{}}{{}}}
 \bibcite{belytschko2001arbitrary}{{3}{}{{}}{{}}}
 \bibcite{berg2017neural}{{4}{}{{}}{{}}}
-\bibcite{BOCHKOV2020109269}{{5}{}{{}}{{}}}
-\bibcite{bochkov2020solving}{{6}{}{{}}{{}}}
-\bibcite{bochkov2021non}{{7}{}{{}}{{}}}
-\bibcite{bochkov2021sharp}{{8}{}{{}}{{}}}
-\bibcite{bramble1996finite}{{9}{}{{}}{{}}}
-\bibcite{chua1988cellularA}{{10}{}{{}}{{}}}
-\bibcite{chua1988cellular}{{11}{}{{}}{{}}}
-\bibcite{crockett2011cartesian}{{12}{}{{}}{{}}}
+\bibcite{bezgin2022jax}{{5}{}{{}}{{}}}
+\bibcite{bhattacharya2020model}{{6}{}{{}}{{}}}
+\bibcite{BOCHKOV2020109269}{{7}{}{{}}{{}}}
+\bibcite{bochkov2020solving}{{8}{}{{}}{{}}}
+\bibcite{bochkov2021non}{{9}{}{{}}{{}}}
+\bibcite{bochkov2021sharp}{{10}{}{{}}{{}}}
+\bibcite{jax2018github}{{11}{}{{}}{{}}}
+\bibcite{bramble1996finite}{{12}{}{{}}{{}}}
 \@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{25}{figure.caption.12}\protected@file@percent }
 \newlabel{fig:lossestar}{{10}{25}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
 \@writefile{toc}{\contentsline {section}{References}{25}{section*.13}\protected@file@percent }
-\bibcite{dal2020data}{{13}{}{{}}{{}}}
-\bibcite{ewing1999immersed}{{14}{}{{}}{{}}}
-\bibcite{fedkiw1999non}{{15}{}{{}}{{}}}
-\bibcite{galatsis2010patterning}{{16}{}{{}}{{}}}
-\bibcite{gobovic1993design}{{17}{}{{}}{{}}}
-\bibcite{gong2008immersed}{{18}{}{{}}{{}}}
-\bibcite{guittet2015solving}{{19}{}{{}}{{}}}
-\bibcite{hecht1987kolmogorov}{{20}{}{{}}{{}}}
-\bibcite{optax2020github}{{21}{}{{}}{{}}}
-\bibcite{ismailov2022}{{22}{}{{}}{{}}}
-\bibcite{kingma2014adam}{{23}{}{{}}{{}}}
-\bibcite{kolmogorov1957representation}{{24}{}{{}}{{}}}
-\bibcite{lagaris1998artificial}{{25}{}{{}}{{}}}
-\bibcite{lee1990neural}{{26}{}{{}}{{}}}
-\bibcite{leveque1994immersed}{{27}{}{{}}{{}}}
-\bibcite{lew2008discontinuous}{{28}{}{{}}{{}}}
-\bibcite{li2003new}{{29}{}{{}}{{}}}
-\bibcite{liu2000boundary}{{30}{}{{}}{{}}}
-\bibcite{lu2020extracting}{{31}{}{{}}{{}}}
-\bibcite{min2007geometric}{{32}{}{{}}{{}}}
-\bibcite{MIN2007300}{{33}{}{{}}{{}}}
-\bibcite{MirzadehPB}{{34}{}{{}}{{}}}
-\bibcite{MISTANI2018150}{{35}{}{{}}{{}}}
-\bibcite{mistani2019parallel}{{36}{}{{}}{{}}}
-\bibcite{moes1999finite}{{37}{}{{}}{{}}}
-\bibcite{osher1988fronts}{{38}{}{{}}{{}}}
-\bibcite{ouaknin2018level}{{39}{}{{}}{{}}}
-\bibcite{pakravan2021solving}{{40}{}{{}}{{}}}
-\bibcite{gradClipping}{{41}{}{{}}{{}}}
-\bibcite{RAISSI2019686}{{42}{}{{}}{{}}}
-\bibcite{sallee1984middle}{{43}{}{{}}{{}}}
-\bibcite{sharp1990calculating}{{44}{}{{}}{{}}}
-\bibcite{shu1988efficient}{{45}{}{{}}{{}}}
-\bibcite{SIRIGNANO20181339}{{46}{}{{}}{{}}}
-\bibcite{sprecher1965structure}{{47}{}{{}}{{}}}
-\bibcite{SUSSMAN1994146}{{48}{}{{}}{{}}}
-\bibcite{theillard2015sharp}{{49}{}{{}}{{}}}
-\bibcite{XIU2001658}{{50}{}{{}}{{}}}
+\bibcite{chen1995universal}{{13}{}{{}}{{}}}
+\bibcite{chua1988cellularA}{{14}{}{{}}{{}}}
+\bibcite{chua1988cellular}{{15}{}{{}}{{}}}
+\bibcite{crockett2011cartesian}{{16}{}{{}}{{}}}
+\bibcite{dal2020data}{{17}{}{{}}{{}}}
+\bibcite{de2018end}{{18}{}{{}}{{}}}
+\bibcite{ewing1999immersed}{{19}{}{{}}{{}}}
+\bibcite{fedkiw1999non}{{20}{}{{}}{{}}}
+\bibcite{galatsis2010patterning}{{21}{}{{}}{{}}}
+\bibcite{gobovic1993design}{{22}{}{{}}{{}}}
+\bibcite{gong2008immersed}{{23}{}{{}}{{}}}
+\bibcite{guittet2015solving}{{24}{}{{}}{{}}}
+\bibcite{hecht1987kolmogorov}{{25}{}{{}}{{}}}
+\bibcite{optax2020github}{{26}{}{{}}{{}}}
+\bibcite{holl2020learning}{{27}{}{{}}{{}}}
+\bibcite{holl2020phiflow}{{28}{}{{}}{{}}}
+\bibcite{ismailov2022}{{29}{}{{}}{{}}}
+\bibcite{kingma2014adam}{{30}{}{{}}{{}}}
+\bibcite{Kochkov2021-ML-CFD}{{31}{}{{}}{{}}}
+\bibcite{kolmogorov1957representation}{{32}{}{{}}{{}}}
+\bibcite{lagaris1998artificial}{{33}{}{{}}{{}}}
+\bibcite{lee1990neural}{{34}{}{{}}{{}}}
+\bibcite{leveque1994immersed}{{35}{}{{}}{{}}}
+\bibcite{lew2008discontinuous}{{36}{}{{}}{{}}}
+\bibcite{li2020fourier}{{37}{}{{}}{{}}}
+\bibcite{li2020neural}{{38}{}{{}}{{}}}
+\bibcite{li2003new}{{39}{}{{}}{{}}}
+\bibcite{liu2000boundary}{{40}{}{{}}{{}}}
+\bibcite{lu2019deeponet}{{41}{}{{}}{{}}}
+\bibcite{lu2020extracting}{{42}{}{{}}{{}}}
+\bibcite{min2007geometric}{{43}{}{{}}{{}}}
+\bibcite{MIN2007300}{{44}{}{{}}{{}}}
+\bibcite{MirzadehPB}{{45}{}{{}}{{}}}
+\bibcite{MISTANI2018150}{{46}{}{{}}{{}}}
+\bibcite{mistani2019parallel}{{47}{}{{}}{{}}}
+\bibcite{moes1999finite}{{48}{}{{}}{{}}}
+\bibcite{osher1988fronts}{{49}{}{{}}{{}}}
+\bibcite{ouaknin2018level}{{50}{}{{}}{{}}}
+\bibcite{pakravan2021solving}{{51}{}{{}}{{}}}
+\bibcite{gradClipping}{{52}{}{{}}{{}}}
+\bibcite{RAISSI2019686}{{53}{}{{}}{{}}}
+\bibcite{sallee1984middle}{{54}{}{{}}{{}}}
+\bibcite{sharp1990calculating}{{55}{}{{}}{{}}}
+\bibcite{shu1988efficient}{{56}{}{{}}{{}}}
+\bibcite{SIRIGNANO20181339}{{57}{}{{}}{{}}}
+\bibcite{sprecher1965structure}{{58}{}{{}}{{}}}
+\bibcite{SUSSMAN1994146}{{59}{}{{}}{{}}}
+\bibcite{theillard2015sharp}{{60}{}{{}}{{}}}
+\bibcite{um2020solver}{{61}{}{{}}{{}}}
+\bibcite{XIU2001658}{{62}{}{{}}{{}}}
+\bibcite{yu2018deep}{{63}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
