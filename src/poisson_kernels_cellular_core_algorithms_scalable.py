@@ -666,7 +666,7 @@ class PDETrainer:
 
 
 
-def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3):
+def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3, Nx_tr=32, Ny_tr=32, Nz_tr=32, num_epochs=1000, multi_gpu=False):
 
     #--- Defining Optimizer
     learning_rate = 1e-2
@@ -689,13 +689,9 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     
     
     """ Training Parameters """
-    MULTI_GPU = False    
-    NUM_EPOCHS=1000
-    
-    BATCH_SIZE = 32*32*16
-    Nx_tr = Ny_tr = Nz_tr = 32
-    
-    
+          
+    BATCH_SIZE = min( 32*32*16, Nx_tr*Ny_tr*Nz_tr)
+
     
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
     train_points = TD.gstate.R
@@ -709,7 +705,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     loss_epochs = []
     epoch_store = []    
      
-    if MULTI_GPU:
+    if multi_gpu:
         """ Multi-GPU Training """
         n_devices = jax.local_device_count()
         train_dx = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dx)
@@ -737,8 +733,8 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         loss_epoch += loss_epoch_
         return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
     
-    for epoch in range(NUM_EPOCHS):
-        if MULTI_GPU:
+    for epoch in range(num_epochs):
+        if multi_gpu:
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0 )
             for i in range(num_batches):
                 pdb.set_trace()
@@ -754,20 +750,20 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
     
-    if MULTI_GPU: 
+    if multi_gpu: 
         params = jax.device_get(jax.tree_map(lambda x: x[0], params))
     
     
     
     
     
-    #for epoch in range(NUM_EPOCHS):   
+    #for epoch in range(num_epochs):   
         # #train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
         # #train_points = TD.move_train_points(train_points, train_dx, train_dy, train_dz)
         # ds_iter = DD(train_points)
         
         # for x in ds_iter:
-        #    if MULTI_GPU: x = jax.tree_map(split, x)
+        #    if multi_gpu: x = jax.tree_map(split, x)
         #    opt_state, params, loss_epoch = update_fn(opt_state, params, x, train_dx, train_dy, train_dz) 
               
         # print(f"epoch # {epoch} loss is {loss_epoch}")
@@ -790,9 +786,9 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     #     return (opt_state, params, loss_epoch, egstate), None
     # epoch_store = []
     # loss_epochs = []
-    # loss_epochs = jnp.zeros(NUM_EPOCHS)
+    # loss_epochs = jnp.zeros(num_epochs)
     # batch_store = jnp.arange(num_batches)
-    # for epoch in range(NUM_EPOCHS):
+    # for epoch in range(num_epochs):
     #     (opt_state, params, loss_epoch, eval_gstate), _ = jax.lax.scan(learn_whole_batched, (opt_state, params, eval_gstate), batch_store)
     #     loss_epochs.append(loss_epoch)
     #     epoch_store.append(epoch)
@@ -805,8 +801,8 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     #     opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)
     #     loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
     #     return (opt_state, params, loss_epochs), None
-    # loss_epochs = jnp.zeros(NUM_EPOCHS)
-    # epoch_store = jnp.arange(NUM_EPOCHS)
+    # loss_epochs = jnp.zeros(num_epochs)
+    # epoch_store = jnp.arange(num_epochs)
     # (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
 
     

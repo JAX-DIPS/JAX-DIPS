@@ -14,15 +14,16 @@
 \BOOKMARK [3][-]{subsubsection.3.3.1}{Integration over 3D surfaces and volumes}{subsection.3.3}% 14
 \BOOKMARK [3][-]{subsubsection.3.3.2}{Cross sections of interface with grid cell faces}{subsection.3.3}% 15
 \BOOKMARK [2][-]{subsection.3.4}{Neural network approximators for the solution}{section.3}% 16
-\BOOKMARK [2][-]{subsection.3.5}{Approach I. Finite discretization method fused with regression extrapolation}{section.3}% 17
+\BOOKMARK [2][-]{subsection.3.5}{Approach I. Finite discretization method fused with regression-based extrapolation}{section.3}% 17
 \BOOKMARK [2][-]{subsection.3.6}{Approach II. Finite discretization method fused with neural extrapolation}{section.3}% 18
 \BOOKMARK [2][-]{subsection.3.7}{Optimization scheme}{section.3}% 19
 \BOOKMARK [3][-]{subsubsection.3.7.1}{Preconditioners are ideal network regularizers}{subsection.3.7}% 20
 \BOOKMARK [3][-]{subsubsection.3.7.2}{Learning rate scheduling}{subsection.3.7}% 21
 \BOOKMARK [3][-]{subsubsection.3.7.3}{Domain switching optimization scheme}{subsection.3.7}% 22
 \BOOKMARK [1][-]{section.4}{Numerical Results}{}% 23
-\BOOKMARK [2][-]{subsection.4.1}{Case I.}{section.4}% 24
-\BOOKMARK [2][-]{subsection.4.2}{Case II.}{section.4}% 25
-\BOOKMARK [1][-]{section.5}{Conclusion}{}% 26
-\BOOKMARK [1][-]{section*.13}{References}{}% 27
-\BOOKMARK [1][-]{appendix.A}{Solving interface problems with physics-informed neural networks}{}% 28
+\BOOKMARK [2][-]{subsection.4.1}{Case I. Sphere: basic benchmark}{section.4}% 24
+\BOOKMARK [2][-]{subsection.4.2}{Case II. Star: complex geometry}{section.4}% 25
+\BOOKMARK [2][-]{subsection.4.3}{Case III. Starbox: multi-GPU, complex geometry}{section.4}% 26
+\BOOKMARK [1][-]{section.5}{Conclusion}{}% 27
+\BOOKMARK [1][-]{section*.13}{References}{}% 28
+\BOOKMARK [1][-]{appendix.A}{Solving interface problems with physics-informed neural networks}{}% 29
