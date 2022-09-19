@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-IMAGE_NAME="jax_dip"
+IMAGE_NAME="jax_dips"
 DOCKER_CMD="docker run \
     --network host \
     --gpus all \
@@ -33,7 +33,7 @@ build() {
 
 dev() {
     local DEV_IMG=${IMAGE_NAME}
-    PYTHONPATH='/workspace'
+    DEV_PYTHONPATH='/workspace:/opt/PyEVTK'
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -56,7 +56,7 @@ dev() {
     $DOCKER_CMD \
         --name ${CONT_NAME} \
         -u $(id -u):$(id -u) \
-        -e PYTHONPATH=$PYTHONPATH \
+        -e PYTHONPATH=$DEV_PYTHONPATH \
         -it --rm \
         ${DEV_IMG} \
         bash

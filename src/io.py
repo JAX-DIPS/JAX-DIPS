@@ -75,6 +75,8 @@ def write_vtk_solution(gstate, log, address = 'results/', maxsteps=None):
 
 def write_vtk_manual(gstate, field_dict, filename='results/manual_dump'):
     # field_dict = {name : value, ...}
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+
     X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
     host_dict = {}
     for field_name in field_dict.keys():
