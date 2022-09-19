@@ -80,9 +80,9 @@ def poisson_solver_with_jump_complex():
 
     scale = 0.1
     r0 = 0.483*scale; ri = 0.151*scale; re = 0.911*scale
-    n_1 = 3.0; beta_1 =  0.1; theta_1 = 0.5
-    n_2 = 4.0; beta_2 = -0.1; theta_2 = 1.8
-    n_3 = 7.0; beta_3 = 0.15; theta_3 = 0.0
+    n_1 = 3.0; beta_1 =  0.1*scale; theta_1 = 0.5
+    n_2 = 4.0; beta_2 = -0.1*scale; theta_2 = 1.8
+    n_3 = 7.0; beta_3 = 0.15*scale; theta_3 = 0.0
 
     
     
@@ -116,9 +116,9 @@ def poisson_solver_with_jump_complex():
             # xc, yc, zc = xyz
             xc, yc, zc, theta_1, theta_2, theta_3 = xyz
             theta_1 *= jnp.pi; theta_2 *= jnp.pi; theta_3 *= jnp.pi; 
-            core  = beta_1 * jnp.cos(n_1 * (jnp.arctan2(y,x) - theta_1))
-            core += beta_2 * jnp.cos(n_2 * (jnp.arctan2(y,x) - theta_2))
-            core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y,x) - theta_3))
+            core  = beta_1 * jnp.cos(n_1 * (jnp.arctan2(y-yc,x-xc) - theta_1))
+            core += beta_2 * jnp.cos(n_2 * (jnp.arctan2(y-yc,x-xc) - theta_2))
+            core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y-yc,x-xc) - theta_3))
             phi_  = jnp.min( jnp.array([ phi_, jnp.sqrt((x-xc)**2 + (y-yc)**2 + (z-zc)**2) - 1.0*r0 * (1.0 + (((x-xc)**2 + (y-yc)**2)/((x-xc)**2 + (y-yc)**2 + (z-zc)**2))**2 * core) ]) )
             phi_= jnp.nan_to_num(phi_, -r0*core)
             return (phi_,), None

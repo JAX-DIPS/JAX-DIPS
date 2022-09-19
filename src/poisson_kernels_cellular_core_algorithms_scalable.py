@@ -690,7 +690,8 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     
     """ Training Parameters """
           
-    BATCH_SIZE = min( 32*32*16, Nx_tr*Ny_tr*Nz_tr)
+    # BATCH_SIZE = min( 32*32*16, Nx_tr*Ny_tr*Nz_tr)
+    BATCH_SIZE = min( 64*64*32, Nx_tr*Ny_tr*Nz_tr)
 
     
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
