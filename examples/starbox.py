@@ -93,9 +93,9 @@ def poisson_solver_with_jump_complex():
     angles = random.multivariate_normal(key, mean, cov, shape=(1000,))
     # angles = ((stars ) / (stars.max() - stars.min()) ) 
 
-    xc = jnp.linspace(-1 + 1.15*r0, 1 - 1.15*r0, 10, dtype=f32)
-    yc = jnp.linspace(-1 + 1.15*r0, 1 - 1.15*r0, 10, dtype=f32)
-    zc = jnp.linspace(-1 + 1.15*r0, 1 - 1.15*r0, 10, dtype=f32)
+    xc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, 10, dtype=f32)
+    yc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, 10, dtype=f32)
+    zc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, 10, dtype=f32)
     Xce, Yce, Zce = jnp.meshgrid(xc, yc, zc)
     positions = jnp.column_stack((Xce.reshape(-1), Yce.reshape(-1), Zce.reshape(-1)))
     
