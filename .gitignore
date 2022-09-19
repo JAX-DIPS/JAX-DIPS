@@ -22,6 +22,7 @@ workspace.code-workspace
 .vscode-server
 
 .python_history
+.bash_history
 
 .cache
 .config

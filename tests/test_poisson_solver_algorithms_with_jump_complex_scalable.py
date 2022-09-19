@@ -56,20 +56,20 @@ def test_poisson_solver_with_jump_complex():
     xmax = ymax = zmax = f32(1.0)
     init_mesh_fn, coord_at = mesh.construct(dim)
     
-    # --------- Grid nodes
-    Nx = i32(64)
-    Ny = i32(64)
-    Nz = i32(64)
+    # --------- Grid nodes for level set
+    Nx = Ny = Nz = i32(64)
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
     dx = xc[1] - xc[0]
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
+
     #----------  Evaluation Mesh for Visualization
-    exc = jnp.linspace(xmin, xmax, 256, dtype=f32)
-    eyc = jnp.linspace(ymin, ymax, 256, dtype=f32)
-    ezc = jnp.linspace(zmin, zmax, 256, dtype=f32)
+    Nx_eval = Ny_eval = Nz_eval = i32(256)
+    exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
+    eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
+    ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
     eval_gstate = init_mesh_fn(exc, eyc, ezc)
     
     # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper
