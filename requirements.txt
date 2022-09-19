@@ -2,6 +2,6 @@ https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.3.14+cuda11.cudnn82-
 jax[cuda11_cudnn82] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 dm-haiku
 optax
-torch --extra-index-url https://download.pytorch.org/whl/cu114
+# torch --extra-index-url https://download.pytorch.org/whl/cu114
 pytest
 matplotlib
