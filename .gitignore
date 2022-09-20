@@ -34,6 +34,6 @@ workspace.code-workspace
 .local
 
 
-examples/lucy/lucy.ply
-examples/dragon/dragon.vti
-examples/dragon/dragonian_full.csv
+# examples/lucy/lucy.ply
+# examples/dragon/dragon.vti
+# examples/dragon/dragonian_full.csv
