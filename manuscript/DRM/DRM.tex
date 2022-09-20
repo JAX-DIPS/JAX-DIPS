@@ -1222,6 +1222,51 @@ We used 1 NVIDIA DGX machine with 8 V100 GPUs (each with 32 GB VRAM used at $100
 	\label{fig:starbox512}
 \end{figure}
 
+
+
+
+\subsection{Case IV. The Charged Dragon}
+We simulate a Poisson problem with discontinuities on the Dragon problem presented in \cite{curless1996volumetric}. In this case we used the signed-distance function produced by SDFGen, and initiated an interpolant based on its values; \textit{i.e.}, $\phi(r)$. The problem set up was $f^\pm=0,\ k^\pm=0, \ \alpha=0.1,\ \beta=1.0, \ \mu^-=1.0, \ \mu^+=2.0$ and the Dirichlet boundary condition over the walls is $u_{bc}(\{x,y,z\}\in \partial \Omega)=1/\phi(x,y,z)$. 
+
+The results are shown in figure \ref{fig:dragon}.
+
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{./figures/dragon_shape.png}
+         \caption{Geometry of the dragon.}
+         \label{fig:dragon1}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{./figures/dragon_phi.png}
+         \caption{Level-set function.}
+         \label{fig:dragon2}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{./figures/dragon_sol.png}
+         \caption{Solution on a cross section.}
+         \label{fig:dragon3}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{./figures/dragon_volume.png}
+         \caption{Solution in the domain.}
+         \label{fig:dragon4}
+     \end{subfigure}
+        \caption{A Charged Dragon.}
+        \label{fig:dragon}
+\end{figure}
+
+
+
+
+
+
 \section{Conclusion} \label{sec:conc}
 We developed a differentiable GPU-based framework for solving partial differential equations with jump conditions across irregular interfaces in three spatial dimensions. Solutions in each domain are represented by a simple multi-layer perceptron (MLP) and Cartesian grid points of the underlying numerical discretization scheme are treated as collocation points for optimizing the unknown parameters of the MLPs. 
 

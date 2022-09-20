@@ -146,15 +146,27 @@
 \newlabel{fig:star}{{8}{23}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.10}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }}{24}{figure.caption.11}\protected@file@percent }
 \newlabel{fig:star_sol}{{9}{24}{Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }{figure.caption.11}{}}
+\citation{curless1996volumetric}
 \@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{25}{table.caption.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{25}{section.5}\protected@file@percent }
-\newlabel{sec:conc}{{5}{25}{Conclusion}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Case IV. The Charged Dragon}{25}{subsection.4.4}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{26}{figure.caption.12}\protected@file@percent }
 \newlabel{fig:lossestar}{{10}{26}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Illustration of numerical solution for the starbox example. The geometry is stored on a $64^3$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128^3$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.\relax }}{26}{figure.caption.13}\protected@file@percent }
 \newlabel{fig:starbox}{{11}{26}{Illustration of numerical solution for the starbox example. The geometry is stored on a $64^3$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128^3$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.\relax }{figure.caption.13}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Illustration of numerical solution for the starbox example with 1000 stars. The geometry is stored on a $128^3$ grid, neural network model was trained for $15$ epochs that took $10,340$ seconds on 8 NVIDIA V100 GPU on one DGX node over a base resolution of $512^3$ grid and refined on resolutions $1024^3,2048^3,4096^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.\relax }}{27}{figure.caption.14}\protected@file@percent }
 \newlabel{fig:starbox512}{{12}{27}{Illustration of numerical solution for the starbox example with 1000 stars. The geometry is stored on a $128^3$ grid, neural network model was trained for $15$ epochs that took $10,340$ seconds on 8 NVIDIA V100 GPU on one DGX node over a base resolution of $512^3$ grid and refined on resolutions $1024^3,2048^3,4096^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.\relax }{figure.caption.14}{}}
+\newlabel{fig:dragon1}{{13a}{28}{Geometry of the dragon.\relax }{figure.caption.15}{}}
+\newlabel{sub@fig:dragon1}{{a}{28}{Geometry of the dragon.\relax }{figure.caption.15}{}}
+\newlabel{fig:dragon2}{{13b}{28}{Level-set function.\relax }{figure.caption.15}{}}
+\newlabel{sub@fig:dragon2}{{b}{28}{Level-set function.\relax }{figure.caption.15}{}}
+\newlabel{fig:dragon3}{{13c}{28}{Solution on a cross section.\relax }{figure.caption.15}{}}
+\newlabel{sub@fig:dragon3}{{c}{28}{Solution on a cross section.\relax }{figure.caption.15}{}}
+\newlabel{fig:dragon4}{{13d}{28}{Solution in the domain.\relax }{figure.caption.15}{}}
+\newlabel{sub@fig:dragon4}{{d}{28}{Solution in the domain.\relax }{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces A Charged Dragon.\relax }}{28}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:dragon}{{13}{28}{A Charged Dragon.\relax }{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{29}{section.5}\protected@file@percent }
+\newlabel{sec:conc}{{5}{29}{Conclusion}{section.5}{}}
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{adams2002immersed}{{1}{}{{}}{{}}}
@@ -174,57 +186,58 @@
 \bibcite{chua1988cellularA}{{15}{}{{}}{{}}}
 \bibcite{chua1988cellular}{{16}{}{{}}{{}}}
 \bibcite{crockett2011cartesian}{{17}{}{{}}{{}}}
-\bibcite{dal2020data}{{18}{}{{}}{{}}}
-\bibcite{de2018end}{{19}{}{{}}{{}}}
-\@writefile{toc}{\contentsline {section}{References}{29}{section*.15}\protected@file@percent }
-\bibcite{ewing1999immersed}{{20}{}{{}}{{}}}
-\bibcite{fedkiw1999non}{{21}{}{{}}{{}}}
-\bibcite{galatsis2010patterning}{{22}{}{{}}{{}}}
-\bibcite{gobovic1993design}{{23}{}{{}}{{}}}
-\bibcite{gong2008immersed}{{24}{}{{}}{{}}}
-\bibcite{guittet2015solving}{{25}{}{{}}{{}}}
-\bibcite{hecht1987kolmogorov}{{26}{}{{}}{{}}}
-\bibcite{optax2020github}{{27}{}{{}}{{}}}
-\bibcite{holl2020learning}{{28}{}{{}}{{}}}
-\bibcite{holl2020phiflow}{{29}{}{{}}{{}}}
-\bibcite{ismailov2022}{{30}{}{{}}{{}}}
-\bibcite{kingma2014adam}{{31}{}{{}}{{}}}
-\bibcite{Kochkov2021-ML-CFD}{{32}{}{{}}{{}}}
-\bibcite{kolmogorov1957representation}{{33}{}{{}}{{}}}
-\bibcite{lagaris1998artificial}{{34}{}{{}}{{}}}
-\bibcite{lee1990neural}{{35}{}{{}}{{}}}
-\bibcite{leveque1994immersed}{{36}{}{{}}{{}}}
-\bibcite{lew2008discontinuous}{{37}{}{{}}{{}}}
-\bibcite{li2020fourier}{{38}{}{{}}{{}}}
-\bibcite{li2020neural}{{39}{}{{}}{{}}}
-\bibcite{li2003new}{{40}{}{{}}{{}}}
-\bibcite{liu2000boundary}{{41}{}{{}}{{}}}
-\bibcite{lu2019deeponet}{{42}{}{{}}{{}}}
-\bibcite{lu2020extracting}{{43}{}{{}}{{}}}
-\bibcite{min2007geometric}{{44}{}{{}}{{}}}
-\bibcite{MIN2007300}{{45}{}{{}}{{}}}
-\bibcite{MirzadehPB}{{46}{}{{}}{{}}}
-\bibcite{MISTANI2018150}{{47}{}{{}}{{}}}
-\bibcite{mistani2019parallel}{{48}{}{{}}{{}}}
-\bibcite{moes1999finite}{{49}{}{{}}{{}}}
-\bibcite{osher1988fronts}{{50}{}{{}}{{}}}
-\bibcite{oswald2005smectic}{{51}{}{{}}{{}}}
-\bibcite{ouaknin2018level}{{52}{}{{}}{{}}}
-\bibcite{pakravan2021solving}{{53}{}{{}}{{}}}
-\bibcite{gradClipping}{{54}{}{{}}{{}}}
-\bibcite{RAISSI2019686}{{55}{}{{}}{{}}}
-\bibcite{sallee1984middle}{{56}{}{{}}{{}}}
-\bibcite{shallue2018measuring}{{57}{}{{}}{{}}}
-\bibcite{sharp1990calculating}{{58}{}{{}}{{}}}
-\bibcite{shu1988efficient}{{59}{}{{}}{{}}}
-\bibcite{SIRIGNANO20181339}{{60}{}{{}}{{}}}
-\bibcite{sprecher1965structure}{{61}{}{{}}{{}}}
-\bibcite{SUSSMAN1994146}{{62}{}{{}}{{}}}
-\bibcite{theillard2015sharp}{{63}{}{{}}{{}}}
-\bibcite{um2020solver}{{64}{}{{}}{{}}}
-\bibcite{XIU2001658}{{65}{}{{}}{{}}}
-\bibcite{yu2018deep}{{66}{}{{}}{{}}}
+\bibcite{curless1996volumetric}{{18}{}{{}}{{}}}
+\bibcite{dal2020data}{{19}{}{{}}{{}}}
+\@writefile{toc}{\contentsline {section}{References}{30}{section*.16}\protected@file@percent }
+\bibcite{de2018end}{{20}{}{{}}{{}}}
+\bibcite{ewing1999immersed}{{21}{}{{}}{{}}}
+\bibcite{fedkiw1999non}{{22}{}{{}}{{}}}
+\bibcite{galatsis2010patterning}{{23}{}{{}}{{}}}
+\bibcite{gobovic1993design}{{24}{}{{}}{{}}}
+\bibcite{gong2008immersed}{{25}{}{{}}{{}}}
+\bibcite{guittet2015solving}{{26}{}{{}}{{}}}
+\bibcite{hecht1987kolmogorov}{{27}{}{{}}{{}}}
+\bibcite{optax2020github}{{28}{}{{}}{{}}}
+\bibcite{holl2020learning}{{29}{}{{}}{{}}}
+\bibcite{holl2020phiflow}{{30}{}{{}}{{}}}
+\bibcite{ismailov2022}{{31}{}{{}}{{}}}
+\bibcite{kingma2014adam}{{32}{}{{}}{{}}}
+\bibcite{Kochkov2021-ML-CFD}{{33}{}{{}}{{}}}
+\bibcite{kolmogorov1957representation}{{34}{}{{}}{{}}}
+\bibcite{lagaris1998artificial}{{35}{}{{}}{{}}}
+\bibcite{lee1990neural}{{36}{}{{}}{{}}}
+\bibcite{leveque1994immersed}{{37}{}{{}}{{}}}
+\bibcite{lew2008discontinuous}{{38}{}{{}}{{}}}
+\bibcite{li2020fourier}{{39}{}{{}}{{}}}
+\bibcite{li2020neural}{{40}{}{{}}{{}}}
+\bibcite{li2003new}{{41}{}{{}}{{}}}
+\bibcite{liu2000boundary}{{42}{}{{}}{{}}}
+\bibcite{lu2019deeponet}{{43}{}{{}}{{}}}
+\bibcite{lu2020extracting}{{44}{}{{}}{{}}}
+\bibcite{min2007geometric}{{45}{}{{}}{{}}}
+\bibcite{MIN2007300}{{46}{}{{}}{{}}}
+\bibcite{MirzadehPB}{{47}{}{{}}{{}}}
+\bibcite{MISTANI2018150}{{48}{}{{}}{{}}}
+\bibcite{mistani2019parallel}{{49}{}{{}}{{}}}
+\bibcite{moes1999finite}{{50}{}{{}}{{}}}
+\bibcite{osher1988fronts}{{51}{}{{}}{{}}}
+\bibcite{oswald2005smectic}{{52}{}{{}}{{}}}
+\bibcite{ouaknin2018level}{{53}{}{{}}{{}}}
+\bibcite{pakravan2021solving}{{54}{}{{}}{{}}}
+\bibcite{gradClipping}{{55}{}{{}}{{}}}
+\bibcite{RAISSI2019686}{{56}{}{{}}{{}}}
+\bibcite{sallee1984middle}{{57}{}{{}}{{}}}
+\bibcite{shallue2018measuring}{{58}{}{{}}{{}}}
+\bibcite{sharp1990calculating}{{59}{}{{}}{{}}}
+\bibcite{shu1988efficient}{{60}{}{{}}{{}}}
+\bibcite{SIRIGNANO20181339}{{61}{}{{}}{{}}}
+\bibcite{sprecher1965structure}{{62}{}{{}}{{}}}
+\bibcite{SUSSMAN1994146}{{63}{}{{}}{{}}}
+\bibcite{theillard2015sharp}{{64}{}{{}}{{}}}
+\bibcite{um2020solver}{{65}{}{{}}{{}}}
+\bibcite{XIU2001658}{{66}{}{{}}{{}}}
+\bibcite{yu2018deep}{{67}{}{{}}{{}}}
 \@writefile{toc}{\let\numberline\tmptocnumberline}
-\@writefile{toc}{\contentsline {section}{\numberline {Appendix \nobreakspace  {}A}Solving interface problems with physics-informed neural networks}{32}{appendix.A}\protected@file@percent }
-\newlabel{eq::interfaceLoss}{{A.2}{32}{Solving interface problems with physics-informed neural networks}{equation.A.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {Appendix \nobreakspace  {}A}Solving interface problems with physics-informed neural networks}{33}{appendix.A}\protected@file@percent }
+\newlabel{eq::interfaceLoss}{{A.2}{33}{Solving interface problems with physics-informed neural networks}{equation.A.2}{}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers

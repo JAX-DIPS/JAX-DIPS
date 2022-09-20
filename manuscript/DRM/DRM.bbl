@@ -98,6 +98,12 @@ R.~Crockett, P.~Colella, and D.~T. Graves.
   heat equations with discontinuous coefficients in three dimensions.
 \newblock {\em Journal of Computational Physics}, 230(7):2451--2469, 2011.
 
+\bibitem{curless1996volumetric}
+B.~Curless and M.~Levoy.
+\newblock A volumetric method for building complex models from range images.
+\newblock In {\em Proceedings of the 23rd annual conference on Computer
+  graphics and interactive techniques}, pages 303--312, 1996.
+
 \bibitem{dal2020data}
 N.~Dal~Santo, S.~Deparis, and L.~Pegolotti.
 \newblock Data driven approximation of parametrized pdes by reduced basis and
