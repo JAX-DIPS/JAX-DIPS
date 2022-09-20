@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  19 SEP 2022 22:06
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2022.5.15)  19 SEP 2022 23:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -766,42 +766,48 @@ Package pdftex.def Info: ./figures/case_II_regression.png  used on input line 1
 pe.png (PNG copy)> <./figures/star_mu_m.png (PNG copy)>] [24 <./figures/star_so
 ls_regression_64x64x64.png (PNG copy)> <./figures/star_grad_sols_regression_64x
 64x64.png (PNG copy)>]
-<./figures/starbox_cropped.png, id=481, 2021.5525pt x 2108.87875pt>
+<./figures/starbox_cropped.png, id=482, 2021.5525pt x 2108.87875pt>
 File: ./figures/starbox_cropped.png Graphic file (type png)
 <use ./figures/starbox_cropped.png>
-Package pdftex.def Info: ./figures/starbox_cropped.png  used on input line 1209
+Package pdftex.def Info: ./figures/starbox_cropped.png  used on input line 1211
 .
-(pdftex.def)             Requested size: 193.50076pt x 201.85797pt.
-<./figures/poisson_solver_loss_starbox.png, id=482, 578.16pt x 578.16pt>
+(pdftex.def)             Requested size: 210.70462pt x 219.78159pt.
+<./figures/poisson_solver_loss_starbox.png, id=483, 578.16pt x 578.16pt>
 File: ./figures/poisson_solver_loss_starbox.png Graphic file (type png)
 <use ./figures/poisson_solver_loss_starbox.png>
 Package pdftex.def Info: ./figures/poisson_solver_loss_starbox.png  used on inp
-ut line 1210.
-(pdftex.def)             Requested size: 193.50076pt x 193.49292pt.
+ut line 1212.
+(pdftex.def)             Requested size: 210.70462pt x 210.70464pt.
+<./figures/starbox_512.png, id=484, 1157.32375pt x 1157.32375pt>
+File: ./figures/starbox_512.png Graphic file (type png)
+<use ./figures/starbox_512.png>
+Package pdftex.def Info: ./figures/starbox_512.png  used on input line 1220.
+(pdftex.def)             Requested size: 430.00462pt x 430.00433pt.
  [25] [26 <./figures/poisson_solver_loss_star_64x64x64_regress.png> <./figures/
 case_II_regression.png> <./figures/starbox_cropped.png> <./figures/poisson_solv
-er_loss_starbox.png>] [27]
-(./DRM.bbl [28] [29] [30]) [31]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1270.
- [32]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1270.
- (./DRM.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1270.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1270.
+er_loss_starbox.png>] [27 <./figures/starbox_512.png (PNG copy)>] [28] (./DRM.b
+bl [29] [30] [31]) [32]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1277.
+ [33]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1277.
+
+(./DRM.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1277.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1277.
 
 Package rerunfilecheck Info: File `DRM.out' has not changed.
-(rerunfilecheck)             Checksum: 1EF2F5CBA0EF40A741615BABCCC9F4EF;2596.
+(rerunfilecheck)             Checksum: F9159CFE6AD61A3DDD1E19150FB6090C;2596.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1270.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1277.
  ) 
 Here is how much of TeX's memory you used:
- 10316 strings out of 483065
- 157417 string characters out of 5963550
- 446262 words of memory out of 5000000
- 24932 multiletter control sequences out of 15000+600000
+ 10325 strings out of 483065
+ 157616 string characters out of 5963550
+ 446798 words of memory out of 5000000
+ 24938 multiletter control sequences out of 15000+600000
  545427 words of font info for 77 fonts, out of 8000000 for 9000
  81 hyphenation exceptions out of 8191
  41i,28n,42p,1736b,659s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -836,10 +842,10 @@ t/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist/font
 s/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/texlive/texmf-dist/fonts/type1
 /public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/fonts/type1/
 public/amsfonts/symbols/msbm10.pfb>
-Output written on DRM.pdf (32 pages, 10202274 bytes).
+Output written on DRM.pdf (33 pages, 11398338 bytes).
 PDF statistics:
- 672 PDF objects out of 1000 (max. 8388607)
- 572 compressed objects within 6 object streams
- 170 named destinations out of 1000 (max. 500000)
- 341 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 679 PDF objects out of 1000 (max. 8388607)
+ 577 compressed objects within 6 object streams
+ 172 named destinations out of 1000 (max. 500000)
+ 346 words of extra memory for PDF output out of 10000 (max. 10000000)
 

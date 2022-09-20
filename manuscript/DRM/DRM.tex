@@ -1195,25 +1195,32 @@ $2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
 
 \subsection{Case III. Starbox: multi-GPU, complex geometry}
 
-Consider a box filled with $64$ stars of case \ref{subsec:star} arranged on a regular $4\times 4\times 4$ lattice with randomized orientations in the xy-plane; \textit{i.e.}, this resembles a columnar mesophase of liquid crystal materials \cite{oswald2005smectic,ANDRIENKO2018520}. The scale parameters of the level-set function ($r_0$ and $\beta_i$'s) are scaled by a factor $0.35$ to avoid overlapping stars. We set problem parameters to constants given by $\mu_m= 1,\ \mu_p=80,\ k_m=0,\ k_p=0 $ and set zero Dirichlet boundary conditions on the walls. The source terms are given by
+Consider a box filled with $64$ stars of case \ref{subsec:star} arranged on a regular $4\times 4\times 4$ lattice with randomized orientations in the yz-plane; \textit{i.e.}, this resembles a columnar mesophase of liquid crystal materials \cite{oswald2005smectic,ANDRIENKO2018520}. The scale parameters of the level-set function ($r_0$ and $\beta_i$'s) are scaled by a factor $0.35$ to avoid overlapping stars. We set problem parameters to constants given by $\mu^-= 1,\ \mu^+=80,\ k^-=0,\ k^+=0 $ and set zero Dirichlet boundary conditions on the walls. The source terms are given by
 \begin{align*}
-f_m(x,y,z)=& \sin(2 x)\cos(2 y) \exp(z) \bigg(7  + 2 \cos(2 \pi (x+y)) \sin(2\pi(x-y))\sin(z)\bigg)  \\
+f^-(x,y,z)=& \sin(2 x)\cos(2 y) \exp(z) \bigg(7  + 2 \cos(2 \pi (x+y)) \sin(2\pi(x-y))\sin(z)\bigg)  \\
 &  +8\pi \cos(z) \exp(z) \bigg(\cos(4\pi y) \sin(2 x) \sin(2 y) -\cos(4\pi x) \cos(2 x)\cos(2 y) \bigg) \\
-f_p(x,y,z)=&  2 \bigg( 16(\frac{y-x}{3})^5 - 20(\frac{y-x}{3})^3 + 5\frac{y-x}{3} \bigg) \frac{\cos(z)}{ (x+y+3)^2}  \\
+f^+(x,y,z)=&  2 \bigg( 16(\frac{y-x}{3})^5 - 20(\frac{y-x}{3})^3 + 5\frac{y-x}{3} \bigg) \frac{\cos(z)}{ (x+y+3)^2}  \\
 & +\bigg( 16 (\frac{y-x}{3})^5 -\frac{820}{9} (\frac{y-x}{3})^3 + \frac{285}{9}(\frac{y-x}{3}) \bigg) \log(x+y+3)\cos(z)
 \end{align*}
 We set jump conditions in solution and solution flux to $\alpha=\beta=0$. The solution is illustrated in figure \ref{fig:starbox}.
 
+We used 1 NVIDIA DGX machine with 8 V100 GPUs (each with 32 GB VRAM used at $100\%$ thread and memory utility) to train a surrogate model at base resolution of $512^3$ and refined up to $4096^3$ with 1000 stars in the box. Figure \ref{fig:starbox512} is a visualization of this setting.
+
 \begin{figure}
 	\centering
-	\includegraphics[width=0.45\linewidth]{./figures/starbox_cropped.png}
-	\includegraphics[width=0.45\linewidth]{./figures/poisson_solver_loss_starbox.png}
-	\caption{Illustration of numerical solution for the starbox example. The geometry is stored on a $64\times 64\times 64$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128\times 128\times 128$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization, the model is evaluated on a $256\times 256 \times 256$ grid.}
+	\includegraphics[width=0.49\linewidth]{./figures/starbox_cropped.png}
+	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_starbox.png}
+	\caption{Illustration of numerical solution for the starbox example. The geometry is stored on a $64^3$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128^3$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.}
 	\label{fig:starbox}
 \end{figure}
 
 
-
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{./figures/starbox_512.png}
+	\caption{Illustration of numerical solution for the starbox example with 1000 stars. The geometry is stored on a $128^3$ grid, neural network model was trained for $15$ epochs that took $10,340$ seconds on 8 NVIDIA V100 GPU on one DGX node over a base resolution of $512^3$ grid and refined on resolutions $1024^3,2048^3,4096^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.}
+	\label{fig:starbox512}
+\end{figure}
 
 \section{Conclusion} \label{sec:conc}
 We developed a differentiable GPU-based framework for solving partial differential equations with jump conditions across irregular interfaces in three spatial dimensions. Solutions in each domain are represented by a simple multi-layer perceptron (MLP) and Cartesian grid points of the underlying numerical discretization scheme are treated as collocation points for optimizing the unknown parameters of the MLPs. 
