@@ -141,7 +141,7 @@ def poisson_solver_with_jump_complex():
         """
         Jump in solution at interface
         """
-        return 0.5
+        return 0.10
 
 
     @custom_jit
@@ -149,7 +149,7 @@ def poisson_solver_with_jump_complex():
         """
         Jump in flux at interface
         """
-        return 0.0
+        return 1.0
 
 
     @custom_jit
@@ -182,8 +182,8 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        
-        return jnp.sin(2*x)*jnp.cos(2*y)*jnp.sin(2*z)
+        return 0.0
+        # return jnp.sin(2*x)*jnp.cos(2*y)*jnp.sin(2*z)
 
     @custom_jit
     def f_p_fn(r):
