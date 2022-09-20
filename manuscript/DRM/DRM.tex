@@ -1225,7 +1225,7 @@ We used 1 NVIDIA DGX machine with 8 V100 GPUs (each with 32 GB VRAM used at $100
 
 
 
-\subsection{Case IV. The Charged Dragon}
+\subsection{Case IV. A Charged Dragon}
 We simulate a Poisson problem with discontinuities on the Dragon problem presented in \cite{curless1996volumetric}. In this case we used the signed-distance function produced by SDFGen, and initiated an interpolant based on its values; \textit{i.e.}, $\phi(r)$. The problem set up was $f^\pm=0,\ k^\pm=0, \ \alpha=0.1,\ \beta=1.0, \ \mu^-=1.0, \ \mu^+=2.0$ and the Dirichlet boundary condition over the walls is $u_{bc}(\{x,y,z\}\in \partial \Omega)=1/\phi(x,y,z)$. 
 
 The results are shown in figure \ref{fig:dragon}.
