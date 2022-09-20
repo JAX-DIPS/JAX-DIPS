@@ -111,7 +111,7 @@ def poisson_solver_with_jump_complex():
     
     @custom_jit
     def dirichlet_bc_fn(r):
-        return 0.0
+        return 1.0 / phi_fn(r)
 
 
     @custom_jit
@@ -133,7 +133,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 80.0
+        return 2.0
 
 
     @custom_jit
@@ -141,7 +141,7 @@ def poisson_solver_with_jump_complex():
         """
         Jump in solution at interface
         """
-        return 0.0
+        return 0.5
 
 
     @custom_jit
@@ -182,12 +182,8 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        fm   = -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z)) +\
-               -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*x) * 2*jnp.cos(2*x)*jnp.cos(2*y)*jnp.exp(z)   +\
-               -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*y) * (-2)*jnp.sin(2*x)*jnp.sin(2*y)*jnp.exp(z) +\
-                2*jnp.cos(2*jnp.pi*(x+y))*jnp.sin(2*jnp.pi*(x-y))*jnp.sin(z) * jnp.sin(2*x)*jnp.cos(2*y)*jnp.exp(z)
         
-        return fm
+        return jnp.sin(2*x)*jnp.cos(2*y)*jnp.sin(2*z)
 
     @custom_jit
     def f_p_fn(r):
