@@ -1204,7 +1204,7 @@ f^+(x,y,z)=&  2 \bigg( 16(\frac{y-x}{3})^5 - 20(\frac{y-x}{3})^3 + 5\frac{y-x}{3
 \end{align*}
 We set jump conditions in solution and solution flux to $\alpha=\beta=0$. The solution is illustrated in figure \ref{fig:starbox}.
 
-We used 1 NVIDIA DGX machine with 8 V100 GPUs (each with 32 GB VRAM used at $100\%$ thread and memory utility) to train a surrogate model at base resolution of $512^3$ and refined up to $4096^3$ with 1000 stars in the box. Figure \ref{fig:starbox512} is a visualization of this setting.
+We used 1 NVIDIA DGX machine with 8 V100 GPUs (each with 32 GB VRAM used at $100\%$ thread and memory utility) to train a surrogate model at base resolution of $512^3$ and refined up to $4096^3$ with 1000 stars in the box. Figure \ref{fig:starbox512} is a visualization of this setting. This is equivalent to an effective resolution of $68.7$ billion grid points.
 
 \begin{figure}
 	\centering

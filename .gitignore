@@ -32,3 +32,8 @@ workspace.code-workspace
 .ssh
 .gnupg
 .local
+
+
+examples/lucy/lucy.ply
+examples/dragon/dragon.vti
+examples/dragon/dragonian.csv

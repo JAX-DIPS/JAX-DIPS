@@ -5,3 +5,4 @@ optax
 # torch --extra-index-url https://download.pytorch.org/whl/cu114
 pytest
 matplotlib
+meshio[all]
