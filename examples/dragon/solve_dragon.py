@@ -52,7 +52,7 @@ def poisson_solver_with_jump_complex():
     SWITCHING_INTERVAL = 3
     Nx_tr = Ny_tr = Nz_tr = 128
     multi_gpu = False
-    num_epochs = 50
+    num_epochs = 20
 
 
     dim = i32(3)
@@ -194,12 +194,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        f_p = -1.0 * ( 
-            ( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*(y-x)/3 ) * (-2)*jnp.cos(z) / (x+y+3)**2 +\
-             2*( 16*5*4*(1.0/9.0)*((y-x)/3)**3 - 20*3*2*(1.0/9.0)*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z) +\
-            -1*( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z)
-        )
-        return f_p
+        return 0.0
 
 
     
@@ -223,9 +218,9 @@ def poisson_solver_with_jump_complex():
 
     
     eval_phi = vmap(phi_fn)(eval_gstate.R)
-    log = {'phi': eval_phi, 'U': sim_state.solution}
+    log = {'phi': eval_phi.reshape((Nx_eval,Ny_eval,Nz_eval)), 'U': sim_state.solution.reshape((Nx_eval,Ny_eval,Nz_eval))}
     io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/dragon_final')
-    
+    pdb.set_trace()
 
 
 
