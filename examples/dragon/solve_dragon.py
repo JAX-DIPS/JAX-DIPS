@@ -60,6 +60,13 @@ def poisson_solver_with_jump_complex():
     
     
     # --------- Grid nodes for level set
+    """ load the dragon """
+    dragon_host = onp.loadtxt(currDir + '/dragonian_full.csv', delimiter=',', skiprows=1)
+    # file_x = onp.array(xmin + dragon_host[:,0] * gstate.dx)
+    # file_y = onp.array(ymin + dragon_host[:,1] * gstate.dy)
+    # file_z = onp.array(zmin + dragon_host[:,2] * gstate.dz)
+    # file_R = onp.column_stack((file_x, file_y, file_z))
+    
     xmin = 0.118; xmax = 0.353
     ymin = 0.088; ymax = 0.263
     zmin = 0.0615; zmax = 0.1835
@@ -68,34 +75,38 @@ def poisson_solver_with_jump_complex():
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
-    dx = xc[1] - xc[0]
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
-
-    dragon_host = onp.loadtxt(currDir + '/dragonian.csv')
-    dragon = jnp.array(dragon_host)
-    # log = {'phi': dragon}
-    # io.write_vtk_manual(gstate, log, filename='results/dragon')
+    
+    """ find the mapping between stored file and solver """
+    file_order_index = onp.array(dragon_host[:,:3], dtype=int).astype(str)
+    file_order_dragon_phi = onp.array(dragon_host[:,3])
+    mapping = {}
+    for idx, val in zip(file_order_index, file_order_dragon_phi): mapping['_'.join(list(idx))] = val
+    I = jnp.arange(Nx); J = jnp.arange(Ny); K = jnp.arange(Nz)
+    II, JJ, KK = jnp.meshgrid(I,J,K, indexing='ij')
+    IJK = onp.array(jnp.concatenate((II.reshape(-1,1), JJ.reshape(-1,1), KK.reshape(-1,1)), axis=1) , dtype=str)
+    dragon_phi = []
+    for idx in IJK: dragon_phi.append(mapping['_'.join(list(idx))] )
+    dragon_phi = onp.array(dragon_phi)
+    # io.write_vtk_manual(gstate, {'phi': dragon_phi.reshape((Nx,Ny,Nz))}, filename=currDir + '/results/dragon_initial')
+        
+    """ Move to GPU and create interpolant on gstate """
+    dragon = jnp.array(dragon_phi)
+    phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(dragon, gstate)
     
     
-
-    #----------  Evaluation Mesh for Visualization
+    """ Evaluation Mesh for Visualization  """
     Nx_eval = Nx
     Ny_eval = Ny
     Nz_eval = Nz
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
     eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
-    eval_gstate = init_mesh_fn(exc, eyc, ezc)    
+    eval_gstate = init_mesh_fn(exc, eyc, ezc)     
     
     
-    # -- Initialize the Dragons in the BOX
-    num_stars_x = num_stars_y = num_stars_z = 4      # Ensure you are solving your system
-    scale = 0.35                                     # This is for proper separation between stars
-
-    phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(dragon, gstate)
-    
-    
+    """ Define functions """
     
     
     @custom_jit
@@ -195,7 +206,10 @@ def poisson_solver_with_jump_complex():
 
     init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
-   
+    
+    eval_phi = vmap(phi_fn)(eval_gstate.R)
+    
+    
     t1 = time.time()
 
     
@@ -210,7 +224,7 @@ def poisson_solver_with_jump_complex():
     
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     log = {'phi': eval_phi, 'U': sim_state.solution}
-    io.write_vtk_manual(eval_gstate, log, filename=currDir + 'results/dragon')
+    io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/dragon_final')
     
 
 

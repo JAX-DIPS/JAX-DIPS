@@ -16,10 +16,11 @@ The resulting SDF available through this repository, as a VTI file (visualizatio
 
 
 
-NOTE:
+# Loading the CSV file:
 The grid can be loaded by
 
-`xmin = 0.118; xmax = 0.353
+```
+    xmin = 0.118; xmax = 0.353
     ymin = 0.088; ymax = 0.263
     zmin = 0.0615; zmax = 0.1835
     Nx = 236; Ny = 176; Nz = 123
@@ -33,4 +34,4 @@ The grid can be loaded by
 
     dragon_host = onp.loadtxt(currDir + '/dragonian.csv')
     dragon = jnp.array(dragon_host)
-    `
+```
