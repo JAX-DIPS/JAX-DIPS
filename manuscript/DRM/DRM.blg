@@ -4,49 +4,49 @@ The top-level auxiliary file: DRM.aux
 The style file: abbrv.bst
 Database file #1: references.bib
 Warning--entry type for "jax2018github" isn't style-file defined
---line 98 of file references.bib
+--line 119 of file references.bib
 Warning--entry type for "optax2020github" isn't style-file defined
---line 727 of file references.bib
+--line 748 of file references.bib
 Warning--can't use both volume and number fields in kolmogorov1957representation
-You've used 64 entries,
+You've used 66 entries,
             2118 wiz_defined-function locations,
-            860 strings with 15539 characters,
-and the built_in function-call counts, 22421 in all, are:
-= -- 2182
-> -- 1226
+            873 strings with 15880 characters,
+and the built_in function-call counts, 22963 in all, are:
+= -- 2235
+> -- 1246
 < -- 6
-+ -- 500
-- -- 416
-* -- 1734
-:= -- 3826
-add.period$ -- 191
-call.type$ -- 64
-change.case$ -- 399
++ -- 508
+- -- 422
+* -- 1764
+:= -- 3920
+add.period$ -- 198
+call.type$ -- 66
+change.case$ -- 407
 chr.to.int$ -- 0
-cite$ -- 65
-duplicate$ -- 712
-empty$ -- 1614
-format.name$ -- 416
-if$ -- 4518
+cite$ -- 67
+duplicate$ -- 735
+empty$ -- 1662
+format.name$ -- 422
+if$ -- 4633
 int.to.chr$ -- 0
-int.to.str$ -- 64
-missing$ -- 60
-newline$ -- 319
-num.names$ -- 128
-pop$ -- 338
+int.to.str$ -- 66
+missing$ -- 63
+newline$ -- 330
+num.names$ -- 132
+pop$ -- 348
 preamble$ -- 1
-purify$ -- 335
+purify$ -- 342
 quote$ -- 0
-skip$ -- 509
+skip$ -- 523
 stack$ -- 0
-substring$ -- 1473
-swap$ -- 97
+substring$ -- 1504
+swap$ -- 99
 text.length$ -- 6
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 256
+type$ -- 262
 warning$ -- 1
-while$ -- 211
-width$ -- 66
-write$ -- 688
+while$ -- 216
+width$ -- 68
+write$ -- 711
 (There were 3 warnings)

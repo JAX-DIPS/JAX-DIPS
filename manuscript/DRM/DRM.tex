@@ -94,19 +94,20 @@
 \title{JAX-DIPS: Neural bootstrapping of finite discretization methods and application to elliptic problems with discontinuities}
 
 
-\cortext[cor]{Corresponding author: p.a.mistani@gmail.com}
+\cortext[cor]{Corresponding author: pmistani@nvidia.com}
 
 
 \author[1]{Pouria A. Mistani\thanks{corresponding author} $^{\dagger,}$}
 \author[2]{Samira Pakravan$^{\dagger,}$}
 \author[1]{Rajesh Ilango}
-\author[2]{Frederic G. Gibou}
+\author[1]{Sanjay Choudhry}
+\author[2]{Frederic Gibou}
 
 \address[1]{NVIDIA Corporation, Santa Clara, CA 95051, USA}
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present a scalable strategy for development of mesh-free hybrid neuro-symbolic partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution functions and operators of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical solvers. The presented neural bootstrapping method (hereby dubbed NBM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply NBM to the important class of elliptic problems with jump conditions across irregular interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and released in a software package named \texttt{JAX-DIPS} (\href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}), standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
+	We present a scalable strategy for development of mesh-free hybrid neuro-symbolic partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution functions and operators of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical solvers. The presented neural bootstrapping method (hereby dubbed NBM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply NBM to the important class of elliptic problems with jump conditions across irregular interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and \footnote{Pending NVIDIA open sourcing procedure.} in a software package named \texttt{JAX-DIPS} (\href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}), standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
 
 \end{abstract}
 
@@ -844,7 +845,7 @@ There is a major downside with this approach that during training the automatic 
 
 
 \subsection{Optimization scheme}
-Here we describe the optimization protocols for training neural models in \texttt{JAX-DIP}.
+Here we describe the optimization protocols for training neural models in \texttt{JAX-DIPS}.
 
 \subsubsection{Preconditioners are ideal network regularizers}
 Finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system around interfaces often lead to bad condition number for the linear system, which can be remedied by applying preconditioners. Intuitively, condition number is caused by a separation of scales for geometric lengthscales or material properties that underly the solution patterns. One of the strengths of the presented approach is to readily enable usage of preconditioners for training neural network surrogate models.
@@ -937,6 +938,12 @@ We found this problem can be drastically improved by interleaving region-specifi
 \end{algorithm}
 
 
+
+
+\subsubsection{Multi-GPU parallelization with model parallel training}
+The NBM is embarrasingly parallel and residual evaluation at each point is independent from other points. Therefore, multi-GPU parallelization does not involve inter-GPU communication for evaluating the residuals per point. We partition the training points and distribute them along with copies of neural network parameters among multiple GPUs to compute gradient updates per batch. Then we aggregate these updates by averaging the values on different GPUs. The updates are then broadcasted and model parameters are updated on each device.
+
+The ability to batch over grid points is one of the key enabling factors for reaching higher resolutions and higher dimensions. With NBM it is straightforward to scale finite discretization methods on GPU clusters.
 
 
 \section{Numerical Results} \label{sec:examples}
@@ -1074,7 +1081,7 @@ After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty
 \end{figure}
 
 
-\subsection{Case II. Star: complex geometry}
+\subsection{Case II. Star: complex geometry} \label{subsec:star}
 
 We use a pair of fully connected feedforward neural networks, each composed of $1$ hidden layer and $100$ neurons with \texttt{sine} activation function, followed  by an output layer with $1$ linear neuron. There are a total of $1,002$ trainable parameters in the model.
 
@@ -1188,9 +1195,22 @@ $2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
 
 \subsection{Case III. Starbox: multi-GPU, complex geometry}
 
+Consider a box filled with $64$ stars of case \ref{subsec:star} arranged on a regular $4\times 4\times 4$ lattice with randomized orientations in the xy-plane; \textit{i.e.}, this resembles a columnar mesophase of liquid crystal materials \cite{oswald2005smectic,ANDRIENKO2018520}. The scale parameters of the level-set function ($r_0$ and $\beta_i$'s) are scaled by a factor $0.35$ to avoid overlapping stars. We set problem parameters to constants given by $\mu_m= 1,\ \mu_p=80,\ k_m=0,\ k_p=0 $ and set zero Dirichlet boundary conditions on the walls. The source terms are given by
+\begin{align*}
+f_m(x,y,z)=& \sin(2 x)\cos(2 y) \exp(z) \bigg(7  + 2 \cos(2 \pi (x+y)) \sin(2\pi(x-y))\sin(z)\bigg)  \\
+&  +8\pi \cos(z) \exp(z) \bigg(\cos(4\pi y) \sin(2 x) \sin(2 y) -\cos(4\pi x) \cos(2 x)\cos(2 y) \bigg) \\
+f_p(x,y,z)=&  2 \bigg( 16(\frac{y-x}{3})^5 - 20(\frac{y-x}{3})^3 + 5\frac{y-x}{3} \bigg) \frac{\cos(z)}{ (x+y+3)^2}  \\
+& +\bigg( 16 (\frac{y-x}{3})^5 -\frac{820}{9} (\frac{y-x}{3})^3 + \frac{285}{9}(\frac{y-x}{3}) \bigg) \log(x+y+3)\cos(z)
+\end{align*}
+We set jump conditions in solution and solution flux to $\alpha=\beta=0$. The solution is illustrated in figure \ref{fig:starbox}.
 
-
-
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\linewidth]{./figures/starbox_cropped.png}
+	\includegraphics[width=0.45\linewidth]{./figures/poisson_solver_loss_starbox.png}
+	\caption{Illustration of numerical solution for the starbox example. The geometry is stored on a $64\times 64\times 64$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128\times 128\times 128$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization, the model is evaluated on a $256\times 256 \times 256$ grid.}
+	\label{fig:starbox}
+\end{figure}
 
 
 
@@ -1203,11 +1223,7 @@ There are many improvements for \texttt{JAX-DIPS} that we will pursue for future
 
 \begin{itemize}
 
-\item  More sophisticated neural architectures can be considered in \texttt{JAX-DIPS} by adding to the model class of the library. We only considered MLPs, however in recent years there have a plethora of deep neural network models that have shown great promise such as transformers, graph neural networks, \textit{etc}.
-
-\item Multi-GPU training using domain decomposition and distribution using the \texttt{pmap} primitive in JAX is another very immediate improvement that will enable higher resolution simulations.
-
-\item Modification of the numerical discretization scheme in order to operate over unstructured point clouds rather than the uniform Cartesian grids.
+\item  More sophisticated neural architectures can be considered in \texttt{JAX-DIPS} by adding to the model class of the library. We only considered MLPs, however in recent years there have been a plethora of deep neural network models that have shown great promise such as transformers, graph neural networks, \textit{etc}. An important class are symmetry preserving neural networks.
 
 \item Extension to adaptive grids with enhanced resolutions closer to the interfaces while coarsening the grid cells in the bulk.
 

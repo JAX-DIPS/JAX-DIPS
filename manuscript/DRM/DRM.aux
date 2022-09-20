@@ -124,98 +124,105 @@
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.3}Domain switching optimization scheme}{18}{subsubsection.3.7.3}\protected@file@percent }
 \@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Domain switching method. Switching interval is $\tau $.\relax }}{18}{algorithm.2}\protected@file@percent }
 \newlabel{switching}{{2}{18}{Domain switching method. Switching interval is $\tau $.\relax }{algorithm.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Results}{18}{section.4}\protected@file@percent }
-\newlabel{sec:examples}{{4}{18}{Numerical Results}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Case I. Sphere: basic benchmark}{18}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.4}Multi-GPU parallelization with model parallel training}{18}{subsubsection.3.7.4}\protected@file@percent }
 \citation{guittet2015solving}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }}{19}{table.caption.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Results}{19}{section.4}\protected@file@percent }
+\newlabel{sec:examples}{{4}{19}{Numerical Results}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Case I. Sphere: basic benchmark}{19}{subsection.4.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II. Star: complex geometry}{19}{subsection.4.2}\protected@file@percent }
+\newlabel{subsec:star}{{4.2}{19}{Case II. Star: complex geometry}{subsection.4.2}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{20}{figure.caption.5}\protected@file@percent }
 \newlabel{fig:losses}{{4}{20}{Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.5}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{20}{figure.caption.6}\protected@file@percent }
 \newlabel{fig:sphere}{{5}{20}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.6}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. \relax }}{21}{figure.caption.7}\protected@file@percent }
 \newlabel{fig:sphere}{{6}{21}{Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. \relax }{figure.caption.7}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }}{22}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:spheregrad}{{7}{22}{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }{figure.caption.8}{}}
+\citation{oswald2005smectic,ANDRIENKO2018520}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }}{22}{table.caption.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Case III. Starbox: multi-GPU, complex geometry}{22}{subsection.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{22}{section.5}\protected@file@percent }
-\newlabel{sec:conc}{{5}{22}{Conclusion}{section.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{23}{table.caption.9}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }}{23}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:spheregrad}{{7}{23}{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{23}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:star}{{8}{23}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }}{24}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:star_sol}{{9}{24}{Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }{figure.caption.11}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{25}{table.caption.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{25}{section.5}\protected@file@percent }
+\newlabel{sec:conc}{{5}{25}{Conclusion}{section.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{26}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:lossestar}{{10}{26}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Illustration of numerical solution for the starbox example. The geometry is stored on a $64\times 64\times 64$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128\times 128\times 128$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization, the model is evaluated on a $256\times 256 \times 256$ grid.\relax }}{26}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:starbox}{{11}{26}{Illustration of numerical solution for the starbox example. The geometry is stored on a $64\times 64\times 64$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128\times 128\times 128$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization, the model is evaluated on a $256\times 256 \times 256$ grid.\relax }{figure.caption.13}{}}
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{adams2002immersed}{{1}{}{{}}{{}}}
-\bibcite{babuvska1970finite}{{2}{}{{}}{{}}}
-\bibcite{belytschko2001arbitrary}{{3}{}{{}}{{}}}
-\bibcite{berg2017neural}{{4}{}{{}}{{}}}
-\bibcite{bezgin2022jax}{{5}{}{{}}{{}}}
-\bibcite{bhattacharya2020model}{{6}{}{{}}{{}}}
-\bibcite{BOCHKOV2020109269}{{7}{}{{}}{{}}}
-\bibcite{bochkov2020solving}{{8}{}{{}}{{}}}
-\bibcite{bochkov2021non}{{9}{}{{}}{{}}}
-\bibcite{bochkov2021sharp}{{10}{}{{}}{{}}}
-\bibcite{jax2018github}{{11}{}{{}}{{}}}
-\bibcite{bramble1996finite}{{12}{}{{}}{{}}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{24}{figure.caption.10}\protected@file@percent }
-\newlabel{fig:star}{{8}{24}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.10}{}}
-\@writefile{toc}{\contentsline {section}{References}{24}{section*.13}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }}{25}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:star_sol}{{9}{25}{Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }{figure.caption.11}{}}
-\bibcite{chen1995universal}{{13}{}{{}}{{}}}
-\bibcite{chua1988cellularA}{{14}{}{{}}{{}}}
-\bibcite{chua1988cellular}{{15}{}{{}}{{}}}
-\bibcite{crockett2011cartesian}{{16}{}{{}}{{}}}
-\bibcite{dal2020data}{{17}{}{{}}{{}}}
-\bibcite{de2018end}{{18}{}{{}}{{}}}
-\bibcite{ewing1999immersed}{{19}{}{{}}{{}}}
-\bibcite{fedkiw1999non}{{20}{}{{}}{{}}}
-\bibcite{galatsis2010patterning}{{21}{}{{}}{{}}}
-\bibcite{gobovic1993design}{{22}{}{{}}{{}}}
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{26}{figure.caption.12}\protected@file@percent }
-\newlabel{fig:lossestar}{{10}{26}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
-\bibcite{gong2008immersed}{{23}{}{{}}{{}}}
-\bibcite{guittet2015solving}{{24}{}{{}}{{}}}
-\bibcite{hecht1987kolmogorov}{{25}{}{{}}{{}}}
-\bibcite{optax2020github}{{26}{}{{}}{{}}}
-\bibcite{holl2020learning}{{27}{}{{}}{{}}}
-\bibcite{holl2020phiflow}{{28}{}{{}}{{}}}
-\bibcite{ismailov2022}{{29}{}{{}}{{}}}
-\bibcite{kingma2014adam}{{30}{}{{}}{{}}}
-\bibcite{Kochkov2021-ML-CFD}{{31}{}{{}}{{}}}
-\bibcite{kolmogorov1957representation}{{32}{}{{}}{{}}}
-\bibcite{lagaris1998artificial}{{33}{}{{}}{{}}}
-\bibcite{lee1990neural}{{34}{}{{}}{{}}}
-\bibcite{leveque1994immersed}{{35}{}{{}}{{}}}
-\bibcite{lew2008discontinuous}{{36}{}{{}}{{}}}
-\bibcite{li2020fourier}{{37}{}{{}}{{}}}
-\bibcite{li2020neural}{{38}{}{{}}{{}}}
-\bibcite{li2003new}{{39}{}{{}}{{}}}
-\bibcite{liu2000boundary}{{40}{}{{}}{{}}}
-\bibcite{lu2019deeponet}{{41}{}{{}}{{}}}
-\bibcite{lu2020extracting}{{42}{}{{}}{{}}}
-\bibcite{min2007geometric}{{43}{}{{}}{{}}}
-\bibcite{MIN2007300}{{44}{}{{}}{{}}}
-\bibcite{MirzadehPB}{{45}{}{{}}{{}}}
-\bibcite{MISTANI2018150}{{46}{}{{}}{{}}}
-\bibcite{mistani2019parallel}{{47}{}{{}}{{}}}
-\bibcite{moes1999finite}{{48}{}{{}}{{}}}
-\bibcite{osher1988fronts}{{49}{}{{}}{{}}}
-\bibcite{ouaknin2018level}{{50}{}{{}}{{}}}
-\bibcite{pakravan2021solving}{{51}{}{{}}{{}}}
-\bibcite{gradClipping}{{52}{}{{}}{{}}}
-\bibcite{RAISSI2019686}{{53}{}{{}}{{}}}
-\bibcite{sallee1984middle}{{54}{}{{}}{{}}}
-\bibcite{shallue2018measuring}{{55}{}{{}}{{}}}
-\bibcite{sharp1990calculating}{{56}{}{{}}{{}}}
-\bibcite{shu1988efficient}{{57}{}{{}}{{}}}
-\bibcite{SIRIGNANO20181339}{{58}{}{{}}{{}}}
-\bibcite{sprecher1965structure}{{59}{}{{}}{{}}}
-\bibcite{SUSSMAN1994146}{{60}{}{{}}{{}}}
-\bibcite{theillard2015sharp}{{61}{}{{}}{{}}}
-\bibcite{um2020solver}{{62}{}{{}}{{}}}
-\bibcite{XIU2001658}{{63}{}{{}}{{}}}
-\bibcite{yu2018deep}{{64}{}{{}}{{}}}
-\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\bibcite{ANDRIENKO2018520}{{2}{}{{}}{{}}}
+\bibcite{babuvska1970finite}{{3}{}{{}}{{}}}
+\bibcite{belytschko2001arbitrary}{{4}{}{{}}{{}}}
+\bibcite{berg2017neural}{{5}{}{{}}{{}}}
+\bibcite{bezgin2022jax}{{6}{}{{}}{{}}}
+\bibcite{bhattacharya2020model}{{7}{}{{}}{{}}}
+\bibcite{BOCHKOV2020109269}{{8}{}{{}}{{}}}
+\bibcite{bochkov2020solving}{{9}{}{{}}{{}}}
+\bibcite{bochkov2021non}{{10}{}{{}}{{}}}
+\bibcite{bochkov2021sharp}{{11}{}{{}}{{}}}
+\bibcite{jax2018github}{{12}{}{{}}{{}}}
+\bibcite{bramble1996finite}{{13}{}{{}}{{}}}
+\bibcite{chen1995universal}{{14}{}{{}}{{}}}
+\bibcite{chua1988cellularA}{{15}{}{{}}{{}}}
+\bibcite{chua1988cellular}{{16}{}{{}}{{}}}
+\bibcite{crockett2011cartesian}{{17}{}{{}}{{}}}
+\bibcite{dal2020data}{{18}{}{{}}{{}}}
+\bibcite{de2018end}{{19}{}{{}}{{}}}
+\@writefile{toc}{\contentsline {section}{References}{28}{section*.14}\protected@file@percent }
+\bibcite{ewing1999immersed}{{20}{}{{}}{{}}}
+\bibcite{fedkiw1999non}{{21}{}{{}}{{}}}
+\bibcite{galatsis2010patterning}{{22}{}{{}}{{}}}
+\bibcite{gobovic1993design}{{23}{}{{}}{{}}}
+\bibcite{gong2008immersed}{{24}{}{{}}{{}}}
+\bibcite{guittet2015solving}{{25}{}{{}}{{}}}
+\bibcite{hecht1987kolmogorov}{{26}{}{{}}{{}}}
+\bibcite{optax2020github}{{27}{}{{}}{{}}}
+\bibcite{holl2020learning}{{28}{}{{}}{{}}}
+\bibcite{holl2020phiflow}{{29}{}{{}}{{}}}
+\bibcite{ismailov2022}{{30}{}{{}}{{}}}
+\bibcite{kingma2014adam}{{31}{}{{}}{{}}}
+\bibcite{Kochkov2021-ML-CFD}{{32}{}{{}}{{}}}
+\bibcite{kolmogorov1957representation}{{33}{}{{}}{{}}}
+\bibcite{lagaris1998artificial}{{34}{}{{}}{{}}}
+\bibcite{lee1990neural}{{35}{}{{}}{{}}}
+\bibcite{leveque1994immersed}{{36}{}{{}}{{}}}
+\bibcite{lew2008discontinuous}{{37}{}{{}}{{}}}
+\bibcite{li2020fourier}{{38}{}{{}}{{}}}
+\bibcite{li2020neural}{{39}{}{{}}{{}}}
+\bibcite{li2003new}{{40}{}{{}}{{}}}
+\bibcite{liu2000boundary}{{41}{}{{}}{{}}}
+\bibcite{lu2019deeponet}{{42}{}{{}}{{}}}
+\bibcite{lu2020extracting}{{43}{}{{}}{{}}}
+\bibcite{min2007geometric}{{44}{}{{}}{{}}}
+\bibcite{MIN2007300}{{45}{}{{}}{{}}}
+\bibcite{MirzadehPB}{{46}{}{{}}{{}}}
+\bibcite{MISTANI2018150}{{47}{}{{}}{{}}}
+\bibcite{mistani2019parallel}{{48}{}{{}}{{}}}
+\bibcite{moes1999finite}{{49}{}{{}}{{}}}
+\bibcite{osher1988fronts}{{50}{}{{}}{{}}}
+\bibcite{oswald2005smectic}{{51}{}{{}}{{}}}
+\bibcite{ouaknin2018level}{{52}{}{{}}{{}}}
+\bibcite{pakravan2021solving}{{53}{}{{}}{{}}}
+\bibcite{gradClipping}{{54}{}{{}}{{}}}
+\bibcite{RAISSI2019686}{{55}{}{{}}{{}}}
+\bibcite{sallee1984middle}{{56}{}{{}}{{}}}
+\bibcite{shallue2018measuring}{{57}{}{{}}{{}}}
+\bibcite{sharp1990calculating}{{58}{}{{}}{{}}}
+\bibcite{shu1988efficient}{{59}{}{{}}{{}}}
+\bibcite{SIRIGNANO20181339}{{60}{}{{}}{{}}}
+\bibcite{sprecher1965structure}{{61}{}{{}}{{}}}
+\bibcite{SUSSMAN1994146}{{62}{}{{}}{{}}}
+\bibcite{theillard2015sharp}{{63}{}{{}}{{}}}
+\bibcite{um2020solver}{{64}{}{{}}{{}}}
+\bibcite{XIU2001658}{{65}{}{{}}{{}}}
+\bibcite{yu2018deep}{{66}{}{{}}{{}}}
 \@writefile{toc}{\let\numberline\tmptocnumberline}
-\@writefile{toc}{\contentsline {section}{\numberline {Appendix \nobreakspace  {}A}Solving interface problems with physics-informed neural networks}{29}{appendix.A}\protected@file@percent }
-\newlabel{eq::interfaceLoss}{{A.2}{29}{Solving interface problems with physics-informed neural networks}{equation.A.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {Appendix \nobreakspace  {}A}Solving interface problems with physics-informed neural networks}{31}{appendix.A}\protected@file@percent }
+\newlabel{eq::interfaceLoss}{{A.2}{31}{Solving interface problems with physics-informed neural networks}{equation.A.2}{}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers

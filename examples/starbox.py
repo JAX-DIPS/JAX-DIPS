@@ -51,7 +51,7 @@ def poisson_solver_with_jump_complex():
     SWITCHING_INTERVAL = 3
     Nx_tr = Ny_tr = Nz_tr = 128
     multi_gpu = False
-    num_epochs = 2
+    num_epochs = 50
 
 
     dim = i32(3)
@@ -75,27 +75,24 @@ def poisson_solver_with_jump_complex():
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
     eval_gstate = init_mesh_fn(exc, eyc, ezc)
     
-    # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper
-    
 
-    scale = 0.1
+
+    # -- Initialize the STARS in the BOX
+    num_stars_x = num_stars_y = num_stars_z = 4      # Ensure you are solving your system
+    scale = 0.35                                     # This is for proper separation between stars
+
     r0 = 0.483*scale; ri = 0.151*scale; re = 0.911*scale
     n_1 = 3.0; beta_1 =  0.1*scale; theta_1 = 0.5
     n_2 = 4.0; beta_2 = -0.1*scale; theta_2 = 1.8
     n_3 = 7.0; beta_3 = 0.15*scale; theta_3 = 0.0
 
-    
-    
-   
     key = random.PRNGKey(0)
     cov = jnp.eye(3)
     mean = jnp.zeros(3)
-    angles = random.multivariate_normal(key, mean, cov, shape=(1000,))
-    # angles = ((stars ) / (stars.max() - stars.min()) ) 
-
-    xc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, 10, dtype=f32)
-    yc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, 10, dtype=f32)
-    zc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, 10, dtype=f32)
+    angles = random.multivariate_normal(key, mean, cov, shape=(num_stars_x * num_stars_y * num_stars_z,)) 
+    xc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_x, dtype=f32)
+    yc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_y, dtype=f32)
+    zc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_z, dtype=f32)
     Xce, Yce, Zce = jnp.meshgrid(xc, yc, zc)
     positions = jnp.column_stack((Xce.reshape(-1), Yce.reshape(-1), Zce.reshape(-1)))
     

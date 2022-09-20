@@ -5,6 +5,12 @@ L.~Adams and Z.~Li.
 \newblock The immersed interface/multigrid methods for interface problems.
 \newblock {\em SIAM Journal on Scientific Computing}, 24(2):463--479, 2002.
 
+\bibitem{ANDRIENKO2018520}
+D.~Andrienko.
+\newblock Introduction to liquid crystals.
+\newblock {\em Journal of Molecular Liquids}, 267:520--541, 2018.
+\newblock Special Issue Dedicated to the Memory of Professor Y. Reznikov.
+
 \bibitem{babuvska1970finite}
 I.~Babu{\v{s}}ka.
 \newblock The finite element method for elliptic equations with discontinuous
@@ -288,6 +294,12 @@ S.~Osher and J.~A. Sethian.
 \newblock Fronts propagating with curvature-dependent speed: Algorithms based
   on hamilton-jacobi formulations.
 \newblock {\em Journal of computational physics}, 79(1):12--49, 1988.
+
+\bibitem{oswald2005smectic}
+P.~Oswald and P.~Pieranski.
+\newblock {\em Smectic and columnar liquid crystals: concepts and physical
+  properties illustrated by experiments}.
+\newblock CRC press, 2005.
 
 \bibitem{ouaknin2018level}
 G.~Y. Ouaknin, N.~Laachi, K.~Delaney, G.~H. Fredrickson, and F.~Gibou.
