@@ -51,7 +51,7 @@ def poisson_solver_with_jump_complex():
     SWITCHING_INTERVAL = 3
     Nx_tr = Ny_tr = Nz_tr = 64 #1024
     multi_gpu = False          #True
-    num_epochs = 20
+    num_epochs = 1000
     batch_size = min( 64*64*32, Nx_tr*Ny_tr*Nz_tr)
 
 
@@ -98,8 +98,7 @@ def poisson_solver_with_jump_complex():
     ymin = scalefac * ymin - 2.0; ymax = scalefac * ymax - 2.0; 
     zmin = scalefac * zmin - 2.0; zmax = scalefac * zmax - 2.0
     dragon = jnp.array(dragon_phi)
-    # import pdb
-    # pdb.set_trace()
+
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
@@ -109,9 +108,9 @@ def poisson_solver_with_jump_complex():
 
 
     """ Evaluation Mesh for Visualization  """
-    Nx_eval = Nx
-    Ny_eval = Ny
-    Nz_eval = Nz
+    Nx_eval = 2*Nx
+    Ny_eval = 2*Ny
+    Nz_eval = 2*Nz
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
     eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
