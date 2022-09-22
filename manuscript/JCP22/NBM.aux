@@ -1,0 +1,244 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\Newlabel{cor}{1}
+\citation{sharp1990calculating,MirzadehPB}
+\citation{mistani2019parallel}
+\citation{MISTANI2018150}
+\citation{theillard2015sharp,bochkov2021sharp}
+\citation{galatsis2010patterning,ouaknin2018level,bochkov2021non}
+\Newlabel{1}{a}
+\Newlabel{2}{b}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec::introduction}{{1}{1}{Introduction}{section.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Problem statement}{1}{subsection.1.1}\protected@file@percent }
+\citation{babuvska1970finite,bramble1996finite}
+\citation{leveque1994immersed}
+\citation{adams2002immersed,li2003new,ewing1999immersed,gong2008immersed}
+\citation{fedkiw1999non}
+\citation{liu2000boundary}
+\citation{guittet2015solving}
+\citation{crockett2011cartesian}
+\citation{lew2008discontinuous,moes1999finite,belytschko2001arbitrary}
+\citation{BOCHKOV2020109269}
+\citation{lee1990neural}
+\citation{gobovic1993design,chua1988cellular,chua1988cellularA}
+\citation{lagaris1998artificial}
+\citation{RAISSI2019686}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Literature on relevant finite discretization methods}{2}{subsection.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Literature on solving PDEs with neural networks}{2}{subsection.1.3}\protected@file@percent }
+\citation{SIRIGNANO20181339}
+\citation{yu2018deep}
+\citation{jax2018github}
+\citation{holl2020phiflow}
+\citation{Kochkov2021-ML-CFD}
+\citation{bezgin2022jax}
+\citation{pakravan2021solving,dal2020data,lu2020extracting}
+\citation{berg2017neural}
+\citation{um2020solver}
+\citation{de2018end,holl2020learning}
+\citation{chen1995universal}
+\citation{lu2019deeponet,bhattacharya2020model,li2020neural,li2020fourier}
+\citation{pakravan2021solving}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Neural Bootstrapping Method (NBM)}{3}{section.2}\protected@file@percent }
+\newlabel{sec:nbm}{{2}{3}{Neural Bootstrapping Method (NBM)}{section.2}{}}
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:nbm_kernel}{{1a}{4}{NBM kernels compute residual contribution by each collocation point per thread. Kernel operations involve considering implicit cells at different resolutions according to the bootstrapped finite discretization method.\relax }{figure.caption.1}{}}
+\newlabel{sub@fig:nbm_kernel}{{a}{4}{NBM kernels compute residual contribution by each collocation point per thread. Kernel operations involve considering implicit cells at different resolutions according to the bootstrapped finite discretization method.\relax }{figure.caption.1}{}}
+\newlabel{fig:trainingloop}{{1b}{4}{NBM outer training layout. Geometric information is managed by a mesh oracle that is often a structured mesh at much lower resolution that stores the level-set funcion. The pointwise evaluations at each implicit cell is locally preconditioned based on the geometry of the interfaces crossing the implicit cells. The training loop involves automatic differentiation across the assembly of the linear system performed by the NBM kernels.\relax }{figure.caption.1}{}}
+\newlabel{sub@fig:trainingloop}{{b}{4}{NBM outer training layout. Geometric information is managed by a mesh oracle that is often a structured mesh at much lower resolution that stores the level-set funcion. The pointwise evaluations at each implicit cell is locally preconditioned based on the geometry of the interfaces crossing the implicit cells. The training loop involves automatic differentiation across the assembly of the linear system performed by the NBM kernels.\relax }{figure.caption.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Neural Bootstrapping Method (NBM).\relax }}{4}{figure.caption.1}\protected@file@percent }
+\newlabel{fig:nbm}{{1}{4}{Neural Bootstrapping Method (NBM).\relax }{figure.caption.1}{}}
+\citation{shallue2018measuring}
+\citation{MIN2007300}
+\@writefile{toc}{\contentsline {section}{\numberline {3}JAX-DIPS: Differentiable Interfacial PDE Solver}{5}{section.3}\protected@file@percent }
+\newlabel{sec:dips}{{3}{5}{JAX-DIPS: Differentiable Interfacial PDE Solver}{section.3}{}}
+\citation{MIN2007300}
+\citation{osher1988fronts}
+\citation{SUSSMAN1994146}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Interpolation methods}{6}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1}Trilinear interpolation}{6}{subsubsection.3.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2}Quadratic non-oscillatory interpolation}{6}{subsubsection.3.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Level-set method}{6}{subsection.3.2}\protected@file@percent }
+\citation{XIU2001658}
+\newlabel{eq::sussman}{{2}{7}{Level-set method}{equation.3.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}Second order accurate semi-Lagrangian advection scheme}{7}{subsubsection.3.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.2}Godunov Hamiltonian for reinitialization}{7}{subsubsection.3.2.2}\protected@file@percent }
+\citation{shu1988efficient}
+\citation{shu1988efficient}
+\citation{min2007geometric}
+\citation{sallee1984middle}
+\citation{min2007geometric}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Geometric integration}{8}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.1}Integration over 3D surfaces and volumes}{8}{subsubsection.3.3.1}\protected@file@percent }
+\citation{min2007geometric}
+\citation{min2007geometric}
+\citation{min2007geometric}
+\citation{min2007geometric}
+\citation{min2007geometric}
+\citation{min2007geometric}
+\citation{min2007geometric}
+\citation{hecht1987kolmogorov}
+\citation{kolmogorov1957representation}
+\citation{sprecher1965structure}
+\citation{ismailov2022}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.2}Cross sections of interface with grid cell faces}{10}{subsubsection.3.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Neural network approximators for the solution}{10}{subsection.3.4}\protected@file@percent }
+\citation{kingma2014adam}
+\citation{bochkov2020solving}
+\citation{bochkov2020solving}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Two neural networks are defined for the two regions of the computational domain.\relax }}{11}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:shapes}{{2}{11}{Two neural networks are defined for the two regions of the computational domain.\relax }{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Approach I. Finite discretization method fused with regression-based extrapolation}{11}{subsection.3.5}\protected@file@percent }
+\newlabel{sec::FD}{{3.5}{11}{Approach I. Finite discretization method fused with regression-based extrapolation}{subsection.3.5}{}}
+\citation{bochkov2020solving}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }}{12}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:grid}{{3}{12}{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.\relax }{figure.caption.3}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf  {U}_{i,j}+r_{i,j}^\pm $.\relax }}{15}{algorithm.1}\protected@file@percent }
+\newlabel{euclid}{{1}{15}{Bias Slow approximation of the non-existing solution value on a grid point based on existing solution values in its neighborhood. The notation is used for $u_{i,j}^\pm =B_{i,j}^\pm : \mathbf {U}_{i,j}+r_{i,j}^\pm $.\relax }{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Approach II. Finite discretization method fused with neural extrapolation}{16}{subsection.3.6}\protected@file@percent }
+\newlabel{eq::taylorexpandjump}{{13}{16}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.13}{}}
+\newlabel{eq::extrapolate1}{{14}{16}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.14}{}}
+\newlabel{eq::extrapolate2}{{15}{16}{Approach II. Finite discretization method fused with neural extrapolation}{equation.3.15}{}}
+\citation{kingma2014adam}
+\citation{optax2020github}
+\citation{gradClipping}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Optimization scheme}{17}{subsection.3.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.1}Preconditioners are ideal network regularizers}{17}{subsubsection.3.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.2}Learning rate scheduling}{17}{subsubsection.3.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.3}Domain switching optimization scheme}{18}{subsubsection.3.7.3}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Domain switching method. Switching interval is $\tau $.\relax }}{18}{algorithm.2}\protected@file@percent }
+\newlabel{switching}{{2}{18}{Domain switching method. Switching interval is $\tau $.\relax }{algorithm.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.7.4}Multi-GPU parallelization with model parallel training}{18}{subsubsection.3.7.4}\protected@file@percent }
+\citation{guittet2015solving}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Results}{19}{section.4}\protected@file@percent }
+\newlabel{sec:examples}{{4}{19}{Numerical Results}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Case I. Sphere: basic benchmark}{19}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Case II. Star: complex geometry}{19}{subsection.4.2}\protected@file@percent }
+\newlabel{subsec:star}{{4.2}{19}{Case II. Star: complex geometry}{subsection.4.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{20}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:losses}{{4}{20}{Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }}{20}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:sphere}{{5}{20}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $16\times 16\times 16$ grid (right).\relax }{figure.caption.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. \relax }}{21}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:sphere}{{6}{21}{Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. \relax }{figure.caption.7}{}}
+\citation{oswald2005smectic,ANDRIENKO2018520}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }}{22}{table.caption.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Case III. Starbox: multi-GPU, complex geometry}{22}{subsection.4.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }}{23}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:spheregrad}{{7}{23}{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{23}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:star}{{8}{23}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }}{24}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:star_sol}{{9}{24}{Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }{figure.caption.12}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{25}{table.caption.9}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Convergence test for the scalable pointwise multi-resolution regression-based solver. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. We run these experiments on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a multi-resolution training protocol that refines to 4 levels at each collocation point. Errors are reported on an upsamples grid at resolution $256^3$. Batch size is the minimum of $64\times 64\times 32$ and number of collocation points, which ensures memory saturation at 32 GB.\relax }}{25}{table.caption.10}\protected@file@percent }
+\citation{curless1996volumetric}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{26}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:lossestar}{{10}{26}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Case IV. A Charged Dragon}{26}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{26}{section.5}\protected@file@percent }
+\newlabel{sec:conc}{{5}{26}{Conclusion}{section.5}{}}
+\bibstyle{abbrv}
+\bibdata{references}
+\bibcite{adams2002immersed}{{1}{}{{}}{{}}}
+\bibcite{ANDRIENKO2018520}{{2}{}{{}}{{}}}
+\bibcite{babuvska1970finite}{{3}{}{{}}{{}}}
+\bibcite{belytschko2001arbitrary}{{4}{}{{}}{{}}}
+\bibcite{berg2017neural}{{5}{}{{}}{{}}}
+\bibcite{bezgin2022jax}{{6}{}{{}}{{}}}
+\bibcite{bhattacharya2020model}{{7}{}{{}}{{}}}
+\bibcite{BOCHKOV2020109269}{{8}{}{{}}{{}}}
+\bibcite{bochkov2020solving}{{9}{}{{}}{{}}}
+\bibcite{bochkov2021non}{{10}{}{{}}{{}}}
+\bibcite{bochkov2021sharp}{{11}{}{{}}{{}}}
+\bibcite{jax2018github}{{12}{}{{}}{{}}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Illustration of numerical solution for the starbox example. The geometry is stored on a $64^3$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128^3$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.\relax }}{27}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:starbox}{{11}{27}{Illustration of numerical solution for the starbox example. The geometry is stored on a $64^3$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128^3$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.\relax }{figure.caption.14}{}}
+\@writefile{toc}{\contentsline {section}{References}{27}{section*.17}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Illustration of numerical solution for the starbox example with 1000 stars. The geometry is stored on a $128^3$ grid, neural network model was trained for $15$ epochs that took $10,340$ seconds on 8 NVIDIA V100 GPU on one DGX node over a base resolution of $512^3$ grid and refined on resolutions $1024^3,2048^3,4096^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.\relax }}{28}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:starbox512}{{12}{28}{Illustration of numerical solution for the starbox example with 1000 stars. The geometry is stored on a $128^3$ grid, neural network model was trained for $15$ epochs that took $10,340$ seconds on 8 NVIDIA V100 GPU on one DGX node over a base resolution of $512^3$ grid and refined on resolutions $1024^3,2048^3,4096^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.\relax }{figure.caption.15}{}}
+\newlabel{fig:dragon1}{{13a}{29}{Geometry of the dragon.\relax }{figure.caption.16}{}}
+\newlabel{sub@fig:dragon1}{{a}{29}{Geometry of the dragon.\relax }{figure.caption.16}{}}
+\newlabel{fig:dragon2}{{13b}{29}{Level-set function.\relax }{figure.caption.16}{}}
+\newlabel{sub@fig:dragon2}{{b}{29}{Level-set function.\relax }{figure.caption.16}{}}
+\newlabel{fig:dragon3}{{13c}{29}{Solution on a cross section.\relax }{figure.caption.16}{}}
+\newlabel{sub@fig:dragon3}{{c}{29}{Solution on a cross section.\relax }{figure.caption.16}{}}
+\newlabel{fig:dragon4}{{13d}{29}{Solution in the domain.\relax }{figure.caption.16}{}}
+\newlabel{sub@fig:dragon4}{{d}{29}{Solution in the domain.\relax }{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces A Charged Dragon.\relax }}{29}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:dragon}{{13}{29}{A Charged Dragon.\relax }{figure.caption.16}{}}
+\bibcite{bramble1996finite}{{13}{}{{}}{{}}}
+\bibcite{chen1995universal}{{14}{}{{}}{{}}}
+\bibcite{chua1988cellularA}{{15}{}{{}}{{}}}
+\bibcite{chua1988cellular}{{16}{}{{}}{{}}}
+\bibcite{crockett2011cartesian}{{17}{}{{}}{{}}}
+\bibcite{curless1996volumetric}{{18}{}{{}}{{}}}
+\bibcite{dal2020data}{{19}{}{{}}{{}}}
+\bibcite{de2018end}{{20}{}{{}}{{}}}
+\bibcite{ewing1999immersed}{{21}{}{{}}{{}}}
+\bibcite{fedkiw1999non}{{22}{}{{}}{{}}}
+\bibcite{galatsis2010patterning}{{23}{}{{}}{{}}}
+\bibcite{gobovic1993design}{{24}{}{{}}{{}}}
+\bibcite{gong2008immersed}{{25}{}{{}}{{}}}
+\bibcite{guittet2015solving}{{26}{}{{}}{{}}}
+\bibcite{hecht1987kolmogorov}{{27}{}{{}}{{}}}
+\bibcite{optax2020github}{{28}{}{{}}{{}}}
+\bibcite{holl2020learning}{{29}{}{{}}{{}}}
+\bibcite{holl2020phiflow}{{30}{}{{}}{{}}}
+\bibcite{ismailov2022}{{31}{}{{}}{{}}}
+\bibcite{kingma2014adam}{{32}{}{{}}{{}}}
+\bibcite{Kochkov2021-ML-CFD}{{33}{}{{}}{{}}}
+\bibcite{kolmogorov1957representation}{{34}{}{{}}{{}}}
+\bibcite{lagaris1998artificial}{{35}{}{{}}{{}}}
+\bibcite{lee1990neural}{{36}{}{{}}{{}}}
+\bibcite{leveque1994immersed}{{37}{}{{}}{{}}}
+\bibcite{lew2008discontinuous}{{38}{}{{}}{{}}}
+\bibcite{li2020fourier}{{39}{}{{}}{{}}}
+\bibcite{li2020neural}{{40}{}{{}}{{}}}
+\bibcite{li2003new}{{41}{}{{}}{{}}}
+\bibcite{liu2000boundary}{{42}{}{{}}{{}}}
+\bibcite{lu2019deeponet}{{43}{}{{}}{{}}}
+\bibcite{lu2020extracting}{{44}{}{{}}{{}}}
+\bibcite{min2007geometric}{{45}{}{{}}{{}}}
+\bibcite{MIN2007300}{{46}{}{{}}{{}}}
+\bibcite{MirzadehPB}{{47}{}{{}}{{}}}
+\bibcite{MISTANI2018150}{{48}{}{{}}{{}}}
+\bibcite{mistani2019parallel}{{49}{}{{}}{{}}}
+\bibcite{moes1999finite}{{50}{}{{}}{{}}}
+\bibcite{osher1988fronts}{{51}{}{{}}{{}}}
+\bibcite{oswald2005smectic}{{52}{}{{}}{{}}}
+\bibcite{ouaknin2018level}{{53}{}{{}}{{}}}
+\bibcite{pakravan2021solving}{{54}{}{{}}{{}}}
+\bibcite{gradClipping}{{55}{}{{}}{{}}}
+\bibcite{RAISSI2019686}{{56}{}{{}}{{}}}
+\bibcite{sallee1984middle}{{57}{}{{}}{{}}}
+\bibcite{shallue2018measuring}{{58}{}{{}}{{}}}
+\bibcite{sharp1990calculating}{{59}{}{{}}{{}}}
+\bibcite{shu1988efficient}{{60}{}{{}}{{}}}
+\bibcite{SIRIGNANO20181339}{{61}{}{{}}{{}}}
+\bibcite{sprecher1965structure}{{62}{}{{}}{{}}}
+\bibcite{SUSSMAN1994146}{{63}{}{{}}{{}}}
+\bibcite{theillard2015sharp}{{64}{}{{}}{{}}}
+\bibcite{um2020solver}{{65}{}{{}}{{}}}
+\bibcite{XIU2001658}{{66}{}{{}}{{}}}
+\bibcite{yu2018deep}{{67}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\@writefile{toc}{\let\numberline\tmptocnumberline}
+\@writefile{toc}{\contentsline {section}{\numberline {Appendix \nobreakspace  {}A}Solving interface problems with physics-informed neural networks}{33}{appendix.A}\protected@file@percent }
+\newlabel{eq::interfaceLoss}{{A.2}{33}{Solving interface problems with physics-informed neural networks}{equation.A.2}{}}

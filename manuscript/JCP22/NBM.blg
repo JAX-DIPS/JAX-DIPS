@@ -1,0 +1,52 @@
+This is BibTeX, Version 0.99d (TeX Live 2019/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: NBM.aux
+The style file: abbrv.bst
+Database file #1: references.bib
+Warning--entry type for "jax2018github" isn't style-file defined
+--line 128 of file references.bib
+Warning--entry type for "optax2020github" isn't style-file defined
+--line 757 of file references.bib
+Warning--can't use both volume and number fields in kolmogorov1957representation
+You've used 67 entries,
+            2118 wiz_defined-function locations,
+            878 strings with 16093 characters,
+and the built_in function-call counts, 23416 in all, are:
+= -- 2282
+> -- 1259
+< -- 7
++ -- 514
+- -- 426
+* -- 1788
+:= -- 3981
+add.period$ -- 201
+call.type$ -- 67
+change.case$ -- 412
+chr.to.int$ -- 0
+cite$ -- 68
+duplicate$ -- 758
+empty$ -- 1703
+format.name$ -- 426
+if$ -- 4739
+int.to.chr$ -- 0
+int.to.str$ -- 67
+missing$ -- 64
+newline$ -- 335
+num.names$ -- 134
+pop$ -- 356
+preamble$ -- 1
+purify$ -- 346
+quote$ -- 0
+skip$ -- 544
+stack$ -- 0
+substring$ -- 1542
+swap$ -- 110
+text.length$ -- 7
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 266
+warning$ -- 1
+while$ -- 221
+width$ -- 69
+write$ -- 722
+(There were 3 warnings)
