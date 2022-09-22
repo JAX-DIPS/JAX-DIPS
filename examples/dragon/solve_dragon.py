@@ -91,8 +91,21 @@ def poisson_solver_with_jump_complex():
     dragon_phi = onp.array(dragon_phi)
     # io.write_vtk_manual(gstate, {'phi': dragon_phi.reshape((Nx,Ny,Nz))}, filename=currDir + '/results/dragon_initial')
 
-    """ Move to GPU and create interpolant on gstate """
-    dragon = jnp.array(dragon_phi)
+
+    """ Scaling the system up, rewrite gstate """
+    scalefac = 10.0
+    xmin = scalefac * xmin - 2.0; xmax = scalefac * xmax - 2.0 ; 
+    ymin = scalefac * ymin - 2.0; ymax = scalefac * ymax - 2.0; 
+    zmin = scalefac * zmin - 2.0; zmax = scalefac * zmax - 2.0
+    dragon = jnp.array(dragon_phi) * scalefac
+
+    xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
+    yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
+    zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
+    gstate = init_mesh_fn(xc, yc, zc)
+    R = gstate.R
+    
+    """ Create interpolant on gstate """
     phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(dragon, gstate)
 
 
