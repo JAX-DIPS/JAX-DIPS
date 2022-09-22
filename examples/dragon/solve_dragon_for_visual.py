@@ -51,7 +51,7 @@ def poisson_solver_with_jump_complex():
     SWITCHING_INTERVAL = 3
     Nx_tr = Ny_tr = Nz_tr = 64 #1024
     multi_gpu = False          #True
-    num_epochs = 20
+    num_epochs = 1000
     batch_size = min( 64*64*32, Nx_tr*Ny_tr*Nz_tr)
 
 
@@ -76,7 +76,6 @@ def poisson_solver_with_jump_complex():
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
     gstate = init_mesh_fn(xc, yc, zc)
-    R = gstate.R
 
     """ find the mapping between stored file and solver """
     file_order_index = onp.array(dragon_host[:,:3], dtype=int).astype(str)
@@ -91,7 +90,9 @@ def poisson_solver_with_jump_complex():
     dragon_phi = onp.array(dragon_phi)
     # io.write_vtk_manual(gstate, {'phi': dragon_phi.reshape((Nx,Ny,Nz))}, filename=currDir + '/results/dragon_initial')
 
-
+    
+    
+    
     """ Scaling the system up, rewrite gstate """
     scalefac = 10.0
     xmin = scalefac * xmin - 2.0; xmax = scalefac * xmax - 2.0 ; 
@@ -110,9 +111,9 @@ def poisson_solver_with_jump_complex():
 
 
     """ Evaluation Mesh for Visualization  """
-    Nx_eval = Nx
-    Ny_eval = Ny
-    Nz_eval = Nz
+    Nx_eval = 2*Nx
+    Ny_eval = 2*Ny
+    Nz_eval = 2*Nz
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
     eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
@@ -123,9 +124,30 @@ def poisson_solver_with_jump_complex():
 
 
     @custom_jit
-    def dirichlet_bc_fn(r):
-        return 0.2 #0.01 / (1e-3 + abs(phi_fn(r)))
+    def exact_sol_m_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        return jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z)
 
+
+    @custom_jit
+    def exact_sol_p_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        yx3 = (y-x)/3.0
+        return (16.0*yx3**5 - 20.0*yx3**3 + 5.0*yx3) * jnp.log(x+y+3) * jnp.cos(z)
+
+
+    @custom_jit
+    def dirichlet_bc_fn(r):
+        return exact_sol_p_fn(r)
+
+
+    @custom_jit
+    def evaluate_exact_solution_fn(r):
+        return jnp.where(phi_fn(r) >= 0, exact_sol_p_fn(r), exact_sol_m_fn(r))
 
     @custom_jit
     def mu_m_fn(r):
@@ -135,8 +157,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 1.0
-
+        return 10.0 * (1 + 0.2 * jnp.cos(2*jnp.pi*(x+y)) * jnp.sin(2*jnp.pi*(x-y)) * jnp.cos(z) )
 
     @custom_jit
     def mu_p_fn(r):
@@ -146,24 +167,28 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 2.0
-
+        return 1.0
 
     @custom_jit
     def alpha_fn(r):
         """
         Jump in solution at interface
         """
-        return 0.10
-
+        return exact_sol_p_fn(r) - exact_sol_m_fn(r)
 
     @custom_jit
     def beta_fn(r):
         """
         Jump in flux at interface
         """
-        return 1.0
+        normal_fn = grad(phi_fn)
+        grad_u_p_fn = grad(exact_sol_p_fn)
+        grad_u_m_fn = grad(exact_sol_m_fn)
 
+        vec_1 = mu_p_fn(r)*grad_u_p_fn(r)
+        vec_2 = mu_m_fn(r)*grad_u_m_fn(r)
+        n_vec = normal_fn(r)
+        return jnp.nan_to_num(jnp.dot(vec_1 - vec_2, n_vec) * (-1.0))
 
     @custom_jit
     def k_m_fn(r):
@@ -172,7 +197,6 @@ def poisson_solver_with_jump_complex():
         """
         return 0.0
 
-
     @custom_jit
     def k_p_fn(r):
         """
@@ -180,14 +204,14 @@ def poisson_solver_with_jump_complex():
         """
         return 0.0
 
-
-
     @custom_jit
     def initial_value_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return 0.0
+        return 0.0 #evaluate_exact_solution_fn(r)
+
+
 
 
     @custom_jit
@@ -195,14 +219,24 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sin(40*jnp.pi*x)*jnp.cos(40*jnp.pi*y)*jnp.sin(40*jnp.pi*z)
+        fm   = -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z)) +\
+               -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*x) * 2*jnp.cos(2*x)*jnp.cos(2*y)*jnp.exp(z)   +\
+               -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*y) * (-2)*jnp.sin(2*x)*jnp.sin(2*y)*jnp.exp(z) +\
+                2*jnp.cos(2*jnp.pi*(x+y))*jnp.sin(2*jnp.pi*(x-y))*jnp.sin(z) * jnp.sin(2*x)*jnp.cos(2*y)*jnp.exp(z)
+
+        return fm
 
     @custom_jit
     def f_p_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return 0.0
+        f_p = -1.0 * (
+            ( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*(y-x)/3 ) * (-2)*jnp.cos(z) / (x+y+3)**2 +\
+             2*( 16*5*4*(1.0/9.0)*((y-x)/3)**3 - 20*3*2*(1.0/9.0)*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z) +\
+            -1*( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z)
+        )
+        return f_p
 
 
 
@@ -210,7 +244,6 @@ def poisson_solver_with_jump_complex():
     init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
 
-    eval_phi = vmap(phi_fn)(eval_gstate.R)
 
 
     t1 = time.time()
@@ -222,12 +255,25 @@ def poisson_solver_with_jump_complex():
     t2 = time.time()
 
     print(f"solve took {(t2 - t1)} seconds")
-    jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
+    jax.profiler.save_device_memory_profile("memory_dragon_poisson_solver_scalable.prof")
 
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
-    log = {'phi': eval_phi.reshape((Nx_eval,Ny_eval,Nz_eval)), 'U': sim_state.solution.reshape((Nx_eval,Ny_eval,Nz_eval))}
-    io.write_vtk_manual(eval_gstate, log, filename=currDir + f'/results/dragon_final{Nx_tr}')
+    exact_sol = vmap(evaluate_exact_solution_fn)(eval_gstate.R)
+    error = sim_state.solution - exact_sol
+    log = {'phi': eval_phi.reshape((Nx_eval,Ny_eval,Nz_eval)), 
+           'U': sim_state.solution.reshape((Nx_eval,Ny_eval,Nz_eval)), 
+           'U_exact': exact_sol.reshape((Nx_eval,Ny_eval,Nz_eval)), 
+           'U-U_exact': error.reshape((Nx_eval,Ny_eval,Nz_eval))
+           }
+    io.write_vtk_manual(eval_gstate, log, filename=currDir + f'/results/dragon_visual{Nx_tr}')
+    
+    L_inf_err = abs(sim_state.solution - exact_sol).max()
+    rms_err = jnp.square(sim_state.solution - exact_sol).mean()**0.5
+
+    print("\n SOLUTION ERROR\n")
+
+    print(f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared error = {rms_err} ")
 
 
 if __name__ == "__main__":
