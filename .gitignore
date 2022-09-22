@@ -32,7 +32,8 @@ workspace.code-workspace
 .ssh
 .gnupg
 .local
-
+checkpoints/
+.vscode/
 examples/dragon/results/*.pvsm
 # examples/lucy/lucy.ply
 # examples/dragon/dragon.vti
