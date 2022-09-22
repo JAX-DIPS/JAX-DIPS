@@ -4,7 +4,6 @@ rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path: # add parent dir to paths
     sys.path.append(rootDir)
 import time
-import pdb
 from functools import partial
 
 import jax
@@ -33,7 +32,7 @@ Nx = i32(128)
 Ny = i32(128)
 Nz = i32(128)
 dimension = i32(3)
-tf = f32(2 * jnp.pi) 
+tf = f32(2 * jnp.pi)
 
 #--------- Grid nodes
 xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -41,7 +40,7 @@ yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
 zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 dx = xc[1] - xc[0]
 dt = dx * f32(0.75)
-simulation_steps = i32(tf / dt) 
+simulation_steps = i32(tf / dt)
 
 #---------------
 # Create helper functions to define a periodic box of some size.
@@ -69,7 +68,7 @@ init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.le
 sim_state = init_fn(velocity_fn, R)
 
 # get normal vector and mean curvature
-normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature_4th_order) 
+normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature_4th_order)
 
 
 
@@ -86,9 +85,8 @@ def add_null_argument(func):
 
 # def perturb_fn(apply_fn, EPS=1e-9):
 #     def perturbed_apply_fn(velocity_fn, state, gstate, time_):
-#         pdb.set_trace()
 #         return state
-    
+
 #     return perturbed_apply_fn
 
 log = {
@@ -114,7 +112,7 @@ def step_func(i, state_and_nbrs):
     log['nx'] = log['nx'].at[i].set(normal[:,0])
     log['ny'] = log['ny'].at[i].set(normal[:,1])
     log['nz'] = log['nz'].at[i].set(normal[:,2])
-    
+
     state = reinitialize_fn(state, gstate)
     # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
     return apply_fn(velocity_fn, state, gstate, time_), log, dt
@@ -129,5 +127,3 @@ jax.profiler.save_device_memory_profile("memory.prof")
 
 
 io.write_vtk_log(gstate, log)
-
-pdb.set_trace()

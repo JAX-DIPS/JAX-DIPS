@@ -23,7 +23,6 @@ from src.jaxmd_modules.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad)
 import jax
 import jax.profiler
-import pdb
 import time
 import os
 import sys

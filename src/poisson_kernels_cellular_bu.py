@@ -23,7 +23,6 @@ from functools import partial
 import optax
 import haiku as hk
 from src import (interpolate, geometric_integrations)
-import pdb
 import matplotlib
 
 from src.jaxmd_modules import util
@@ -245,7 +244,7 @@ def poisson_solver(gstate, sim_state):
 
     """
     BEGIN geometric integration functions intiation
-    Getting simplices of the grid: intersection points 
+    Getting simplices of the grid: intersection points
     """
     get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(
         gstate, sim_state)
@@ -276,11 +275,11 @@ def poisson_solver(gstate, sim_state):
         """
         This function evaluates pairs of u^+ and u^- at each grid point
         in the domain, given a current cube of u values.
-      
+
         BIAS SLOW:
-            This function evaluates 
-                u_m = B_m : u + r_m 
-            and 
+            This function evaluates
+                u_m = B_m : u + r_m
+            and
                 u_p = B_p : u + r_p
         """
 
@@ -290,7 +289,7 @@ def poisson_solver(gstate, sim_state):
         def interface_node(i, j, k):
             def mu_minus_bigger_fn(i, j, k):
                 def extrapolate_u_m_from_negative_domain(i, j, k):
-                    delta_ijk = phi_cube[i, j, k] 
+                    delta_ijk = phi_cube[i, j, k]
                     r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                     r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                     r_m_proj = r_m_proj[jnp.newaxis]
@@ -301,7 +300,7 @@ def poisson_solver(gstate, sim_state):
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain(i, j, k):
-                    delta_ijk = phi_cube[i, j, k]  
+                    delta_ijk = phi_cube[i, j, k]
                     r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                     r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                     r_p_proj = r_p_proj[jnp.newaxis]
@@ -317,7 +316,7 @@ def poisson_solver(gstate, sim_state):
 
             def mu_plus_bigger_fn(i, j, k):
                 def extrapolate_u_m_from_negative_domain_(i, j, k):
-                    delta_ijk = phi_cube[i, j, k] 
+                    delta_ijk = phi_cube[i, j, k]
                     r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                     r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                     r_m_proj = r_m_proj[jnp.newaxis]
@@ -328,7 +327,7 @@ def poisson_solver(gstate, sim_state):
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain_(i, j, k):
-                    delta_ijk = phi_cube[i, j, k] 
+                    delta_ijk = phi_cube[i, j, k]
                     r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                     r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                     r_p_proj = r_p_proj[jnp.newaxis]
@@ -351,8 +350,8 @@ def poisson_solver(gstate, sim_state):
         is_interface = is_cell_crossed_by_interface((i, j, k))
         u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
         return u_mp
-        
-       
+
+
 
 
     @jit
@@ -362,18 +361,18 @@ def poisson_solver(gstate, sim_state):
         This evaluates the rhs in Au^k=b given estimate u^k.
         The purpose would be to define an optimization problem with:
 
-        min || A u^k - b ||^2 
+        min || A u^k - b ||^2
 
-        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
+        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field.
 
-        * PROCEDURE: 
+        * PROCEDURE:
             first compute u = B:u + r for each node
-            then use the actual cell geometries (face areas and mu coeffs) to 
+            then use the actual cell geometries (face areas and mu coeffs) to
             compute the rhs of the linear system given currently passed-in u vector
             for solution estimate.
 
         """
-        
+
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
 
         u_mp_at_node = partial(get_u_mp_at_node_fn, u_cube)
@@ -385,7 +384,7 @@ def poisson_solver(gstate, sim_state):
             # coeffs, vols = jnp.split(poisson_scheme_coeffs, [12], axis=0)
 
             coeffs_ = compute_face_centroids_values_plus_minus_at_node(node)
-            
+
             coeffs = coeffs_[:12]
             vols = coeffs_[12:14]
             # areas = coeffs_[14:]
@@ -452,7 +451,7 @@ def poisson_solver(gstate, sim_state):
         """
         lhs_rhs = compute_Ax_and_b_fn(x)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        loss = optax.l2_loss(lhs, rhs).mean() 
+        loss = optax.l2_loss(lhs, rhs).mean()
         # regularizer on boundaries
         x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
         loss += jnp.square(x_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
@@ -490,7 +489,7 @@ def poisson_solver(gstate, sim_state):
     # err_1 = abs(rhs[:,:,-1]/dx**3*2-f_p_cube_internal[:,:,-1]).max()
     # '''err_1 on all boundaries must be 0, it is 1e-8 which is fine'''
     # err_2 = (lhs/x_cube/dx**3)[:,:,Nz//2]
-    
+
     #-- volume & face area test:
     # coeffs = vmap(compute_face_centroids_values_plus_minus_at_node)(nodes)
     # poissons = coeffs[:,:12]; vols = coeffs[:,12:14]; face_areas = coeffs[:,14:]
@@ -500,15 +499,14 @@ def poisson_solver(gstate, sim_state):
 
 
     # from jax import jacrev, jacfwd
-    # def hessian_fn(f): 
+    # def hessian_fn(f):
     #     return jacfwd(jacrev(f))
-    
+
     # H_fn = hessian_fn(compute_residual)
     # J_fn = jacfwd(compute_residual)
 
-    # def minimize_newton_step(x): 
+    # def minimize_newton_step(x):
     #     return x - 0.1*jnp.linalg.inv(H_fn(x)) @ J_fn(x)
-    # pdb.set_trace()
 
     ''' testing end '''
 
@@ -527,18 +525,18 @@ def poisson_solver(gstate, sim_state):
 
 
     # Combining gradient transforms using `optax.chain`.
-    optimizer = optax.chain(                         
+    optimizer = optax.chain(
                             optax.clip_by_global_norm(1.0), # Clip the gradient by the global norm.
                             optax.scale_by_adam(),  # Use the updates from adam.
                             optax.scale_by_schedule(scheduler), # Use the learning rate from the scheduler.
                             optax.scale(-1.0) # Scale updates by -1 since optax.apply_updates is additive and we want to descend on the loss.
     )
-   
-    
-    # RMSProp Optimizers 
+
+
+    # RMSProp Optimizers
     # optimizer = optax.chain(
     #                         optax.clip_by_global_norm(1.0),
-    #                         optax.scale_by_rms(decay=decay_rate_),  
+    #                         optax.scale_by_rms(decay=decay_rate_),
     #                         optax.scale_by_schedule(scheduler),
     #                         optax.scale(-1.0)
     # )
@@ -560,7 +558,7 @@ def poisson_solver(gstate, sim_state):
     def nn_up_fn(r):
         '''
         neural network function for solution in Omega plus
-        input: 
+        input:
             r: vector of coordinates for one point (x,y,z)
         output:
             one scalar value representing the solution u_p
@@ -575,7 +573,7 @@ def poisson_solver(gstate, sim_state):
     def nn_um_fn(r):
         '''
         neural network function for solution in Omega minus
-        input: 
+        input:
             r: vector of coordinates for one point (x,y,z)
         output:
             one scalar value representing the solution u_m
@@ -589,8 +587,8 @@ def poisson_solver(gstate, sim_state):
         h3 = hk.Linear(output_size=1)(h2)
         return h3
 
-    
-    
+
+
     rng = random.PRNGKey(42)
 
     model_up = hk.transform(nn_up_fn)
@@ -599,7 +597,7 @@ def poisson_solver(gstate, sim_state):
     params_up = model_up.init(next(rng), nodes[0])
     params_um = model_um.init(next(rng), nodes[0])
 
-    
+
 
     def nn_u_node_fn(node):
         '''
@@ -609,17 +607,13 @@ def poisson_solver(gstate, sim_state):
         i,j,k = node
         r = jnp.array([xo[i-2], yo[j-2], zo[k-2]])
         return jnp.where(phi_cube[i,j,k] >=0, model_up.apply(params_up, None, r), model_um.apply(params_um, None, r))
-    
-    
-    nn_u_fn = vmap(nn_u_node_fn)
-    pdb.set_trace()
 
+
+    nn_u_fn = vmap(nn_u_node_fn)
 
     for layer_name, weights in params.items():
         print(layer_name)
         print("Weights : {}, Biases : {}\n".format(params[layer_name]["w"].shape,params[layer_name]["b"].shape))
-    
-    pdb.set_trace()
 
     """
     #----------- EXPLORE
@@ -635,7 +629,7 @@ def poisson_solver(gstate, sim_state):
     @jit
     def compute_loss(params):                # loss function to minimize
         return compute_residual(params['u'])
-    
+
 
 
     """ Generic Optimization Routine """
@@ -658,12 +652,12 @@ def poisson_solver(gstate, sim_state):
     plt.ylabel('loss', fontsize=20)
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
-    
+
 
     """
     Compute normal gradients for error analysis
     """
-    
+
     def compute_normal_gradient_solution_mp_on_interface(u):
         """
         Given the solution field u, this function computes gradient of u along normal direction
@@ -679,7 +673,7 @@ def poisson_solver(gstate, sim_state):
             cp_pqm = Cp_ijk_pqm.reshape(phi_cube_.shape+ (-1,))[i-2,j-2,k-2]
             return jnp.sum(cm_pqm * u_mp_pqm[:,0]), jnp.sum(cp_pqm * u_mp_pqm[:,1])
 
-        c_mp_u_mp_ngbs = vmap(convolve_at_node)(nodes)      
+        c_mp_u_mp_ngbs = vmap(convolve_at_node)(nodes)
         grad_n_u_m = -1.0 * Cm_ijk_pqm.sum(axis=1) * u_mp[:,0] + c_mp_u_mp_ngbs[0]
         grad_n_u_p = -1.0 * Cp_ijk_pqm.sum(axis=1) * u_mp[:,1] + c_mp_u_mp_ngbs[1]
         return grad_n_u_m, grad_n_u_p
@@ -701,10 +695,10 @@ def poisson_solver(gstate, sim_state):
             grad_m = d_m_mat @ dU_mp[:,0]
             grad_p = d_p_mat @ dU_mp[:,1]
             return grad_m, grad_p
-        return vmap(convolve_at_node, (0,0,0))(nodes, D_m_mat, D_p_mat)  
-    
+        return vmap(convolve_at_node, (0,0,0))(nodes, D_m_mat, D_p_mat)
+
     grad_u_mp = compute_gradient_solution_mp(params['u'])
     # plt.pcolor(grad_u_mp[0].reshape((Nx,Ny,Nz,3))[:,Ny//2,:,1]); plt.show()
-    
+
 
     return params['u'], grad_u_mp, grad_u_mp_normal_to_interface

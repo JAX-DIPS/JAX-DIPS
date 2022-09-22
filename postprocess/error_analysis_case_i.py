@@ -2,11 +2,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-import pdb
 
 
 xgrid = np.linspace(8,128, 1000)
-ygrid = 6 / xgrid 
+ygrid = 6 / xgrid
 
 # case I
 nx = np.array([8, 16, 32, 64, 128])

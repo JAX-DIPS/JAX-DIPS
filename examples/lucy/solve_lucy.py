@@ -24,7 +24,6 @@ from src.jaxmd_modules.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad, lax, random)
 import jax
 import jax.profiler
-import pdb
 import time
 import os
 import sys
@@ -58,7 +57,7 @@ def poisson_solver_with_jump_complex():
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
     init_mesh_fn, coord_at = mesh.construct(dim)
-    
+
     # --------- Grid nodes for level set
     Nx = Ny = Nz = i32(128)
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -74,11 +73,8 @@ def poisson_solver_with_jump_complex():
     eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
     eval_gstate = init_mesh_fn(exc, eyc, ezc)
-    
 
-    pdb.set_trace()
 
-    
     # -- Initialize the STARS in the BOX
     num_stars_x = num_stars_y = num_stars_z = 4      # Ensure you are solving your system
     scale = 0.35                                     # This is for proper separation between stars
@@ -91,15 +87,15 @@ def poisson_solver_with_jump_complex():
     key = random.PRNGKey(0)
     cov = jnp.eye(3)
     mean = jnp.zeros(3)
-    angles = random.multivariate_normal(key, mean, cov, shape=(num_stars_x * num_stars_y * num_stars_z,)) 
+    angles = random.multivariate_normal(key, mean, cov, shape=(num_stars_x * num_stars_y * num_stars_z,))
     xc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_x, dtype=f32)
     yc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_y, dtype=f32)
     zc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_z, dtype=f32)
     Xce, Yce, Zce = jnp.meshgrid(xc, yc, zc)
     positions = jnp.column_stack((Xce.reshape(-1), Yce.reshape(-1), Zce.reshape(-1)))
-    
+
     stars = jnp.concatenate((positions, angles), axis=1)
-    
+
 
     @custom_jit
     def unperturbed_phi_fn(r):
@@ -109,27 +105,27 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        
+
         def initialize(carry, xyz):
             phi_, = carry
             # xc, yc, zc = xyz
             xc, yc, zc, theta_1, theta_2, theta_3 = xyz
-            theta_1 *= jnp.pi; theta_2 *= jnp.pi; theta_3 *= jnp.pi; 
+            theta_1 *= jnp.pi; theta_2 *= jnp.pi; theta_3 *= jnp.pi;
             core  = beta_1 * jnp.cos(n_1 * (jnp.arctan2(y-yc,x-xc) - theta_1))
             core += beta_2 * jnp.cos(n_2 * (jnp.arctan2(y-yc,x-xc) - theta_2))
             core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y-yc,x-xc) - theta_3))
             phi_  = jnp.min( jnp.array([ phi_, jnp.sqrt((x-xc)**2 + (y-yc)**2 + (z-zc)**2) - 1.0*r0 * (1.0 + (((x-xc)**2 + (y-yc)**2)/((x-xc)**2 + (y-yc)**2 + (z-zc)**2))**2 * core) ]) )
             phi_= jnp.nan_to_num(phi_, -r0*core)
             return (phi_,), None
-        
+
         phi_ = 1e9
         (phi_,), _ = jax.lax.scan(initialize, (phi_,), stars)
-        
+
         return phi_
-    
+
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
-    
+
     @custom_jit
     def dirichlet_bc_fn(r):
         return 0.0
@@ -195,7 +191,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 0.0 
+        return 0.0
 
 
     @custom_jit
@@ -207,7 +203,7 @@ def poisson_solver_with_jump_complex():
                -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*x) * 2*jnp.cos(2*x)*jnp.cos(2*y)*jnp.exp(z)   +\
                -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*y) * (-2)*jnp.sin(2*x)*jnp.sin(2*y)*jnp.exp(z) +\
                 2*jnp.cos(2*jnp.pi*(x+y))*jnp.sin(2*jnp.pi*(x-y))*jnp.sin(z) * jnp.sin(2*x)*jnp.cos(2*y)*jnp.exp(z)
-        
+
         return fm
 
     @custom_jit
@@ -215,7 +211,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        f_p = -1.0 * ( 
+        f_p = -1.0 * (
             ( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*(y-x)/3 ) * (-2)*jnp.cos(z) / (x+y+3)**2 +\
              2*( 16*5*4*(1.0/9.0)*((y-x)/3)**3 - 20*3*2*(1.0/9.0)*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z) +\
             -1*( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z)
@@ -223,14 +219,14 @@ def poisson_solver_with_jump_complex():
         return f_p
 
 
-    
+
 
     init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
-   
+
     t1 = time.time()
 
-    
+
     sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu)
     # sim_state.solution.block_until_ready()
 
@@ -239,11 +235,11 @@ def poisson_solver_with_jump_complex():
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
 
-    
+
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     log = {'phi': eval_phi, 'U': sim_state.solution}
     io.write_vtk_manual(eval_gstate, log, filename='results/starbox')
-    
+
 
 
 

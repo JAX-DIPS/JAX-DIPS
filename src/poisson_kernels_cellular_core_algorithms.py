@@ -38,14 +38,13 @@ import matplotlib.pyplot as plt
 
 from functools import partial
 import time
-import pdb
 
 
 class PDETrainer:
     def __init__(self, gstate, sim_state, optimizer, algorithm=0, precondition=1):
-        
+
         self.optimizer = optimizer
-        self.gstate = gstate  
+        self.gstate = gstate
         self.sim_state = sim_state
 
         self.algorithm = algorithm
@@ -82,7 +81,7 @@ class PDETrainer:
 
         self.mu_m_cube_internal = mu_m.reshape(grid_shape)
         self.mu_p_cube_internal = mu_p.reshape(grid_shape)
-        
+
         self.mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_m, gstate)
         self.mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(mu_p, gstate)
         self.alpha_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(alpha, gstate)
@@ -103,23 +102,23 @@ class PDETrainer:
 
         self.phi_flat = self.phi_cube_.reshape(-1)
         self.Vol_cell_nominal = dx*dy*dz
-        self.grid_shape = grid_shape  
+        self.grid_shape = grid_shape
 
         get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
         self.beta_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.beta_interp_fn)
         self.compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
-        
+
         self.initialize_algorithms()
         if precondition==1:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
         elif precondition==0:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
 
-      
 
 
-    def initialize_algorithms(self):    
-        
+
+    def initialize_algorithms(self):
+
         self.normal_vec_fn = partial(self.normal_vector_fn, phi_cube=self.phi_cube, dx=self.dx, dy=self.dy, dz=self.dz)
         self.normal_vecs = vmap(self.normal_vec_fn)(self.nodes)
 
@@ -128,7 +127,7 @@ class PDETrainer:
             self.u_mp_fn = self.get_u_mp_by_regression_at_node_fn
             self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_regression
             self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_regression
-        
+
         elif self.algorithm==1:
             self.initialize_neural_based_algorithm()
             self.u_mp_fn = self.get_u_mp_by_neural_network_at_node_fn
@@ -156,9 +155,9 @@ class PDETrainer:
 
 
 
-    def initialize_regression_based_algorithm(self): 
+    def initialize_regression_based_algorithm(self):
         dx = self.dx; dy = self.dy; dz = self.dz
-        
+
         def get_X_ijk():
             Xijk = jnp.array([[-dx, -dy, -dz],
                             [0.0, -dy, -dz],
@@ -235,7 +234,6 @@ class PDETrainer:
 
         self.mask_interface_bandwidth = sign_m_fn(self.phi_flat**2 - self.bandwidth_squared)
         self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat**2 - self.bandwidth_squared)
-        # pdb.set_trace()
         # plt.imshow(self.mask_interface_bandwidth.reshape((16, 16, 16))[8]);  plt.colorbar(); plt.savefig('test__.png')
         # plt.imshow((self.mask_region_m + self.mask_region_p).reshape((16,16,16))[8]); plt.colorbar(); plt.savefig('test__.png')
 
@@ -272,7 +270,7 @@ class PDETrainer:
         self.Cm_ijk_pqm = get_c_ijk_pqm_vec(self.normal_vecs, self.D_m_mat)
         self.Cp_ijk_pqm = get_c_ijk_pqm_vec(self.normal_vecs, self.D_p_mat)
 
-        
+
 
         self.zeta_p_ijk_pqm = ((self.mu_p_cube_internal - self.mu_m_cube_internal) / self.mu_m_cube_internal) * self.phi_cube_
         self.zeta_p_ijk_pqm = self.zeta_p_ijk_pqm[...,jnp.newaxis] * self.Cp_ijk_pqm.reshape(self.phi_cube_.shape + (-1,))
@@ -292,8 +290,8 @@ class PDETrainer:
 
         self.gamma_p_ijk = (self.gamma_p_ijk_pqm.sum(axis=3) - self.gamma_p_ijk_pqm[:, :, :, 13]) * f32(-1.0)
         self.gamma_m_ijk = (self.gamma_m_ijk_pqm.sum(axis=3) - self.gamma_m_ijk_pqm[:, :, :, 13]) * f32(-1.0)
-        
-      
+
+
 
 
 
@@ -329,7 +327,7 @@ class PDETrainer:
     # @partial(jit, static_argnums=0)
     def init(self, seed=42):
         rng = random.PRNGKey(seed)
-        params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)  
+        params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)
         opt_state = self.optimizer.init(params)
         return opt_state, params
 
@@ -352,7 +350,7 @@ class PDETrainer:
         return u_at_point_fn, grad_u_at_point_fn
 
 
-    
+
     @partial(jit, static_argnums=(0))
     def evaluate_loss_fn(self, lhs, rhs, sol_cube):
         """
@@ -366,15 +364,15 @@ class PDETrainer:
         tot_loss += jnp.square(sol_cube[: , :, 0] - self.dirichlet_cube[ :, :, 0]).mean() * self.Vol_cell_nominal
         tot_loss += jnp.square(sol_cube[: , :,-1] - self.dirichlet_cube[ :, :,-1]).mean() * self.Vol_cell_nominal
         return tot_loss
-    
-    
-    
+
+
+
     @partial(jit, static_argnums=(0))
     def evaluate_loss_m_region_fn(self, lhs_, rhs_):
         """
             in the minus region only
         """
-        mask_region = self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
+        mask_region = self.mask_region_m[:,jnp.newaxis,jnp.newaxis]
         lhs = jnp.multiply(mask_region, lhs_)
         rhs = jnp.multiply(mask_region, rhs_)
         loss_m = jnp.mean(optax.l2_loss(lhs, rhs))
@@ -386,7 +384,7 @@ class PDETrainer:
         """
              in the plus region only
         """
-        mask_region = self.mask_region_p[:,jnp.newaxis,jnp.newaxis] 
+        mask_region = self.mask_region_p[:,jnp.newaxis,jnp.newaxis]
         lhs = jnp.multiply(mask_region, lhs_)
         rhs = jnp.multiply(mask_region, rhs_)
 
@@ -399,7 +397,7 @@ class PDETrainer:
         loss_p += jnp.square(sol_cube[: , :,-1] - self.dirichlet_cube[ :, :,-1]).mean() * self.Vol_cell_nominal
         return loss_p
 
-   
+
 
     @partial(jit, static_argnums=(0))
     def evaluate_loss_region_fn(self, lhs_, rhs_, sol_cube, region):
@@ -410,9 +408,9 @@ class PDETrainer:
         """
         region_sgn = jnp.sign(region)
         half_region_sgn = 0.5 * region_sgn
-        
-        
-        mask_region = (0.5 + half_region_sgn)*self.mask_region_p[:,jnp.newaxis,jnp.newaxis] + (0.5 - half_region_sgn)*self.mask_region_m[:,jnp.newaxis,jnp.newaxis] 
+
+
+        mask_region = (0.5 + half_region_sgn)*self.mask_region_p[:,jnp.newaxis,jnp.newaxis] + (0.5 - half_region_sgn)*self.mask_region_m[:,jnp.newaxis,jnp.newaxis]
         # mask_region = (0.5 + half_region_sgn)*self.mask_non_interface_bandwidth[:, jnp.newaxis, jnp.newaxis] + (0.5 - half_region_sgn) * self.mask_interface_bandwidth[:, jnp.newaxis, jnp.newaxis]
 
         lhs = jnp.multiply(mask_region, lhs_)
@@ -420,7 +418,7 @@ class PDETrainer:
 
         loss_p = jnp.mean(optax.l2_loss(lhs, rhs))
         loss_p += jnp.square(sol_cube[ 0, :, :] - self.dirichlet_cube[ 0, :, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
-        loss_p += jnp.square(sol_cube[-1, :, :] - self.dirichlet_cube[-1, :, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn) 
+        loss_p += jnp.square(sol_cube[-1, :, :] - self.dirichlet_cube[-1, :, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
         loss_p += jnp.square(sol_cube[: , 0, :] - self.dirichlet_cube[ :, 0, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
         loss_p += jnp.square(sol_cube[: ,-1, :] - self.dirichlet_cube[ :,-1, :]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
         loss_p += jnp.square(sol_cube[: , :, 0] - self.dirichlet_cube[ :, :, 0]).mean() * self.Vol_cell_nominal * (0.5 + half_region_sgn)
@@ -436,12 +434,12 @@ class PDETrainer:
         lhs_rhs = self.compute_Ax_and_b_fn(params)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         pred_sol = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
-        sol_cube = pred_sol.reshape(self.grid_shape)      
+        sol_cube = pred_sol.reshape(self.grid_shape)
         tot_loss = self.evaluate_loss_region_fn( lhs, rhs, sol_cube, region)
         return tot_loss
-    
+
     @partial(jit, static_argnums=(0))
-    def update_region(self, opt_state, params, region=0):      
+    def update_region(self, opt_state, params, region=0):
         """
         region=0: everywhere
         region>0: in the plus sign region
@@ -455,7 +453,7 @@ class PDETrainer:
 
     def loss_m(self, params):
         lhs_rhs = self.compute_Ax_and_b_fn(params)
-        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)     
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         loss_m = self.evaluate_loss_m_region_fn( lhs, rhs)
         return loss_m
 
@@ -463,39 +461,39 @@ class PDETrainer:
         lhs_rhs = self.compute_Ax_and_b_fn(params)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         pred_sol = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
-        sol_cube = pred_sol.reshape(self.grid_shape)      
+        sol_cube = pred_sol.reshape(self.grid_shape)
         loss_p = self.evaluate_loss_p_region_fn( lhs, rhs, sol_cube)
         return loss_p
-    
+
     def loss(self, params):
         """
             Loss function of the neural network
-        """        
+        """
         # jax.make_jaxpr(self.evaluate_solution_fn)(params, self.gstate.R, self.phi_flat).pretty_print()
         # jax.make_jaxpr(self.compute_Ax_and_b_fn)(params).pretty_print()
         lhs_rhs = self.compute_Ax_and_b_fn(params)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         pred_sol = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
-        sol_cube = pred_sol.reshape(self.grid_shape)      
+        sol_cube = pred_sol.reshape(self.grid_shape)
         tot_loss = self.evaluate_loss_fn( lhs, rhs, sol_cube)
         return tot_loss
 
     @partial(jit, static_argnums=(0))
-    def update_m(self, opt_state, params):      
+    def update_m(self, opt_state, params):
         loss, grads = value_and_grad(self.loss_m)(params)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
 
     @partial(jit, static_argnums=(0))
-    def update_p(self, opt_state, params):      
+    def update_p(self, opt_state, params):
         loss, grads = value_and_grad(self.loss_p)(params)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
-    
+
     @partial(jit, static_argnums=(0))
-    def update(self, opt_state, params):      
+    def update(self, opt_state, params):
         loss, grads = value_and_grad(self.loss)(params)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
@@ -511,24 +509,24 @@ class PDETrainer:
         This evaluates the rhs in Au^k=b given estimate u^k.
         The purpose would be to define an optimization problem with:
 
-        min || A u^k - b ||^2 
+        min || A u^k - b ||^2
 
-        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
+        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field.
 
-        * PROCEDURE: 
+        * PROCEDURE:
             first compute u = B:u + r for each node
-            then use the actual cell geometries (face areas and mu coeffs) to 
+            then use the actual cell geometries (face areas and mu coeffs) to
             compute the rhs of the linear system given currently passed-in u vector
             for solution estimate.
 
         """
-    
+
         x = self.gstate.x
         y = self.gstate.y
         z = self.gstate.z
 
         Nx, Ny, Nz = self.grid_shape
-        
+
         u = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
         u_cube = u.reshape(self.grid_shape)
 
@@ -557,10 +555,10 @@ class PDETrainer:
             vols = coeffs_[12:14]
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
-            
+
             def get_lhs_at_interior_node(node):
                 i, j, k = node
-                
+
                 k_m_ijk = self.k_m_cube_internal[i-2, j-2, k-2]
                 k_p_ijk = self.k_p_cube_internal[i-2, j-2, k-2]
 
@@ -585,7 +583,7 @@ class PDETrainer:
 
                 diag_coeff = k_p_ijk * V_p_ijk + k_m_ijk * V_m_ijk + (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) + (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11])
                 return jnp.array([lhs, diag_coeff])
-            
+
 
             def get_lhs_on_box_boundary(node):
                 i, j, k = node
@@ -595,13 +593,13 @@ class PDETrainer:
             lhs_diagcoeff = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
             lhs, diagcoeff = jnp.split(lhs_diagcoeff, [1], 0)
             # diagcoeff_ = jnp.sqrt(diagcoeff*diagcoeff)
-            #--- RHS  
+            #--- RHS
             def get_rhs_at_interior_node(node):
                 i, j, k = node
                 rhs = self.f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + self.f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
                 rhs += self.beta_integrate_over_interface_at_node(node)
                 return rhs
-            
+
             def get_rhs_on_box_boundary(node):
                 i, j, k = node
                 return self.dirichlet_cube[i-2, j-2, k-2] * self.Vol_cell_nominal
@@ -613,7 +611,7 @@ class PDETrainer:
             # return jnp.array([lhs / (1e-13 + diagcoeff_), rhs / (1e-13 + diagcoeff_)])
 
         evaluate_on_nodes_fn = vmap(evaluate_discretization_lhs_rhs_at_node)
-        
+
         lhs_rhs = evaluate_on_nodes_fn(self.nodes)
         return lhs_rhs
 
@@ -630,24 +628,24 @@ class PDETrainer:
         This evaluates the rhs in Au^k=b given estimate u^k.
         The purpose would be to define an optimization problem with:
 
-        min || A u^k - b ||^2 
+        min || A u^k - b ||^2
 
-        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
+        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field.
 
-        * PROCEDURE: 
+        * PROCEDURE:
             first compute u = B:u + r for each node
-            then use the actual cell geometries (face areas and mu coeffs) to 
+            then use the actual cell geometries (face areas and mu coeffs) to
             compute the rhs of the linear system given currently passed-in u vector
             for solution estimate.
 
         """
-    
+
         x = self.gstate.x
         y = self.gstate.y
         z = self.gstate.z
 
         Nx, Ny, Nz = self.grid_shape
-        
+
         u = self.evaluate_solution_fn(params, self.gstate.R, self.phi_flat)
         u_cube = u.reshape(self.grid_shape)
 
@@ -676,10 +674,10 @@ class PDETrainer:
             vols = coeffs_[12:14]
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
-            
+
             def get_lhs_at_interior_node(node):
                 i, j, k = node
-                
+
                 k_m_ijk = self.k_m_cube_internal[i-2, j-2, k-2]
                 k_p_ijk = self.k_p_cube_internal[i-2, j-2, k-2]
 
@@ -703,7 +701,7 @@ class PDETrainer:
                 lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
 
                 return lhs
-            
+
 
             def get_lhs_on_box_boundary(node):
                 i, j, k = node
@@ -713,13 +711,13 @@ class PDETrainer:
             lhs = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
 
 
-            #--- RHS  
+            #--- RHS
             def get_rhs_at_interior_node(node):
                 i, j, k = node
                 rhs = self.f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + self.f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
                 rhs += self.beta_integrate_over_interface_at_node(node)
                 return rhs
-            
+
             def get_rhs_on_box_boundary(node):
                 i, j, k = node
                 return self.dirichlet_cube[i-2, j-2, k-2] * self.Vol_cell_nominal
@@ -735,7 +733,7 @@ class PDETrainer:
 
 
 
-    
+
 
 
 
@@ -744,11 +742,11 @@ class PDETrainer:
         """
         This function evaluates pairs of u^+ and u^- at each grid point
         in the domain, given the neural network models.
-    
+
         BIAS SLOW:
-            This function evaluates 
-                u_m = B_m : u + r_m 
-            and 
+            This function evaluates
+                u_m = B_m : u + r_m
+            and
                 u_p = B_p : u + r_p
         """
         u_ijk = u_cube[i-2, j-2, k-2]
@@ -816,7 +814,7 @@ class PDETrainer:
             mu_p_ijk = self.mu_p_cube_internal[i-2, j-2, k-2]
             return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(i, j, k), mu_plus_bigger_fn(i, j, k))
 
-        
+
         # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
         is_interface = self.is_cell_crossed_by_interface((i, j, k))
         # is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
@@ -845,7 +843,7 @@ class PDETrainer:
             cp_pqm = self.Cp_ijk_pqm.reshape(self.phi_cube_.shape+ (-1,))[i-2,j-2,k-2]
             return jnp.sum(cm_pqm * u_mp_pqm[:,0]), jnp.sum(cp_pqm * u_mp_pqm[:,1])
 
-        c_mp_u_mp_ngbs = vmap(convolve_at_node)(self.nodes)      
+        c_mp_u_mp_ngbs = vmap(convolve_at_node)(self.nodes)
         grad_n_u_m = -1.0 * self.Cm_ijk_pqm.sum(axis=1) * u_mp[:,0] + c_mp_u_mp_ngbs[0]
         grad_n_u_p = -1.0 * self.Cp_ijk_pqm.sum(axis=1) * u_mp[:,1] + c_mp_u_mp_ngbs[1]
         return grad_n_u_m, grad_n_u_p
@@ -869,8 +867,8 @@ class PDETrainer:
             grad_m = d_m_mat @ dU_mp[:,0]
             grad_p = d_p_mat @ dU_mp[:,1]
             return grad_m, grad_p
-        return vmap(convolve_at_node, (0,0,0))(self.nodes, self.D_m_mat, self.D_p_mat)  
-    
+        return vmap(convolve_at_node, (0,0,0))(self.nodes, self.D_m_mat, self.D_p_mat)
+
 
 
 
@@ -886,9 +884,9 @@ class PDETrainer:
         u_at_point_fn, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
 
         r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
-        delta_ijk = self.phi_cube[i, j, k]         
+        delta_ijk = self.phi_cube[i, j, k]
         u_ijk = u_at_point_fn(r_ijk, delta_ijk)
-        
+
 
         def bulk_node(is_interface_, u_ijk_):
             return jnp.array([jnp.where(is_interface_ == -1, u_ijk_, 0.0), jnp.where(is_interface_ == 1, u_ijk_, 0.0)])
@@ -914,7 +912,7 @@ class PDETrainer:
                     u_p += delta_ijk * ( (self.mu_m_over_mu_p_interp_fn(r_p_proj) - 1.0) * du_dn + self.beta_over_mu_p_interp_fn(r_p_proj) )
                     # u_p += delta_ijk * ( (self.mu_m_interp_fn(r_p_proj)/self.mu_p_interp_fn(r_p_proj) - 1.0) * du_dn + self.beta_interp_fn(r_p_proj)/self.mu_p_interp_fn(r_p_proj) )
                     return u_p
-                
+
                 u_m = jnp.where(delta_ijk > 0, extrapolate_u_m_from_negative_domain(i, j, k), u_ijk)[0]
                 u_p = jnp.where(delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain(i, j, k))[0]
                 return jnp.array([u_m, u_p])
@@ -984,26 +982,26 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
         init_value=learning_rate,
         transition_steps=100,
         decay_rate=decay_rate_)
-    optimizer = optax.chain(                         
-                            optax.clip_by_global_norm(1.0), 
-                            optax.scale_by_adam(),  
-                            optax.scale_by_schedule(scheduler), 
-                            optax.scale(-1.0) 
+    optimizer = optax.chain(
+                            optax.clip_by_global_norm(1.0),
+                            optax.scale_by_adam(),
+                            optax.scale_by_schedule(scheduler),
+                            optax.scale(-1.0)
     )
     # optimizer = optax.adam(learning_rate)
-    # optimizer = optax.rmsprop(learning_rate) 
+    # optimizer = optax.rmsprop(learning_rate)
     #---------------------
 
     trainer = PDETrainer(gstate, sim_state, optimizer, algorithm)
-    opt_state, params = trainer.init(); print_architecture(params)    
+    opt_state, params = trainer.init(); print_architecture(params)
 
     num_epochs=10000
     start_time = time.time()
 
     # loss_epochs = []
     # epoch_store = []
-    # for epoch in range(num_epochs):            
-    #     opt_state, params, loss_epoch = trainer.update(opt_state, params)            
+    # for epoch in range(num_epochs):
+    #     opt_state, params, loss_epoch = trainer.update(opt_state, params)
     #     print(f"epoch # {epoch} loss is {loss_epoch}")
     #     loss_epochs.append(loss_epoch)
     #     epoch_store.append(epoch)
@@ -1022,13 +1020,12 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     uu = trainer.evaluate_solution_fn(params, trainer.gstate.R, trainer.phi_flat)
     u_cube = uu.reshape(trainer.grid_shape)
     u_mp = vmap(trainer.get_u_mp_by_regression_at_node_fn, (None, None, None, None, 0, 0, 0))(u_cube, trainer.gstate.x, trainer.gstate.y, trainer.gstate.z, trainer.nodes[:,0], trainer.nodes[:,1], trainer.nodes[:,2])
-    pdb.set_trace()
-    
+
     def learn_interleaved(carry, epoch):
         # cur_region = 0:everywhere, <0: interface band/inside, >0: outside interface band/outside
         opt_state, params, loss_epochs = carry
         # cur_region = epoch % switching_interval - 1       # inside - outside - whole
-        cur_region = i32(-1)*(epoch % switching_interval)   # whole - inside - inside 
+        cur_region = i32(-1)*(epoch % switching_interval)   # whole - inside - inside
         opt_state, params, loss_epoch = trainer.update_region(opt_state, params, region=cur_region)
         # opt_state, params, loss_epoch = trainer.update(opt_state, params)
         loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
@@ -1037,9 +1034,9 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     loss_epochs = jnp.zeros(num_epochs)
     epoch_store = jnp.arange(num_epochs)
     (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_interleaved, (opt_state, params, loss_epochs), epoch_store)
-    
-    
-    
+
+
+
     end_time = time.time()
     print(f"solve took {end_time - start_time} (sec)")
 
@@ -1053,9 +1050,9 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
 
     plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
     plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
-    
+
     # ax.plot(epoch_store, loss_epochs, color='k')
-    
+
     ax.set_yscale('log')
     ax.set_xlabel(r'$\rm epoch$', fontsize=20)
     ax.set_ylabel(r'$\rm loss$', fontsize=20)
@@ -1065,10 +1062,10 @@ def poisson_solver(gstate, sim_state, algorithm=0, switching_interval=3):
     plt.tight_layout()
     plt.savefig('tests/poisson_solver_loss.png')
     plt.close()
-  
+
     final_solution = trainer.evaluate_solution_fn(params, gstate.R, trainer.phi_flat).reshape(-1)
 
-    #------------- Gradients of discovered solutions are below:    
+    #------------- Gradients of discovered solutions are below:
     if algorithm==0:
         grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(final_solution, None)
         grad_u_mp = trainer.compute_gradient_solution_mp(final_solution, None)

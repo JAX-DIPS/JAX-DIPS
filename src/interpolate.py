@@ -25,7 +25,6 @@ import jax.numpy as np
 from jax import lax, jit
 from scipy.interpolate import splrep, PPoly
 from src.jaxmd_modules import util
-import pdb
 
 # Typing
 
@@ -102,10 +101,10 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
     xo = gstate.x; yo = gstate.y; zo = gstate.z
     c_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     sgn_0_ = sgn_0.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
-    
+
     x, y, z, c_cube = add_ghost_layer_3d(xo, yo, zo, c_cube_)
     x, y, z, c_cube = add_ghost_layer_3d(x, y, z, c_cube)
-    
+
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
     x, y, z, sgn_0_ = add_ghost_layer_3d(xo, yo, zo, sgn_0_)
@@ -119,8 +118,8 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
     kk = np.arange(2, Nz+2)
     I, J, K = np.meshgrid(ii, jj, kk, indexing='ij')
     nodes = np.column_stack( (I.reshape(-1), J.reshape(-1), K.reshape(-1) ))
-    
-    
+
+
 
     def find_cell_idx(node):
         """
@@ -147,9 +146,9 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         c0 = (c_cube[i+1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * f32(0.25)
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + np.nan_to_num(corr_s)
-        dx_p =  f32(-1.0) * phi_ijk / s_I - s_I * c2 
+        dx_p =  f32(-1.0) * phi_ijk / s_I - s_I * c2
         return dx_p, s_I /f32(10.0)
-    
+
     @jit
     def x_deriv_at_interface_m(i, j, k):
         phi_ijk = c_cube[i, j, k]
@@ -158,11 +157,11 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         d2x_m = (c_cube[i, j  , k  ] - 2*c_cube[i-1,j,k] + c_cube[i-2,j  ,k  ]) / dx / dx
         # d2x_m, d2y_m, d2z_m = second_order_deriv(i-1, j, k)
         c2 = minmod(d2x, d2x_m) * f32(0.5)
-        c1 = (c_cube[i, j , k] - c_cube[i-1 ,j ,k]) / dx 
+        c1 = (c_cube[i, j , k] - c_cube[i-1 ,j ,k]) / dx
         c0 = (c_cube[i-1, j , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dx * dx * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p :  c0/c1, lambda p: (c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dx * f32(0.5) + np.nan_to_num(corr_s)
-        dx_m = phi_ijk / s_I + s_I * c2 
+        dx_m = phi_ijk / s_I + s_I * c2
         return dx_m, s_I /f32(10.0)
 
     @jit
@@ -177,7 +176,7 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         c0 = (c_cube[i, j+1 , k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + np.nan_to_num(corr_s)
-        dy_p = f32(-1.0) * phi_ijk / s_I - s_I * c2 
+        dy_p = f32(-1.0) * phi_ijk / s_I - s_I * c2
         return dy_p, s_I /f32(10.0)
 
     @jit
@@ -188,11 +187,11 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         d2y_m = (c_cube[i  , j, k  ] - 2*c_cube[i,j-1,k] + c_cube[i  ,j-2,k  ]) / dy / dy
         # d2x_m, d2y_m, d2z_m = second_order_deriv(i, j-1, k)
         c2 = minmod(d2y, d2y_m) * f32(0.5)
-        c1 = (c_cube[i, j , k] - c_cube[i  ,j-1,k]) / dy 
+        c1 = (c_cube[i, j , k] - c_cube[i  ,j-1,k]) / dy
         c0 = (c_cube[i, j-1, k] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dy * dy * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : c0/c1, lambda p: (c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dy * f32(0.5) + np.nan_to_num(corr_s)
-        dy_m = phi_ijk / s_I + s_I * c2 
+        dy_m = phi_ijk / s_I + s_I * c2
         return dy_m, s_I /f32(10.0)
 
     @jit
@@ -207,9 +206,9 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         c0 = (c_cube[i, j , k+1] + c_cube[i  ,j ,k]) / f32(2.0) - c2 * dz * dz * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : -c0/c1, lambda p: (-c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + np.nan_to_num(corr_s)
-        dz_p = f32(-1.0) * phi_ijk / s_I - s_I * c2  
+        dz_p = f32(-1.0) * phi_ijk / s_I - s_I * c2
         return dz_p, s_I /f32(10.0)
-    
+
     @jit
     def z_deriv_at_interface_m(i, j, k):
         phi_ijk = c_cube[i, j, k]
@@ -218,30 +217,30 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
         d2z_m = (c_cube[i  , j  , k] - 2*c_cube[i,j,k-1] + c_cube[i  ,j  ,k-2]) / dz / dz
         # d2x_m, d2y_m, d2z_m = second_order_deriv(i, j, k-1)
         c2 = minmod(d2z, d2z_m) * f32(0.5)
-        c1 = (c_cube[i, j , k] - c_cube[i  ,j ,k-1]) / dz 
+        c1 = (c_cube[i, j , k] - c_cube[i  ,j ,k-1]) / dz
         c0 = (c_cube[i, j , k] + c_cube[i  ,j ,k-1]) / f32(2.0) - c2 * dz * dz * 0.25
         corr_s = lax.cond(np.abs(c2) < EPS, lambda p : c0/c1, lambda p: (c1 - np.sign(p) * np.sqrt(c1*c1 - f32(4)*c2*c0))/(f32(2.0)*c2) , phi_ijk)
         s_I = dz * f32(0.5) + np.nan_to_num(corr_s)
-        dz_m = phi_ijk / s_I + s_I * c2 
+        dz_m = phi_ijk / s_I + s_I * c2
         return dz_m, s_I /f32(10.0)
 
     @jit
     def x_deriv_in_bulk_p(i, j, k):
         d2x   = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) / dx / dx
         d2x_p = (c_cube[i+2, j  , k  ] - 2*c_cube[i+1,j,k] + c_cube[i,j  ,k  ]) / dx / dx
-        
+
         dx_p = (c_cube[i+1, j , k] - c_cube[i  ,j ,k]) / dx - f32(0.5) * dx * minmod(d2x, d2x_p)
-        
+
         return dx_p, dx / f32(10.0)
-    
+
     @jit
     def x_deriv_in_bulk_m(i, j, k):
         d2x   = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) / dx / dx
         d2x_m = (c_cube[i, j  , k  ] - 2*c_cube[i-1,j,k] + c_cube[i-2,j  ,k  ]) / dx / dx
- 
+
         dx_m = (c_cube[i  , j , k] - c_cube[i-1,j ,k]) / dx + f32(0.5) * dx * minmod(d2x, d2x_m)
         return dx_m, dx / f32(10.0)
-    
+
     @jit
     def y_deriv_in_bulk_p(i, j, k):
         d2y   = (c_cube[i  , j+1, k  ] - 2*c_cube[i,j,k] + c_cube[i  ,j-1,k  ]) / dy / dy
@@ -249,7 +248,7 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
 
         dy_p = (c_cube[i, j+1, k] - c_cube[i, j  , k]) / dy - f32(0.5) * dy * minmod(d2y, d2y_p)
         return dy_p, dy / f32(10.0)
-    
+
     @jit
     def y_deriv_in_bulk_m(i, j, k):
         d2y = (c_cube[i  , j+1, k  ] - 2*c_cube[i,j,k] + c_cube[i  ,j-1,k  ]) / dy / dy
@@ -257,15 +256,15 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
 
         dy_m = (c_cube[i, j  , k] - c_cube[i, j-1, k]) / dy + f32(0.5) * dy * minmod(d2y, d2y_m)
         return dy_m, dy / f32(10.0)
-    
+
     @jit
     def z_deriv_in_bulk_p(i, j, k):
         d2z   = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) / dz / dz
         d2z_p = (c_cube[i  , j  , k+2] - 2*c_cube[i,j,k+1] + c_cube[i  ,j  ,k]) / dz / dz
-        
-        dz_p = (c_cube[i, j, k+1] - c_cube[i, j, k  ]) / dz - f32(0.5) * dz *  minmod(d2z, d2z_p) 
+
+        dz_p = (c_cube[i, j, k+1] - c_cube[i, j, k  ]) / dz - f32(0.5) * dz *  minmod(d2z, d2z_p)
         return dz_p, dz / f32(10.0)
-    
+
     @jit
     def z_deriv_in_bulk_m(i, j, k):
         d2z = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) / dz / dz
@@ -313,14 +312,14 @@ def godunov_hamiltonian(phi_n, sgn_0, gstate):
     def node_update(node, sgn_ijk):
         i,j,k = find_cell_idx(node)
         (d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m), dtau_ijk = first_order_deriv(i, j, k)
-        sgn_ijk = sgn_0_[i,j,k] 
+        sgn_ijk = sgn_0_[i,j,k]
 
-        res = ( hamiltonian(sgn_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * sgn_ijk * dtau_ijk 
+        res = ( hamiltonian(sgn_ijk, d1x_p, d1x_m, d1y_p, d1y_m, d1z_p, d1z_m) - f32(1.0) ) * sgn_ijk * dtau_ijk
         return np.nan_to_num(res)
 
     return vmap(node_update, (0, None))(nodes, sgn_0_)
 
-    
+
 
 
 
@@ -348,16 +347,16 @@ def nonoscillatory_quadratic_interpolation_per_point(c, gstate):
         j = which_cell_index(np.asarray(y_p >= y))
         k = which_cell_index(np.asarray(z_p >= z))
         return i, j, k
-    
-    
+
+
     def find_lower_left_cell_idx(point):
         """
         find cell index (i,j,k) containing point
         """
         x_p, y_p, z_p = point
-        i = i32((x_p - x[0] ) / dx)  
-        j = i32((y_p - y[0] ) / dy) 
-        k = i32((z_p - z[0] ) / dz) 
+        i = i32((x_p - x[0] ) / dx)
+        j = i32((y_p - y[0] ) / dy)
+        k = i32((z_p - z[0] ) / dz)
         i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(x.shape[0] - 2), lambda p: i32(p), i)
         j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(y.shape[0] - 2), lambda p: i32(p), j)
         k = lax.cond(k >= z.shape[0] - 1, lambda p: i32(z.shape[0] - 2), lambda p: i32(p), k)
@@ -371,9 +370,9 @@ def nonoscillatory_quadratic_interpolation_per_point(c, gstate):
         find cell index (i,j,k) containing point
         """
         x_p, y_p, z_p = point
-        i = i32((x_p - x[0] ) / dx)  
-        j = i32((y_p - y[0] ) / dy) 
-        k = i32((z_p - z[0] ) / dz) 
+        i = i32((x_p - x[0] ) / dx)
+        j = i32((y_p - y[0] ) / dy)
+        k = i32((z_p - z[0] ) / dz)
         i = np.where(i >= x.shape[0] - 1, i32(x.shape[0] - 2), i)
         j = np.where(j >= y.shape[0] - 1, i32(y.shape[0] - 2), j)
         k = np.where(k >= z.shape[0] - 1, i32(z.shape[0] - 2), k)
@@ -382,7 +381,7 @@ def nonoscillatory_quadratic_interpolation_per_point(c, gstate):
         k = np.where(k <= 1, i32(2), k)
         return i, j, k
 
-    
+
     def second_order_deriv(i, j, k, dd):
         dx, dy, dz = dd
         dxx = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) #/ dx / dx
@@ -390,13 +389,13 @@ def nonoscillatory_quadratic_interpolation_per_point(c, gstate):
         dzz = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) #/ dz / dz
         return np.array([dxx, dyy, dzz])
 
-    
+
     def single_cell_interp(point):
         """
         nonoscillatory quadratic interpolation
         """
         i,j,k = find_lower_left_cell_idx(point)
-        
+
         c_111 = c_cube[i+1, j+1, k+1]
         c_110 = c_cube[i+1, j+1, k  ]
         c_011 = c_cube[i  , j+1, k+1]
@@ -423,39 +422,39 @@ def nonoscillatory_quadratic_interpolation_per_point(c, gstate):
         c_1  = c_01  * (f32(1.0) - y_d) + c_11  * y_d
 
         c    = c_0   * (f32(1.0) - z_d) + c_1   * z_d
-        
-        
-        d2x_000 = (c_cube[i+1, j  , k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i-1,j  ,k  ]) 
-        d2y_000 = (c_cube[i  , j+1, k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i  ,j-1,k  ]) 
+
+
+        d2x_000 = (c_cube[i+1, j  , k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i-1,j  ,k  ])
+        d2y_000 = (c_cube[i  , j+1, k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i  ,j-1,k  ])
         d2z_000 = (c_cube[i  , j  , k+1] - 2*c_cube[i  ,j  ,k  ] + c_cube[i  ,j  ,k-1])
 
-        d2x_100 = (c_cube[i+2, j  , k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i  ,j  ,k  ]) 
-        d2y_100 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i+1,j-1,k  ]) 
+        d2x_100 = (c_cube[i+2, j  , k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i  ,j  ,k  ])
+        d2y_100 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i+1,j-1,k  ])
         d2z_100 = (c_cube[i+1, j  , k+1] - 2*c_cube[i+1,j  ,k  ] + c_cube[i+1,j  ,k-1])
 
-        d2x_010 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i-1,j+1,k  ]) 
-        d2y_010 = (c_cube[i  , j+2, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i  ,j  ,k  ]) 
+        d2x_010 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i-1,j+1,k  ])
+        d2y_010 = (c_cube[i  , j+2, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i  ,j  ,k  ])
         d2z_010 = (c_cube[i  , j+1, k+1] - 2*c_cube[i  ,j+1,k  ] + c_cube[i  ,j+1,k-1])
 
-        d2x_001 = (c_cube[i+1, j  , k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i-1,j  ,k+1]) 
-        d2y_001 = (c_cube[i  , j+1, k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i  ,j-1,k+1]) 
+        d2x_001 = (c_cube[i+1, j  , k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i-1,j  ,k+1])
+        d2y_001 = (c_cube[i  , j+1, k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i  ,j-1,k+1])
         d2z_001 = (c_cube[i  , j  , k+2] - 2*c_cube[i  ,j  ,k+1] + c_cube[i  ,j  ,k  ])
 
 
-        d2x_101 = (c_cube[i+2, j  , k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i  ,j  ,k+1]) 
-        d2y_101 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i+1,j-1,k+1]) 
+        d2x_101 = (c_cube[i+2, j  , k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i  ,j  ,k+1])
+        d2y_101 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i+1,j-1,k+1])
         d2z_101 = (c_cube[i+1, j  , k+2] - 2*c_cube[i+1,j  ,k+1] + c_cube[i+1,j  ,k  ])
 
-        d2x_011 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i-1,j+1,k+1]) 
-        d2y_011 = (c_cube[i  , j+2, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i  ,j  ,k+1]) 
+        d2x_011 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i-1,j+1,k+1])
+        d2y_011 = (c_cube[i  , j+2, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i  ,j  ,k+1])
         d2z_011 = (c_cube[i  , j+1, k+2] - 2*c_cube[i  ,j+1,k+1] + c_cube[i  ,j+1,k  ])
 
-        d2x_110 = (c_cube[i+2, j+1, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i  ,j+1,k  ]) 
-        d2y_110 = (c_cube[i+1, j+2, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i+1,j  ,k  ]) 
+        d2x_110 = (c_cube[i+2, j+1, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i  ,j+1,k  ])
+        d2y_110 = (c_cube[i+1, j+2, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i+1,j  ,k  ])
         d2z_110 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i+1,j+1,k  ] + c_cube[i+1,j+1,k-1])
 
-        d2x_111 = (c_cube[i+2, j+1, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i  ,j+1,k+1]) 
-        d2y_111 = (c_cube[i+1, j+2, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i+1,j  ,k+1]) 
+        d2x_111 = (c_cube[i+2, j+1, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i  ,j+1,k+1])
+        d2y_111 = (c_cube[i+1, j+2, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i+1,j  ,k+1])
         d2z_111 = (c_cube[i+1, j+1, k+2] - 2*c_cube[i+1,j+1,k+1] + c_cube[i+1,j+1,k  ])
 
 
@@ -463,11 +462,11 @@ def nonoscillatory_quadratic_interpolation_per_point(c, gstate):
         d2c_dyy = np.min(np.array([np.abs(d2y_000),np.abs(d2y_100),np.abs(d2y_010),np.abs(d2y_001),np.abs(d2y_101),np.abs(d2y_011),np.abs(d2y_110),np.abs(d2y_111)]))
         d2c_dzz = np.min(np.array([np.abs(d2z_000),np.abs(d2z_100),np.abs(d2z_010),np.abs(d2z_001),np.abs(d2z_101),np.abs(d2z_011),np.abs(d2z_110),np.abs(d2z_111)]))
 
-        c  = c - d2c_dxx * f32(0.5) * x_d * (f32(1.0) - x_d) - d2c_dyy * f32(0.5) * y_d * (f32(1.0) - y_d) - d2c_dzz * f32(0.5) * z_d * (f32(1.0) - z_d) 
+        c  = c - d2c_dxx * f32(0.5) * x_d * (f32(1.0) - x_d) - d2c_dyy * f32(0.5) * y_d * (f32(1.0) - y_d) - d2c_dzz * f32(0.5) * z_d * (f32(1.0) - z_d)
 
         return c
 
-    
+
 
 
     return single_cell_interp
@@ -500,16 +499,16 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         j = which_cell_index(np.asarray(y_p >= y))
         k = which_cell_index(np.asarray(z_p >= z))
         return i, j, k
-    
-    
+
+
     def find_lower_left_cell_idx(point):
         """
         find cell index (i,j,k) containing point
         """
         x_p, y_p, z_p = point
-        i = i32((x_p - x[0] ) / dx)  
-        j = i32((y_p - y[0] ) / dy) 
-        k = i32((z_p - z[0] ) / dz) 
+        i = i32((x_p - x[0] ) / dx)
+        j = i32((y_p - y[0] ) / dy)
+        k = i32((z_p - z[0] ) / dz)
         i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(x.shape[0] - 2), lambda p: i32(p), i)
         j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(y.shape[0] - 2), lambda p: i32(p), j)
         k = lax.cond(k >= z.shape[0] - 1, lambda p: i32(z.shape[0] - 2), lambda p: i32(p), k)
@@ -523,9 +522,9 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         find cell index (i,j,k) containing point
         """
         x_p, y_p, z_p = point
-        i = i32((x_p - x[0] ) / dx)  
-        j = i32((y_p - y[0] ) / dy) 
-        k = i32((z_p - z[0] ) / dz) 
+        i = i32((x_p - x[0] ) / dx)
+        j = i32((y_p - y[0] ) / dy)
+        k = i32((z_p - z[0] ) / dz)
         i = np.where(i >= x.shape[0] - 1, i32(x.shape[0] - 2), i)
         j = np.where(j >= y.shape[0] - 1, i32(y.shape[0] - 2), j)
         k = np.where(k >= z.shape[0] - 1, i32(z.shape[0] - 2), k)
@@ -534,7 +533,7 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         k = np.where(k <= 1, i32(2), k)
         return i, j, k
 
-    
+
     def second_order_deriv(i, j, k, dd):
         dx, dy, dz = dd
         dxx = (c_cube[i+1, j  , k  ] - 2*c_cube[i,j,k] + c_cube[i-1,j  ,k  ]) #/ dx / dx
@@ -542,13 +541,13 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         dzz = (c_cube[i  , j  , k+1] - 2*c_cube[i,j,k] + c_cube[i  ,j  ,k-1]) #/ dz / dz
         return np.array([dxx, dyy, dzz])
 
-    
+
     def single_cell_interp(point):
         """
         nonoscillatory quadratic interpolation
         """
         i,j,k = find_lower_left_cell_idx(point)
-        
+
         c_111 = c_cube[i+1, j+1, k+1]
         c_110 = c_cube[i+1, j+1, k  ]
         c_011 = c_cube[i  , j+1, k+1]
@@ -575,39 +574,39 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         c_1  = c_01  * (f32(1.0) - y_d) + c_11  * y_d
 
         c    = c_0   * (f32(1.0) - z_d) + c_1   * z_d
-        
-        
-        d2x_000 = (c_cube[i+1, j  , k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i-1,j  ,k  ]) 
-        d2y_000 = (c_cube[i  , j+1, k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i  ,j-1,k  ]) 
+
+
+        d2x_000 = (c_cube[i+1, j  , k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i-1,j  ,k  ])
+        d2y_000 = (c_cube[i  , j+1, k  ] - 2*c_cube[i  ,j  ,k  ] + c_cube[i  ,j-1,k  ])
         d2z_000 = (c_cube[i  , j  , k+1] - 2*c_cube[i  ,j  ,k  ] + c_cube[i  ,j  ,k-1])
 
-        d2x_100 = (c_cube[i+2, j  , k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i  ,j  ,k  ]) 
-        d2y_100 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i+1,j-1,k  ]) 
+        d2x_100 = (c_cube[i+2, j  , k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i  ,j  ,k  ])
+        d2y_100 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i+1,j  ,k  ] + c_cube[i+1,j-1,k  ])
         d2z_100 = (c_cube[i+1, j  , k+1] - 2*c_cube[i+1,j  ,k  ] + c_cube[i+1,j  ,k-1])
 
-        d2x_010 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i-1,j+1,k  ]) 
-        d2y_010 = (c_cube[i  , j+2, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i  ,j  ,k  ]) 
+        d2x_010 = (c_cube[i+1, j+1, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i-1,j+1,k  ])
+        d2y_010 = (c_cube[i  , j+2, k  ] - 2*c_cube[i  ,j+1,k  ] + c_cube[i  ,j  ,k  ])
         d2z_010 = (c_cube[i  , j+1, k+1] - 2*c_cube[i  ,j+1,k  ] + c_cube[i  ,j+1,k-1])
 
-        d2x_001 = (c_cube[i+1, j  , k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i-1,j  ,k+1]) 
-        d2y_001 = (c_cube[i  , j+1, k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i  ,j-1,k+1]) 
+        d2x_001 = (c_cube[i+1, j  , k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i-1,j  ,k+1])
+        d2y_001 = (c_cube[i  , j+1, k+1] - 2*c_cube[i  ,j  ,k+1] + c_cube[i  ,j-1,k+1])
         d2z_001 = (c_cube[i  , j  , k+2] - 2*c_cube[i  ,j  ,k+1] + c_cube[i  ,j  ,k  ])
 
 
-        d2x_101 = (c_cube[i+2, j  , k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i  ,j  ,k+1]) 
-        d2y_101 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i+1,j-1,k+1]) 
+        d2x_101 = (c_cube[i+2, j  , k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i  ,j  ,k+1])
+        d2y_101 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i+1,j  ,k+1] + c_cube[i+1,j-1,k+1])
         d2z_101 = (c_cube[i+1, j  , k+2] - 2*c_cube[i+1,j  ,k+1] + c_cube[i+1,j  ,k  ])
 
-        d2x_011 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i-1,j+1,k+1]) 
-        d2y_011 = (c_cube[i  , j+2, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i  ,j  ,k+1]) 
+        d2x_011 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i-1,j+1,k+1])
+        d2y_011 = (c_cube[i  , j+2, k+1] - 2*c_cube[i  ,j+1,k+1] + c_cube[i  ,j  ,k+1])
         d2z_011 = (c_cube[i  , j+1, k+2] - 2*c_cube[i  ,j+1,k+1] + c_cube[i  ,j+1,k  ])
 
-        d2x_110 = (c_cube[i+2, j+1, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i  ,j+1,k  ]) 
-        d2y_110 = (c_cube[i+1, j+2, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i+1,j  ,k  ]) 
+        d2x_110 = (c_cube[i+2, j+1, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i  ,j+1,k  ])
+        d2y_110 = (c_cube[i+1, j+2, k  ] - 2*c_cube[i+1,j+1,k  ] + c_cube[i+1,j  ,k  ])
         d2z_110 = (c_cube[i+1, j+1, k+1] - 2*c_cube[i+1,j+1,k  ] + c_cube[i+1,j+1,k-1])
 
-        d2x_111 = (c_cube[i+2, j+1, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i  ,j+1,k+1]) 
-        d2y_111 = (c_cube[i+1, j+2, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i+1,j  ,k+1]) 
+        d2x_111 = (c_cube[i+2, j+1, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i  ,j+1,k+1])
+        d2y_111 = (c_cube[i+1, j+2, k+1] - 2*c_cube[i+1,j+1,k+1] + c_cube[i+1,j  ,k+1])
         d2z_111 = (c_cube[i+1, j+1, k+2] - 2*c_cube[i+1,j+1,k+1] + c_cube[i+1,j+1,k  ])
 
 
@@ -615,11 +614,11 @@ def nonoscillatory_quadratic_interpolation(c, gstate):
         d2c_dyy = np.min(np.array([np.abs(d2y_000),np.abs(d2y_100),np.abs(d2y_010),np.abs(d2y_001),np.abs(d2y_101),np.abs(d2y_011),np.abs(d2y_110),np.abs(d2y_111)]))
         d2c_dzz = np.min(np.array([np.abs(d2z_000),np.abs(d2z_100),np.abs(d2z_010),np.abs(d2z_001),np.abs(d2z_101),np.abs(d2z_011),np.abs(d2z_110),np.abs(d2z_111)]))
 
-        c  = c - d2c_dxx * f32(0.5) * x_d * (f32(1.0) - x_d) - d2c_dyy * f32(0.5) * y_d * (f32(1.0) - y_d) - d2c_dzz * f32(0.5) * z_d * (f32(1.0) - z_d) 
+        c  = c - d2c_dxx * f32(0.5) * x_d * (f32(1.0) - x_d) - d2c_dyy * f32(0.5) * y_d * (f32(1.0) - y_d) - d2c_dzz * f32(0.5) * z_d * (f32(1.0) - z_d)
 
         return c
 
-    
+
     def interp_fn(R_star):
         """
         interpolate on all provided points
@@ -681,7 +680,7 @@ def add_ghost_layer_3d(x, y, z, c_cube):
     c_cube_gh = c_cube_gh.at[0,1:-1,1:-1].set(x_layer_l)
     c_cube_gh = c_cube_gh.at[-1,1:-1,1:-1].set(x_layer_r)
 
-    y_layer_b = 2 * c_cube_gh[:, 1,:] - c_cube_gh[:, 2,:] 
+    y_layer_b = 2 * c_cube_gh[:, 1,:] - c_cube_gh[:, 2,:]
     y_layer_t = 2 * c_cube_gh[:,-2,:] - c_cube_gh[:,-3,:]
     c_cube_gh = c_cube_gh.at[:,0,:].set(y_layer_b)
     c_cube_gh = c_cube_gh.at[:,-1,:].set(y_layer_t)
@@ -731,8 +730,8 @@ def add_ghost_layer_3d_(x, y, z, c_cube):
 
 
 @jit
-def which_cell_index(cond): 
-    """A USEFULE utility function to find the index of True in a list, 
+def which_cell_index(cond):
+    """A USEFULE utility function to find the index of True in a list,
     for example cond = 0.1 < gstate.x provides a list of True's and False's
     and thie function returns the first time True appears
     """
@@ -822,9 +821,9 @@ def multilinear_interpolation(c, gstate):
         find cell index (i,j,k) containing point
         """
         x_p, y_p, z_p = point
-        i = i32((x_p - x[0]) / dx)  
-        j = i32((y_p - y[0]) / dy) 
-        k = i32((z_p - z[0]) / dz) 
+        i = i32((x_p - x[0]) / dx)
+        j = i32((y_p - y[0]) / dy)
+        k = i32((z_p - z[0]) / dz)
 
         i = lax.cond(i >= x.shape[0] - 1, lambda p: i32(x.shape[0] - 2), lambda p: i32(p), i)
         j = lax.cond(j >= y.shape[0] - 1, lambda p: i32(y.shape[0] - 2), lambda p: i32(p), j)
@@ -842,9 +841,9 @@ def multilinear_interpolation(c, gstate):
         find cell index (i,j,k) containing point
         """
         x_p, y_p, z_p = point
-        i = i32((x_p - x[0] ) / dx)  
-        j = i32((y_p - y[0] ) / dy) 
-        k = i32((z_p - z[0] ) / dz) 
+        i = i32((x_p - x[0] ) / dx)
+        j = i32((y_p - y[0] ) / dy)
+        k = i32((z_p - z[0] ) / dz)
         i = np.where(i >= x.shape[0] - 1, i32(x.shape[0] - 2), i)
         j = np.where(j >= y.shape[0] - 1, i32(y.shape[0] - 2), j)
         k = np.where(k >= z.shape[0] - 1, i32(z.shape[0] - 2), k)
@@ -860,7 +859,7 @@ def multilinear_interpolation(c, gstate):
         Trilinear interpolation
         """
         i,j,k = find_lower_left_cell_idx(point)
-        
+
         c_111 = c_cube[i+1, j+1, k+1]
         c_110 = c_cube[i+1, j+1, k  ]
         c_011 = c_cube[i  , j+1, k+1]
@@ -913,7 +912,7 @@ def vec_multilinear_interpolation(Vec, gstate):
         yvals = vy_interp_fn(R_)
         zvals = vz_interp_fn(R_)
         return np.column_stack((xvals, yvals, zvals))
-    
+
     return interp_fn
 
 
@@ -929,7 +928,7 @@ def vec_nonoscillatory_quadratic_interpolation(Vec, gstate):
         yvals = vy_interp_fn(R_)
         zvals = vz_interp_fn(R_)
         return np.column_stack((xvals, yvals, zvals))
-    
+
     return interp_fn
 
 

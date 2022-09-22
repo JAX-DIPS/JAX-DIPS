@@ -22,7 +22,6 @@
 from jax import (numpy as jnp, jit, vmap, lax, config)
 from src import (interpolate)
 import functools
-import pdb
 config.update("jax_debug_nans", True)
 from src.jaxmd_modules import util
 
@@ -53,12 +52,12 @@ def sign_m_fn(a):
 def get_vertices_S_intersect_Gamma(S, phi_S, eta_S):
     """
     This function returns the vertices splitted by the level set.
-    The intersection of the mesh-cell simplex S crossed by the level-set function. 
+    The intersection of the mesh-cell simplex S crossed by the level-set function.
     """
     zeros_gamma = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                               [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
 
-    
+
     def eta_1_fn(arg):
         S, phi_S, zeros_gamma = arg
         S_sorted = S[jnp.argsort(phi_S)]
@@ -67,11 +66,11 @@ def get_vertices_S_intersect_Gamma(S, phi_S, eta_S):
         Q_1 =  ( phi_S_sorted[0] * S_sorted[2] - phi_S_sorted[2] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[2])
         Q_2 =  ( phi_S_sorted[0] * S_sorted[3] - phi_S_sorted[3] * S_sorted[0] ) / (phi_S_sorted[0] - phi_S_sorted[3])
         return jnp.array([[Q_0, Q_1, Q_2], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
-    
+
     def eta_3_fn(arg):
         S, phi_S, zeros_gamma = arg
         return eta_1_fn((S, -1.0 * phi_S, zeros_gamma))
-    
+
     def eta_2_fn(arg):
         S, phi_S, zeros_gamma = arg
         S_sorted = S[jnp.argsort(phi_S)]
@@ -81,14 +80,14 @@ def get_vertices_S_intersect_Gamma(S, phi_S, eta_S):
         Q_2 =  ( phi_S_sorted[1] * S_sorted[3] - phi_S_sorted[3] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[3])
         Q_5 =  ( phi_S_sorted[1] * S_sorted[2] - phi_S_sorted[2] * S_sorted[1] ) / (phi_S_sorted[1] - phi_S_sorted[2])
         return jnp.array([[Q_0, Q_1, Q_2], [Q_0, Q_5, Q_2]], dtype=f32)
-        
-    
+
+
     def eta_2_3_fn(arg):
         return jnp.where(eta_S==2, eta_2_fn(arg), eta_3_fn(arg))
 
     def eta_1_2_3_fn(arg):
         return jnp.where(eta_S==1, eta_1_fn(arg), eta_2_3_fn(arg))
-    
+
     def eta_0_4_fn(arg):
         S, phi_S, zeros_gamma = arg
         return zeros_gamma
@@ -100,8 +99,8 @@ def get_vertices_S_intersect_Gamma(S, phi_S, eta_S):
 def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
     """
     This function returns the tetrahedra vertices splitted by the level set.
-    The intersection of the mesh-cell volume crossed by the level-set function. 
-    """            
+    The intersection of the mesh-cell volume crossed by the level-set function.
+    """
     zeros_ = jnp.array([[[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
@@ -109,7 +108,7 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
     ones_ = jnp.array([ [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0],[0.0, 0.0, 0.0]]], dtype=f32)
-    
+
     def eta_1_fn(arg):
         S, phi_S, zeros_, ones_ = arg
         S_sorted = S[jnp.argsort(phi_S)]
@@ -121,7 +120,7 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
         return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
                          [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]],\
                          [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]] ], dtype=f32)
-    
+
     def eta_2_fn(arg):
         S, phi_S, zeros_, ones_ = arg
         S_sorted = S[jnp.argsort(phi_S)]
@@ -135,7 +134,7 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
         return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
                           [Q_4, Q_1, Q_2, Q_3],\
                           [Q_0, Q_5, Q_2, Q_3]], dtype=f32)
-    
+
     def eta_3_fn(arg):
         S, phi_S, zeros_, ones_ = arg
         S_sorted = S[jnp.argsort(phi_S)]
@@ -149,10 +148,10 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
         return jnp.array([[Q_0, Q_1, Q_2, Q_3],\
                           [Q_0, Q_4, Q_2, Q_3],\
                           [Q_5, Q_4, Q_2, Q_3]], dtype=f32)
-    
+
     def eta_2_3_fn(arg):
         return jnp.where(eta_S == 2, eta_2_fn(arg), eta_3_fn(arg))
-    
+
     def eta_1_2_3_fn(arg):
         return jnp.where(eta_S==1, eta_1_fn(arg), eta_2_3_fn(arg))
 
@@ -162,7 +161,7 @@ def get_vertices_S_intersect_Omega_m(S, phi_S, eta_S: int):
         return jnp.where(eta_S==0, zeros_, ones_)
 
     shared_vertices = jnp.where(eta_S * (eta_S - 4)==0, eta_0_4_fn((S, phi_S, zeros_, ones_)), eta_1_2_3_fn((S, phi_S, zeros_, ones_)))
-    
+
     return shared_vertices
 
 
@@ -175,7 +174,7 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
     phi_cube_ = phi_n.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, phi_cube_)
     x, y, z, phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
-    
+
     dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
 
@@ -183,14 +182,14 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
     def is_node_crossed_by_interface(node):
         """
         If the control volume around node is crossed, it returns 0 (crossed), otherwise this returns +-1 (not crossed).
-        
+
         Returns:
             +1: in Omega^+
              0: on interface (crossed)
             -1: in Omega^-
         """
         i, j, k = node
-        # Get corners of the control volume    
+        # Get corners of the control volume
         dXcorners = jnp.array([ [-dx, -dy, -dz],
                                 [ dx, -dy, -dz],
                                 [ dx, -dy,  dz],
@@ -199,7 +198,7 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
                                 [ dx,  dy, -dz],
                                 [-dx,  dy,  dz],
                                 [ dx,  dy,  dz] ], dtype=f32) * (0.5)
-        
+
         R_cell_corners = dXcorners + jnp.array([x[i], y[j], z[k]])
         phi_cell_corners = phi_interp_fn(R_cell_corners)
 
@@ -223,8 +222,8 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
 
         phis = jnp.array([phi_P_000, phi_P_100, phi_P_101, phi_P_001, phi_P_010, phi_P_110, phi_P_011, phi_P_111])
         eta_S = (sign_m_fn(phis).sum()).astype(int)
-      
-        
+
+
         return jnp.where(eta_S * (eta_S - 8)==0, jnp.sign(phi_P_000), 0)
 
     @jit
@@ -236,7 +235,7 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
         Returns a tuple with: ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
         """
         i, j, k = node
-        # Get corners of the control volume    
+        # Get corners of the control volume
         dXcorners = 0.5 * jnp.array([   [-dx, -dy, -dz],
                                         [ dx, -dy, -dz],
                                         [ dx, -dy,  dz],
@@ -245,7 +244,7 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
                                         [ dx,  dy, -dz],
                                         [-dx,  dy,  dz],
                                         [ dx,  dy,  dz] ], dtype=f32)
-        
+
         R_cell_corners = dXcorners + jnp.array([x[i], y[j], z[k]])
         phi_cell_corners = phi_interp_fn(R_cell_corners)
 
@@ -306,11 +305,11 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
         # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
         return sv_gamma_s1, sv_gamma_s2, sv_gamma_s3, sv_gamma_s4, sv_gamma_s5,\
                sv_omega_s1, sv_omega_s2, sv_omega_s3, sv_omega_s4, sv_omega_s5,\
-               S_1, S_2, S_3, S_4, S_5 
+               S_1, S_2, S_3, S_4, S_5
 
     # pieces = get_vertices_of_cell_intersection_with_interface_at_node(nodes[0])
     # pieces = vmap(get_vertices_of_cell_intersection_with_interface_at_node)(nodes)
-   
+
     return get_vertices_of_cell_intersection_with_interface_at_node, is_node_crossed_by_interface
 
 
@@ -321,20 +320,20 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
 #     get_vertices_fn = get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
 
 def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interface, u_interp_fn):
-    
+
     @jit
     def compute_interface_integral(node):
-        pieces = get_vertices_fn(node)  
-        
+        pieces = get_vertices_fn(node)
+
         # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
         S1_Gamma = pieces[0]
         S2_Gamma = pieces[1]
         S3_Gamma = pieces[2]
         S4_Gamma = pieces[3]
         S5_Gamma = pieces[4]
-        
+
         vol_fn = lambda A: 0.5 * jnp.sqrt(jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) )
-        
+
         integral  = vol_fn(S1_Gamma[0]) * u_interp_fn(S1_Gamma[0]).mean()
         integral += vol_fn(S1_Gamma[1]) * u_interp_fn(S1_Gamma[1]).mean()
 
@@ -351,8 +350,8 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
         integral += vol_fn(S5_Gamma[1]) * u_interp_fn(S5_Gamma[1]).mean()
 
         return integral
-    
-    
+
+
     @jit
     def integrate_over_interface_at_node(node):
         """
@@ -360,12 +359,12 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
         """
         is_interface = is_node_crossed_by_interface(node)
         return jnp.where(is_interface==0, compute_interface_integral(node), 0.0)
-       
-    
+
+
     @jit
     def compute_negative_bulk_integral(node):
-        pieces = get_vertices_fn(node)  
-        
+        pieces = get_vertices_fn(node)
+
         # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
         S1_Omega_m = pieces[5]
         S2_Omega_m = pieces[6]
@@ -396,7 +395,7 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
         integral += vol_fn(S5_Omega_m[2]) * u_interp_fn(S5_Omega_m[2]).mean()
 
         return integral
-        
+
 
 
     @jit
@@ -415,11 +414,11 @@ def integrate_over_gamma_and_omega_m(get_vertices_fn, is_node_crossed_by_interfa
 def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn):
     """
     This function identifies centroids of each face in the positive and negative domain and on the interface,
-    and evaluates values of some coefficient (diffusion coefficient, etc) on those centroids. 
+    and evaluates values of some coefficient (diffusion coefficient, etc) on those centroids.
 
-    This is done by the middle-cut triangulation (cf. Min & Gibou 2007), where the grid cells crossed by the 
+    This is done by the middle-cut triangulation (cf. Min & Gibou 2007), where the grid cells crossed by the
     interface are decomposed to five tetrahedra given by:
-      number;      vertices                              ; faces exposed to external 
+      number;      vertices                              ; faces exposed to external
         S1: conv(P_{000} ; P_{100} ; P_{010} ; P_{001}) -> z = 0 plane, x = 0 plane, y = 0 plane
         S2: conv(P_{110} ; P_{100} ; P_{010} ; P_{111}) -> z = 0 plane, x = 1 plane, y = 1 plane
         S3: conv(P_{101} ; P_{100} ; P_{111} ; P_{001}) -> z = 1 plane, x = 1 plane, y = 0 plane
@@ -439,7 +438,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
                  vol_m, vol_p]
 
     """
-    xo = gstate.x; yo = gstate.y; zo = gstate.z    
+    xo = gstate.x; yo = gstate.y; zo = gstate.z
     dx = xo[2] - xo[1]; dy = yo[2] - yo[1]; dz = zo[2] - zo[1]
 
     vol = dx * dy * dz
@@ -452,15 +451,15 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
     # area_fn = lambda A: jnp.nan_to_num( 0.5 * jnp.sqrt( jnp.nan_to_num( jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) ) ) )
     @jit
     def vol_fn(A):
-        tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) 
+        tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T )
         vol_tmp = (1.0 / 6.0) * jnp.sqrt(jnp.abs(jnp.nan_to_num(tmp)))
         return vol_tmp
 
     @jit
     def area_fn(A):
-        tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T )  #jnp.where(a_shape==(3,3), jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) , 0.0 ) 
+        tmp = jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T )  #jnp.where(a_shape==(3,3), jnp.linalg.det( (A[1:] - A[0]) @ (A[1:] - A[0]).T ) , 0.0 )
         return 0.5 * jnp.sqrt(jnp.abs(jnp.nan_to_num(tmp)))
-    
+
     @jit
     def positive_or_zero(num):
         return jnp.where(num < 0, 0.0, num)
@@ -468,8 +467,8 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
     @jit
     def compute_interface_faces(node):
-        pieces = get_vertices_fn(node)  
-        
+        pieces = get_vertices_fn(node)
+
         # ( S1 \cap \Gamma, ..., S5 \cap \Gamma, S1 \cap \Omega^-, ..., S5 \cap \Omega^-, S1, ..., S5 )
         # vertices of decomposed tetrahedra enclosed in \Omega^m
         S1_Omega_m = pieces[5]
@@ -477,38 +476,38 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         S3_Omega_m = pieces[7]
         S4_Omega_m = pieces[8]
         S5_Omega_m = pieces[9]
-        
+
 
         i, j, k = (node - 2)
-        # Get face centers of the control volume centered on node    
+        # Get face centers of the control volume centered on node
         dXfaces = 0.5 * jnp.array([ [-dx, 0.0, 0.0],
                                     [ dx, 0.0, 0.0],
                                     [0.0, -dy, 0.0],
                                     [0.0,  dy, 0.0],
                                     [0.0, 0.0, -dz],
                                     [0.0, 0.0,  dz]  ], dtype=f32)
-        
+
         R_cell_faces = dXfaces + jnp.array([xo[i], yo[j], zo[k]])
 
-        mu_m_faces = mu_m_interp_fn(R_cell_faces) 
-        mu_p_faces = mu_p_interp_fn(R_cell_faces) 
+        mu_m_faces = mu_m_interp_fn(R_cell_faces)
+        mu_p_faces = mu_p_interp_fn(R_cell_faces)
 
         #---- compute volumes of minus/plus of the cell
-        vol_m  = vol_fn(S1_Omega_m[0]) 
-        vol_m += vol_fn(S1_Omega_m[1]) 
-        vol_m += vol_fn(S1_Omega_m[2]) 
-        vol_m += vol_fn(S2_Omega_m[0]) 
-        vol_m += vol_fn(S2_Omega_m[1]) 
-        vol_m += vol_fn(S2_Omega_m[2]) 
-        vol_m += vol_fn(S3_Omega_m[0]) 
-        vol_m += vol_fn(S3_Omega_m[1]) 
-        vol_m += vol_fn(S3_Omega_m[2]) 
-        vol_m += vol_fn(S4_Omega_m[0]) 
-        vol_m += vol_fn(S4_Omega_m[1]) 
-        vol_m += vol_fn(S4_Omega_m[2]) 
-        vol_m += vol_fn(S5_Omega_m[0]) 
-        vol_m += vol_fn(S5_Omega_m[1]) 
-        vol_m += vol_fn(S5_Omega_m[2]) 
+        vol_m  = vol_fn(S1_Omega_m[0])
+        vol_m += vol_fn(S1_Omega_m[1])
+        vol_m += vol_fn(S1_Omega_m[2])
+        vol_m += vol_fn(S2_Omega_m[0])
+        vol_m += vol_fn(S2_Omega_m[1])
+        vol_m += vol_fn(S2_Omega_m[2])
+        vol_m += vol_fn(S3_Omega_m[0])
+        vol_m += vol_fn(S3_Omega_m[1])
+        vol_m += vol_fn(S3_Omega_m[2])
+        vol_m += vol_fn(S4_Omega_m[0])
+        vol_m += vol_fn(S4_Omega_m[1])
+        vol_m += vol_fn(S4_Omega_m[2])
+        vol_m += vol_fn(S5_Omega_m[0])
+        vol_m += vol_fn(S5_Omega_m[1])
+        vol_m += vol_fn(S5_Omega_m[2])
         vol_p = positive_or_zero(vol - vol_m)
         # vol_p = jnp.where(vol_p_ < 0, 0.0, vol_p_)
         #----
@@ -518,11 +517,11 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         x_p_face = xo[i] + 0.5 * dx
 
         y_m_face = yo[j] - 0.5 * dy
-        y_p_face = yo[j] + 0.5 * dy   
-        
+        y_p_face = yo[j] + 0.5 * dy
+
         z_m_face = zo[k] - 0.5 * dz
-        z_p_face = zo[k] + 0.5 * dz   
-        
+        z_p_face = zo[k] + 0.5 * dz
+
         #---- this number is used to keep track of garbage points in area_from_partitions function below
         fiducial_point = jnp.rint((xo[-1] - xo[0])*100)
 
@@ -530,7 +529,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
             def comp(partition):
                 """
-                Figure 4 of Min & Gibou 2007: 3 different cases are possible. Among them the ones where 
+                Figure 4 of Min & Gibou 2007: 3 different cases are possible. Among them the ones where
                 exactly 3 vertices lie on the corresponding face contribute an area element. We add those areas.
                 """
                 simplex_0 = partition[0]
@@ -539,21 +538,21 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
 
                 num_face_points_0 = jnp.count_nonzero(simplex_0[:,0] - fiducial_point)
                 num_face_points_1 = jnp.count_nonzero(simplex_1[:,0] - fiducial_point)
-                num_face_points_2 = jnp.count_nonzero(simplex_2[:,0] - fiducial_point) 
+                num_face_points_2 = jnp.count_nonzero(simplex_2[:,0] - fiducial_point)
 
                 sort_indices_0 = jnp.argsort(simplex_0[:,0])
                 sort_indices_1 = jnp.argsort(simplex_1[:,0])
                 sort_indices_2 = jnp.argsort(simplex_2[:,0])
 
-              
+
                 area_0 = lax.cond(num_face_points_0==3, lambda p: area_fn(p), lambda p: f32(0.0), simplex_0[sort_indices_0][:3])
                 area_1 = lax.cond(num_face_points_1==3, lambda p: area_fn(p), lambda p: f32(0.0), simplex_1[sort_indices_1][:3])
                 area_2 = lax.cond(num_face_points_2==3, lambda p: area_fn(p), lambda p: f32(0.0), simplex_2[sort_indices_2][:3])
-              
+
                 return area_0 + area_1 + area_2
 
 
-            partition_1 = jnp.zeros_like(s_omega_m_partition_1) 
+            partition_1 = jnp.zeros_like(s_omega_m_partition_1)
 
             partition_1 = partition_1.at[0,0].set(jnp.where(on_face_partition_1[0,0], s_omega_m_partition_1[0,0], fiducial_point))
             partition_1 = partition_1.at[0,1].set(jnp.where(on_face_partition_1[0,1], s_omega_m_partition_1[0,1], fiducial_point))
@@ -571,7 +570,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
             partition_1 = partition_1.at[2,3].set(jnp.where(on_face_partition_1[2,3], s_omega_m_partition_1[2,3], fiducial_point))
 
 
-            partition_2 = jnp.zeros_like(s_omega_m_partition_2) 
+            partition_2 = jnp.zeros_like(s_omega_m_partition_2)
 
             partition_2 = partition_2.at[0,0].set(jnp.where(on_face_partition_2[0,0], s_omega_m_partition_2[0,0], fiducial_point))
             partition_2 = partition_2.at[0,1].set(jnp.where(on_face_partition_2[0,1], s_omega_m_partition_2[0,1], fiducial_point))
@@ -587,29 +586,29 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
             partition_2 = partition_2.at[2,1].set(jnp.where(on_face_partition_2[2,1], s_omega_m_partition_2[2,1], fiducial_point))
             partition_2 = partition_2.at[2,2].set(jnp.where(on_face_partition_2[2,2], s_omega_m_partition_2[2,2], fiducial_point))
             partition_2 = partition_2.at[2,3].set(jnp.where(on_face_partition_2[2,3], s_omega_m_partition_2[2,3], fiducial_point))
-            
-            area_partition_1 = comp(partition_1) 
-            area_partition_2 = comp(partition_2) 
+
+            area_partition_1 = comp(partition_1)
+            area_partition_2 = comp(partition_2)
 
             return area_partition_1  + area_partition_2
-        
+
         def extract_area_minus_x_face(s_omega_m_partition_1, s_omega_m_partition_2, x_face):
-            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,0], x_face, atol=1e-10*dx) 
-            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,0], x_face, atol=1e-10*dx) 
+            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,0], x_face, atol=1e-10*dx)
+            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,0], x_face, atol=1e-10*dx)
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
 
         def extract_area_minus_y_face(s_omega_m_partition_1, s_omega_m_partition_2, y_face):
-            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,1], y_face, atol=1e-10*dy) 
-            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,1], y_face, atol=1e-10*dy) 
+            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,1], y_face, atol=1e-10*dy)
+            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,1], y_face, atol=1e-10*dy)
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
 
         def extract_area_minus_z_face(s_omega_m_partition_1, s_omega_m_partition_2, z_face):
-            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,2], z_face, atol=1e-10*dz) 
-            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,2], z_face, atol=1e-10*dz) 
+            on_face_partition_1 = jnp.isclose(s_omega_m_partition_1[:,:,2], z_face, atol=1e-10*dz)
+            on_face_partition_2 = jnp.isclose(s_omega_m_partition_2[:,:,2], z_face, atol=1e-10*dz)
             return compute_area_from_partitions(on_face_partition_1, s_omega_m_partition_1, on_face_partition_2, s_omega_m_partition_2)
 
-        
-       
+
+
         area_imh_m = extract_area_minus_x_face(S1_Omega_m, S4_Omega_m, x_m_face)
         area_iph_m = extract_area_minus_x_face(S2_Omega_m, S3_Omega_m, x_p_face)
         area_imh_p = positive_or_zero(area_x - area_imh_m)
@@ -624,7 +623,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         area_kph_m = extract_area_minus_z_face(S3_Omega_m, S4_Omega_m, z_p_face)
         area_kmh_p = positive_or_zero(area_z - area_kmh_m)
         area_kph_p = positive_or_zero(area_z - area_kph_m)
-        
+
         #-----
 
 
@@ -650,7 +649,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         #                                                             vol_m, vol_p], dtype=f32)
         # return node_coeff_times_area_divided_size_and_volumes
 
-  
+
         return jnp.array([mu_A_dx_imh_m, mu_A_dx_imh_p, mu_A_dx_iph_m, mu_A_dx_iph_p, \
                           mu_A_dy_jmh_m, mu_A_dy_jmh_p, mu_A_dy_jph_m, mu_A_dy_jph_p,\
                           mu_A_dz_kmh_m, mu_A_dz_kmh_p, mu_A_dz_kph_m, mu_A_dz_kph_p,\
@@ -660,7 +659,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
                           area_kmh_m, area_kmh_p, area_kph_m, area_kph_p], dtype=f32)
 
 
- 
+
     @jit
     def compute_domain_faces(node, is_interface):
         """
@@ -669,20 +668,20 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         depending on sign of the level-set function at the node.
         """
         i, j, k = (node - 2)
-        # Get face centers of the control volume centered on node    
+        # Get face centers of the control volume centered on node
         dXfaces = 0.5 * jnp.array([ [-dx, 0.0, 0.0],
                                     [ dx, 0.0, 0.0],
                                     [0.0, -dy, 0.0],
                                     [0.0,  dy, 0.0],
                                     [0.0, 0.0, -dz],
                                     [0.0, 0.0,  dz]  ], dtype=f32)
-        
+
         R_cell_faces = dXfaces + jnp.array([xo[i], yo[j], zo[k]])
 
         mu_m_faces = mu_m_interp_fn(R_cell_faces) * sign_m_fn(is_interface)
         mu_p_faces = mu_p_interp_fn(R_cell_faces) * sign_p_fn(is_interface)
-        
-        
+
+
         vol_m = vol * sign_m_fn(is_interface)
         vol_p = vol * sign_p_fn(is_interface)
 
@@ -729,7 +728,7 @@ def compute_cell_faces_areas_values(gstate, get_vertices_fn, is_node_crossed_by_
         """
         is_interface = is_node_crossed_by_interface(node)
         return jnp.where(is_interface==0, compute_interface_faces(node), compute_domain_faces(node, is_interface))
-        
+
 
 
     return compute_face_centroids_values_plus_minus_at_node

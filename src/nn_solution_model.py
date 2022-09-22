@@ -22,24 +22,24 @@ import haiku as hk
 from jax import (numpy as jnp, nn as jnn)
 from jax import config
 config.update("jax_debug_nans", False)
-import pdb
+
 
 class DoubleMLP(hk.Module):
 
     def __init__(self, name=None):
         super().__init__(name=name)
-    
+
         self.num_hidden_layers = 1
         self.hidden_dim = 100
-        self.activation_fn = jnp.sin 
+        self.activation_fn = jnp.sin
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
-        
+
         self.L = 3
         self.args = 2**jnp.arange(self.L) * jnp.pi
         self.encoding_m = jnp.zeros(6*self.L)
         self.encoding_p = jnp.zeros(6*self.L)
-        
-      
+
+
 
 
     def __call__(self, r, phi_r):
@@ -53,7 +53,7 @@ class DoubleMLP(hk.Module):
     def nn_up_fn(self, h):
         '''
         neural network function for solution in Omega plus
-        input: 
+        input:
             h: vector of coordinates for one point (x,y,z)
         output:
             one scalar value representing the solution u_p
@@ -68,7 +68,7 @@ class DoubleMLP(hk.Module):
     def nn_um_fn(self, h):
         '''
         neural network function for solution in Omega minus
-        input: 
+        input:
             h: vector of coordinates for one point (x,y,z)
         output:
             one scalar value representing the solution u_m
@@ -83,8 +83,8 @@ class DoubleMLP(hk.Module):
 
     def positional_encoding_p(self, h):
         '''
-        positional encoding function 
-        input: 
+        positional encoding function
+        input:
             h: vector of coordinates for one point (x,y,z)
         output:
             L dimensional encoding
@@ -105,8 +105,8 @@ class DoubleMLP(hk.Module):
 
     def positional_encoding_m(self, h):
         '''
-        positional encoding function 
-        input: 
+        positional encoding function
+        input:
             h: vector of coordinates for one point (x,y,z)
         output:
             L dimensional encoding
@@ -131,8 +131,8 @@ class DoubleMLP(hk.Module):
     def __version__():
         return '0.0.1'
 
-    
-    
+
+
 
 
 

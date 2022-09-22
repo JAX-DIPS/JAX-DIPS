@@ -24,7 +24,6 @@ from src.jaxmd_modules.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad, lax, random)
 import jax
 import jax.profiler
-import pdb
 import time
 import os
 import sys
@@ -50,15 +49,15 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 def poisson_solver_with_jump_complex():
     ALGORITHM = 0                          # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
-    Nx_tr = Ny_tr = Nz_tr = 128
-    multi_gpu = False
+    Nx_tr = Ny_tr = Nz_tr = 1024
+    multi_gpu = True
     num_epochs = 20
 
 
     dim = i32(3)
     init_mesh_fn, coord_at = mesh.construct(dim)
-    
-    
+
+
     # --------- Grid nodes for level set
     """ load the dragon """
     dragon_host = onp.loadtxt(currDir + '/dragonian_full.csv', delimiter=',', skiprows=1)
@@ -66,18 +65,18 @@ def poisson_solver_with_jump_complex():
     # file_y = onp.array(ymin + dragon_host[:,1] * gstate.dy)
     # file_z = onp.array(zmin + dragon_host[:,2] * gstate.dz)
     # file_R = onp.column_stack((file_x, file_y, file_z))
-    
+
     xmin = 0.118; xmax = 0.353
     ymin = 0.088; ymax = 0.263
     zmin = 0.0615; zmax = 0.1835
     Nx = 236; Ny = 176; Nz = 123
-    
+
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
-    
+
     """ find the mapping between stored file and solver """
     file_order_index = onp.array(dragon_host[:,:3], dtype=int).astype(str)
     file_order_dragon_phi = onp.array(dragon_host[:,3])
@@ -90,12 +89,12 @@ def poisson_solver_with_jump_complex():
     for idx in IJK: dragon_phi.append(mapping['_'.join(list(idx))] )
     dragon_phi = onp.array(dragon_phi)
     # io.write_vtk_manual(gstate, {'phi': dragon_phi.reshape((Nx,Ny,Nz))}, filename=currDir + '/results/dragon_initial')
-        
+
     """ Move to GPU and create interpolant on gstate """
     dragon = jnp.array(dragon_phi)
     phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(dragon, gstate)
-    
-    
+
+
     """ Evaluation Mesh for Visualization  """
     Nx_eval = Nx
     Ny_eval = Ny
@@ -103,12 +102,12 @@ def poisson_solver_with_jump_complex():
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
     eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
-    eval_gstate = init_mesh_fn(exc, eyc, ezc)     
-    
-    
+    eval_gstate = init_mesh_fn(exc, eyc, ezc)
+
+
     """ Define functions """
-    
-    
+
+
     @custom_jit
     def dirichlet_bc_fn(r):
         return 1.0 / phi_fn(r)
@@ -174,7 +173,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 0.0 
+        return 0.0
 
 
     @custom_jit
@@ -193,17 +192,17 @@ def poisson_solver_with_jump_complex():
         return 0.0
 
 
-    
+
 
     init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
-    
+
     eval_phi = vmap(phi_fn)(eval_gstate.R)
-    
-    
+
+
     t1 = time.time()
 
-    
+
     sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu)
     # sim_state.solution.block_until_ready()
 
@@ -212,13 +211,10 @@ def poisson_solver_with_jump_complex():
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
 
-    
+
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     log = {'phi': eval_phi.reshape((Nx_eval,Ny_eval,Nz_eval)), 'U': sim_state.solution.reshape((Nx_eval,Ny_eval,Nz_eval))}
-    io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/dragon_final')
-    pdb.set_trace()
-
-
+    io.write_vtk_manual(eval_gstate, log, filename=currDir + f'/results/dragon_final{Nx_tr}')
 
 
 if __name__ == "__main__":

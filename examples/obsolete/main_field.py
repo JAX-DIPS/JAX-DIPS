@@ -14,8 +14,8 @@ from src import simulate_fields
 from src import simulate_particles
 from src import visualization
 from src import mesh
-from src import interpolate 
-import pdb
+from src import interpolate
+
 
 # Use JAX's random number generator to generate random initial positions.
 key = random.PRNGKey(0)
@@ -78,11 +78,11 @@ sim_state = init_fn(R)
 def step_func(i, state_and_nbrs):
     state, log = state_and_nbrs
     time = i * dt
-    log['t'] = log['t'].at[i].set(time) 
+    log['t'] = log['t'].at[i].set(time)
     sol = state.solution
-    log['U'] = log['U'].at[i].set(sol) 
+    log['U'] = log['U'].at[i].set(sol)
     vel = state.velocity_nm1
-    log['V'] = log['V'].at[i].set(vel) 
+    log['V'] = log['V'].at[i].set(vel)
     # state = reinitialize_fn(state, gstate)
     state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
     return apply_fn(state, gstate, time), log
@@ -121,4 +121,3 @@ visualization.plot_slice_animation(gstate, log, levels=lvls, cmap='Spectral_r')
 # u3 = interp_fn(R+0.1).flatten().reshape(gstate.shape())
 # import matplotlib.pyplot as plt
 # plt.contour(u3[:,:,gstate.shape()[2]//2]); plt.show()
-pdb.set_trace()
