@@ -26,7 +26,6 @@ import os
 from dataclasses import field
 from evtk.hl import rectilinearToVTK, imageToVTK, structuredToVTK
 import numpy as onp
-import pdb
 
 
 def write_vtk(gstate, log, maxsteps=None):

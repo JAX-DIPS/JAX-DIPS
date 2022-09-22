@@ -24,7 +24,6 @@ from src.jaxmd_modules.util import f32, i32
 from jax import (jit, numpy as jnp, vmap, grad, lax)
 import jax
 import jax.profiler
-import pdb
 import time
 import os
 import sys
@@ -57,7 +56,7 @@ def test_poisson_solver_with_jump_complex():
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
     init_mesh_fn, coord_at = mesh.construct(dim)
-    
+
     # --------- Grid nodes for level set
     Nx = Ny = Nz = i32(128)
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -73,15 +72,15 @@ def test_poisson_solver_with_jump_complex():
     eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
     eval_gstate = init_mesh_fn(exc, eyc, ezc)
-    
+
     # -- 3d example according to 4.6 in Guittet 2015 (VIM) paper
     @custom_jit
     def exact_sol_m_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z) 
-  
+        return jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z)
+
 
     @custom_jit
     def exact_sol_p_fn(r):
@@ -89,8 +88,8 @@ def test_poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         yx3 = (y-x)/3.0
-        return (16.0*yx3**5 - 20.0*yx3**3 + 5.0*yx3) * jnp.log(x+y+3) * jnp.cos(z) 
-        
+        return (16.0*yx3**5 - 20.0*yx3**3 + 5.0*yx3) * jnp.log(x+y+3) * jnp.cos(z)
+
 
     @custom_jit
     def dirichlet_bc_fn(r):
@@ -115,10 +114,10 @@ def test_poisson_solver_with_jump_complex():
         core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y,x) - theta_3))
 
         phi_  = jnp.sqrt(x**2 + y**2 + z**2)
-        phi_ += -1.0*r0 * (1.0 + ((x**2 + y**2)/(x**2 + y**2 + z**2))**2 * core ) 
+        phi_ += -1.0*r0 * (1.0 + ((x**2 + y**2)/(x**2 + y**2 + z**2))**2 * core )
 
         return jnp.nan_to_num(phi_, -r0*core)
-    
+
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     @custom_jit
@@ -229,7 +228,7 @@ def test_poisson_solver_with_jump_complex():
                -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*x) * 2*jnp.cos(2*x)*jnp.cos(2*y)*jnp.exp(z)   +\
                -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*y) * (-2)*jnp.sin(2*x)*jnp.sin(2*y)*jnp.exp(z) +\
                 2*jnp.cos(2*jnp.pi*(x+y))*jnp.sin(2*jnp.pi*(x-y))*jnp.sin(z) * jnp.sin(2*x)*jnp.cos(2*y)*jnp.exp(z)
-        
+
         return fm
 
     @custom_jit
@@ -237,7 +236,7 @@ def test_poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        f_p = -1.0 * ( 
+        f_p = -1.0 * (
             ( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*(y-x)/3 ) * (-2)*jnp.cos(z) / (x+y+3)**2 +\
              2*( 16*5*4*(1.0/9.0)*((y-x)/3)**3 - 20*3*2*(1.0/9.0)*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z) +\
             -1*( 16*((y-x)/3)**5 - 20*((y-x)/3)**3 + 5*((y-x)/3) ) * jnp.log(x+y+3)*jnp.cos(z)
@@ -245,12 +244,12 @@ def test_poisson_solver_with_jump_complex():
         return f_p
 
 
-    
+
 
 
     init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     sim_state = init_fn(R)
-   
+
     t1 = time.time()
 
     
@@ -262,13 +261,13 @@ def test_poisson_solver_with_jump_complex():
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
 
-    
+
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     exact_sol = vmap(evaluate_exact_solution_fn)(eval_gstate.R)
     error = sim_state.solution - exact_sol
     log = {'phi': eval_phi, 'U': sim_state.solution, 'U_exact': exact_sol, 'U-U_exact': error}
     io.write_vtk_manual(eval_gstate, log)
-    
+
 
     # log = {
     #     'phi': sim_state.phi,
@@ -298,7 +297,6 @@ def test_poisson_solver_with_jump_complex():
     print("\n SOLUTION ERROR\n")
 
     print(f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared error = {rms_err} ")
-    pdb.set_trace()
 
     """
     MASK the solution over sphere only
@@ -323,9 +321,9 @@ def test_poisson_solver_with_jump_complex():
 
     print(f"L_inf errors in grad u in Omega_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
     print(f"L_inf errors in grad u in Omega_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
-    
 
-    
+
+
     #--- normal gradients over interface
     normal_fn = grad(phi_fn)
     normal_vec = vmap(normal_fn)(gstate.R).reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
@@ -335,20 +333,18 @@ def test_poisson_solver_with_jump_complex():
 
     mask_i_m = ( abs(sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1]) < 0.5*dx ) * ( sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] < 0.0 )
     mask_i_p = ( abs(sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1]) < 0.5*dx ) * ( sim_state.phi.reshape((Nx,Ny,Nz))[1:-1,1:-1,1:-1] > 0.0 )
-    
+
     grad_um_n_exact = vmap(jnp.dot, (0,0))(normal_vec.reshape(-1,3), grad_um_exact.reshape(-1,3)).reshape((Nx-2,Ny-2,Nz-2))
     grad_up_n_exact = vmap(jnp.dot, (0,0))(normal_vec.reshape(-1,3), grad_up_exact.reshape(-1,3)).reshape((Nx-2,Ny-2,Nz-2))
 
     err_um_n = abs(grad_um_n - grad_um_n_exact)[mask_i_m].max()
     err_up_n = abs(grad_up_n - grad_up_n_exact)[mask_i_p].max()
 
-    
+
     print(f"L_inf error in normal grad u on interface minus: {err_um_n} \t plus: {err_up_n}")
 
     #----
     assert L_inf_err<0.2
-
-    pdb.set_trace()
 
 
 if __name__ == "__main__":

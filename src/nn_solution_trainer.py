@@ -23,7 +23,6 @@ import jax
 from jax import (numpy as jnp, vmap, jit, random, value_and_grad)
 from functools import partial
 import optax
-import pdb
 import time
 import matplotlib
 matplotlib.use('Agg')
@@ -41,9 +40,9 @@ class Trainer:
         self.optimizer = optimizer
         self.compute_Ax_and_b_fn = compute_Ax_and_b_fn
         self.grid_shape = grid_shape
-   
 
-        
+
+
     @staticmethod
     @hk.transform
     def forward(x, phi_x):
@@ -62,7 +61,7 @@ class Trainer:
     @partial(jit, static_argnums=0)
     def init(self, seed=42):
         rng = random.PRNGKey(seed)
-        params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)  
+        params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)
         opt_state = self.optimizer.init(params)
         return opt_state, params
 
@@ -84,9 +83,8 @@ class Trainer:
             Weighted L2 loss with exp(-\phi^2) to emphasize error around boundaries
         """
         # weight = jnp.exp(-1.0*jnp.square(phi_flat))
-        # tot_loss = jnp.mean(weight * optax.l2_loss(lhs, rhs)) #/ jnp.mean(weight)            
+        # tot_loss = jnp.mean(weight * optax.l2_loss(lhs, rhs)) #/ jnp.mean(weight)
         tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
-        # pdb.set_trace()
 
         tot_loss += jnp.square(sol_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
         tot_loss += jnp.square(sol_cube[-1, :, :] - dirichlet_cube[-1, :, :]).mean() * Vol_cell_nominal
@@ -102,19 +100,19 @@ class Trainer:
     def loss(self, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):
         """
             Loss function of the neural network
-        """        
+        """
         pred_sol = self.evaluate_solution_fn(params, R_flat, phi_flat)
-        
+
         lhs_rhs = self.compute_Ax_and_b_fn(pred_sol)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
 
-        sol_cube = pred_sol.reshape(self.grid_shape)      
+        sol_cube = pred_sol.reshape(self.grid_shape)
         tot_loss = self.evaluate_loss_fn( phi_flat, lhs, rhs, sol_cube, dirichlet_cube, Vol_cell_nominal)
-        
+
         return tot_loss
 
     @partial(jit, static_argnums=(0))
-    def update(self, opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):      
+    def update(self, opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal):
         loss, grads = value_and_grad(self.loss)(params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
@@ -138,12 +136,12 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, grid_shape, dirichle
     """
 
     trainer = Trainer(compute_Ax_and_b_fn, grid_shape, optimizer)
-    
+
     opt_state, params = trainer.init()
 
     print('\n')
     print('Architecture Summary (trainable parameters):')
-    
+
     num_params = 0
     for pytree in params:
         leaves = jax.tree_leaves(pytree)
@@ -155,18 +153,18 @@ def train(optimizer, compute_Ax_and_b_fn, R_flat, phi_flat, grid_shape, dirichle
             for elem in val:
                 res *= elem
             num_params += res
-    
+
     print('\n')
     print(f"Total number of trainable parameters = {num_params} ...")
     print('\n')
-    
-    #----------------------------------------------------------------------    
-    
+
+    #----------------------------------------------------------------------
+
     start_time = time.time()
     loss_epochs = []
     epoch_store = []
-    for epoch in range(num_epochs):            
-        opt_state, params, loss_epoch = trainer.update(opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal)            
+    for epoch in range(num_epochs):
+        opt_state, params, loss_epoch = trainer.update(opt_state, params, R_flat, phi_flat, dirichlet_cube, Vol_cell_nominal)
         print(f"epoch # {epoch} loss is {loss_epoch}")
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
