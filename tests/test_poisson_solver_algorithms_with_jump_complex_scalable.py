@@ -49,7 +49,9 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 def test_poisson_solver_with_jump_complex():
     ALGORITHM = 0                   # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
-    Nx_tr = Ny_tr = Nz_tr = 32
+    Nx_tr = Ny_tr = Nz_tr = 64
+    multi_gpu = False
+    num_epochs = 10000
 
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
@@ -57,7 +59,7 @@ def test_poisson_solver_with_jump_complex():
     init_mesh_fn, coord_at = mesh.construct(dim)
     
     # --------- Grid nodes for level set
-    Nx = Ny = Nz = i32(64)
+    Nx = Ny = Nz = i32(128)
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
@@ -252,7 +254,7 @@ def test_poisson_solver_with_jump_complex():
     t1 = time.time()
 
     
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=100, multi_gpu=False)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()

@@ -111,7 +111,7 @@ def poisson_solver_with_jump_complex():
     
     @custom_jit
     def dirichlet_bc_fn(r):
-        return 1.0 / phi_fn(r)
+        return 100.0 / phi_fn(r)
 
 
     @custom_jit

@@ -1139,9 +1139,9 @@ regress $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$
 \hline
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 \hline 
-$2^3$ & $ 1.36\times 10^{-1}$ &  -     & $ 1.27$   &   -   & $ 0.019  $  & $  0.98 $ \\
-$2^4$ & $ 7.98\times 10^{-2} $ &  $ $   & $ 8.23\times 10^{-1} $   & $ $   & $ 0.022  $  & $ 1.01  $ \\ 
-$2^5$ & $ 4.36\times 10^{-2} $ &  $ $   & $ 3.85\times 10^{-1} $   & $  $   & $ 0.032  $  & $ 1.30  $ \\ 
+$2^3$ & $ 1.36\times 10^{-1}$ &  -     & $ 1.27$                 &   -   & $ 0.019  $  & $  0.98 $ \\
+$2^4$ & $ 7.98\times 10^{-2}$ &  $ $   & $ 8.23\times 10^{-1} $  & $ $   & $ 0.022  $  & $ 1.01  $ \\ 
+$2^5$ & $ 4.36\times 10^{-2}$ &  $ $   & $ 3.85\times 10^{-1} $  & $  $  & $ 0.032  $  & $ 1.30  $ \\ 
 $2^6$ & $2.43\times 10^{-2} $ &  $ $   & $ 2.28\times 10^{-1}$   & $ $   & $  0.200 $  & $ 3.7 $ \\ 
 $2^7$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $21.4 $ \\ \hline
 \end{tabular}
@@ -1161,6 +1161,32 @@ $2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
 \end{center}
 \end{table}
 
+
+
+
+\begin{table}[ht]
+	\begin{center}
+	\begin{tabular}{|l||ll|ll|c|c|}
+	\hline
+	regress $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$} & \multicolumn{2}{c|}{GPU Statistics} \\
+	\hline
+	$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
+	\hline 
+	$2^3$ & $ 1.32\times 10^{-1}$ &   -    & $ 2.50 $                &   -   & $ 0.0225 $  & $ 1.27 $ \\
+	$2^4$ & $ 5.91\times 10^{-2}$ &  $ $   & $ 6.79\times 10^{-1} $  & $ $   & $ 0.0411 $  & $ 1.27 $ \\ 
+	$2^5$ & $ 2.51\times 10^{-2}$ &  $ $   & $ 3.06\times 10^{-1}$   & $ $   & $ 0.1814 $  & $ 8.3  $ \\ 
+	$2^6$ & $ $ &  $ $   & $ $   & $ $   & $  $  & $ 30.13 $ \\ 
+	$2^7$ & $ $ &  $ $   & $ $   & $ $   & $  $  & $  $ \\ \hline
+	\end{tabular}
+	\caption{Convergence test for the scalable pointwise multi-resolution regression-based solver. 
+	Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. 
+	We run these experiments on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. 
+	We use a multi-resolution training protocol that refines to 4 levels at each collocation point. 
+	Errors are reported on an upsamples grid at resolution $256^3$. 
+	Batch size is the minimum of $64\times 64\times 32$ and number of collocation points, which ensures memory saturation at 32 GB.}
+	\end{center}
+\end{table}
+	
 
 
 
