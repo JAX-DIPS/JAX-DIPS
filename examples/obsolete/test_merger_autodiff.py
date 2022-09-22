@@ -4,7 +4,6 @@ rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path: # add parent dir to paths
     sys.path.append(rootDir)
 import time
-import pdb
 from functools import partial
 
 import jax
@@ -33,7 +32,7 @@ Nx = i32(128)
 Ny = i32(128)
 Nz = i32(128)
 dimension = i32(3)
-tf = f32(2 * jnp.pi) 
+tf = f32(2 * jnp.pi)
 
 #--------- Grid nodes
 xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -41,7 +40,7 @@ yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
 zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
 dx = xc[1] - xc[0]
 dt = dx * f32(0.9)
-simulation_steps = i32(tf / dt) 
+simulation_steps = i32(tf / dt)
 
 #---------------
 # Create helper functions to define a periodic box of some size.
@@ -89,7 +88,7 @@ def get_velocity_fn_AD(phi_fn, gstate):
 
 # DISCRETE: get normal vector and mean curvature
 def get_velocity_fn_DS(sim_state, gstate):
-    normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature) 
+    normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature)
     normal, curve = normal_curve_fn(sim_state.solution, gstate)
     vel = f32(0.01) * curve.reshape(-1, 1) * normal
     velocity_fn_DS = add_null_argument(interpolate.vec_nonoscillatory_quadratic_interpolation(vel, gstate))
@@ -104,7 +103,7 @@ curve_phi_fn = jit(compositions.vec_curvature_fn(phi_fn) )
 normal_phi_fn = jit(compositions.vec_normal_fn(phi_fn) )
 curvature_phi_n =  curve_phi_fn(gstate.R)
 normal_phi_n =  normal_phi_fn(gstate.R)
-normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature) 
+normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature)
 normal, curve = normal_curve_fn(sim_state.solution, gstate)
 io.write_vtk_manual(gstate, {"phi" : sim_state.solution, "curvature auto" : curvature_phi_n, "curvature discrete": curve, "normal x auto": normal_phi_n[:,0], "normal y auto": normal_phi_n[:,1], "normal z auto": normal_phi_n[:,2], "normal x discrete": normal[:,0], "normal y discrete": normal[:,1], "normal z discrete": normal[:,2]}, 'results/manual_dump_n')
 #---------
@@ -135,19 +134,18 @@ normal_phi_np2_fn = jit(compositions.vec_normal_fn(phi_np2_fn) )
 normal_phi_np2 =  normal_phi_np2_fn(gstate.R)
 
 #--------
-normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature) 
+normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature)
 normal_np2, curve_np2 = normal_curve_fn(phi_np2, gstate)
 io.write_vtk_manual(gstate, {"phi" : phi_np2, "curvature auto" : curvature_phi_np2, "curvature discrete": curve_np2, "normal x auto": normal_phi_np2[:,0], "normal y auto": normal_phi_np2[:,1], "normal z auto": normal_phi_np2[:,2], "normal x discrete": normal_np2[:,0], "normal y discrete": normal_np2[:,1], "normal z discrete": normal_np2[:,2]}, 'results/manual_dump_np2')
 #---------
 
 phi_fin_fn = phi_fn
 for i in range(2): print(i); phi_fin_fn = compose_fn(phi_fin_fn)
-pdb.set_trace()
 
 
 def timestepper(i, x):
     phi_fin_fn = compose_fn(phi_fin_fn)
-    return phi_fin_fn(x)    
+    return phi_fin_fn(x)
 
 phi_next = lax.fori_loop(timestepper, 0, 10, gstate.R[0])
 
@@ -200,7 +198,7 @@ def step_func(i, state_and_nbrs):
     log['nx'] = log['nx'].at[i].set(normal[:,0])
     log['ny'] = log['ny'].at[i].set(normal[:,1])
     log['nz'] = log['nz'].at[i].set(normal[:,2])
-    
+
     state = reinitialize_fn(state, gstate)
     # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
     return apply_fn(velocity_fn, state, gstate, time_), log, dt
@@ -215,5 +213,3 @@ jax.profiler.save_device_memory_profile("memory.prof")
 
 
 io.write_vtk_log(gstate, log)
-
-pdb.set_trace()

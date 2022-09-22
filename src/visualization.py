@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as onp
 # import moviepy.editor as mpy
-import pdb
+
 
 def plot(R):
     X = R[:,0]; Y=R[:,1]; Z=R[:,2]
@@ -49,7 +49,7 @@ def animate(log, scale_fac=0.05):
     times = log['t']
     X = Rs[0][:,0]; Y=Rs[0][:,1]; Z=Rs[0][:,2]
     fig = mlab.gcf()
-    
+
     p = mlab.points3d(X, Y, Z, scale_factor=scale_fac)
 
     @mlab.animate(delay=100)
@@ -76,7 +76,7 @@ def plot3D_field(gstate, U):
 
 
 def animate_field(gstate, log, **kwargs):
-    
+
     X, Y, Z = onp.meshgrid(gstate.x, gstate.y, gstate.z, indexing='ij')
     U = log['U'][0]
     times = log['t']

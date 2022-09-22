@@ -25,7 +25,6 @@ import haiku as hk
 from src import (interpolate, geometric_integrations)
 from src.jaxmd_modules import util
 from src.nn_solution_trainer import train
-import pdb
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -245,7 +244,7 @@ def poisson_solver(gstate, sim_state):
 
     """
     BEGIN geometric integration functions intiation
-    Getting simplices of the grid: intersection points 
+    Getting simplices of the grid: intersection points
     """
     get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(
         gstate, sim_state)
@@ -261,7 +260,7 @@ def poisson_solver(gstate, sim_state):
     """
     Vol_cell_nominal = dx*dy*dz
 
-    
+
 
     @jit
     def is_box_boundary_node(i, j, k):
@@ -277,11 +276,11 @@ def poisson_solver(gstate, sim_state):
         """
         This function evaluates pairs of u^+ and u^- at each grid point
         in the domain, given a current cube of u values.
-      
+
         BIAS SLOW:
-            This function evaluates 
-                u_m = B_m : u + r_m 
-            and 
+            This function evaluates
+                u_m = B_m : u + r_m
+            and
                 u_p = B_p : u + r_p
         """
 
@@ -291,7 +290,7 @@ def poisson_solver(gstate, sim_state):
         def interface_node(i, j, k):
             def mu_minus_bigger_fn(i, j, k):
                 def extrapolate_u_m_from_negative_domain(i, j, k):
-                    delta_ijk = phi_cube[i, j, k] 
+                    delta_ijk = phi_cube[i, j, k]
                     r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                     r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                     r_m_proj = r_m_proj[jnp.newaxis]
@@ -302,7 +301,7 @@ def poisson_solver(gstate, sim_state):
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain(i, j, k):
-                    delta_ijk = phi_cube[i, j, k]  
+                    delta_ijk = phi_cube[i, j, k]
                     r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                     r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                     r_p_proj = r_p_proj[jnp.newaxis]
@@ -318,7 +317,7 @@ def poisson_solver(gstate, sim_state):
 
             def mu_plus_bigger_fn(i, j, k):
                 def extrapolate_u_m_from_negative_domain_(i, j, k):
-                    delta_ijk = phi_cube[i, j, k] 
+                    delta_ijk = phi_cube[i, j, k]
                     r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                     r_m_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                     r_m_proj = r_m_proj[jnp.newaxis]
@@ -329,7 +328,7 @@ def poisson_solver(gstate, sim_state):
                     return u_m
 
                 def extrapolate_u_p_from_positive_domain_(i, j, k):
-                    delta_ijk = phi_cube[i, j, k] 
+                    delta_ijk = phi_cube[i, j, k]
                     r_ijk = jnp.array([x[i], y[j], z[k]], dtype=f32)
                     r_p_proj = r_ijk - delta_ijk * normal_vec_fn((i, j, k))
                     r_p_proj = r_p_proj[jnp.newaxis]
@@ -352,29 +351,29 @@ def poisson_solver(gstate, sim_state):
         is_interface = is_cell_crossed_by_interface((i, j, k))
         u_mp = jnp.where(is_interface == 0, interface_node(i, j, k), bulk_node(is_interface, u_ijk))
         return u_mp
-        
-       
 
 
-    
+
+
+
     def compute_Ax_and_b_fn(u):
         """
         This function calculates  A @ u for a given vector of unknowns u.
         This evaluates the rhs in Au^k=b given estimate u^k.
         The purpose would be to define an optimization problem with:
 
-        min || A u^k - b ||^2 
+        min || A u^k - b ||^2
 
-        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field. 
+        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field.
 
-        * PROCEDURE: 
+        * PROCEDURE:
             first compute u = B:u + r for each node
-            then use the actual cell geometries (face areas and mu coeffs) to 
+            then use the actual cell geometries (face areas and mu coeffs) to
             compute the rhs of the linear system given currently passed-in u vector
             for solution estimate.
 
         """
-        
+
         u_cube = u.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
 
         u_mp_at_node = partial(get_u_mp_at_node_fn, u_cube)
@@ -386,15 +385,15 @@ def poisson_solver(gstate, sim_state):
             # coeffs, vols = jnp.split(poisson_scheme_coeffs, [12], axis=0)
 
             coeffs_ = compute_face_centroids_values_plus_minus_at_node(node)
-            
+
             coeffs = coeffs_[:12]
             vols = coeffs_[12:14]
             # areas = coeffs_[14:]
 
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
-            
-            
+
+
             def get_lhs_at_interior_node(node):
                 i, j, k = node
                 # k_cube's don't have ghost layers
@@ -418,7 +417,7 @@ def poisson_solver(gstate, sim_state):
                 u_m_ijkp, u_p_ijkp = u_mp_at_node(i  , j  , k+1)
                 lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
                 return lhs
-            
+
             def get_lhs_on_box_boundary(node):
                 i, j, k = node
                 lhs = u_cube[i-2, j-2, k-2] * Vol_cell_nominal
@@ -426,13 +425,13 @@ def poisson_solver(gstate, sim_state):
             lhs = jnp.where(is_box_boundary_node(i, j, k), get_lhs_on_box_boundary(node), get_lhs_at_interior_node(node))
 
             #--- RHS
-            
+
             def get_rhs_at_interior_node(node):
                 i, j, k = node
                 rhs = f_m_cube_internal[i-2, j-2, k-2] * V_m_ijk + f_p_cube_internal[i-2, j-2, k-2] * V_p_ijk
                 rhs += beta_integrate_over_interface_at_node(node)
                 return rhs
-            
+
             def get_rhs_on_box_boundary(node):
                 """
                 Imposing Dirichlet BCs on the RHS
@@ -452,7 +451,7 @@ def poisson_solver(gstate, sim_state):
 
 
     #--- Defining Optimizer
-    
+
     # ------ Exponential decay of the learning rate.
     decay_rate_ = 0.975
     learning_rate = 1e-2
@@ -461,7 +460,7 @@ def poisson_solver(gstate, sim_state):
         transition_steps=100,
         decay_rate=decay_rate_)
     # Combining gradient transforms using `optax.chain`.
-    optimizer = optax.chain(                         
+    optimizer = optax.chain(
                             optax.clip_by_global_norm(1.0), # Clip the gradient by the global norm.
                             optax.scale_by_adam(),  # Use the updates from adam.
                             optax.scale_by_schedule(scheduler), # Use the learning rate from the scheduler.
@@ -470,10 +469,10 @@ def poisson_solver(gstate, sim_state):
 
     # optimizer = optax.adam(learning_rate)
     # optimizer = optax.rmsprop(learning_rate)
-    
+
     #---------------------
-    
-   
+
+
     grid_shape = (Nx,Ny,Nz)
     final_solution = train(optimizer, compute_Ax_and_b_fn, gstate.R, phi_cube_.reshape(-1), grid_shape, dirichlet_cube, Vol_cell_nominal, num_epochs=10000)
 
@@ -488,7 +487,7 @@ def poisson_solver(gstate, sim_state):
     #     """
     #     lhs_rhs = compute_Ax_and_b_fn(x)
     #     lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-    #     loss = optax.l2_loss(lhs, rhs).mean() 
+    #     loss = optax.l2_loss(lhs, rhs).mean()
     #     # regularizer on boundaries
     #     x_cube = x.reshape((xo.shape[0], yo.shape[0], zo.shape[0]))
     #     loss += jnp.square(x_cube[ 0, :, :] - dirichlet_cube[ 0, :, :]).mean() * Vol_cell_nominal
@@ -511,16 +510,16 @@ def poisson_solver(gstate, sim_state):
     # x_cube = x_cube.at[ :, :,-1].set(dirichlet_cube[ :, :,-1])
     # x = x_cube.reshape(-1)
 
-    
-    # Optimization Problem is set up by defining: (1) params, (2) compute_loss(params) 
+
+    # Optimization Problem is set up by defining: (1) params, (2) compute_loss(params)
     # params = {'u': x}                        # parameters to be optimized
     # @jit
     # def compute_loss(params):                # loss function to minimize
     #     return compute_residual(params['u'])
-    
 
 
-    # # Generic Optimization Routine 
+
+    # # Generic Optimization Routine
     # loss_store = []
     # grad_fn = jit(grad(compute_loss))
     # opt_state = optimizer.init(params)
@@ -540,8 +539,8 @@ def poisson_solver(gstate, sim_state):
     # plt.ylabel('loss', fontsize=20)
     # plt.savefig('tests/poisson_solver_loss.png')
     # plt.close()
-    
-   
+
+
 
     #------------- Gradients of discovered solutions are below:
 
@@ -561,7 +560,7 @@ def poisson_solver(gstate, sim_state):
             cp_pqm = Cp_ijk_pqm.reshape(phi_cube_.shape+ (-1,))[i-2,j-2,k-2]
             return jnp.sum(cm_pqm * u_mp_pqm[:,0]), jnp.sum(cp_pqm * u_mp_pqm[:,1])
 
-        c_mp_u_mp_ngbs = vmap(convolve_at_node)(nodes)      
+        c_mp_u_mp_ngbs = vmap(convolve_at_node)(nodes)
         grad_n_u_m = -1.0 * Cm_ijk_pqm.sum(axis=1) * u_mp[:,0] + c_mp_u_mp_ngbs[0]
         grad_n_u_p = -1.0 * Cp_ijk_pqm.sum(axis=1) * u_mp[:,1] + c_mp_u_mp_ngbs[1]
         return grad_n_u_m, grad_n_u_p
@@ -580,8 +579,8 @@ def poisson_solver(gstate, sim_state):
             grad_m = d_m_mat @ dU_mp[:,0]
             grad_p = d_p_mat @ dU_mp[:,1]
             return grad_m, grad_p
-        return vmap(convolve_at_node, (0,0,0))(nodes, D_m_mat, D_p_mat)  
-    
+        return vmap(convolve_at_node, (0,0,0))(nodes, D_m_mat, D_p_mat)
+
     # grad_u_mp_normal_to_interface = compute_normal_gradient_solution_mp_on_interface(params['u'])
     # grad_u_mp = compute_gradient_solution_mp(params['u'])
     # return params['u'], grad_u_mp, grad_u_mp_normal_to_interface

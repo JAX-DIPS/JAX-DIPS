@@ -29,7 +29,7 @@ import jax
 import time
 import os
 import sys
-import pdb
+
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
@@ -127,7 +127,7 @@ def test_spinning_sphere():
     sim_state.solution.block_until_ready()
     t2 = time.time()
     print(f"time per timestep is {(t2 - t1)/simulation_steps}")
-    
+
 
     dt_last = tf - (simulation_steps-1) * dt
     sim_state, log, dt = step_func(i32(simulation_steps), (sim_state, log, dt_last))
@@ -136,9 +136,9 @@ def test_spinning_sphere():
 
 
     difference_l2 = jnp.mean(jnp.square(log['U'][-1] - log['U'][0]))
-    
+
     jax.profiler.save_device_memory_profile("memory_advecting_sphere.prof")
-    
+
     print(f"L2 error in 2\pi advected sphere of radius 0.5 is equal to {difference_l2} \t should ideally be \t 0.0")
     assert jnp.isclose(difference_l2, 0.0, atol=1e-4)
     #--- to save snapshots uncomment below line
@@ -148,4 +148,3 @@ def test_spinning_sphere():
 
 if __name__=="__main__":
     test_spinning_sphere()
-    
