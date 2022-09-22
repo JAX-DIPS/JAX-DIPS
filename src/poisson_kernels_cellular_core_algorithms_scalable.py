@@ -661,7 +661,7 @@ class PDETrainer:
 
 
 
-def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3, Nx_tr=32, Ny_tr=32, Nz_tr=32, num_epochs=1000, multi_gpu=False):
+def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3, Nx_tr=32, Ny_tr=32, Nz_tr=32, num_epochs=1000, multi_gpu=False, batch_size=131072):
 
     #--- Defining Optimizer
     learning_rate = 1e-2
@@ -685,9 +685,6 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
 
     """ Training Parameters """
 
-    BATCH_SIZE = min( 32*32*16, Nx_tr*Ny_tr*Nz_tr)
-    # BATCH_SIZE = min( 64*64*32, Nx_tr*Ny_tr*Nz_tr)
-
 
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
     train_points = TD.gstate.R
@@ -709,13 +706,13 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         train_dz = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dz)
         params = jax.tree_map(lambda x: jnp.array([x] * n_devices), params)
         opt_state = jax.tree_map(lambda x: jnp.array([x] * n_devices), opt_state)
-        DD = train_data.DatasetDict(batch_size=n_devices*BATCH_SIZE, x_data=train_points, num_gpus=n_devices)
+        DD = train_data.DatasetDict(batch_size=n_devices*batch_size, x_data=train_points, num_gpus=n_devices)
         batched_training_data = DD.get_batched_data()
         update_fn = pmap(trainer.update_multi_gpu, in_axes=(0, 0, 0, 0, 0, 0), axis_name='num_devices')
 
     else:
         """ Single GPU """
-        DD = train_data.DatasetDict(batch_size=BATCH_SIZE, x_data=train_points)
+        DD = train_data.DatasetDict(batch_size=batch_size, x_data=train_points)
         batched_training_data = DD.get_batched_data()
         update_fn = trainer.update
 

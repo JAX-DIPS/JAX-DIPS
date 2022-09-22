@@ -49,9 +49,10 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 def poisson_solver_with_jump_complex():
     ALGORITHM = 0                          # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
-    Nx_tr = Ny_tr = Nz_tr = 1024
-    multi_gpu = True
+    Nx_tr = Ny_tr = Nz_tr = 64 #1024
+    multi_gpu = False          #True
     num_epochs = 20
+    batch_size = min( 64*64*32, Nx_tr*Ny_tr*Nz_tr)
 
 
     dim = i32(3)
@@ -110,7 +111,7 @@ def poisson_solver_with_jump_complex():
 
     @custom_jit
     def dirichlet_bc_fn(r):
-        return 0.01 / (1e-3 + abs(phi_fn(r)))
+        return 0.2 #0.01 / (1e-3 + abs(phi_fn(r)))
 
 
     @custom_jit
@@ -181,8 +182,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 0.0
-        # return jnp.sin(2*x)*jnp.cos(2*y)*jnp.sin(2*z)
+        return jnp.sin(40*jnp.pi*x)*jnp.cos(40*jnp.pi*y)*jnp.sin(40*jnp.pi*z)
 
     @custom_jit
     def f_p_fn(r):
@@ -203,7 +203,7 @@ def poisson_solver_with_jump_complex():
     t1 = time.time()
 
 
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu, batch_size=batch_size)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
