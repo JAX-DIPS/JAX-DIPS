@@ -1,0 +1,125 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The proposed Neural Bootstrapping Method applied to computing the electrostatic field around a complex charged geometry in a complex dielectric. The neural approach readily enables a $8192^3$ effective resolution on a GPU cluster and captures the physically correct discontinuities. Geometry (left), streamlines (center), cross-section showing jump in solution and/or gradient.\relax }}{1}{figure.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:dragon}{{1}{1}{The proposed Neural Bootstrapping Method applied to computing the electrostatic field around a complex charged geometry in a complex dielectric. The neural approach readily enables a $8192^3$ effective resolution on a GPU cluster and captures the physically correct discontinuities. Geometry (left), streamlines (center), cross-section showing jump in solution and/or gradient.\relax }{figure.caption.2}{}}
+\citation{lee1990neural}
+\citation{gobovic1993design,chua1988cellular,chua1988cellularA}
+\citation{lagaris1998artificial}
+\citation{RAISSI2019686}
+\citation{wang2022and,rahaman2019spectral}
+\citation{SIRIGNANO20181339}
+\citation{yu2018deep}
+\citation{jax2018github}
+\citation{holl2020phiflow}
+\citation{Kochkov2021-ML-CFD}
+\citation{bezgin2022jax}
+\citation{pakravan2021solving,dal2020data,lu2020extracting}
+\citation{berg2017neural}
+\citation{um2020solver}
+\citation{de2018end,holl2020learning}
+\citation{chen1995universal}
+\citation{lu2019deeponet,bhattacharya2020model,li2020neural,li2020fourier}
+\citation{pakravan2021solving}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{section.1}\protected@file@percent }
+\citation{sharp1990calculating,MirzadehPB}
+\citation{mistani2019parallel}
+\citation{MISTANI2018150}
+\citation{theillard2015sharp,bochkov2021sharp}
+\citation{galatsis2010patterning,ouaknin2018level,bochkov2021non}
+\citation{shallue2018measuring}
+\citation{BOCHKOV2020109269}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Problem statement}{3}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Scalable \& Mesh-Freeing Neuro-Symbolic PDE Solver}{3}{section.3}\protected@file@percent }
+\citation{curless1996volumetric}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Neural Bootstrapping Method (NBM). NBM kernels compute residual contribution by each collocation point per GPU thread. Kernel operations involve implicit cells at different resolutions according to the bootstrapped finite discretization method. Geometric information for interface-cell crossings is computed by a level-set interpolant defined on a much lower resolution grid. Pointwise residuals are locally preconditioned based on the geometry of the interface crossing the implicit cells. \relax }}{4}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:nbm}{{2}{4}{Neural Bootstrapping Method (NBM). NBM kernels compute residual contribution by each collocation point per GPU thread. Kernel operations involve implicit cells at different resolutions according to the bootstrapped finite discretization method. Geometric information for interface-cell crossings is computed by a level-set interpolant defined on a much lower resolution grid. Pointwise residuals are locally preconditioned based on the geometry of the interface crossing the implicit cells. \relax }{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Numerical results}{4}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Convergence}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Complex geometry and physics}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces We report $L^\infty $-norm error and root-mean-squared-error (RMSE) of the solution field evaluated in the domain. Rightmost column reports the overall time to solution for our JAX implementation which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. A pair of neural networks, each with 5 hidden layers of 10 neurons wide, have $982$ total trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. \relax }}{5}{table.caption.4}\protected@file@percent }
+\newlabel{tab:convergence}{{1}{5}{We report $L^\infty $-norm error and root-mean-squared-error (RMSE) of the solution field evaluated in the domain. Rightmost column reports the overall time to solution for our JAX implementation which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. A pair of neural networks, each with 5 hidden layers of 10 neurons wide, have $982$ total trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. \relax }{table.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Parallel scaling on network of GPUs}{5}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion and conclusions}{5}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Submission of papers to NeurIPS 2022}{6}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Style}{6}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Retrieval of style files}{6}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Preprint option}{6}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}General formatting instructions}{6}{section.7}\protected@file@percent }
+\newlabel{gen_inst}{{7}{6}{General formatting instructions}{section.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Headings: first level}{7}{section.8}\protected@file@percent }
+\newlabel{headings}{{8}{7}{Headings: first level}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Headings: second level}{7}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {8.1.1}Headings: third level}{7}{subsubsection.8.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Paragraphs}{7}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Citations, figures, tables, references}{7}{section.9}\protected@file@percent }
+\newlabel{others}{{9}{7}{Citations, figures, tables, references}{section.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Citations within the text}{7}{subsection.9.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Sample figure caption.\relax }}{8}{figure.caption.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Footnotes}{8}{subsection.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3}Figures}{8}{subsection.9.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4}Tables}{8}{subsection.9.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10}Final instructions}{8}{section.10}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Sample table title\relax }}{9}{table.caption.8}\protected@file@percent }
+\newlabel{sample-table}{{2}{9}{Sample table title\relax }{table.caption.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {11}Preparing PDF files}{9}{section.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.1}Margins in \LaTeX  {}}{9}{subsection.11.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A}Appendix}{11}{appendix.A}\protected@file@percent }
+\bibstyle{abbrv}
+\bibdata{references}
+\bibcite{berg2017neural}{{1}{}{{}}{{}}}
+\bibcite{bezgin2022jax}{{2}{}{{}}{{}}}
+\bibcite{bhattacharya2020model}{{3}{}{{}}{{}}}
+\bibcite{BOCHKOV2020109269}{{4}{}{{}}{{}}}
+\bibcite{bochkov2021non}{{5}{}{{}}{{}}}
+\bibcite{bochkov2021sharp}{{6}{}{{}}{{}}}
+\bibcite{jax2018github}{{7}{}{{}}{{}}}
+\bibcite{chen1995universal}{{8}{}{{}}{{}}}
+\bibcite{chua1988cellularA}{{9}{}{{}}{{}}}
+\bibcite{chua1988cellular}{{10}{}{{}}{{}}}
+\bibcite{curless1996volumetric}{{11}{}{{}}{{}}}
+\bibcite{dal2020data}{{12}{}{{}}{{}}}
+\bibcite{de2018end}{{13}{}{{}}{{}}}
+\bibcite{galatsis2010patterning}{{14}{}{{}}{{}}}
+\bibcite{gobovic1993design}{{15}{}{{}}{{}}}
+\bibcite{holl2020learning}{{16}{}{{}}{{}}}
+\bibcite{holl2020phiflow}{{17}{}{{}}{{}}}
+\bibcite{Kochkov2021-ML-CFD}{{18}{}{{}}{{}}}
+\bibcite{lagaris1998artificial}{{19}{}{{}}{{}}}
+\bibcite{lee1990neural}{{20}{}{{}}{{}}}
+\@writefile{toc}{\contentsline {section}{References}{12}{appendix.A}\protected@file@percent }
+\bibcite{li2020fourier}{{21}{}{{}}{{}}}
+\bibcite{li2020neural}{{22}{}{{}}{{}}}
+\bibcite{lu2019deeponet}{{23}{}{{}}{{}}}
+\bibcite{lu2020extracting}{{24}{}{{}}{{}}}
+\bibcite{MirzadehPB}{{25}{}{{}}{{}}}
+\bibcite{MISTANI2018150}{{26}{}{{}}{{}}}
+\bibcite{mistani2019parallel}{{27}{}{{}}{{}}}
+\bibcite{ouaknin2018level}{{28}{}{{}}{{}}}
+\bibcite{pakravan2021solving}{{29}{}{{}}{{}}}
+\bibcite{rahaman2019spectral}{{30}{}{{}}{{}}}
+\bibcite{RAISSI2019686}{{31}{}{{}}{{}}}
+\bibcite{shallue2018measuring}{{32}{}{{}}{{}}}
+\bibcite{sharp1990calculating}{{33}{}{{}}{{}}}
+\bibcite{SIRIGNANO20181339}{{34}{}{{}}{{}}}
+\bibcite{theillard2015sharp}{{35}{}{{}}{{}}}
+\bibcite{um2020solver}{{36}{}{{}}{{}}}
+\bibcite{wang2022and}{{37}{}{{}}{{}}}
+\bibcite{yu2018deep}{{38}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
