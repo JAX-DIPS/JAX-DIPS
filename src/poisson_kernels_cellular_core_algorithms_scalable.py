@@ -18,9 +18,9 @@
 
 """
 """ To run on CPUs uncomment the following XLA flag with your choice of num CPUs """
-# import os
-# os.environ["XLA_FLAGS"] = '--xla_force_host_platform_device_count=8' # Use 8 CPU devices
-
+import os
+import pickle
+import signal
 import jax
 from jax import (numpy as jnp, vmap, pmap, jit, grad, random, value_and_grad, config)
 config.update("jax_debug_nans", False)
@@ -41,6 +41,19 @@ from functools import partial
 import time
 
 
+stop_training = False
+
+
+def signalHandler(signal_num, frame):
+    global stop_training
+    stop_training = True
+    print("Signal:", signal_num, " Frame: ", frame)
+    print('Training will stop after the completion of current epoch')
+
+
+signal.signal(signal.SIGINT, signalHandler)
+
+
 class PDETrainer:
     """
         This is a completely local point-based Poisson solver.
@@ -50,22 +63,17 @@ class PDETrainer:
             algorithm = 0: use regression to evaluate u^\pm
             algorithm = 1: use neural network to evaluate u^\pm
         """
-
         self.optimizer = optimizer
         self.gstate = gstate
         self.sim_state_fn = sim_state_fn
         self.sim_state = sim_state
         self.algorithm = algorithm
 
-
         """ Grid Info """
         # self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
         self.xmin = gstate.xmin(); self.xmax = gstate.xmax()
         self.ymin = gstate.ymin(); self.ymax = gstate.ymax()
         self.zmin = gstate.zmin(); self.zmax = gstate.zmax()
-
-
-
 
         """ functions for the method """
         self.dir_bc_fn = self.sim_state_fn.dir_bc_fn
@@ -82,7 +90,6 @@ class PDETrainer:
         self.beta_over_mu_m_interp_fn = lambda r: self.beta_interp_fn(r) / self.mu_m_interp_fn(r)
         self.beta_over_mu_p_interp_fn = lambda r: self.beta_interp_fn(r) / self.mu_p_interp_fn(r)
 
-
         """ The level set function or its interpolant (if is free boundary) """
         # self.phi_cube_ = sim_state.phi.reshape(self.grid_shape)
         # x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, self.phi_cube_)
@@ -90,7 +97,6 @@ class PDETrainer:
         # self.phi_flat = self.phi_cube_.reshape(-1)
         # self.phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(self.sim_state.phi, self.gstate)
         self.phi_interp_fn = self.sim_state_fn.phi_fn
-
 
         """ Geometric operations per point """
         self.get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(self.phi_interp_fn)
@@ -125,10 +131,6 @@ class PDETrainer:
         #                         [0,  1,  1],
         #                         [1,  1,  1]], dtype=i32)
 
-
-
-
-
         """ initialize configurated solver """
         if self.algorithm==0:
             self.u_mp_fn = self.get_u_mp_by_regression_at_point_fn
@@ -145,7 +147,33 @@ class PDETrainer:
         elif precondition==0:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
 
+    def fetch_checkpoint(self, checkpoint_dir):
+        if checkpoint_dir is None or not os.path.exists(checkpoint_dir):
+            return None
+        else:
+            checkpoints = [p for p in os.listdir(
+                checkpoint_dir) if 'checkpoint_' in p]
+            checkpoint = os.path.join(checkpoint_dir,
+                                      max(checkpoints))
+            print(f'Loading checkpoint {checkpoint}')
+            with open(checkpoint, 'rb') as f:
+                state = pickle.load(f)
+            return state
 
+    def save_checkpoint(self, checkpoint_dir, state):
+        if checkpoint_dir is None:
+            print('No checkpoint dir. specified. Skipping checkpoint.')
+            return
+
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+
+        checkpoint = os.path.join(checkpoint_dir,
+                                  'checkpoint_' + str(state['epoch']))
+        print(f'Saving checkpoint {checkpoint}')
+        with open(checkpoint, 'wb') as f:
+            pickle.dump(state, f)
+        return checkpoint
 
     def get_Xijk(self, cell_dx, cell_dy, cell_dz):
         Xijk = jnp.array([  [-cell_dx, -cell_dy, -cell_dz],
@@ -654,15 +682,21 @@ class PDETrainer:
         return grad_u_m, grad_u_p
 
 
-
-
-
-
-
-
-
-def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, switching_interval=3, Nx_tr=32, Ny_tr=32, Nz_tr=32, num_epochs=1000, multi_gpu=False, batch_size=131072):
-
+def poisson_solver(gstate,
+                   eval_gstate,
+                   sim_state,
+                   sim_state_fn,
+                   algorithm=0,
+                   switching_interval=3,
+                   Nx_tr=32,
+                   Ny_tr=32,
+                   Nz_tr=32,
+                   num_epochs=1000,
+                   multi_gpu=False,
+                   batch_size=131072,
+                   checkpoint_dir="./checkpoints",
+                   checkpoint_interval=2):
+    global stop_training
     #--- Defining Optimizer
     learning_rate = 1e-2
     decay_rate_ = 0.975
@@ -681,10 +715,7 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     #--------
     # optimizer = optax.rmsprop(learning_rate)
     #---------------------
-
-
     """ Training Parameters """
-
 
     TD = train_data.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
     train_points = TD.gstate.R
@@ -693,7 +724,17 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
     train_dz = TD.gstate.dz
 
     trainer = PDETrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
-    opt_state, params = trainer.init(); print_architecture(params)
+    state = trainer.fetch_checkpoint(checkpoint_dir)
+    epoch_start = 0
+    if state is None:
+        opt_state, params = trainer.init(); print_architecture(params)
+    else:
+        opt_state = state['opt_state']
+        params = state['params']
+        epoch_start = state['epoch']
+        batch_size = state['batch_size']
+        resolution = state['resolution']
+        print(f'Resuming training from epoch {epoch_start} with batch_size {batch_size}, resolution {resolution}.')
 
     loss_epochs = []
     epoch_store = []
@@ -709,7 +750,6 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         DD = train_data.DatasetDict(batch_size=n_devices*batch_size, x_data=train_points, num_gpus=n_devices)
         batched_training_data = DD.get_batched_data()
         update_fn = pmap(trainer.update_multi_gpu, in_axes=(0, 0, 0, 0, 0, 0), axis_name='num_devices')
-
     else:
         """ Single GPU """
         DD = train_data.DatasetDict(batch_size=batch_size, x_data=train_points)
@@ -717,7 +757,6 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         update_fn = trainer.update
 
     num_batches = batched_training_data.shape[1]
-
     start_time = time.time()
 
     def learn_one_batch(carry, data_batch):
@@ -726,7 +765,10 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
         loss_epoch += loss_epoch_
         return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
 
-    for epoch in range(num_epochs):
+    for epoch in range(epoch_start, num_epochs):
+        if stop_training:
+            break
+
         if multi_gpu:
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0 )
             for i in range(num_batches):
@@ -738,16 +780,22 @@ def poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm=0, sw
             (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
 
         loss_epoch /= num_batches
-        print(f"epoch # {epoch} loss is {jnp.mean(loss_epoch)}")  # mean is to support multi-gpu as well.
+        print(f"Epoch # {epoch} loss is {jnp.mean(loss_epoch)}. Exit training: {stop_training}")  # mean is to support multi-gpu as well.
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
 
+        if (epoch + 1) % checkpoint_interval == 0:
+            state = {
+                'opt_state': opt_state,
+                'params': params,
+                'epoch': epoch + 1,
+                'batch_size': BATCH_SIZE,
+                'resolution': f'{Nx_tr}, {Ny_tr}, {Nz_tr}'
+            }
+            trainer.save_checkpoint(checkpoint_dir, state)
+
     if multi_gpu:
         params = jax.device_get(jax.tree_map(lambda x: x[0], params))
-
-
-
-
 
     #for epoch in range(num_epochs):
         # #train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
