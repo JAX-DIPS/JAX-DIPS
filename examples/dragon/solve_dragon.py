@@ -47,13 +47,26 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 
 
 def poisson_solver_with_jump_complex():
+    gpu_cnt = jax.local_device_count()
+
+    if gpu_cnt == 0:
+        print('No GPUs found.')
+        exit(1)
+    elif gpu_cnt == 1:
+        multi_gpu = False
+    else:
+        multi_gpu = True
+
     ALGORITHM = 0                          # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
-    Nx_tr = Ny_tr = Nz_tr = 64 #1024
-    multi_gpu = False          #True
+    Nx_tr = Ny_tr = Nz_tr = 64
     num_epochs = 20
     batch_size = min( 64*64*32, Nx_tr*Ny_tr*Nz_tr)
+    # batch_size = min( 32*32*16, Nx_tr*Ny_tr*Nz_tr)
 
+    checkpoint_dir = f'./checkpoints_{Nx_tr}_{gpu_cnt}'
+
+    print(f"Starting dragon example with resolution {Nx_tr} # of GPU(s) {gpu_cnt} and batchSize {batch_size}")
 
     dim = i32(3)
     init_mesh_fn, coord_at = mesh.construct(dim)
@@ -94,8 +107,8 @@ def poisson_solver_with_jump_complex():
 
     """ Scaling the system up, rewrite gstate """
     scalefac = 10.0
-    xmin = scalefac * xmin - 2.0; xmax = scalefac * xmax - 2.0 ; 
-    ymin = scalefac * ymin - 2.0; ymax = scalefac * ymax - 2.0; 
+    xmin = scalefac * xmin - 2.0; xmax = scalefac * xmax - 2.0;
+    ymin = scalefac * ymin - 2.0; ymax = scalefac * ymax - 2.0;
     zmin = scalefac * zmin - 2.0; zmax = scalefac * zmax - 2.0
     dragon = jnp.array(dragon_phi) * scalefac
 
@@ -104,7 +117,7 @@ def poisson_solver_with_jump_complex():
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
-    
+
     """ Create interpolant on gstate """
     phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(dragon, gstate)
 
@@ -216,7 +229,16 @@ def poisson_solver_with_jump_complex():
     t1 = time.time()
 
 
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu, batch_size=batch_size)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate,
+                                                   eval_gstate,
+                                                   sim_state,
+                                                   algorithm=ALGORITHM,
+                                                   switching_interval=SWITCHING_INTERVAL,
+                                                   Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr,
+                                                   num_epochs=num_epochs,
+                                                   multi_gpu=multi_gpu,
+                                                   batch_size=batch_size,
+                                                   checkpoint_dir=checkpoint_dir)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
@@ -227,7 +249,7 @@ def poisson_solver_with_jump_complex():
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     log = {'phi': eval_phi.reshape((Nx_eval,Ny_eval,Nz_eval)), 'U': sim_state.solution.reshape((Nx_eval,Ny_eval,Nz_eval))}
-    io.write_vtk_manual(eval_gstate, log, filename=currDir + f'/results/dragon_final{Nx_tr}')
+    io.write_vtk_manual(eval_gstate, log, filename=currDir + f'/results/dragon_final{Nx_tr}_{gpu_cnt}')
 
 
 if __name__ == "__main__":
