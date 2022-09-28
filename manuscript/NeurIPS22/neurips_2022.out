@@ -1,25 +1,8 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}% 1
 \BOOKMARK [1][-]{section.2}{Problem statement}{}% 2
-\BOOKMARK [1][-]{section.3}{Scalable \046 Mesh-Freeing Neuro-Symbolic PDE Solver}{}% 3
+\BOOKMARK [1][-]{section.3}{Scalable and Mesh-Freeing Neuro-Symbolic Differential Solver}{}% 3
 \BOOKMARK [1][-]{section.4}{Numerical results}{}% 4
-\BOOKMARK [2][-]{subsection.4.1}{Convergence}{section.4}% 5
-\BOOKMARK [2][-]{subsection.4.2}{Complex geometry and physics}{section.4}% 6
-\BOOKMARK [2][-]{subsection.4.3}{Parallel scaling on network of GPUs}{section.4}% 7
-\BOOKMARK [1][-]{section.5}{Discussion and conclusions}{}% 8
-\BOOKMARK [1][-]{section.6}{Submission of papers to NeurIPS 2022}{}% 9
-\BOOKMARK [2][-]{subsection.6.1}{Style}{section.6}% 10
-\BOOKMARK [2][-]{subsection.6.2}{Retrieval of style files}{section.6}% 11
-\BOOKMARK [1][-]{section.7}{General formatting instructions}{}% 12
-\BOOKMARK [1][-]{section.8}{Headings: first level}{}% 13
-\BOOKMARK [2][-]{subsection.8.1}{Headings: second level}{section.8}% 14
-\BOOKMARK [3][-]{subsubsection.8.1.1}{Headings: third level}{subsection.8.1}% 15
-\BOOKMARK [1][-]{section.9}{Citations, figures, tables, references}{}% 16
-\BOOKMARK [2][-]{subsection.9.1}{Citations within the text}{section.9}% 17
-\BOOKMARK [2][-]{subsection.9.2}{Footnotes}{section.9}% 18
-\BOOKMARK [2][-]{subsection.9.3}{Figures}{section.9}% 19
-\BOOKMARK [2][-]{subsection.9.4}{Tables}{section.9}% 20
-\BOOKMARK [1][-]{section.10}{Final instructions}{}% 21
-\BOOKMARK [1][-]{section.11}{Preparing PDF files}{}% 22
-\BOOKMARK [2][-]{subsection.11.1}{Margins in LaTeX}{section.11}% 23
-\BOOKMARK [1][-]{appendix.A}{Appendix}{}% 24
-\BOOKMARK [1][-]{appendix.A}{References}{}% 25
+\BOOKMARK [2][-]{subsection.4.1}{Convergence and accuracy}{section.4}% 5
+\BOOKMARK [2][-]{subsection.4.2}{Time complexity and parallel scaling on GPU clusters}{section.4}% 6
+\BOOKMARK [1][-]{section.5}{Conclusion}{}% 7
+\BOOKMARK [1][-]{section*.6}{References}{}% 8

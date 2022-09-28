@@ -98,6 +98,11 @@ P.~Holl, V.~Koltun, K.~Um, and N.~Thuerey.
   physical simulations.
 \newblock In {\em NeurIPS Workshop}, volume~2, 2020.
 
+\bibitem{kingma2014adam}
+D.~P. Kingma and J.~Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock {\em arXiv preprint arXiv:1412.6980}, 2014.
+
 \bibitem{Kochkov2021-ML-CFD}
 D.~Kochkov, J.~A. Smith, A.~Alieva, Q.~Wang, M.~P. Brenner, and S.~Hoyer.
 \newblock Machine learning{\textendash}accelerated computational fluid
@@ -159,6 +164,17 @@ P.~Mistani, A.~Guittet, C.~Poignard, and F.~Gibou.
 \newblock A parallel voronoi-based approach for mesoscale simulations of cell
   aggregate electropermeabilization.
 \newblock {\em Journal of Computational Physics}, 380:48--64, 2019.
+
+\bibitem{tiny-cuda-nn}
+T.~M\"uller.
+\newblock Tiny {CUDA} neural network framework, 2021.
+\newblock https://github.com/nvlabs/tiny-cuda-nn.
+
+\bibitem{osher1988fronts}
+S.~Osher and J.~A. Sethian.
+\newblock Fronts propagating with curvature-dependent speed: Algorithms based
+  on hamilton-jacobi formulations.
+\newblock {\em Journal of computational physics}, 79(1):12--49, 1988.
 
 \bibitem{ouaknin2018level}
 G.~Y. Ouaknin, N.~Laachi, K.~Delaney, G.~H. Fredrickson, and F.~Gibou.
