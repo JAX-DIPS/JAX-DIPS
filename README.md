@@ -3,7 +3,7 @@ JAX implementation of a differentiable inverse PDE solver with jump conditions o
 
 Advection of the level-set function by a semi-Lagrangian scheme with Sussman reinitialization on a uniform mesh with `128*128*128` grid points is demonstrated below. Note the minimal mass-loss in the level-set function after a full rotation.
 
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/streamline_dragon.png)
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/dragon.pdf)
 
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/animated_spinning.gif)
 
