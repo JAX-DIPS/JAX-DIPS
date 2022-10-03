@@ -151,10 +151,9 @@ class PDETrainer:
         if checkpoint_dir is None or not os.path.exists(checkpoint_dir):
             return None
         else:
-            checkpoints = [p for p in os.listdir(
-                checkpoint_dir) if 'checkpoint_' in p]
-            checkpoint = os.path.join(checkpoint_dir,
-                                      max(checkpoints))
+            checkpoints = [p for p in os.listdir(checkpoint_dir) if 'checkpoint_' in p]
+            if checkpoints==[]: return None
+            checkpoint = os.path.join(checkpoint_dir, max(checkpoints))
             print(f'Loading checkpoint {checkpoint}')
             with open(checkpoint, 'rb') as f:
                 state = pickle.load(f)
@@ -789,7 +788,7 @@ def poisson_solver(gstate,
                 'opt_state': opt_state,
                 'params': params,
                 'epoch': epoch + 1,
-                'batch_size': BATCH_SIZE,
+                'batch_size': batch_size,
                 'resolution': f'{Nx_tr}, {Ny_tr}, {Nz_tr}'
             }
             trainer.save_checkpoint(checkpoint_dir, state)
