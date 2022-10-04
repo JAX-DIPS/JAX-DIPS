@@ -151,10 +151,9 @@ class PDETrainer:
         if checkpoint_dir is None or not os.path.exists(checkpoint_dir):
             return None
         else:
-            checkpoints = [p for p in os.listdir(
-                checkpoint_dir) if 'checkpoint_' in p]
-            checkpoint = os.path.join(checkpoint_dir,
-                                      max(checkpoints))
+            checkpoints = [p for p in os.listdir(checkpoint_dir) if 'checkpoint_' in p]
+            if checkpoints==[]: return None
+            checkpoint = os.path.join(checkpoint_dir, max(checkpoints))
             print(f'Loading checkpoint {checkpoint}')
             with open(checkpoint, 'rb') as f:
                 state = pickle.load(f)
@@ -765,18 +764,21 @@ def poisson_solver(gstate,
         loss_epoch += loss_epoch_
         return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
 
+    key = random.PRNGKey(758493)
     for epoch in range(epoch_start, num_epochs):
         if stop_training:
             break
 
         if multi_gpu:
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0 )
+            batched_training_data = random.shuffle(key, batched_training_data, axis=2)
             for i in range(num_batches):
                 opt_state, params, loss_epoch_ = update_fn(opt_state, params, batched_training_data[:,i,...], train_dx, train_dy, train_dz)
                 loss_epoch += loss_epoch_
         else:
             loss_epoch = 0.0
             train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+            batched_training_data = random.shuffle(key, batched_training_data, axis=1)
             (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
 
         loss_epoch /= num_batches
@@ -789,7 +791,7 @@ def poisson_solver(gstate,
                 'opt_state': opt_state,
                 'params': params,
                 'epoch': epoch + 1,
-                'batch_size': BATCH_SIZE,
+                'batch_size': batch_size,
                 'resolution': f'{Nx_tr}, {Ny_tr}, {Nz_tr}'
             }
             trainer.save_checkpoint(checkpoint_dir, state)
