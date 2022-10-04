@@ -227,3 +227,4 @@ class TrainData:
                 train_dz *= 0.50
 
             return train_dx, train_dy, train_dz
+        

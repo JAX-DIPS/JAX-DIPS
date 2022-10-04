@@ -764,6 +764,7 @@ def poisson_solver(gstate,
         loss_epoch += loss_epoch_
         return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
 
+    key = random.PRNGKey(758493)
     for epoch in range(epoch_start, num_epochs):
         if stop_training:
             break
@@ -776,6 +777,7 @@ def poisson_solver(gstate,
         else:
             loss_epoch = 0.0
             train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+            batched_training_data = random.shuffle(key, batched_training_data, axis=1)
             (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
 
         loss_epoch /= num_batches
