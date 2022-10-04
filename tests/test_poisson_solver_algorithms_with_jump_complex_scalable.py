@@ -51,7 +51,7 @@ def test_poisson_solver_with_jump_complex():
     Nx_tr = Ny_tr = Nz_tr = 64
     checkpoint_dir="./checkpoints"
     checkpoint_interval = 1000
-    multi_gpu = False
+    multi_gpu = True
     num_epochs = 10000
     batch_size = min( 64*64*32, Nx_tr*Ny_tr*Nz_tr)
 

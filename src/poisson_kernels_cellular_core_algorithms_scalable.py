@@ -771,6 +771,7 @@ def poisson_solver(gstate,
 
         if multi_gpu:
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0 )
+            batched_training_data = random.shuffle(key, batched_training_data, axis=2)
             for i in range(num_batches):
                 opt_state, params, loss_epoch_ = update_fn(opt_state, params, batched_training_data[:,i,...], train_dx, train_dy, train_dz)
                 loss_epoch += loss_epoch_
