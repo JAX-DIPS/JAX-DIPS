@@ -22,10 +22,10 @@
 \BOOKMARK [3][-]{subsubsection.3.7.3}{Domain switching optimization scheme}{subsection.3.7}% 22
 \BOOKMARK [3][-]{subsubsection.3.7.4}{Multi-GPU parallelization with model parallel training}{subsection.3.7}% 23
 \BOOKMARK [1][-]{section.4}{Numerical Results}{}% 24
-\BOOKMARK [2][-]{subsection.4.1}{Case I. Sphere: basic benchmark}{section.4}% 25
+\BOOKMARK [2][-]{subsection.4.1}{Case I. Sphere: Single-resolution solver in one batch}{section.4}% 25
 \BOOKMARK [2][-]{subsection.4.2}{Case II. Star: complex geometry}{section.4}% 26
 \BOOKMARK [2][-]{subsection.4.3}{Case III. Starbox: multi-GPU, complex geometry}{section.4}% 27
 \BOOKMARK [2][-]{subsection.4.4}{Case IV. A Charged Dragon}{section.4}% 28
 \BOOKMARK [1][-]{section.5}{Conclusion}{}% 29
-\BOOKMARK [1][-]{section*.17}{References}{}% 30
+\BOOKMARK [1][-]{section*.18}{References}{}% 30
 \BOOKMARK [1][-]{appendix.A}{Solving interface problems with physics-informed neural networks}{}% 31

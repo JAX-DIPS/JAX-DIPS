@@ -24,7 +24,7 @@
 \usepackage[normalem]{ulem}
 
 \usepackage[normalem]{ulem}
-
+\usepackage{booktabs}
 
 
 
@@ -943,36 +943,31 @@ We found this problem can be drastically improved by interleaving region-specifi
 \subsubsection{Multi-GPU parallelization with model parallel training}
 The NBM is embarrasingly parallel and residual evaluation at each point is independent from other points. Therefore, multi-GPU parallelization does not involve inter-GPU communication for evaluating the residuals per point. We partition the training points and distribute them along with copies of neural network parameters among multiple GPUs to compute gradient updates per batch. Then we aggregate these updates by averaging the values on different GPUs. The updates are then broadcasted and model parameters are updated on each device.
 
-The ability to batch over grid points is one of the key enabling factors for reaching higher resolutions and higher dimensions. With NBM it is straightforward to scale finite discretization methods on GPU clusters.
+The ability to batch over grid points is one of the key enabling factors for reaching higher resolutions and higher dimensions. With NBM it is straightforward to scale finite discretization methods on GPU clusters. It is extremely important to randomly shuffle and redistribute the points among the batches at the beginning of each epoch, we found without shuffling the accuracy deteriorates and increasing resolution does not yield better solutions; see figure \ref{fig:batcheffect}.
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\linewidth]{./figures/poisson_solver_loss_multires_64.png}
+	\includegraphics[width=0.45\linewidth]{./figures/poisson_solver_loss_multires_64_shuffled.png}
+	\caption{Effect of shuffling on the star example of \ref{subsec:star}; (left) without shuffling and (right) with shuffling. Shuffling has to be applied on the batches when training on batched data points.}
+	\label{fig:batcheffect}
+\end{figure}
 
 
 \section{Numerical Results} \label{sec:examples}
 
-We consider solution to example problems of the form
+We consider several examples for solution to elliptic problems of the form with
 \begin{align*}
 	 & k^{\pm}u^{\pm} - \nabla \cdot (\mu^{\pm}\nabla u^\pm)=f^{\pm}, & \mathbf{x}\in\Omega^\pm \\
 	 & [u]=\alpha,                                                    & \mathbf{x} \in \Gamma   \\
 	 & [\mu \partial_{\mathbf{n}}u]=\beta,                            & \mathbf{x} \in \Gamma
 \end{align*}
 
-with increasing level of difficulty.
 
 
-%
-%\subsection{No interface, $\Gamma=\emptyset $}
-%We set the level-set function to $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} + 0.5$ within a domain $\Omega:[-1,1]^3$ characterizing absence of all jump conditions. Using the method of manufactured solutions, we construct the following Poisson problem for an exact solution $u(\mathbf{x}) = \sin(y)\cos(x)$ with appropriate Dirichlet boundary conditions:
-%\begin{align*}
-%	 - \Delta u &=2\sin(y)\cos(x), & \mathbf{x}\in\Omega\\
-%	 u(\mathbf{x}) &= \sin(y)\cos(x), &\mathbf{x}\in \partial \Omega
-%\end{align*}
-%with \texttt{Adam} optimizer starting from an initial condition $\hat{u}(\mathbf{x};t=0)=y$ which does not satisfy the system of equations.
-
-
-
-%\subsection{Interface, $\Gamma\neq \emptyset$}
-\subsection{Case I. Sphere: basic benchmark}
-%We consider the example 4.6 of the Voronoi-Interface Method (VIM) of Guittet et al 2015 \cite{guittet2015solving} where a sphere $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} - 0.5$ is centered in a box $\Omega:[-1,1]^3$ with the exact solution
-As the simplest case, we consider a sphere $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} - 0.5$ centered in a box $\Omega:[-1,1]^3$ with the exact solution
+\subsection{Case I. Sphere: Single-resolution solver in one batch}
+We use a single uniform grid and train on all the points in a single batch. We consider a sphere $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} - 0.5$ centered in a box $\Omega:[-1,1]^3$ with the exact solution
 \begin{align*}
 & u^-(x,y,z)=e^{z}, & \phi(\mathbf{x})<0\\
 & u^+(x,y,z)=\cos(x)\sin(y), & \phi(\mathbf{x})\ge 0
@@ -988,63 +983,31 @@ that imply variable source terms
 &f^+(x,y,z)=2\cos(x)\sin(y)e^{-z} &\phi(\mathbf{x})\ge 0
 \end{align*}
 
-Table 8 of \cite{guittet2015solving} reports convergence results for the solution and its gradient over the surface of the sphere in the $L^\infty$-norm, here we report similar results for comparison with VIM. Order of convergence, denoted by $p$, is computed by doubling the number of grid points in every dimension and measuring the $L^\infty$ error of solution and its gradient over all the grid points in the domain:
+The network has 5 hidden layers with 10 neurons in each layer using sine activation functions. Table \ref{tab:convergence_sphere} reports convergence results for the solution in the $L^\infty$-norm and root-mean-squared-error of the solution. Order of convergence, denoted by $p$, is computed by doubling the number of grid points in every dimension and measuring the $L^\infty$ error of solution and its gradient over all the grid points in the domain:
 \begin{align*}
 &\frac{\textrm{err}(2h)}{\textrm{err}(h)}=2^p \rightarrow p = \log_2\bigg(\frac{\textrm{err}(2h)}{\textrm{err}(h)}\bigg)  & h=\min(h_x,h_y,h_z)
 \end{align*}
 
 
-%\begin{table}[ht]
-%\begin{center}
-%\begin{tabular}{|l||ll|ll|ll|ll|c|}
-%\hline
-%& \multicolumn{2}{c|}{VIM}& \multicolumn{2}{c|}{JAX-DIPS} & \multicolumn{2}{|c|}{VIM}& \multicolumn{3}{c|}{JAX-DIPS}\\
-%\hline
-%$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order &   Gradient    &   Order   &   Gradient   &   Order & t (sec/epoch) \\
-%\hline
-%$2^3$ & $3.61\times 10^{-3}$ & -         & $9.49\times 10^{-1}$ & -      & $1.13\times 10^{-2}$ & -      & $2.38$               & -      & 180\\ 
-%$2^4$ & $1.21\times 10^{-3}$ & $1.58$    & $1.56\times 10^{-1}$ & $2.60$ & $7.69\times 10^{-3}$ & $0.56$ & $4.80\times 10^{-1}$ & $2.31$ & 274\\ 
-%$2^5$ & $3.04\times 10^{-4}$ & $1.99$    & - & - & $3.83\times 10^{-3}$ & $1.01$ & - & - &  \\ 
-%$2^6$ & $7.74\times 10^{-5}$ & $1.98$    & $8.86\times 10^{-2}$ & - & $2.43\times 10^{-3}$ & $0.66$ & $5.73\times 10^{-1}$ & -& 1.45\\ 
-%$2^7$ & $1.97\times 10^{-5}$ & $1.98$    & - & - & $1.24\times 10^{-3}$ & $0.98$ & - & -&\\ \hline
-%\end{tabular}
-%\caption{Convergence on the solution and its gradient. VIM values are the $L^\infty$-norm over the surface of the sphere. We report $L^\infty$-norm of solution and its gradient evaluated everywhere in the domain (more conservative). Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case.}
-%\end{center}
-%\end{table}
 \begin{table}[ht]
 \begin{center}
-\begin{tabular}{|l||ll|ll|c|c|}
-\hline
-regress $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$} & \multicolumn{2}{c|}{GPU Statistics} \\
-\hline
+\caption{Convergence and overall time to solution for our JAX implementation, with $10,000$ epochs in each case, and initial compilation time. Measurements are on a single NVIDIA A6000 GPU. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.} \label{tab:convergence_sphere}
+
+\begin{tabular}{ccccccc}
+\toprule
+ & \multicolumn{2}{c}{RMSE}& \multicolumn{2}{c}{$L^\infty$} & \multicolumn{2}{c}{GPU Statistics} \\
+\cmidrule(r){2-3}\cmidrule(r){4-5}\cmidrule(r){6-7}
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
-\hline 
+\midrule
 $2^3$ & $3.7\times 10^{-2}$ &  -        & $3.25\times 10^{-1}$  &   -     & $0.0306$ & $1.05$ \\
-$2^4$ & $7.1\times 10^{-3}$ &  $2.38$   & $1.1\times 10^{-1}$   & $1.56$  & $0.056$  & $1.72$ \\ 
+$2^4$ & $7.1\times 10^{-3}$ &  $2.38$   & $1.10\times 10^{-1}$   & $1.56$  & $0.056$  & $1.72$ \\ 
 $2^5$ & $5.9\times 10^{-3}$ &  $0.27$   & $8.36 \times 10^{-2}$ & $0.4$   & $0.053$  & $2.15$ \\ 
 $2^6$ & $4.1\times 10^{-3}$ &  $0.53$   & $6.44\times 10^{-2}$  & $0.38$  & $0.287$  & $5.57$ \\ 
-$2^7$ & $2.64\times 10^{-3}$&  $0.64$   & $3.53\times 10^{-2}$  & $0.87$  & $2.125$ & $32.1$ \\ \hline
+$2^7$ & $2.64\times 10^{-3}$&  $0.64$   & $3.53\times 10^{-2}$  & $0.87$  & $2.125$ & $32.1$ \\ \bottomrule
 \end{tabular}
-\begin{tabular}{|l||ll|ll|c|c|}
-\hline
-neural $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$} & \multicolumn{2}{c|}{GPU Statistics} \\
-\hline
-$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
-\hline 
-$2^3$ & $ $ &  -     & $ $  &   -   & $ $ & $ $ \\
-$2^4$ & $ $ &  $ $   & $ $  & $ $   & $ $ & $ $ \\ 
-$2^5$ & $ $ &  $ $   & $ $  & $ $   & $ $ & $ $ \\ 
-$2^6$ & $ $ &  $ $   & $ $  & $ $   & $ $ & $ $ \\ 
-$2^7$ & $ $ &  $ $   & $ $  & $ $   & $ $ & $ $ \\ \hline
-\end{tabular}
-\caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural method has 2 hidden layers with 10 neurons each, overall 322 trainable parameteres. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.}
 \end{center}
 \end{table}
 
-
-
-
-After $\rm 10,000$ epochs on a grid of $16\times 16 \times 16$ the $\rm L^\infty$-norm error of the solution is $1.1\times 10^{-1}$, corresponding to a $10\%$ relative error in the solution.
 
 
 \begin{figure}
@@ -1172,11 +1135,11 @@ $2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
 	\hline
 	$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 	\hline 
-	$2^3$ & $ 1.32\times 10^{-1}$ &   -    & $ 2.50 $                &   -   & $ 0.0225 $  & $ 1.27 $ \\
-	$2^4$ & $ 5.91\times 10^{-2}$ &  $ $   & $ 6.79\times 10^{-1} $  & $ $   & $ 0.0411 $  & $ 1.27 $ \\ 
-	$2^5$ & $ 2.51\times 10^{-2}$ &  $ $   & $ 3.06\times 10^{-1}$   & $ $   & $ 0.1814 $  & $ 8.3  $ \\ 
-	$2^6$ & $ 2.70\times 10^{-2}$ &  $ $   & $ 2.81\times 10^{-1} $   & $ $   & $ 1.889 $  & $ 30.13 $ \\ 
-	$2^7$ & $ 8.93\times 10^{-2}$ &  $ $   & $ 4.00\times 10^{-1} $   & $ $   & $ 14.022 $  & $ 32 $ \\ \hline
+	$2^3$ & $ 1.05\times 10^{-1}$ &   -    & $ 1.29 $                &   -   & $ 0.0225 $  & $ 1.27 $ \\
+	$2^4$ & $ 5.52\times 10^{-2}$ &  $ $   & $ 6.22\times 10^{-1} $  & $ $   & $ 0.0411 $  & $ 1.27 $ \\ 
+	$2^5$ & $ 2.44\times 10^{-2}$ &  $ $   & $ 2.66\times 10^{-1}$   & $ $   & $ 0.1814 $  & $ 8.3  $ \\ 
+	$2^6$ & $ 2.33\times 10^{-2}$ &  $ $   & $ 2.24\times 10^{-1} $   & $ $   & $ 1.889 $  & $ 29.6 $ \\ 
+	$2^7$ & $ 8.93\times 10^{-2}$ &  $ $   & $ 4.00\times 10^{-1} $   & $ $   & $ 9.649 $  & $ 29.7 $ \\ \hline
 	\end{tabular}
 	\caption{Convergence test for the scalable pointwise multi-resolution regression-based solver. 
 	Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. 
