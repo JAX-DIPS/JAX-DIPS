@@ -1,0 +1,246 @@
+\documentclass{elsarticle}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage{wrapfig}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage[tmargin=1in,bmargin=1in]{geometry}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{latexsym}
+\usepackage{pdfsync}
+\usepackage[boxed]{algorithm}
+\usepackage{algorithm}
+%\usepackage{algpseudocode}
+\usepackage{multirow}
+\usepackage{rotating}
+\usepackage{color}
+\usepackage{url}
+%\usepackage{subfigure}
+\usepackage{xcolor,colortbl}
+\usepackage{bigstrut}
+\usepackage{bigints}
+\usepackage[normalem]{ulem}
+
+\usepackage[normalem]{ulem}
+\usepackage{booktabs}
+
+
+
+\hypersetup{
+    colorlinks=true,              % false: boxed links; true: colored links
+    linkcolor=blue,               % color of internal links
+    citecolor=blue,               % color of links to bibliography
+    filecolor=black,              % color of file links
+    urlcolor=red,               % color of external links
+    bookmarks=false,
+    pdffitwindow=true,
+    pdfpagelayout=SinglePage
+}
+
+\captionsetup[figure]{font=small,labelfont=normal}
+
+\definecolor{mypink}{cmyk}{0, 0.7808, 0.4429, 0.1412}
+
+\definecolor{mybrown}{cmyk}{0, 0.60, 0.95, 0.63}
+\definecolor{darkgreen}{cmyk}{0.98, 0, 0.36, 0.22}
+
+
+\newcommand{\comment}[1]{\textcolor{red}{[#1]$_{\rm Frederic}$}}
+\newcommand{\pouriacomment}[1]{\textcolor{darkgreen}{[#1]$_{\rm Pouria}$}}
+
+\newcommand{\etal}{\textit{et al.\ }}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\mbf}[1]{\mathbf{#1}}
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+\newcommand{\tensor}[1]{\underline{\underline{\boldsymbol{#1}}}}
+\newcommand{\mat}[1]{\underline{\underline{\boldsymbol{#1}}}}
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+\newcommand{\ben}{\begin{equation*}}
+\newcommand{\een}{\end{equation*}}
+\newcommand{\bea}{\begin{eqnarray}}
+\newcommand{\eea}{\end{eqnarray}}
+\newcommand{\bean}{\begin{eqnarray*}}
+\newcommand{\eean}{\end{eqnarray*}}
+
+\newcommand{\fphi}[2]{\frac{\phi_#1}{\phi_#1-\phi_#2}}
+\newcommand{\lif}[2]{\frac{f_#1\phi_#2-f_#2\phi_#1}{\phi_#2-\phi_#1}}
+\newcommand{\dx}{{\Delta x}}
+\newcommand{\dy}{{\Delta y}}
+\newcommand{\dz}{{\Delta z}}
+\newcommand{\dt}{{\Delta t}}
+\newcommand{\hf}{{\frac12}}
+\newcommand{\U}{\vect{U}}
+\newcommand{\n}{\vect{n}}
+
+
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+
+
+
+\begin{document}
+%\title{JAX-DIPS: Differentiable Interfacial PDE Solver}
+%\title{Differentiable framework for learning surrogate neural network models for solving elliptic problems with discontinuities across irregular interfaces}
+%\title{Differentiable residual minimization method for learning surrogate models for elliptic problems with irregular discontinuities}
+
+%\title{JAX-DIPS: Neuro-symbolic bootstrapping method for solving elliptic problems with discontinuities across irregular interfaces}
+\title{JAX-DIPS: Neural bootstrapping of finite discretization methods and application to elliptic problems with discontinuities}
+
+
+\cortext[cor]{Corresponding author: pmistani@nvidia.com}
+
+
+\author[1]{Pouria A. Mistani\thanks{corresponding author} $^{\dagger,}$}
+\author[2]{Samira Pakravan$^{\dagger,}$}
+\author[2]{Frederic Gibou}
+
+\address[1]{NVIDIA Corporation, Santa Clara, CA 95051, USA}
+\address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
+
+\begin{abstract}
+	...
+
+\end{abstract}
+
+\begin{keyword}
+	level-set method \sep free boundary problems \sep surrogate models \sep jump conditions \sep differentiable programming \sep neural networks
+\end{keyword}
+
+\maketitle
+\def\thefootnote{$\dagger$}\footnotetext{These authors contributed equally to this work}
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\section{Level-set method}
+The level-set method for solving free boundary problems was introduced by Osher \& Sethian (1988) \cite{osher1988fronts}. The free boundary is described as the zero contour of a signed-distance function, $\phi$, whose evolution is given by the advection equation according to some velocity field dictated by the physics of the problem, $\mathbf{v}$, that is defined over the moving boundary
+\begin{align}
+	\frac{\partial \phi}{\partial t} + \mathbf{v}\cdot \nabla \phi = 0
+\end{align}
+
+This \textit{implicit} representation of the moving boundaries resolves the need for the challenging task of adapting the underlying grid to the yet-unknown discontinuities in the solution field. The computational simplicity of using Cartesian grids for solving free boundary problems with irregular geometries, as well as the ability to simulate freely moving discontinuities in a \textit{sharp}-manner, that is required by the physics of these problems, are the two main offerings of the level-set method for this class of PDE problems.
+
+The signed-distance property of the level-set function, \textit{i.e.} $\vert \nabla \phi\vert =1 $, deteriorates with timestepping the discretized advection equation. This is resolved by solving the Sussman reinitialization equation \cite{SUSSMAN1994146} in fictitious time ($\tau$) every few iterations of the physical time ($t$),
+\begin{align}
+	\frac{\partial \phi}{\partial \tau} + sgn(\phi_0) (\vert \nabla \phi \vert - 1) = 0 \label{eq::sussman}
+\end{align}
+
+Note the asymptotic solution of the Sussman equation is the signed-distance property of the level-set function. Here $sgn(\phi_0)$ is the sign function evaluated on the level-set function before reinitialization in order to preserve the sign of grid points during the fictitous updates.
+
+Besides implicit representation of the free boundaries, the level-set function can be used to compute normal vectors to the interface 
+\begin{align*}
+	\mathbf{n} = \nabla\phi / \vert \nabla \phi \vert 
+\end{align*}
+as well as the curvature of the interface
+\begin{align*}
+	\kappa = \nabla \cdot \mathbf{n}
+\end{align*}
+
+
+
+Below we describe numerical methods implementd in \texttt{JAX-DIPS} to solve the level-set equations.
+
+\subsection{Second order accurate semi-Lagrangian advection scheme}
+Semi-Lagrangian methods are unconditionally stable for solving advection equations, therefore avoiding the restrictive CFL condition on the timestep size from time $t^n$ to $t^{n+1}$. The general procedure to solve for $\phi^{n+1}(\mathbf{x}^{n+1})$ is to first evaluate for each grid point, $\mathbf{x}^{n+1}$, the departure point, $\mathbf{x}_d$, in the upwind direction along the characteristic curve; then use interpolation methods to recover value of the solution field at the departure point; and finally updating the solution field by setting $\phi^{n+1}(\mathbf{x}^{n+1})=\phi^n(\mathbf{x}_d)$.
+
+The task of evaluating departure points is treated by the second-order mid-point method \cite{XIU2001658}
+\begin{align*}
+	\hat{\mathbf{x}} &= \mathbf{x}^{n+1} - \frac{\Delta t}{2} \cdot \mathbf{v}^n(\mathbf{x}^{n+1})\\
+	\mathbf{x}_d &= \mathbf{x}^{n+1} - \Delta t \cdot \mathbf{v}^{n+\frac{1}{2}}(\hat{\mathbf{x}})
+\end{align*}
+
+The first step is trivial, but the second step demands velocity at the mid-timestep $t^{n + \frac{1}{2}}$ which can be evaluated from the velocity field at the previous two timesteps, $t^n$ and $t^{n-1}$, according to
+\begin{align*}
+	\mathbf{v}^{n+\frac{1}{2}} = \frac{3}{2}\mathbf{v}^n - \frac{1}{2} \mathbf{v}^{n-1}
+\end{align*}
+this intermediate velocity field is then fed into a trilinear interpolation scheme to sample the velocities on the intermediate points $\mathbf{v}^{n+\frac{1}{2}}(\hat{\mathbf{x}})$. At this point departure points can be computed, and the advected solution is updated by sampling a nonoscillatory interpolant of the level-set function at timestep $t^n$ over the computed departure points $\phi^n(\mathbf{x}_d)$.
+
+
+\subsection{Godunov Hamiltonian for reinitialization}
+The Sussman equation \ref{eq::sussman} is generically discretized over its spatial dimensions to obtain
+\begin{align}
+	\frac{d\phi}{d\tau} = -sgn(\phi^0) \bigg[ H_G(D_x^+\phi, D_x^-\phi, D_y^+\phi, D_y^-\phi, D_z^+\phi, D_z^-\phi, ) - 1 \bigg]
+\end{align}
+where $H_G$ is the so-called Gudonov Hamiltonian defined as
+\begin{align*}
+	H_G(a,b,c,d,e,f) &= \sqrt{ \sum_{(i,j)\in (a,b),(c,d),(e,f)}\max\bigg( \vert\min( s\cdot i,0)\vert^2, \vert\max( s\cdot j,0)\vert^2 \bigg)  }\\
+	s&= sgn(\phi^0)
+\end{align*}
+where the one-sided derivatives are computed using second order accurate discretizations in the bulk far from interfaces
+\begin{align*}
+	&(D_x^+\phi)_{i,j,k} = \frac{\phi_{i+1,j,k} - \phi_{i,j,k}}{\Delta x} - \frac{\Delta x}{2} \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i+1,j,k})\\
+	&(D_x^-\phi)_{i,j,k} = \frac{\phi_{i,j,k} - \phi_{i-1,j,k}}{\Delta x} + \frac{\Delta x}{2} \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i-1,j,k})
+\end{align*}
+where we used $\textrm{minmod}(a,b)\triangleq \textrm{median}(a,0,b)$ slope-limiter \cite{shu1988efficient}; and in the vicinity of interfaces these derivatives take into account distance to the interface using the level-set function. With similar results along $y$ and $z$ axes, the derivative along the positive $x$-axis is given by 
+\begin{align*}
+ &(D_x^+\phi)_{i,j,k} = \frac{0 - \phi_{i,j,k}}{s_I} - \frac{s_I}{2} c_2^+\\
+ & s_I = \frac{\Delta x}{2} + \left\{
+ \begin{array}{ll}
+ 	-c_0^+/c_1^+    & \textrm{if} \ \vert c_2^+\vert<\epsilon \\
+ 	\bigg(-c_1^+ - sgn(\phi^0_{i,j,k})\sqrt{(c_1^+)^2 - 4c_2^+ c_0^+} \bigg)/(2 c_2^+)    & \textrm{if} \ \vert c_2^+\vert\ge \epsilon 
+ \end{array}
+\right.
+\end{align*}
+where 
+\begin{align*}
+	c_2^+ &= \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i+1,j,k}) \\
+	c_1^+ &=  \frac{\phi_{i+1,j,k} - \phi_{i,j,k}}{\Delta x} \\
+	c_0^+ &= \frac{\phi_{i+1,j,k} + \phi_{i,j,k}}{2} - \frac{c_2^+ (\Delta x)^2}{4}
+\end{align*}
+And along the negative $x$-axis we obtain
+\begin{align*}
+ &(D_x^-\phi)_{i,j,k} = \frac{\phi_{i,j,k} - 0}{s_I} + \frac{s_I}{2} c_2^-\\
+ & s_I = \frac{\Delta x}{2} + \left\{
+ \begin{array}{ll}
+ 	c_0^-/c_1^-    & \textrm{if} \ \vert c_2^-\vert<\epsilon \\
+ 	\bigg(c_1^- - sgn(\phi^0_{i,j,k})\sqrt{(c_1^-)^2 - 4c_2^- c_0^-} \bigg)/(2 c_2^-)    & \textrm{if} \ \vert c_2^-\vert\ge \epsilon 
+ \end{array}
+\right.
+\end{align*}
+where 
+\begin{align*}
+	c_2^- &= \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i-1,j,k}) \\
+	c_1^- &= \frac{\phi_{i,j,k} - \phi_{i-1,j,k}}{\Delta x} \\
+	c_0^- &= \frac{\phi_{i-1,j,k} + \phi_{i,j,k}}{2} - \frac{c_2^- (\Delta x)^2}{4}
+\end{align*}
+
+
+Having the right-hand-side, the TVD-RK2 method of Shu \& Osher \cite{shu1988efficient} is applied to the update the level-set function in fictitious time
+\begin{align*}
+	\tilde{\phi}^{n+1}&=\phi^n - \Delta \tau \cdot sgn(\phi^0) [ H_G^n -1] \\
+	\tilde{\phi}^{n+2}&=\tilde{\phi}^{n+1} - \Delta \tau \cdot sgn(\phi^0) [ \tilde{H}_G^{n+1} -1] \\
+	\phi^{n+1}&=\frac{\phi^n + \tilde{\phi}^{n+2}}{2}
+\end{align*}
+with a timestep chosen by $\Delta \tau = \min (s_I, \Delta x, \Delta y, \Delta z) / 3$.
+
+
+\section*{Acknowledgement}
+
+
+
+%%%%%%%%%%%
+\newpage
+%\section*{References}
+\bibliographystyle{abbrv}
+\addcontentsline{toc}{section}{\refname}
+\bibliography{references}
+
+
+
+\end{document}

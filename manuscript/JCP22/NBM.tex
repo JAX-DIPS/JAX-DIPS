@@ -284,21 +284,11 @@ The second order derivative operator is the familiar 5-point finite difference s
 
 
 \subsection{Level-set method}
-The level-set method for solving free boundary problems was introduced by Osher \& Sethian (1988) \cite{osher1988fronts}. The free boundary is described as the zero contour of a signed-distance function, $\phi$, whose evolution is given by the advection equation according to some velocity field dictated by the physics of the problem, $\mathbf{v}$, that is defined over the moving boundary
-\begin{align}
+The level-set method for solving free boundary problems was introduced by Osher \& Sethian (1988) \cite{osher1988fronts}. The sharp interface is described as the zero contour of a signed-distance function, $\phi$, whose evolution is given by the advection equation according to some velocity field dictated by the physics of the problem, $\mathbf{v}$, that is defined over the moving boundary
+\begin{align*}
 	\frac{\partial \phi}{\partial t} + \mathbf{v}\cdot \nabla \phi = 0
-\end{align}
-
-This \textit{implicit} representation of the moving boundaries resolves the need for the challenging task of adapting the underlying grid to the yet-unknown discontinuities in the solution field. The computational simplicity of using Cartesian grids for solving free boundary problems with irregular geometries, as well as the ability to simulate freely moving discontinuities in a \textit{sharp}-manner, that is required by the physics of these problems, are the two main offerings of the level-set method for this class of PDE problems.
-
-The signed-distance property of the level-set function, \textit{i.e.} $\vert \nabla \phi\vert =1 $, deteriorates with timestepping the discretized advection equation. This is resolved by solving the Sussman reinitialization equation \cite{SUSSMAN1994146} in fictitious time ($\tau$) every few iterations of the physical time ($t$),
-\begin{align}
-	\frac{\partial \phi}{\partial \tau} + sgn(\phi_0) (\vert \nabla \phi \vert - 1) = 0 \label{eq::sussman}
-\end{align}
-
-Note the asymptotic solution of the Sussman equation is the signed-distance property of the level-set function. Here $sgn(\phi_0)$ is the sign function evaluated on the level-set function before reinitialization in order to preserve the sign of grid points during the fictitous updates.
-
-Besides implicit representation of the free boundaries, the level-set function can be used to compute normal vectors to the interface 
+\end{align*}
+This \textit{implicit} representation of the moving boundaries resolves the need for the challenging task of adapting the underlying grid to the yet-unknown discontinuities in the solution field. The computational simplicity of using Cartesian grids for solving free boundary problems with irregular geometries, as well as the ability to simulate freely moving discontinuities in a \textit{sharp}-manner, that is required by the physics of these problems, are the two main offerings of the level-set method for this class of PDE problems. Besides implicit representation of the free boundaries, the level-set function can be used to compute normal vectors to the interface 
 \begin{align*}
 	\mathbf{n} = \nabla\phi / \vert \nabla \phi \vert 
 \end{align*}
@@ -309,80 +299,7 @@ as well as the curvature of the interface
 
 
 
-Below we describe numerical methods implementd in \texttt{JAX-DIPS} to solve the level-set equations.
 
-\subsubsection{Second order accurate semi-Lagrangian advection scheme}
-Semi-Lagrangian methods are unconditionally stable for solving advection equations, therefore avoiding the restrictive CFL condition on the timestep size from time $t^n$ to $t^{n+1}$. The general procedure to solve for $\phi^{n+1}(\mathbf{x}^{n+1})$ is to first evaluate for each grid point, $\mathbf{x}^{n+1}$, the departure point, $\mathbf{x}_d$, in the upwind direction along the characteristic curve; then use interpolation methods to recover value of the solution field at the departure point; and finally updating the solution field by setting $\phi^{n+1}(\mathbf{x}^{n+1})=\phi^n(\mathbf{x}_d)$.
-
-The task of evaluating departure points is treated by the second-order mid-point method \cite{XIU2001658}
-\begin{align*}
-	\hat{\mathbf{x}} &= \mathbf{x}^{n+1} - \frac{\Delta t}{2} \cdot \mathbf{v}^n(\mathbf{x}^{n+1})\\
-	\mathbf{x}_d &= \mathbf{x}^{n+1} - \Delta t \cdot \mathbf{v}^{n+\frac{1}{2}}(\hat{\mathbf{x}})
-\end{align*}
-
-The first step is trivial, but the second step demands velocity at the mid-timestep $t^{n + \frac{1}{2}}$ which can be evaluated from the velocity field at the previous two timesteps, $t^n$ and $t^{n-1}$, according to
-\begin{align*}
-	\mathbf{v}^{n+\frac{1}{2}} = \frac{3}{2}\mathbf{v}^n - \frac{1}{2} \mathbf{v}^{n-1}
-\end{align*}
-this intermediate velocity field is then fed into a trilinear interpolation scheme to sample the velocities on the intermediate points $\mathbf{v}^{n+\frac{1}{2}}(\hat{\mathbf{x}})$. At this point departure points can be computed, and the advected solution is updated by sampling a nonoscillatory interpolant of the level-set function at timestep $t^n$ over the computed departure points $\phi^n(\mathbf{x}_d)$.
-
-
-\subsubsection{Godunov Hamiltonian for reinitialization}
-The Sussman equation \ref{eq::sussman} is generically discretized over its spatial dimensions to obtain
-\begin{align}
-	\frac{d\phi}{d\tau} = -sgn(\phi^0) \bigg[ H_G(D_x^+\phi, D_x^-\phi, D_y^+\phi, D_y^-\phi, D_z^+\phi, D_z^-\phi, ) - 1 \bigg]
-\end{align}
-where $H_G$ is the so-called Gudonov Hamiltonian defined as
-\begin{align*}
-	H_G(a,b,c,d,e,f) &= \sqrt{ \sum_{(i,j)\in (a,b),(c,d),(e,f)}\max\bigg( \vert\min( s\cdot i,0)\vert^2, \vert\max( s\cdot j,0)\vert^2 \bigg)  }\\
-	s&= sgn(\phi^0)
-\end{align*}
-where the one-sided derivatives are computed using second order accurate discretizations in the bulk far from interfaces
-\begin{align*}
-	&(D_x^+\phi)_{i,j,k} = \frac{\phi_{i+1,j,k} - \phi_{i,j,k}}{\Delta x} - \frac{\Delta x}{2} \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i+1,j,k})\\
-	&(D_x^-\phi)_{i,j,k} = \frac{\phi_{i,j,k} - \phi_{i-1,j,k}}{\Delta x} + \frac{\Delta x}{2} \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i-1,j,k})
-\end{align*}
-where we used $\textrm{minmod}(a,b)\triangleq \textrm{median}(a,0,b)$ slope-limiter \cite{shu1988efficient}; and in the vicinity of interfaces these derivatives take into account distance to the interface using the level-set function. With similar results along $y$ and $z$ axes, the derivative along the positive $x$-axis is given by 
-\begin{align*}
- &(D_x^+\phi)_{i,j,k} = \frac{0 - \phi_{i,j,k}}{s_I} - \frac{s_I}{2} c_2^+\\
- & s_I = \frac{\Delta x}{2} + \left\{
- \begin{array}{ll}
- 	-c_0^+/c_1^+    & \textrm{if} \ \vert c_2^+\vert<\epsilon \\
- 	\bigg(-c_1^+ - sgn(\phi^0_{i,j,k})\sqrt{(c_1^+)^2 - 4c_2^+ c_0^+} \bigg)/(2 c_2^+)    & \textrm{if} \ \vert c_2^+\vert\ge \epsilon 
- \end{array}
-\right.
-\end{align*}
-where 
-\begin{align*}
-	c_2^+ &= \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i+1,j,k}) \\
-	c_1^+ &=  \frac{\phi_{i+1,j,k} - \phi_{i,j,k}}{\Delta x} \\
-	c_0^+ &= \frac{\phi_{i+1,j,k} + \phi_{i,j,k}}{2} - \frac{c_2^+ (\Delta x)^2}{4}
-\end{align*}
-And along the negative $x$-axis we obtain
-\begin{align*}
- &(D_x^-\phi)_{i,j,k} = \frac{\phi_{i,j,k} - 0}{s_I} + \frac{s_I}{2} c_2^-\\
- & s_I = \frac{\Delta x}{2} + \left\{
- \begin{array}{ll}
- 	c_0^-/c_1^-    & \textrm{if} \ \vert c_2^-\vert<\epsilon \\
- 	\bigg(c_1^- - sgn(\phi^0_{i,j,k})\sqrt{(c_1^-)^2 - 4c_2^- c_0^-} \bigg)/(2 c_2^-)    & \textrm{if} \ \vert c_2^-\vert\ge \epsilon 
- \end{array}
-\right.
-\end{align*}
-where 
-\begin{align*}
-	c_2^- &= \textrm{minmod}((D_{xx}\phi)_{i,j,k}, (D_{xx}\phi)_{i-1,j,k}) \\
-	c_1^- &= \frac{\phi_{i,j,k} - \phi_{i-1,j,k}}{\Delta x} \\
-	c_0^- &= \frac{\phi_{i-1,j,k} + \phi_{i,j,k}}{2} - \frac{c_2^- (\Delta x)^2}{4}
-\end{align*}
-
-
-Having the right-hand-side, the TVD-RK2 method of Shu \& Osher \cite{shu1988efficient} is applied to the update the level-set function in fictitious time
-\begin{align*}
-	\tilde{\phi}^{n+1}&=\phi^n - \Delta \tau \cdot sgn(\phi^0) [ H_G^n -1] \\
-	\tilde{\phi}^{n+2}&=\tilde{\phi}^{n+1} - \Delta \tau \cdot sgn(\phi^0) [ \tilde{H}_G^{n+1} -1] \\
-	\phi^{n+1}&=\frac{\phi^n + \tilde{\phi}^{n+2}}{2}
-\end{align*}
-with a timestep chosen by $\Delta \tau = \min (s_I, \Delta x, \Delta y, \Delta z) / 3$.
 
 \subsection{Geometric integration}
 \subsubsection{Integration over 3D surfaces and volumes}
@@ -1127,14 +1044,14 @@ $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/
 \midrule
 \rowcolor{lightgray}\multicolumn{7}{c}{regress $\partial_n$}  \\
 $2^3$ & $ 1.36\times 10^{-1}$ &  -         & $ 1.27$                 &   -   & $ 0.019  $  & $  0.98 $ \\
-$2^4$ & $ 7.98\times 10^{-2}$ &  $0.79 $   & $ 8.23\times 10^{-1} $  & $ $   & $ 0.022  $  & $ 1.01  $ \\ 
-$2^5$ & $ 4.36\times 10^{-2}$ &  $0.81 $   & $ 3.85\times 10^{-1} $  & $  $  & $ 0.032  $  & $ 1.30  $ \\ 
-$2^6$ & $ 2.43\times 10^{-2}$ &  $0.84 $   & $ 2.28\times 10^{-1}$   & $ $   & $ 0.200  $  & $ 3.7 $ \\  
+$2^4$ & $ 7.98\times 10^{-2}$ &  $0.77 $   & $ 8.23\times 10^{-1} $  & $ 0.63$   & $ 0.022  $  & $ 1.01  $ \\ 
+$2^5$ & $ 4.36\times 10^{-2}$ &  $0.87 $   & $ 3.85\times 10^{-1} $  & $ 1.10 $  & $ 0.032  $  & $ 1.30  $ \\ 
+$2^6$ & $ 2.43\times 10^{-2}$ &  $0.84 $   & $ 2.28\times 10^{-1}$   & $ 0.76$   & $ 0.200  $  & $ 3.7 $ \\  
 \rowcolor{lightgray}\multicolumn{7}{c}{neural $\partial_n$}  \\
-$2^3$ & $2.17\times 10^{-1} $ &  -     & $2.89 $  &   -   & $0.0259 $ & $ 0.93$ \\
-$2^4$ & $ 1.34\times 10^{-1	}$ &  $ $   & $ 1.66$  & $ $   & $ 0.0408$ & $1.19 $ \\ 
-$2^5$ & $5.68\times 10^{-2} $ &  $ $   & $ 8.17\times 10^{-1}$  & $ $   & $ 0.0712$ & $ 2.96$ \\ 
-$2^6$ & $ 2.77\times 10^{-2}$ &  $ $   & $3.94\times 10^{-1} $  & $ $   & $ 0.334 $ & $ 13.6$ \\  \bottomrule
+$2^3$ & $2.17\times 10^{-1} $ &      -     & $2.89 $                &   -      & $0.0259 $ & $ 0.93$ \\
+$2^4$ & $1.34\times 10^{-1} $ &  $0.70 $   & $ 1.66$                & $ 0.80 $ & $ 0.0408$ & $1.19 $ \\ 
+$2^5$ & $5.68\times 10^{-2} $ &  $1.24 $   & $ 8.17\times 10^{-1}$  & $ 1.02$  & $ 0.0712$ & $ 2.96$ \\ 
+$2^6$ & $ 2.77\times 10^{-2}$ &  $1.03 $   & $3.94\times 10^{-1} $  & $ 1.05$   & $ 0.334 $ & $ 13.6$ \\  \bottomrule
 \end{tabular}
 \caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm{whole region} \rightarrow \textrm{fast region} \rightarrow \textrm{fast region}$ optimization sequence.}
 \end{center}
@@ -1151,11 +1068,11 @@ $2^6$ & $ 2.77\times 10^{-2}$ &  $ $   & $3.94\times 10^{-1} $  & $ $   & $ 0.33
 	\cmidrule(r){1-1}\cmidrule(r){2-3}\cmidrule(r){4-5}\cmidrule(r){6-6}\cmidrule(r){7-7}	
 	$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
 	\midrule
-	$2^3$ & $ 1.05\times 10^{-1}$ &   -    & $ 1.29 $                &   -   & $ 0.0225 $  & $ 1.27 $ \\
-	$2^4$ & $ 5.52\times 10^{-2}$ &  $ $   & $ 6.22\times 10^{-1} $  & $ $   & $ 0.0411 $  & $ 1.27 $ \\ 
-	$2^5$ & $ 2.44\times 10^{-2}$ &  $ $   & $ 2.66\times 10^{-1}$   & $ $   & $ 0.1814 $  & $ 8.3  $ \\ 
-	$2^6$ & $ 2.33\times 10^{-2}$ &  $ $   & $ 2.24\times 10^{-1} $   & $ $   & $ 1.889 $  & $ 29.6 $ \\ 
-	\rowcolor{lightgray}$2^7$ & $ 8.62\times 10^{-2}$ &  $ $   & $ 3.80\times 10^{-1} $   & $ $   & $ 9.649 $  & $ 29.7 $ \\ \bottomrule
+	$2^3$ & $ 1.05\times 10^{-1}$ &   -        & $ 1.29 $                &   -       & $ 0.0225 $     & $ 1.27 $ \\
+	$2^4$ & $ 5.52\times 10^{-2}$ &  $0.93 $   & $ 6.22\times 10^{-1} $  & $ 1.05$   & $ 0.0411 $     & $ 1.27 $ \\ 
+	$2^5$ & $ 2.44\times 10^{-2}$ &  $1.18 $   & $ 2.66\times 10^{-1}$   & $ 1.23$   & $ 0.1814 $     & $ 8.3  $ \\ 
+	$2^6$ & $ 2.33\times 10^{-2}$ &  $0.07 $   & $ 2.24\times 10^{-1} $  & $ 0.25$   & $ 1.889 $      & $ 29.6 $ \\ 
+	\rowcolor{pink}$2^7$ & $ 8.62\times 10^{-2}$ &  $-1.88 $   & $ 3.80\times 10^{-1} $   & $-0.76$   & $ 9.649 $  & $ 29.7 $ \\ \bottomrule
 	\end{tabular}
 	\caption{Convergence test for the scalable pointwise multi-resolution regression-based solver. 
 	Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. 
@@ -1236,7 +1153,8 @@ We adopt the problem setup presented in \ref{subsec:star}, however with a consid
 
 The results are shown in figure \ref{fig:dragon}, with a $\rm L^\infty$-error of $0.5$ and RMSE of $0.06$ after 1000 epochs on a base resolution of $64^3$ and implicitly refined onto multi-resolutions $128^3,256^3,512^3$. The neural network pair have only 1 hidden layer with 100 sine-activated neurons, although investigating more complex networks (transformers, symmetry preserving, \textit{etc}.) would likely improve accuracy.
 
-In table \ref{tab:scaling} we report scaling results on NVIDIA A100 GPUs at four base resolutions with three levels of implicit refinement. We used a batchsize of $32\times 32\times 16$ in all cases. At fixed number of GPUs, training time scales linearly (\textit{i.e.}, optimal scaling) with the number of grid points. At a fixed resolution, increasing the number of GPUs accelerates training roughly with $\rm epoch\ time \sim 1/\sqrt{\text{\# }GPUs}$, although the advantage is more effective at higher resolutions. Compile time increases with resolution and decreases with number of GPUs. A maximum grid size of $1024^3$ at multi-resolutions $1024^3,\ 2048^3, 4096^3,\ 8192^3$ was simulated on one NVIDIA DGX with 8 A100 GPUs. 
+In table \ref{tab:scaling} we report scaling results on NVIDIA A100 GPUs at four base resolutions with three levels of implicit refinement. We used a batchsize of $32\times 32\times 16$ in all cases. At fixed number of GPUs, training time scales linearly (\textit{i.e.}, optimal scaling) with the number of grid points. At a fixed resolution, increasing the number of GPUs accelerates training roughly with $\rm epoch\ time \sim 1/\sqrt{\text{\# }GPUs}$, although the advantage is more effective at higher resolutions. Compile time increases with resolution and decreases with number of GPUs. A maximum grid size of $1024^3$ at multi-resolutions $1024^3,\ 2048^3, 4096^3,\ 8192^3$ was simulated on one NVIDIA DGX with 8 A100 GPUs. The results are shown in figure \ref{fig:dragon}.
+
 
 \begin{table}[ht]
 \begin{center}
@@ -1255,13 +1173,6 @@ $8$        & $0.384$ &  $7.983$   & $3.340$  & $7.901$ & $26.799$ & $9.154$  &  
 \end{center}
 \end{table}
 
-
-
-
-
-
-
-The results are shown in figure \ref{fig:dragon}.
 
 
 \begin{figure}

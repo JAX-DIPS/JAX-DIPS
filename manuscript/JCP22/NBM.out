@@ -8,23 +8,21 @@
 \BOOKMARK [3][-]{subsubsection.3.1.1}{Trilinear interpolation}{subsection.3.1}% 8
 \BOOKMARK [3][-]{subsubsection.3.1.2}{Quadratic non-oscillatory interpolation}{subsection.3.1}% 9
 \BOOKMARK [2][-]{subsection.3.2}{Level-set method}{section.3}% 10
-\BOOKMARK [3][-]{subsubsection.3.2.1}{Second order accurate semi-Lagrangian advection scheme}{subsection.3.2}% 11
-\BOOKMARK [3][-]{subsubsection.3.2.2}{Godunov Hamiltonian for reinitialization}{subsection.3.2}% 12
-\BOOKMARK [2][-]{subsection.3.3}{Geometric integration}{section.3}% 13
-\BOOKMARK [3][-]{subsubsection.3.3.1}{Integration over 3D surfaces and volumes}{subsection.3.3}% 14
-\BOOKMARK [3][-]{subsubsection.3.3.2}{Cross sections of interface with grid cell faces}{subsection.3.3}% 15
-\BOOKMARK [2][-]{subsection.3.4}{Neural network approximators for the solution}{section.3}% 16
-\BOOKMARK [2][-]{subsection.3.5}{Approach I. Finite discretization method fused with regression-based extrapolation}{section.3}% 17
-\BOOKMARK [2][-]{subsection.3.6}{Approach II. Finite discretization method fused with neural extrapolation}{section.3}% 18
-\BOOKMARK [2][-]{subsection.3.7}{Optimization scheme}{section.3}% 19
-\BOOKMARK [3][-]{subsubsection.3.7.1}{Preconditioners are ideal network regularizers}{subsection.3.7}% 20
-\BOOKMARK [3][-]{subsubsection.3.7.2}{Learning rate scheduling}{subsection.3.7}% 21
-\BOOKMARK [3][-]{subsubsection.3.7.3}{Domain switching optimization scheme}{subsection.3.7}% 22
-\BOOKMARK [3][-]{subsubsection.3.7.4}{Multi-GPU parallelization with model parallel training}{subsection.3.7}% 23
-\BOOKMARK [1][-]{section.4}{Numerical Results}{}% 24
-\BOOKMARK [2][-]{subsection.4.1}{Accuracy and convergence: single-resolution, single batch, single GPU}{section.4}% 25
-\BOOKMARK [2][-]{subsection.4.2}{Accuracy and convergence: complex geometry, single GPU, and effect of batching}{section.4}% 26
-\BOOKMARK [2][-]{subsection.4.3}{Time complexity and parallel scaling on GPU clusters}{section.4}% 27
-\BOOKMARK [1][-]{section.5}{Conclusion}{}% 28
-\BOOKMARK [1][-]{section*.15}{References}{}% 29
-\BOOKMARK [1][-]{appendix.A}{Solving interface problems with physics-informed neural networks}{}% 30
+\BOOKMARK [2][-]{subsection.3.3}{Geometric integration}{section.3}% 11
+\BOOKMARK [3][-]{subsubsection.3.3.1}{Integration over 3D surfaces and volumes}{subsection.3.3}% 12
+\BOOKMARK [3][-]{subsubsection.3.3.2}{Cross sections of interface with grid cell faces}{subsection.3.3}% 13
+\BOOKMARK [2][-]{subsection.3.4}{Neural network approximators for the solution}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.5}{Approach I. Finite discretization method fused with regression-based extrapolation}{section.3}% 15
+\BOOKMARK [2][-]{subsection.3.6}{Approach II. Finite discretization method fused with neural extrapolation}{section.3}% 16
+\BOOKMARK [2][-]{subsection.3.7}{Optimization scheme}{section.3}% 17
+\BOOKMARK [3][-]{subsubsection.3.7.1}{Preconditioners are ideal network regularizers}{subsection.3.7}% 18
+\BOOKMARK [3][-]{subsubsection.3.7.2}{Learning rate scheduling}{subsection.3.7}% 19
+\BOOKMARK [3][-]{subsubsection.3.7.3}{Domain switching optimization scheme}{subsection.3.7}% 20
+\BOOKMARK [3][-]{subsubsection.3.7.4}{Multi-GPU parallelization with model parallel training}{subsection.3.7}% 21
+\BOOKMARK [1][-]{section.4}{Numerical Results}{}% 22
+\BOOKMARK [2][-]{subsection.4.1}{Accuracy and convergence: single-resolution, single batch, single GPU}{section.4}% 23
+\BOOKMARK [2][-]{subsection.4.2}{Accuracy and convergence: complex geometry, single GPU, and effect of batching}{section.4}% 24
+\BOOKMARK [2][-]{subsection.4.3}{Time complexity and parallel scaling on GPU clusters}{section.4}% 25
+\BOOKMARK [1][-]{section.5}{Conclusion}{}% 26
+\BOOKMARK [1][-]{section*.15}{References}{}% 27
+\BOOKMARK [1][-]{appendix.A}{Solving interface problems with physics-informed neural networks}{}% 28
