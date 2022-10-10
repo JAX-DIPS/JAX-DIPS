@@ -19,6 +19,7 @@
 \usepackage{color}
 \usepackage{url}
 %\usepackage{subfigure}
+\usepackage{xcolor,colortbl}
 \usepackage{bigstrut}
 \usepackage{bigints}
 \usepackage[normalem]{ulem}
@@ -795,7 +796,7 @@ in matrix notation we have
 \end{algorithm}
 
 
-\subsection{Approach II. Finite discretization method fused with neural extrapolation}
+\subsection{Approach II. Finite discretization method fused with neural extrapolation}\label{sec:fusion}
 Our proposed hybrid PDE solver is based on the observation that the neural network models for negative and positive domains can be explicitly used as interpolation and extrapolation functions within the finite discretization schemes.  
 
 The basic idea of the finite discretization method of section \ref{sec::FD} is to impose the jump conditions on the already-available grid points in the computational cells that are crossed by the interface, instead of aspiring to impose the jump conditions exactly on the interface itself. This is achieved by a Taylor expansion to project the interfacial jump conditions onto adjacent grid points. Using the neural network models for solutions, we are able to naturally evaluate extrapolations of the solution functions in a banded region around the interface as illustrated in figure \ref{fig:shapes}.
@@ -965,8 +966,10 @@ We consider several examples for solution to elliptic problems of the form with
 \end{align*}
 
 
+Using different features of \texttt{JAX-DIPS} one can compose solvers with different training configurations; \textit{i.e.}, single/multi-resolution, single/multi-batch, and single/multi-GPU, domain alternating training. Besides, the neural extrapolation discussed in section \ref{sec:fusion} offers an alternative solver. Below we implement and compare numerical accuracy and performance of these strategies. 
 
-\subsection{Case I. Sphere: Single-resolution solver in one batch}
+
+\subsection{Accuracy and convergence: single-resolution, single batch, single GPU}
 We use a single uniform grid and train on all the points in a single batch. We consider a sphere $\phi(\mathbf{x})=\sqrt{x^2 + y^2 + z^2} - 0.5$ centered in a box $\Omega:[-1,1]^3$ with the exact solution
 \begin{align*}
 & u^-(x,y,z)=e^{z}, & \phi(\mathbf{x})<0\\
@@ -988,11 +991,17 @@ The network has 5 hidden layers with 10 neurons in each layer using sine activat
 &\frac{\textrm{err}(2h)}{\textrm{err}(h)}=2^p \rightarrow p = \log_2\bigg(\frac{\textrm{err}(2h)}{\textrm{err}(h)}\bigg)  & h=\min(h_x,h_y,h_z)
 \end{align*}
 
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_sphere_128x128x128.png}
+	\includegraphics[width=0.45\linewidth]{./figures/case_I_regression.png}
+	\caption{Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures, RMSE and $L^\infty$, at 5 different resolutions (right).}
+	\label{fig:losses}
+\end{figure}
 
 \begin{table}[ht]
 \begin{center}
 \caption{Convergence and overall time to solution for our JAX implementation, with $10,000$ epochs in each case, and initial compilation time. Measurements are on a single NVIDIA A6000 GPU. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.} \label{tab:convergence_sphere}
-
 \begin{tabular}{ccccccc}
 \toprule
  & \multicolumn{2}{c}{RMSE}& \multicolumn{2}{c}{$L^\infty$} & \multicolumn{2}{c}{GPU Statistics} \\
@@ -1011,40 +1020,54 @@ $2^7$ & $2.64\times 10^{-3}$&  $0.64$   & $3.53\times 10^{-2}$  & $0.87$  & $2.1
 
 
 \begin{figure}
-	\centering
-	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_sphere_128x128x128.png}
-	\includegraphics[width=0.45\linewidth]{./figures/case_I_regression.png}
-	\caption{Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures at 5 resolutions (right).}
-	\label{fig:losses}
-\end{figure}
-
-
-\begin{figure}
-	\centering
-	\includegraphics[width=0.49\linewidth]{./figures/sphere_shape.png}
-	\includegraphics[width=0.49\linewidth]{./figures/sphere_mu_m.png}
-	\caption{Illustration of three dimensional interface used (left), and $\mu^\pm$ on the $16\times 16\times 16$ grid (right).}
-	\label{fig:sphere}
-\end{figure}
-
-\begin{figure}
-	\centering
-	\includegraphics[width=\linewidth]{./figures/sphere_sols_regression_16x16x16.png}
-	\includegraphics[width=\linewidth]{./figures/sphere_sols_regression_128x128x128.png}
-	\caption{Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. }
-	\label{fig:sphere}
-\end{figure}
-
-
-\begin{figure}
-	\centering
-	\includegraphics[width=\linewidth]{./figures/128x128x128_electric_U.png}
+     \centering
+     \begin{subfigure}[b]{\textwidth}
+         \centering
+         \includegraphics[width=\linewidth]{./figures/sphere_sols_regression_128x128x128.png}
+	\caption{Illustration of numerical solution and absolute error on a cross section of the domain. }
+	\label{subfig:sphere}
+     \end{subfigure}
+     \begin{subfigure}[b]{\textwidth}
+         \centering
+         \includegraphics[width=\linewidth]{./figures/128x128x128_electric_U.png}
 	\caption{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values.  }
-	\label{fig:spheregrad}
+         \label{fig:spheregrad}
+     \end{subfigure}
+        \caption{The neural network surrogate model trained on a $128^3$ grid using a single NVIDIA A6000 GPU.}
+        \label{fig:sphere}
 \end{figure}
+%\begin{figure}[ht]
+%	\centering
+%	\includegraphics[width=\linewidth]{./figures/128x128x128_electric_U.png}
+%	\caption{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values.  }
+%	\label{fig:spheregrad}
+%\end{figure}
 
 
-\subsection{Case II. Star: complex geometry} \label{subsec:star}
+
+
+
+%\begin{figure}[ht]
+%	\centering
+%	\includegraphics[width=0.49\linewidth]{./figures/sphere_shape.png}
+%	\includegraphics[width=0.49\linewidth]{./figures/sphere_mu_m.png}
+%	\caption{Illustration of three dimensional interface used (left), and $\mu^\pm$ on the $16\times 16\times 16$ grid (right).}
+%	\label{fig:sphere}
+%\end{figure}
+
+%\begin{figure}[ht]
+%	\centering
+%	%\includegraphics[width=\linewidth]{./figures/sphere_sols_regression_16x16x16.png}
+%	\includegraphics[width=\linewidth]{./figures/sphere_sols_regression_128x128x128.png}
+%	\caption{Illustration of numerical solution and absolute error using the regression based solver on a cross section of the domain. }
+%	\label{fig:sphere}
+%\end{figure}
+
+
+
+
+
+\subsection{Accuracy and convergence: complex geometry, single GPU, and effect of batching} \label{subsec:star}
 
 We use a pair of fully connected feedforward neural networks, each composed of $1$ hidden layer and $100$ neurons with \texttt{sine} activation function, followed  by an output layer with $1$ linear neuron. There are a total of $1,002$ trainable parameters in the model.
 
@@ -1096,29 +1119,22 @@ and the diffusion coefficient
 
 \begin{table}[ht]
 \begin{center}
-\begin{tabular}{|l||ll|ll|c|c|}
-\hline
-regress $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$} & \multicolumn{2}{c|}{GPU Statistics} \\
-\hline
+\begin{tabular}{ccccccc}
+\toprule
+ & \multicolumn{2}{c}{RMSE}& \multicolumn{2}{c}{$L^\infty$} & \multicolumn{2}{c}{GPU Statistics} \\
+\cmidrule(r){2-3}\cmidrule(r){4-5}\cmidrule(r){6-7} 
 $\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
-\hline 
-$2^3$ & $ 1.36\times 10^{-1}$ &  -     & $ 1.27$                 &   -   & $ 0.019  $  & $  0.98 $ \\
-$2^4$ & $ 7.98\times 10^{-2}$ &  $ $   & $ 8.23\times 10^{-1} $  & $ $   & $ 0.022  $  & $ 1.01  $ \\ 
-$2^5$ & $ 4.36\times 10^{-2}$ &  $ $   & $ 3.85\times 10^{-1} $  & $  $  & $ 0.032  $  & $ 1.30  $ \\ 
-$2^6$ & $2.43\times 10^{-2} $ &  $ $   & $ 2.28\times 10^{-1}$   & $ $   & $  0.200 $  & $ 3.7 $ \\ 
-$2^7$ & $ $ &  $ $   & $ $   & $ $   & $   $  & $21.4 $ \\ \hline
-\end{tabular}
-\begin{tabular}{|l||ll|ll|c|c|}
-\hline
-neural $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$} & \multicolumn{2}{c|}{GPU Statistics} \\
-\hline
-$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
-\hline 
+\midrule
+\rowcolor{lightgray}\multicolumn{7}{c}{regress $\partial_n$}  \\
+$2^3$ & $ 1.36\times 10^{-1}$ &  -         & $ 1.27$                 &   -   & $ 0.019  $  & $  0.98 $ \\
+$2^4$ & $ 7.98\times 10^{-2}$ &  $0.79 $   & $ 8.23\times 10^{-1} $  & $ $   & $ 0.022  $  & $ 1.01  $ \\ 
+$2^5$ & $ 4.36\times 10^{-2}$ &  $0.81 $   & $ 3.85\times 10^{-1} $  & $  $  & $ 0.032  $  & $ 1.30  $ \\ 
+$2^6$ & $ 2.43\times 10^{-2}$ &  $0.84 $   & $ 2.28\times 10^{-1}$   & $ $   & $ 0.200  $  & $ 3.7 $ \\  
+\rowcolor{lightgray}\multicolumn{7}{c}{neural $\partial_n$}  \\
 $2^3$ & $2.17\times 10^{-1} $ &  -     & $2.89 $  &   -   & $0.0259 $ & $ 0.93$ \\
 $2^4$ & $ 1.34\times 10^{-1	}$ &  $ $   & $ 1.66$  & $ $   & $ 0.0408$ & $1.19 $ \\ 
 $2^5$ & $5.68\times 10^{-2} $ &  $ $   & $ 8.17\times 10^{-1}$  & $ $   & $ 0.0712$ & $ 2.96$ \\ 
-$2^6$ & $ 2.77\times 10^{-2}$ &  $ $   & $3.94\times 10^{-1} $  & $ $   & $ 0.334 $ & $ 13.6$ \\ 
-$2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
+$2^6$ & $ 2.77\times 10^{-2}$ &  $ $   & $3.94\times 10^{-1} $  & $ $   & $ 0.334 $ & $ 13.6$ \\  \bottomrule
 \end{tabular}
 \caption{Convergence on the solution using the regression-based solver. We report $L^\infty$-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm{whole region} \rightarrow \textrm{fast region} \rightarrow \textrm{fast region}$ optimization sequence.}
 \end{center}
@@ -1129,17 +1145,17 @@ $2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
 
 \begin{table}[ht]
 	\begin{center}
-	\begin{tabular}{|l||ll|ll|c|c|}
-	\hline
-	regress $\partial_n$ & \multicolumn{2}{c|}{RMSE}& \multicolumn{2}{c|}{$L^\infty$} & \multicolumn{2}{c|}{GPU Statistics} \\
-	\hline
+	\begin{tabular}{ccccccc}
+	\toprule
+	regress $\partial_n$ & \multicolumn{2}{c}{RMSE}& \multicolumn{2}{c}{$L^\infty$} & \multicolumn{2}{c}{GPU Statistics} \\
+	\cmidrule(r){1-1}\cmidrule(r){2-3}\cmidrule(r){4-5}\cmidrule(r){6-6}\cmidrule(r){7-7}	
 	$\rm N_{x,y,z}$   &   Solution    &   Order   &   Solution   &   Order & t (sec/epoch) & VRAM (GB)\\
-	\hline 
+	\midrule
 	$2^3$ & $ 1.05\times 10^{-1}$ &   -    & $ 1.29 $                &   -   & $ 0.0225 $  & $ 1.27 $ \\
 	$2^4$ & $ 5.52\times 10^{-2}$ &  $ $   & $ 6.22\times 10^{-1} $  & $ $   & $ 0.0411 $  & $ 1.27 $ \\ 
 	$2^5$ & $ 2.44\times 10^{-2}$ &  $ $   & $ 2.66\times 10^{-1}$   & $ $   & $ 0.1814 $  & $ 8.3  $ \\ 
 	$2^6$ & $ 2.33\times 10^{-2}$ &  $ $   & $ 2.24\times 10^{-1} $   & $ $   & $ 1.889 $  & $ 29.6 $ \\ 
-	$2^7$ & $ 8.62\times 10^{-2}$ &  $ $   & $ 3.80\times 10^{-1} $   & $ $   & $ 9.649 $  & $ 29.7 $ \\ \hline
+	\rowcolor{lightgray}$2^7$ & $ 8.62\times 10^{-2}$ &  $ $   & $ 3.80\times 10^{-1} $   & $ $   & $ 9.649 $  & $ 29.7 $ \\ \bottomrule
 	\end{tabular}
 	\caption{Convergence test for the scalable pointwise multi-resolution regression-based solver. 
 	Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. 
@@ -1181,41 +1197,41 @@ $2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
 
 
 
+%
+%\subsection{Case III. Starbox: multi-GPU, complex geometry}
+%
+%Consider a box filled with $64$ stars of case \ref{subsec:star} arranged on a regular $4\times 4\times 4$ lattice with randomized orientations in the yz-plane; \textit{i.e.}, this resembles a columnar mesophase of liquid crystal materials \cite{oswald2005smectic,ANDRIENKO2018520}. The scale parameters of the level-set function ($r_0$ and $\beta_i$'s) are scaled by a factor $0.35$ to avoid overlapping stars. We set problem parameters to constants given by $\mu^-= 1,\ \mu^+=80,\ k^-=0,\ k^+=0 $ and set zero Dirichlet boundary conditions on the walls. The source terms are given by
+%\begin{align*}
+%f^-(x,y,z)=& \sin(2 x)\cos(2 y) \exp(z) \bigg(7  + 2 \cos(2 \pi (x+y)) \sin(2\pi(x-y))\sin(z)\bigg)  \\
+%&  +8\pi \cos(z) \exp(z) \bigg(\cos(4\pi y) \sin(2 x) \sin(2 y) -\cos(4\pi x) \cos(2 x)\cos(2 y) \bigg) \\
+%f^+(x,y,z)=&  2 \bigg( 16(\frac{y-x}{3})^5 - 20(\frac{y-x}{3})^3 + 5\frac{y-x}{3} \bigg) \frac{\cos(z)}{ (x+y+3)^2}  \\
+%& +\bigg( 16 (\frac{y-x}{3})^5 -\frac{820}{9} (\frac{y-x}{3})^3 + \frac{285}{9}(\frac{y-x}{3}) \bigg) \log(x+y+3)\cos(z)
+%\end{align*}
+%We set jump conditions in solution and solution flux to $\alpha=\beta=0$. The solution is illustrated in figure \ref{fig:starbox}.
+%
+%We used 1 NVIDIA DGX machine with 8 V100 GPUs (each with 32 GB VRAM used at $100\%$ thread and memory utility) to train a surrogate model at base resolution of $512^3$ and refined up to $4096^3$ with 1000 stars in the box. Figure \ref{fig:starbox512} is a visualization of this setting. This is equivalent to an effective resolution of $68.7$ billion grid points.
+%
+%\begin{figure}
+%	\centering
+%	\includegraphics[width=0.49\linewidth]{./figures/starbox_cropped.png}
+%	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_starbox.png}
+%	\caption{Illustration of numerical solution for the starbox example. The geometry is stored on a $64^3$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128^3$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.}
+%	\label{fig:starbox}
+%\end{figure}
+%
+%
+%\begin{figure}
+%	\centering
+%	\includegraphics[width=\linewidth]{./figures/starbox_512.png}
+%	\caption{Illustration of numerical solution for the starbox example with 1000 stars. The geometry is stored on a $128^3$ grid, neural network model was trained for $15$ epochs that took $10,340$ seconds on 8 NVIDIA V100 GPU on one DGX node over a base resolution of $512^3$ grid and refined on resolutions $1024^3,2048^3,4096^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.}
+%	\label{fig:starbox512}
+%\end{figure}
+%
 
-\subsection{Case III. Starbox: multi-GPU, complex geometry}
-
-Consider a box filled with $64$ stars of case \ref{subsec:star} arranged on a regular $4\times 4\times 4$ lattice with randomized orientations in the yz-plane; \textit{i.e.}, this resembles a columnar mesophase of liquid crystal materials \cite{oswald2005smectic,ANDRIENKO2018520}. The scale parameters of the level-set function ($r_0$ and $\beta_i$'s) are scaled by a factor $0.35$ to avoid overlapping stars. We set problem parameters to constants given by $\mu^-= 1,\ \mu^+=80,\ k^-=0,\ k^+=0 $ and set zero Dirichlet boundary conditions on the walls. The source terms are given by
-\begin{align*}
-f^-(x,y,z)=& \sin(2 x)\cos(2 y) \exp(z) \bigg(7  + 2 \cos(2 \pi (x+y)) \sin(2\pi(x-y))\sin(z)\bigg)  \\
-&  +8\pi \cos(z) \exp(z) \bigg(\cos(4\pi y) \sin(2 x) \sin(2 y) -\cos(4\pi x) \cos(2 x)\cos(2 y) \bigg) \\
-f^+(x,y,z)=&  2 \bigg( 16(\frac{y-x}{3})^5 - 20(\frac{y-x}{3})^3 + 5\frac{y-x}{3} \bigg) \frac{\cos(z)}{ (x+y+3)^2}  \\
-& +\bigg( 16 (\frac{y-x}{3})^5 -\frac{820}{9} (\frac{y-x}{3})^3 + \frac{285}{9}(\frac{y-x}{3}) \bigg) \log(x+y+3)\cos(z)
-\end{align*}
-We set jump conditions in solution and solution flux to $\alpha=\beta=0$. The solution is illustrated in figure \ref{fig:starbox}.
-
-We used 1 NVIDIA DGX machine with 8 V100 GPUs (each with 32 GB VRAM used at $100\%$ thread and memory utility) to train a surrogate model at base resolution of $512^3$ and refined up to $4096^3$ with 1000 stars in the box. Figure \ref{fig:starbox512} is a visualization of this setting. This is equivalent to an effective resolution of $68.7$ billion grid points.
-
-\begin{figure}
-	\centering
-	\includegraphics[width=0.49\linewidth]{./figures/starbox_cropped.png}
-	\includegraphics[width=0.49\linewidth]{./figures/poisson_solver_loss_starbox.png}
-	\caption{Illustration of numerical solution for the starbox example. The geometry is stored on a $64^3$ grid, neural network model was trained for $50$ epochs that took $734$ seconds on one NVIDIA A6000 GPU over a base resolution of $128^3$ grid and refined on resolutions $256^3,512^3,1024^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.}
-	\label{fig:starbox}
-\end{figure}
 
 
-\begin{figure}
-	\centering
-	\includegraphics[width=\linewidth]{./figures/starbox_512.png}
-	\caption{Illustration of numerical solution for the starbox example with 1000 stars. The geometry is stored on a $128^3$ grid, neural network model was trained for $15$ epochs that took $10,340$ seconds on 8 NVIDIA V100 GPU on one DGX node over a base resolution of $512^3$ grid and refined on resolutions $1024^3,2048^3,4096^4$. For visualization the model is evaluated on a $256^3$ grid, streamlines of solution gradient are color-coded with solution value.}
-	\label{fig:starbox512}
-\end{figure}
-
-
-
-
-\subsection{Case IV. A Charged Dragon - Time complexity and parallel scaling on GPU clusters}
-We adopt the problem setup presented in Case II \ref{subsec:star}, however with a considerably more challenging geometry of the Dragon presented in \cite{curless1996volumetric}. In this case we used the signed-distance function produced by SDFGen, and initiated an interpolant based on its values. 
+\subsection{Time complexity and parallel scaling on GPU clusters}
+We adopt the problem setup presented in \ref{subsec:star}, however with a considerably more challenging geometry of the Dragon presented in \cite{curless1996volumetric}. In this case we used the signed-distance function produced by SDFGen, and initiated an interpolant based on its values. 
 
 
 The results are shown in figure \ref{fig:dragon}, with a $\rm L^\infty$-error of $0.5$ and RMSE of $0.06$ after 1000 epochs on a base resolution of $64^3$ and implicitly refined onto multi-resolutions $128^3,256^3,512^3$. The neural network pair have only 1 hidden layer with 100 sine-activated neurons, although investigating more complex networks (transformers, symmetry preserving, \textit{etc}.) would likely improve accuracy.

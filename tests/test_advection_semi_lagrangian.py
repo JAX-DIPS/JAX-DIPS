@@ -18,7 +18,7 @@
 
 """
 from jax.config import config
-from src import mesh
+from src import mesh, geometric_integrations_per_point, geometric_integrations
 from src import io
 from src import simulate_fields
 from src.jaxmd_modules import space
@@ -29,14 +29,14 @@ import jax
 import time
 import os
 import sys
-
+import pdb
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
-config.update("jax_enable_x64", True)
+config.update("jax_enable_x64", False)
 
 
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
@@ -72,8 +72,6 @@ def test_spinning_sphere():
     R = gstate.R
     # sample_pnt = coord_at(gstate, [1, 1, 1])
 
-    displacement_fn, shift_fn = space.periodic(box_size)
-
     # -- define velocity field as gradient of a scalar field
 
 
@@ -96,15 +94,15 @@ def test_spinning_sphere():
         return jnp.sqrt(x**2 + (y-1.0)**2 + z**2) - 0.5
 
 
-    init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(
-        phi_fn, shift_fn, dt)
+    init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, dt)
     sim_state = init_fn(velocity_fn, R)
+    
     # grad_fn = jax.vmap(jax.grad(phi_fn))
     # grad_phi = grad_fn(gstate.R)
 
 
     log = {
-        'U': jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
+        'U': jnp.zeros((simulation_steps,) + sim_state.phi.shape, dtype=f32),
         't': jnp.zeros((simulation_steps,), dtype=f32)
     }
 
@@ -114,7 +112,7 @@ def test_spinning_sphere():
         state, log, dt = state_and_nbrs
         time_ = jnp.where(i==simulation_steps, tf, i * dt)
         log['t'] = log['t'].at[i].set(time_)
-        log['U'] = log['U'].at[i].set(state.solution)
+        log['U'] = log['U'].at[i].set(state.phi)
         state = reinitialize_fn(state, gstate)
         # state = lax.cond(i//10==0, lambda p: reinitialize_fn(p[0], p[1]), lambda p : p[0], (state, gstate))
         return apply_fn(velocity_fn, state, gstate, time_), log, dt
@@ -122,9 +120,8 @@ def test_spinning_sphere():
 
 
     t1 = time.time()
-    sim_state, log, dt = lax.fori_loop(i32(0), i32(
-        simulation_steps-1), step_func, (sim_state, log, dt))
-    sim_state.solution.block_until_ready()
+    sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps-1), step_func, (sim_state, log, dt))
+    sim_state.phi.block_until_ready()
     t2 = time.time()
     print(f"time per timestep is {(t2 - t1)/simulation_steps}")
 
@@ -132,17 +129,34 @@ def test_spinning_sphere():
     dt_last = tf - (simulation_steps-1) * dt
     sim_state, log, dt = step_func(i32(simulation_steps), (sim_state, log, dt_last))
     log['t'] = log['t'].at[simulation_steps-1].set(tf)
-    log['U'] = log['U'].at[simulation_steps-1].set(sim_state.solution)
+    log['U'] = log['U'].at[simulation_steps-1].set(sim_state.phi)
 
 
     difference_l2 = jnp.mean(jnp.square(log['U'][-1] - log['U'][0]))
 
-    jax.profiler.save_device_memory_profile("memory_advecting_sphere.prof")
+    # jax.profiler.save_device_memory_profile("memory_advecting_sphere.prof")
 
     print(f"L2 error in 2\pi advected sphere of radius 0.5 is equal to {difference_l2} \t should ideally be \t 0.0")
     assert jnp.isclose(difference_l2, 0.0, atol=1e-4)
+
+  
+    def one_fn(r): return 1.0
+    ii = jnp.arange(2, Nx+2)
+    jj = jnp.arange(2, Ny+2)
+    kk = jnp.arange(2, Nz+2)
+    I, J, K = jnp.meshgrid(ii, jj, kk, indexing='ij')
+    nodes = jnp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1)))
+    vone_fn = jax.vmap(one_fn)
+    get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
+    integrate_over_interface_at_node, integrate_in_negative_domain = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, vone_fn)
+    sphere_volume = jax.vmap(integrate_in_negative_domain)(nodes)
+    sphere_area = jax.vmap(integrate_over_interface_at_node)(nodes)
+    print(f"Final volume of the sphere is {sphere_volume}; it should be {4.0*3.141592653589793*0.5**3 / 3.0}")
+    print(f"Final surface area of the sphere is {sphere_area}; it should be {4.0*3.141592653589793*0.5**2}")
+    
     #--- to save snapshots uncomment below line
-    # io.write_vtk_solution(gstate, log, 'results/')
+    io.write_vtk_solution(gstate, log, 'results/')
+    pdb.set_trace()
 
 
 

@@ -29,7 +29,6 @@ from jax._src.dtypes import dtype
 import jax.numpy as jnp
 from jax import lax, vmap
 from numpy import int32
-from torch import norm
 # from min_gibou_tests import velocity_fn
 
 from src import (interpolate, level_set as ls)
@@ -42,7 +41,6 @@ static_cast = util.static_cast
 Array = util.Array
 i32 = util.i32
 f32 = util.f32
-f64 = util.f64
 
 
 
@@ -201,7 +199,7 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     dt = f32(dt)
     dt_2 = f32(dt / 2.0)
 
-    R, U_n, V_nm1= gstate.R, sstate.solution, sstate.velocity_nm1
+    R, U_n, V_nm1= gstate.R, sstate.phi, sstate.velocity_nm1
     V_n = velocity_fn(R, time)
 
     # Get interpolation functions
@@ -228,7 +226,7 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     # U_np1 = perturb(U_np1)
 
     return dataclasses.replace(sstate,
-                               solution=U_np1,
+                               phi=U_np1,
                                velocity_nm1=V_n)
 
 
@@ -249,7 +247,7 @@ def reinitialize_level_set(sstate: T,
     # x = gstate.x; y = gstate.y; z = gstate.z
     # dx = x[2] - x[1]; dy = y[2] - y[1]; dz = z[2] - z[1]
 
-    phi_n = sstate.solution
+    phi_n = sstate.phi
     sgn_0 = jnp.sign(phi_n)
 
     def step_phi_fn(i, sgn_phi_n):
@@ -263,7 +261,7 @@ def reinitialize_level_set(sstate: T,
 
     (sgn_0, phi_n) = lax.fori_loop(i32(0), i32(10), step_phi_fn, (sgn_0, phi_n))
     ls.smooth_phi_n(phi_n, gstate)
-    return dataclasses.replace(sstate, solution=phi_n)
+    return dataclasses.replace(sstate, phi=phi_n)
 
 
 
@@ -276,7 +274,7 @@ class SIMState:
     Attributes:
     u: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
     """
-    solution: Array
+    phi: Array
     velocity_nm1: Array
 
 
@@ -321,9 +319,9 @@ def level_set(level_set_fn: Callable[..., Array],
         _, _, reinitialized_fn, _ = advect_level_set(grid_state, sim_state.velocity_nm1, velocity_fn, time)
         def wrapper(func):
             def wrapped(sim_state, grid_state, time):
-                U_np1 = func(grid_state.R, sim_state.solution, dt)
+                U_np1 = func(grid_state.R, sim_state.phi, dt)
                 V_n = velocity_fn(grid_state.R, time)
-                return dataclasses.replace(sim_state, solution=U_np1, velocity_nm1=V_n)
+                return dataclasses.replace(sim_state, phi=U_np1, velocity_nm1=V_n)
             return wrapped
 
         return wrapper(reinitialized_fn)(sim_state, grid_state, time)

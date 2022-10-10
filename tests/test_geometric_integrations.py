@@ -128,27 +128,18 @@ test_state = CaseClass(PHI, U, ALPHA, MU_M, MU_P)
 
 
 # --- Get interpolants
-phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-    test_state.phi, gstate)
-u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-    test_state.solution, gstate)
-mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-    test_state.mu_m, gstate)
-mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-    test_state.mu_p, gstate)
-jump_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-    test_state.jump, gstate)
+phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.phi, gstate)
+u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.solution, gstate)
+mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.mu_m, gstate)
+mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.mu_p, gstate)
+jump_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.jump, gstate)
 
 
 # --- Get functions
-get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(
-    gstate, test_state)
-integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(
-    get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
-alpha_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(
-    get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, jump_interp_fn)
-compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(
-    gstate, get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn)
+get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, test_state)
+integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
+alpha_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, jump_interp_fn)
+compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn)
 
 
 # --- Measurements: PyTest will pick this up
@@ -158,13 +149,11 @@ def test_surface_area_and_volume():
 
     u_dGammas = vmap(integrate_over_interface_at_node)(nodes)
     print("\n\n\n")
-    print(
-        f"Surface area is computed to be {u_dGammas.sum()} ~~ must be ~~ {jnp.pi}")
+    print(f"Surface area is computed to be {u_dGammas.sum()} ~~ must be ~~ {jnp.pi}")
     print("\n\n\n")
 
     u_dOmegas = vmap(integrate_in_negative_domain_at_node)(nodes)
-    print(
-        f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
+    print(f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
     print("\n\n\n")
 
     assert jnp.isclose(u_dGammas.sum(), jnp.pi, atol=0.02)
