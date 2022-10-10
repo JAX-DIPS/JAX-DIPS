@@ -1139,7 +1139,7 @@ $2^7$ & OOM  &  -   & OOM  & -   & OOM & OOM \\ \hline
 	$2^4$ & $ 5.52\times 10^{-2}$ &  $ $   & $ 6.22\times 10^{-1} $  & $ $   & $ 0.0411 $  & $ 1.27 $ \\ 
 	$2^5$ & $ 2.44\times 10^{-2}$ &  $ $   & $ 2.66\times 10^{-1}$   & $ $   & $ 0.1814 $  & $ 8.3  $ \\ 
 	$2^6$ & $ 2.33\times 10^{-2}$ &  $ $   & $ 2.24\times 10^{-1} $   & $ $   & $ 1.889 $  & $ 29.6 $ \\ 
-	$2^7$ & $ 8.93\times 10^{-2}$ &  $ $   & $ 4.00\times 10^{-1} $   & $ $   & $ 9.649 $  & $ 29.7 $ \\ \hline
+	$2^7$ & $ 8.62\times 10^{-2}$ &  $ $   & $ 3.80\times 10^{-1} $   & $ $   & $ 9.649 $  & $ 29.7 $ \\ \hline
 	\end{tabular}
 	\caption{Convergence test for the scalable pointwise multi-resolution regression-based solver. 
 	Rightmost column reports the overall time to solution for \texttt{JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. 
@@ -1214,42 +1214,87 @@ We used 1 NVIDIA DGX machine with 8 V100 GPUs (each with 32 GB VRAM used at $100
 
 
 
-\subsection{Case IV. A Charged Dragon}
-We simulate a Poisson problem with discontinuities on the Dragon problem presented in \cite{curless1996volumetric}. In this case we used the signed-distance function produced by SDFGen, and initiated an interpolant based on its values; \textit{i.e.}, $\phi(r)$. The problem set up was $f^\pm=0,\ k^\pm=0, \ \alpha=0.1,\ \beta=1.0, \ \mu^-=1.0, \ \mu^+=2.0$ and the Dirichlet boundary condition over the walls is $u_{bc}(\{x,y,z\}\in \partial \Omega)=1/\phi(x,y,z)$. 
+\subsection{Case IV. A Charged Dragon - Time complexity and parallel scaling on GPU clusters}
+We adopt the problem setup presented in Case II \ref{subsec:star}, however with a considerably more challenging geometry of the Dragon presented in \cite{curless1996volumetric}. In this case we used the signed-distance function produced by SDFGen, and initiated an interpolant based on its values. 
+
+
+The results are shown in figure \ref{fig:dragon}, with a $\rm L^\infty$-error of $0.5$ and RMSE of $0.06$ after 1000 epochs on a base resolution of $64^3$ and implicitly refined onto multi-resolutions $128^3,256^3,512^3$. The neural network pair have only 1 hidden layer with 100 sine-activated neurons, although investigating more complex networks (transformers, symmetry preserving, \textit{etc}.) would likely improve accuracy.
+
+In table \ref{tab:scaling} we report scaling results on NVIDIA A100 GPUs at four base resolutions with three levels of implicit refinement. We used a batchsize of $32\times 32\times 16$ in all cases. At fixed number of GPUs, training time scales linearly (\textit{i.e.}, optimal scaling) with the number of grid points. At a fixed resolution, increasing the number of GPUs accelerates training roughly with $\rm epoch\ time \sim 1/\sqrt{\text{\# }GPUs}$, although the advantage is more effective at higher resolutions. Compile time increases with resolution and decreases with number of GPUs. A maximum grid size of $1024^3$ at multi-resolutions $1024^3,\ 2048^3, 4096^3,\ 8192^3$ was simulated on one NVIDIA DGX with 8 A100 GPUs. 
+
+\begin{table}[ht]
+\begin{center}
+\caption{Scaling test. Time per epoch (sec) and JAX compile time for different configurations.} \label{tab:scaling}
+\begin{tabular}{ccccccccc}
+\toprule
+base resolution: & \multicolumn{2}{c}{$64^3$}& \multicolumn{2}{c}{$128^3$} & \multicolumn{2}{c}{$256^3$}  & \multicolumn{2}{c}{$512^3$}\\
+\cmidrule(r){1-1}\cmidrule(r){2-3}\cmidrule(r){4-5}\cmidrule(r){6-7}\cmidrule(r){8-9}
+$\rm A100\ GPUs$ &  epoch  &  compile   &  epoch   & compile &    epoch & compile  &  epoch    &   compile \\
+\cmidrule(r){1-1}\cmidrule(r){2-3}\cmidrule(r){4-5}\cmidrule(r){6-7}\cmidrule(r){8-9} 
+$1$        & $0.908$ &  $9.027$   & $6.960$  & $9.288$ & $55.287$ & $12.164$ &  $438.45$  &  $49.020$ \\
+$2$        & $0.657$ &  $7.575$   & $5.893$  & $7.823$ & $47.360$ & $10.045$ &  $378.98$  &  $39.815$ \\ 
+$4$        & $0.405$ &  $7.480$   & $3.629$  & $7.863$ & $28.261$ & $9.129$  &  $226.73$  &  $27.405$ \\ 
+$8$        & $0.384$ &  $7.983$   & $3.340$  & $7.901$ & $26.799$ & $9.154$  &  $204.88$  &  $20.632$\\ \bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+
+
+
+
+
 
 The results are shown in figure \ref{fig:dragon}.
 
 
 \begin{figure}
      \centering
-     \begin{subfigure}[b]{0.45\textwidth}
+     \begin{subfigure}[b]{\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{./figures/dragon_shape.png}
-         \caption{Geometry of the dragon.}
+         \includegraphics[width=\textwidth]{./figures/dragon.png}
+         \caption{Geometry of the dragon and gradient streamlines, colored by solution values.}
          \label{fig:dragon1}
      \end{subfigure}
-     \begin{subfigure}[b]{0.45\textwidth}
+     \begin{subfigure}[b]{\textwidth}
          \centering
-         \includegraphics[width=\textwidth]{./figures/dragon_phi.png}
-         \caption{Level-set function.}
+         \includegraphics[width=\textwidth]{./figures/dragonSlice.png}
+         \caption{Jump in solution and its gradient.}
          \label{fig:dragon2}
      \end{subfigure}
-     \hfill
-     \begin{subfigure}[b]{0.45\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{./figures/dragon_sol.png}
-         \caption{Solution on a cross section.}
-         \label{fig:dragon3}
-     \end{subfigure}
-     \begin{subfigure}[b]{0.45\textwidth}
-         \centering
-         \includegraphics[width=\textwidth]{./figures/dragon_volume.png}
-         \caption{Solution in the domain.}
-         \label{fig:dragon4}
-     \end{subfigure}
-        \caption{A Charged Dragon.}
+        \caption{The NBM approach enables a $1024^3$ effective resolution on a single NVIDIA A6000 GPU.}
         \label{fig:dragon}
 \end{figure}
+%\begin{figure}
+%     \centering
+%     \begin{subfigure}[b]{0.45\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{./figures/dragon_shape.png}
+%         \caption{Geometry of the dragon.}
+%         \label{fig:dragon1}
+%     \end{subfigure}
+%     \begin{subfigure}[b]{0.45\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{./figures/dragon_phi.png}
+%         \caption{Level-set function.}
+%         \label{fig:dragon2}
+%     \end{subfigure}
+%     \hfill
+%     \begin{subfigure}[b]{0.45\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{./figures/dragon_sol.png}
+%         \caption{Solution on a cross section.}
+%         \label{fig:dragon3}
+%     \end{subfigure}
+%     \begin{subfigure}[b]{0.45\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{./figures/dragon_volume.png}
+%         \caption{Solution in the domain.}
+%         \label{fig:dragon4}
+%     \end{subfigure}
+%        \caption{A Charged Dragon.}
+%        \label{fig:dragon}
+%\end{figure}
 
 
 
