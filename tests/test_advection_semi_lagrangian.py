@@ -18,10 +18,9 @@
 
 """
 from jax.config import config
-from src import mesh, geometric_integrations_per_point, geometric_integrations
+from src import mesh, geometric_integrations
 from src import io
 from src import simulate_fields
-from src.jaxmd_modules import space
 from src.jaxmd_modules.util import f32, i32
 from jax import (jit, lax, numpy as jnp)
 import jax.profiler
@@ -29,7 +28,7 @@ import jax
 import time
 import os
 import sys
-import pdb
+# import pdb
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
@@ -149,14 +148,14 @@ def test_spinning_sphere():
     vone_fn = jax.vmap(one_fn)
     get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
     integrate_over_interface_at_node, integrate_in_negative_domain = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, vone_fn)
-    sphere_volume = jax.vmap(integrate_in_negative_domain)(nodes)
-    sphere_area = jax.vmap(integrate_over_interface_at_node)(nodes)
+    sphere_volume = jax.vmap(integrate_in_negative_domain)(nodes).sum()
+    sphere_area = jax.vmap(integrate_over_interface_at_node)(nodes).sum()
     print(f"Final volume of the sphere is {sphere_volume}; it should be {4.0*3.141592653589793*0.5**3 / 3.0}")
     print(f"Final surface area of the sphere is {sphere_area}; it should be {4.0*3.141592653589793*0.5**2}")
     
     #--- to save snapshots uncomment below line
-    io.write_vtk_solution(gstate, log, 'results/')
-    pdb.set_trace()
+    # io.write_vtk_solution(gstate, log, 'results/')
+    # pdb.set_trace()
 
 
 
