@@ -355,6 +355,18 @@ class PDETrainer:
         return u_at_point_fn, grad_u_at_point_fn
 
 
+    def get_mask_plus(self, points):
+        '''
+            For a set of points, returns 1 if in external region
+            returns 0 if inside the geometry.
+        '''
+        phi_points = self.phi_interp_fn(points)
+        def sign_p_fn(a):
+            # returns 1 only if a>0, otherwise is 0
+            sgn = jnp.sign(a)
+            return jnp.floor(0.5 * sgn + 0.75)
+        mask_p = sign_p_fn(phi_points)
+        return mask_p
 
 
     @partial(jit, static_argnums=(0))
@@ -365,6 +377,17 @@ class PDETrainer:
         lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
+        
+        # du_xmax = (self.evaluate_solution_fn(params, self.gstate.R_xmax_boundary) - self.dir_bc_fn(self.gstate.R_xmax_boundary)[...,jnp.newaxis])
+        # du_xmin = (self.evaluate_solution_fn(params, self.gstate.R_xmin_boundary) - self.dir_bc_fn(self.gstate.R_xmin_boundary)[...,jnp.newaxis])
+        
+        # du_ymax = (self.evaluate_solution_fn(params, self.gstate.R_ymax_boundary) - self.dir_bc_fn(self.gstate.R_ymax_boundary)[...,jnp.newaxis])
+        # du_ymin = (self.evaluate_solution_fn(params, self.gstate.R_ymin_boundary) - self.dir_bc_fn(self.gstate.R_ymin_boundary)[...,jnp.newaxis])
+        
+        # du_zmax = (self.evaluate_solution_fn(params, self.gstate.R_zmax_boundary) - self.dir_bc_fn(self.gstate.R_zmax_boundary)[...,jnp.newaxis])
+        # du_zmin = (self.evaluate_solution_fn(params, self.gstate.R_zmin_boundary) - self.dir_bc_fn(self.gstate.R_zmin_boundary)[...,jnp.newaxis])
+        
+        # tot_loss += 0.01 * (jnp.mean(jnp.square(du_xmax)) + jnp.mean(jnp.square(du_xmin)) + jnp.mean(jnp.square(du_ymax)) + jnp.mean(jnp.square(du_ymin)) + jnp.mean(jnp.square(du_zmax)) + jnp.mean(jnp.square(du_zmin))) 
         return tot_loss
 
 

@@ -123,13 +123,13 @@
 \newlabel{fig:batcheffect}{{4}{17}{Effect of shuffling on the star example of \ref {subsec:star}; (left) without shuffling and (right) with shuffling. Shuffling has to be applied on the batches when training on batched data points.\relax }{figure.caption.4}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Numerical Results}{17}{section.4}\protected@file@percent }
 \newlabel{sec:examples}{{4}{17}{Numerical Results}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Accuracy and convergence: single-resolution, single batch, single GPU}{17}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Accuracy on spherical interface: single-resolution, single batch, single GPU}{17}{subsection.4.1}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures, RMSE and $L^\infty $, at 5 different resolutions (right).\relax }}{18}{figure.caption.5}\protected@file@percent }
 \newlabel{fig:losses}{{5}{18}{Loss evolution with epochs for the sphere of $16\times 16\times 16$ grid (left) and different accuracy measures, RMSE and $L^\infty $, at 5 different resolutions (right).\relax }{figure.caption.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence and overall time to solution for our JAX implementation, with $10,000$ epochs in each case, and initial compilation time. Measurements are on a single NVIDIA A6000 GPU. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }}{18}{table.caption.6}\protected@file@percent }
-\newlabel{tab:convergence_sphere}{{1}{18}{Convergence and overall time to solution for our JAX implementation, with $10,000$ epochs in each case, and initial compilation time. Measurements are on a single NVIDIA A6000 GPU. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }{table.caption.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Accuracy and convergence: complex geometry, single GPU, and effect of batching}{18}{subsection.4.2}\protected@file@percent }
-\newlabel{subsec:star}{{4.2}{18}{Accuracy and convergence: complex geometry, single GPU, and effect of batching}{subsection.4.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Convergence and timings for the sphere example averaged over $10,000$ epochs. Timings include the initial compilation time. Measurements are on a single NVIDIA A6000 GPU. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }}{18}{table.caption.6}\protected@file@percent }
+\newlabel{tab:convergence_sphere}{{1}{18}{Convergence and timings for the sphere example averaged over $10,000$ epochs. Timings include the initial compilation time. Measurements are on a single NVIDIA A6000 GPU. The regression-based method has 5 hidden layers with 10 neurons each, overall 928 trainable parameters.\relax }{table.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Accuracy on star interface: single GPU, domain switching, neural extrapolation, and batching}{18}{subsection.4.2}\protected@file@percent }
+\newlabel{subsec:star}{{4.2}{18}{Accuracy on star interface: single GPU, domain switching, neural extrapolation, and batching}{subsection.4.2}{}}
 \newlabel{subfig:sphere}{{6a}{19}{Illustration of numerical solution and absolute error on a cross section of the domain. \relax }{figure.caption.7}{}}
 \newlabel{sub@subfig:sphere}{{a}{19}{Illustration of numerical solution and absolute error on a cross section of the domain. \relax }{figure.caption.7}{}}
 \newlabel{fig:spheregrad}{{6b}{19}{Streamlines of solution gradient for (left) the surrogate neural model colored by model solution value, (right) exact streamlines colored by exact solution values. \relax }{figure.caption.7}{}}
@@ -137,25 +137,27 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces The neural network surrogate model trained on a $128^3$ grid using a single NVIDIA A6000 GPU.\relax }}{19}{figure.caption.7}\protected@file@percent }
 \newlabel{fig:sphere}{{6}{19}{The neural network surrogate model trained on a $128^3$ grid using a single NVIDIA A6000 GPU.\relax }{figure.caption.7}{}}
 \citation{curless1996volumetric}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence on the solution using the regression-based solver. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. The neural network has $982$ trainable parameters. In each case GPU compute occupancy is at $100\%$ on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a domain switching scheme with the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ optimization sequence.\relax }}{20}{table.caption.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Time complexity and parallel scaling on GPU clusters}{20}{subsection.4.3}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Convergence test for the scalable pointwise multi-resolution regression-based solver. Rightmost column reports the overall time to solution for \texttt  {JAX-DIPS} which constitutes $10,000$ epochs in each case and the initial compilation time of jaxpressions. We run these experiments on a single NVIDIA RTX A6000 GPU. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. We use a multi-resolution training protocol that refines to 4 levels at each collocation point. Errors are reported on an upsamples grid at resolution $256^3$. Batch size is the minimum of $64\times 64\times 32$ and number of collocation points, which ensures memory saturation at 32 GB.\relax }}{21}{table.caption.9}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }}{21}{figure.caption.10}\protected@file@percent }
-\newlabel{fig:star}{{7}{21}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.10}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{21}{section.5}\protected@file@percent }
-\newlabel{sec:conc}{{5}{21}{Conclusion}{section.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }}{22}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:star_sol}{{8}{22}{Illustration of exact and numerical solutions on a $64\times 64 \times 64$ grid.\relax }{figure.caption.11}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }}{23}{figure.caption.12}\protected@file@percent }
-\newlabel{fig:lossestar}{{9}{23}{Loss evolution with epochs for the sphere of $64\times 64\times 64$ grid (left) and different accuracy measures at 5 resolutions (right).\relax }{figure.caption.12}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Scaling test. Time per epoch (sec) and JAX compile time for different configurations.\relax }}{23}{table.caption.13}\protected@file@percent }
-\newlabel{tab:scaling}{{4}{23}{Scaling test. Time per epoch (sec) and JAX compile time for different configurations.\relax }{table.caption.13}{}}
-\newlabel{fig:dragon1}{{10a}{24}{Geometry of the dragon and gradient streamlines, colored by solution values.\relax }{figure.caption.14}{}}
-\newlabel{sub@fig:dragon1}{{a}{24}{Geometry of the dragon and gradient streamlines, colored by solution values.\relax }{figure.caption.14}{}}
-\newlabel{fig:dragon2}{{10b}{24}{Jump in solution and its gradient.\relax }{figure.caption.14}{}}
-\newlabel{sub@fig:dragon2}{{b}{24}{Jump in solution and its gradient.\relax }{figure.caption.14}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces The NBM approach enables a $1024^3$ effective resolution on a single NVIDIA A6000 GPU.\relax }}{24}{figure.caption.14}\protected@file@percent }
-\newlabel{fig:dragon}{{10}{24}{The NBM approach enables a $1024^3$ effective resolution on a single NVIDIA A6000 GPU.\relax }{figure.caption.14}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Convergence in solution of the star geometry using the single-resolution regression-based solver with domain switching. We report $L^\infty $-norm error as well as root-mean-squared-error (RMSE) of the solution field evaluated everywhere in the domain. Timings are averaged over $10,000$ epochs in each case and include the initial compilation time for jaxpressions. The neural network pair have 1 hidden layer each with 100 neurons, overall $1,002$ trainable parameteres. Domain switching scheme follows the $\textrm  {whole region} \rightarrow \textrm  {fast region} \rightarrow \textrm  {fast region}$ sequence.\relax }}{20}{table.caption.8}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Convergence in solution of the star geometry using the multi-resolution regression-based solver with batching. We use a multi-resolution training protocol that refines to 4 levels at each collocation point. Batch size is the minimum of $64\times 64\times 32$ and number of collocation points, which ensures memory saturation at $\nobreakspace  {}30$ GB.\relax }}{20}{table.caption.8}\protected@file@percent }
+\newlabel{subfig:star}{{7a}{21}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.9}{}}
+\newlabel{sub@subfig:star}{{a}{21}{Illustration of three dimensional interface used (left), and $\mu ^\pm $ on the $32\times 32\times 32$ grid (right).\relax }{figure.caption.9}{}}
+\newlabel{fig:lossestar}{{7b}{21}{Loss evolution with epochs for the star of $64\times 64\times 64$ grid using domain switching training (left), and decrease in error by increasing resolutions (right).\relax }{figure.caption.9}{}}
+\newlabel{sub@fig:lossestar}{{b}{21}{Loss evolution with epochs for the star of $64\times 64\times 64$ grid using domain switching training (left), and decrease in error by increasing resolutions (right).\relax }{figure.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces The neural network model trained with different configurations and resolutions.\relax }}{21}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:star}{{7}{21}{The neural network model trained with different configurations and resolutions.\relax }{figure.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Illustration of exact and numerical solutions (top row) and gradient streamlines (bottom row) on a $64\times 64 \times 64$ grid.\relax }}{22}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:star_sol}{{8}{22}{Illustration of exact and numerical solutions (top row) and gradient streamlines (bottom row) on a $64\times 64 \times 64$ grid.\relax }{figure.caption.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Time complexity and parallel scaling on GPU clusters}{23}{subsection.4.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Scaling test. Time per epoch (sec) and JAX compile time for different configurations.\relax }}{23}{table.caption.11}\protected@file@percent }
+\newlabel{tab:scaling}{{4}{23}{Scaling test. Time per epoch (sec) and JAX compile time for different configurations.\relax }{table.caption.11}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{23}{section.5}\protected@file@percent }
+\newlabel{sec:conc}{{5}{23}{Conclusion}{section.5}{}}
+\newlabel{fig:dragon1}{{9a}{24}{Geometry of the dragon and gradient streamlines, colored by solution values.\relax }{figure.caption.12}{}}
+\newlabel{sub@fig:dragon1}{{a}{24}{Geometry of the dragon and gradient streamlines, colored by solution values.\relax }{figure.caption.12}{}}
+\newlabel{fig:dragon2}{{9b}{24}{Jump in solution and its gradient.\relax }{figure.caption.12}{}}
+\newlabel{sub@fig:dragon2}{{b}{24}{Jump in solution and its gradient.\relax }{figure.caption.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces The NBM approach enables a $1024^3$ effective resolution on a single NVIDIA A6000 GPU.\relax }}{24}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:dragon}{{9}{24}{The NBM approach enables a $1024^3$ effective resolution on a single NVIDIA A6000 GPU.\relax }{figure.caption.12}{}}
 \bibstyle{abbrv}
 \bibdata{references}
 \bibcite{adams2002immersed}{{1}{}{{}}{{}}}
@@ -177,7 +179,7 @@
 \bibcite{crockett2011cartesian}{{17}{}{{}}{{}}}
 \bibcite{curless1996volumetric}{{18}{}{{}}{{}}}
 \bibcite{dal2020data}{{19}{}{{}}{{}}}
-\@writefile{toc}{\contentsline {section}{References}{25}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{25}{section*.13}\protected@file@percent }
 \bibcite{de2018end}{{20}{}{{}}{{}}}
 \bibcite{ewing1999immersed}{{21}{}{{}}{{}}}
 \bibcite{fedkiw1999non}{{22}{}{{}}{{}}}
