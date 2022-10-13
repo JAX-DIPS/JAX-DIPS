@@ -45,9 +45,9 @@ def test_poisson_solver_without_jump():
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
-    Nx = i32(16)
-    Ny = i32(16)
-    Nz = i32(16)
+    Nx = i32(8)
+    Ny = i32(8)
+    Nz = i32(8)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -185,14 +185,15 @@ def test_poisson_solver_without_jump():
 
     t1 = time.time()
 
-    sim_state = solve_fn(gstate, sim_state)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
 
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver.prof")
-
+ 
+    
     log = {
         'phi': sim_state.phi,
         'U': sim_state.solution,
@@ -205,12 +206,12 @@ def test_poisson_solver_without_jump():
         'f_m': sim_state.f_m,
         'f_p': sim_state.f_p
     }
-    io.write_vtk_manual(gstate, log)
+    io.write_vtk_manual(gstate, log, filename='results/test_without_jump')
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     print(f"L_inf error = {L_inf_err}")
 
-    assert L_inf_err<0.3
+    assert L_inf_err<0.003
 
 
 if __name__ == "__main__":
