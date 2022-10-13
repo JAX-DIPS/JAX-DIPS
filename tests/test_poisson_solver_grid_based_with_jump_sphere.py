@@ -220,7 +220,7 @@ def test_poisson_solver_with_jump():
 
     t1 = time.time()
 
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=1, switching_interval=SWITCHING_INTERVAL)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=0, switching_interval=SWITCHING_INTERVAL)
 
     t2 = time.time()
 
@@ -257,7 +257,7 @@ def test_poisson_solver_with_jump():
 
     print(f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared error = {rms_err} ")
 
-    assert L_inf_err<0.2
+    assert L_inf_err<0.3
 
 
 if __name__ == "__main__":
