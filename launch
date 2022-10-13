@@ -4,7 +4,6 @@ IMAGE_NAME="jax_dips"
 DOCKER_CMD="docker run \
     --network host \
     --gpus all \
-    --ulimit memlock=-1 --ulimit stack=67108864 \
     -p ${JUPYTER_PORT}:8888 \
     -v /etc/passwd:/etc/passwd:ro \
     -v /etc/group:/etc/group:ro \
