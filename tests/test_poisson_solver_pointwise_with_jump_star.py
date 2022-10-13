@@ -48,11 +48,11 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 def test_poisson_solver_with_jump_complex():
     ALGORITHM = 0                   # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
-    Nx_tr = Ny_tr = Nz_tr = 128
+    Nx_tr = Ny_tr = Nz_tr = 16
     checkpoint_dir="./checkpoints"
     checkpoint_interval = 10000
     multi_gpu = False
-    num_epochs = 10000
+    num_epochs = 1000
     batch_size = min( 64*64*32, Nx_tr*Ny_tr*Nz_tr)
 
     dim = i32(3)
