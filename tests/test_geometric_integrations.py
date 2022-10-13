@@ -17,7 +17,6 @@
   Primary Author: mistani
 
 """
-from unittest import TextTestResult
 from jax.config import config
 from src import io, mesh, interpolate, geometric_integrations
 from src.jaxmd_modules import dataclasses, util

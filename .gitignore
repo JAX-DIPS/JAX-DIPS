@@ -34,6 +34,7 @@ workspace.code-workspace
 .local
 checkpoints/
 .vscode/
+.keras
 examples/dragon/results/*.pvsm
 # examples/lucy/lucy.ply
 # examples/dragon/dragon.vti
