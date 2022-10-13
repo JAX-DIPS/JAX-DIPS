@@ -1,11 +1,12 @@
 # JAX-DIPS
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jax_dips_paper_kernel.png)
+
 JAX implementation of a differentiable PDE solver with jump conditions over irregular interfaces.
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/dragon.png)
-
-Advection of the level-set function by a semi-Lagrangian scheme with Sussman reinitialization on a uniform mesh with `128*128*128` grid points is demonstrated below. Note the minimal mass-loss in the level-set function after a full rotation.
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/dragon.png)![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jump_dragon.png)
 
 
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/animated_spinning.gif)
+<!-- Advection of the level-set function by a semi-Lagrangian scheme with Sussman reinitialization on a uniform mesh with `128*128*128` grid points is demonstrated below. Note the minimal mass-loss in the level-set function after a full rotation. -->
+<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/animated_spinning.gif) -->
 
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/gradient_U.png)
 
