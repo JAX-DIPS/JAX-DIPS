@@ -1,14 +1,23 @@
 # JAX-DIPS
+JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D. 
+
+The numerical method is the neural bootstrapping method (NBM):
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jax_dips_paper_kernel.png)
 
-JAX implementation of a differentiable PDE solver with jump conditions over irregular interfaces.
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/dragon.png)![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jump_dragon.png)
+
+Streamlines of solution gradients, and jump in solution calculated by the `dragon` example.
+<p float="center">
+  <img src="docs/dragon.png" width="258" />
+  <img src="docs/jump_dragon.png" width="150" /> 
+</p>
+
+<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/dragon.png)![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jump_dragon.png) -->
 
 
 <!-- Advection of the level-set function by a semi-Lagrangian scheme with Sussman reinitialization on a uniform mesh with `128*128*128` grid points is demonstrated below. Note the minimal mass-loss in the level-set function after a full rotation. -->
 <!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/animated_spinning.gif) -->
 
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/gradient_U.png)
+<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/gradient_U.png) -->
 
 # Testing
 Do `pytest tests` from parent directory and a suite of tests will run:
