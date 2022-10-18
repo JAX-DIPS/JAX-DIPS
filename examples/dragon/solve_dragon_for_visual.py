@@ -49,6 +49,7 @@ os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 def poisson_solver_with_jump_complex():
     ALGORITHM = 0                          # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
+    checkpoint_interval = 100
     Nx_tr = Ny_tr = Nz_tr = 64 #1024
     multi_gpu = False          #True
     num_epochs = 1000
@@ -249,7 +250,7 @@ def poisson_solver_with_jump_complex():
     t1 = time.time()
 
 
-    sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu, batch_size=batch_size)
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu, batch_size=batch_size, checkpoint_interval=checkpoint_interval)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()
