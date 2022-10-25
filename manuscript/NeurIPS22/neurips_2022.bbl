@@ -109,6 +109,13 @@ D.~Kochkov, J.~A. Smith, A.~Alieva, Q.~Wang, M.~P. Brenner, and S.~Hoyer.
   dynamics.
 \newblock {\em Proceedings of the National Academy of Sciences}, 118(21), 2021.
 
+\bibitem{krishnapriyan2021characterizing}
+A.~Krishnapriyan, A.~Gholami, S.~Zhe, R.~Kirby, and M.~W. Mahoney.
+\newblock Characterizing possible failure modes in physics-informed neural
+  networks.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:26548--26560, 2021.
+
 \bibitem{lagaris1998artificial}
 I.~E. Lagaris, A.~Likas, and D.~I. Fotiadis.
 \newblock Artificial neural networks for solving ordinary and partial

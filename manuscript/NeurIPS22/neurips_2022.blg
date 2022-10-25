@@ -4,46 +4,46 @@ The top-level auxiliary file: neurips_2022.aux
 The style file: abbrv.bst
 Database file #1: references.bib
 Warning--entry type for "jax2018github" isn't style-file defined
---line 154 of file references.bib
-You've used 41 entries,
+--line 163 of file references.bib
+You've used 42 entries,
             2118 wiz_defined-function locations,
-            727 strings with 11775 characters,
-and the built_in function-call counts, 14799 in all, are:
-= -- 1409
-> -- 897
+            732 strings with 11990 characters,
+and the built_in function-call counts, 15256 in all, are:
+= -- 1454
+> -- 925
 < -- 4
-+ -- 357
-- -- 310
-* -- 1130
-:= -- 2556
-add.period$ -- 124
-call.type$ -- 41
-change.case$ -- 277
++ -- 368
+- -- 320
+* -- 1170
+:= -- 2633
+add.period$ -- 127
+call.type$ -- 42
+change.case$ -- 285
 chr.to.int$ -- 0
-cite$ -- 41
-duplicate$ -- 471
-empty$ -- 1008
-format.name$ -- 310
-if$ -- 2974
+cite$ -- 42
+duplicate$ -- 482
+empty$ -- 1038
+format.name$ -- 320
+if$ -- 3064
 int.to.chr$ -- 0
-int.to.str$ -- 41
-missing$ -- 39
-newline$ -- 207
-num.names$ -- 82
-pop$ -- 251
+int.to.str$ -- 42
+missing$ -- 40
+newline$ -- 212
+num.names$ -- 84
+pop$ -- 257
 preamble$ -- 1
-purify$ -- 236
+purify$ -- 243
 quote$ -- 0
-skip$ -- 343
+skip$ -- 350
 stack$ -- 0
-substring$ -- 838
-swap$ -- 75
+substring$ -- 880
+swap$ -- 76
 text.length$ -- 4
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 164
+type$ -- 168
 warning$ -- 0
-while$ -- 126
-width$ -- 43
-write$ -- 440
+while$ -- 130
+width$ -- 44
+write$ -- 451
 (There was 1 warning)

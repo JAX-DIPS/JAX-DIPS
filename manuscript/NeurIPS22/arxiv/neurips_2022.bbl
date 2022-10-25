@@ -1,0 +1,253 @@
+\begin{thebibliography}{10}
+
+\bibitem{berg2017neural}
+J.~Berg and K.~Nystr{\"o}m.
+\newblock Neural network augmented inverse problems for pdes.
+\newblock {\em arXiv preprint arXiv:1712.09685}, 2017.
+
+\bibitem{bezgin2022jax}
+D.~A. Bezgin, A.~B. Buhendwa, and N.~A. Adams.
+\newblock Jax-fluids: A fully-differentiable high-order computational fluid
+  dynamics solver for compressible two-phase flows.
+\newblock {\em arXiv preprint arXiv:2203.13760}, 2022.
+
+\bibitem{bhattacharya2020model}
+K.~Bhattacharya, B.~Hosseini, N.~B. Kovachki, and A.~M. Stuart.
+\newblock Model reduction and neural networks for parametric pdes.
+\newblock {\em arXiv preprint arXiv:2005.03180}, 2020.
+
+\bibitem{BOCHKOV2020109269}
+D.~Bochkov and F.~Gibou.
+\newblock Solving elliptic interface problems with jump conditions on cartesian
+  grids.
+\newblock {\em Journal of Computational Physics}, 407:109269, 2020.
+
+\bibitem{bochkov2021non}
+D.~Bochkov and F.~Gibou.
+\newblock A non-parametric shape optimization approach for solving inverse
+  problems in directed self-assembly of block copolymers.
+\newblock {\em arXiv preprint arXiv:2112.09615}, 2021.
+
+\bibitem{bochkov2021sharp}
+D.~Bochkov, T.~Pollock, and F.~Gibou.
+\newblock Sharp-interface simulations of multicomponent alloy solidification.
+\newblock {\em arXiv preprint arXiv:2112.08650}, 2021.
+
+\bibitem{jax2018github}
+J.~Bradbury, R.~Frostig, P.~Hawkins, M.~J. Johnson, C.~Leary, D.~Maclaurin,
+  G.~Necula, A.~Paszke, J.~Vander{P}las, S.~Wanderman-{M}ilne, and Q.~Zhang.
+\newblock {JAX}: composable transformations of {P}ython+{N}um{P}y programs,
+  2018.
+
+\bibitem{chen1995universal}
+T.~Chen and H.~Chen.
+\newblock Universal approximation to nonlinear operators by neural networks
+  with arbitrary activation functions and its application to dynamical systems.
+\newblock {\em IEEE Transactions on Neural Networks}, 6(4):911--917, 1995.
+
+\bibitem{chua1988cellularA}
+L.~O. Chua and L.~Yang.
+\newblock Cellular neural networks: Applications.
+\newblock {\em IEEE Transactions on circuits and systems}, 35(10):1273--1290,
+  1988.
+
+\bibitem{chua1988cellular}
+L.~O. Chua and L.~Yang.
+\newblock Cellular neural networks: Theory.
+\newblock {\em IEEE Transactions on circuits and systems}, 35(10):1257--1272,
+  1988.
+
+\bibitem{curless1996volumetric}
+B.~Curless and M.~Levoy.
+\newblock A volumetric method for building complex models from range images.
+\newblock In {\em Proceedings of the 23rd annual conference on Computer
+  graphics and interactive techniques}, pages 303--312, 1996.
+
+\bibitem{dal2020data}
+N.~Dal~Santo, S.~Deparis, and L.~Pegolotti.
+\newblock Data driven approximation of parametrized pdes by reduced basis and
+  neural networks.
+\newblock {\em Journal of Computational Physics}, 416:109550, 2020.
+
+\bibitem{de2018end}
+F.~de~Avila Belbute-Peres, K.~Smith, K.~Allen, J.~Tenenbaum, and J.~Z. Kolter.
+\newblock End-to-end differentiable physics for learning and control.
+\newblock {\em Advances in neural information processing systems}, 31, 2018.
+
+\bibitem{galatsis2010patterning}
+K.~Galatsis, K.~L. Wang, M.~Ozkan, C.~S. Ozkan, Y.~Huang, J.~P. Chang, H.~G.
+  Monbouquette, Y.~Chen, P.~Nealey, and Y.~Botros.
+\newblock Patterning and templating for nanoelectronics.
+\newblock {\em Advanced Materials}, 22(6):769--778, 2010.
+
+\bibitem{gobovic1993design}
+D.~Gobovic and M.~Zaghloul.
+\newblock Design of locally connected cmos neural cells to solve the
+  steady-state heat flow problem.
+\newblock In {\em Proceedings of 36th Midwest Symposium on Circuits and
+  Systems}, pages 755--757. IEEE, 1993.
+
+\bibitem{holl2020learning}
+P.~Holl, V.~Koltun, and N.~Thuerey.
+\newblock Learning to control pdes with differentiable physics.
+\newblock {\em arXiv preprint arXiv:2001.07457}, 2020.
+
+\bibitem{holl2020phiflow}
+P.~Holl, V.~Koltun, K.~Um, and N.~Thuerey.
+\newblock phiflow: A differentiable pde solving framework for deep learning via
+  physical simulations.
+\newblock In {\em NeurIPS Workshop}, volume~2, 2020.
+
+\bibitem{kingma2014adam}
+D.~P. Kingma and J.~Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock {\em arXiv preprint arXiv:1412.6980}, 2014.
+
+\bibitem{Kochkov2021-ML-CFD}
+D.~Kochkov, J.~A. Smith, A.~Alieva, Q.~Wang, M.~P. Brenner, and S.~Hoyer.
+\newblock Machine learning{\textendash}accelerated computational fluid
+  dynamics.
+\newblock {\em Proceedings of the National Academy of Sciences}, 118(21), 2021.
+
+\bibitem{krishnapriyan2021characterizing}
+A.~Krishnapriyan, A.~Gholami, S.~Zhe, R.~Kirby, and M.~W. Mahoney.
+\newblock Characterizing possible failure modes in physics-informed neural
+  networks.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:26548--26560, 2021.
+
+\bibitem{lagaris1998artificial}
+I.~E. Lagaris, A.~Likas, and D.~I. Fotiadis.
+\newblock Artificial neural networks for solving ordinary and partial
+  differential equations.
+\newblock {\em IEEE transactions on neural networks}, 9(5):987--1000, 1998.
+
+\bibitem{lee1990neural}
+H.~Lee and I.~S. Kang.
+\newblock Neural algorithm for solving differential equations.
+\newblock {\em Journal of Computational Physics}, 91(1):110--131, 1990.
+
+\bibitem{li2020fourier}
+Z.~Li, N.~Kovachki, K.~Azizzadenesheli, B.~Liu, K.~Bhattacharya, A.~Stuart, and
+  A.~Anandkumar.
+\newblock Fourier neural operator for parametric partial differential
+  equations.
+\newblock {\em arXiv preprint arXiv:2010.08895}, 2020.
+
+\bibitem{li2020neural}
+Z.~Li, N.~Kovachki, K.~Azizzadenesheli, B.~Liu, K.~Bhattacharya, A.~Stuart, and
+  A.~Anandkumar.
+\newblock Neural operator: Graph kernel network for partial differential
+  equations.
+\newblock {\em arXiv preprint arXiv:2003.03485}, 2020.
+
+\bibitem{lu2019deeponet}
+L.~Lu, P.~Jin, and G.~E. Karniadakis.
+\newblock Deeponet: Learning nonlinear operators for identifying differential
+  equations based on the universal approximation theorem of operators.
+\newblock {\em arXiv preprint arXiv:1910.03193}, 2019.
+
+\bibitem{lu2020extracting}
+P.~Y. Lu, S.~Kim, and M.~Solja{\v{c}}i{\'c}.
+\newblock Extracting interpretable physical parameters from spatiotemporal
+  systems using unsupervised learning.
+\newblock {\em Physical Review X}, 10(3):031056, 2020.
+
+\bibitem{MirzadehPB}
+M.~{Mirzadeh}, M.~{Theillard}, and F.~{Gibou}.
+\newblock {A second-order discretization of the nonlinear Poisson-Boltzmann
+  equation over irregular geometries using non-graded adaptive Cartesian
+  grids}.
+\newblock {\em Journal of Computational Physics}, 230(5):2125--2140, Mar. 2011.
+
+\bibitem{MISTANI2018150}
+P.~Mistani, A.~Guittet, D.~Bochkov, J.~Schneider, D.~Margetis, C.~Ratsch, and
+  F.~Gibou.
+\newblock The island dynamics model on parallel quadtree grids.
+\newblock {\em Journal of Computational Physics}, 361:150--166, 2018.
+
+\bibitem{mistani2019parallel}
+P.~Mistani, A.~Guittet, C.~Poignard, and F.~Gibou.
+\newblock A parallel voronoi-based approach for mesoscale simulations of cell
+  aggregate electropermeabilization.
+\newblock {\em Journal of Computational Physics}, 380:48--64, 2019.
+
+\bibitem{tiny-cuda-nn}
+T.~M\"uller.
+\newblock Tiny {CUDA} neural network framework, 2021.
+\newblock https://github.com/nvlabs/tiny-cuda-nn.
+
+\bibitem{osher1988fronts}
+S.~Osher and J.~A. Sethian.
+\newblock Fronts propagating with curvature-dependent speed: Algorithms based
+  on hamilton-jacobi formulations.
+\newblock {\em Journal of computational physics}, 79(1):12--49, 1988.
+
+\bibitem{ouaknin2018level}
+G.~Y. Ouaknin, N.~Laachi, K.~Delaney, G.~H. Fredrickson, and F.~Gibou.
+\newblock Level-set strategy for inverse dsa-lithography.
+\newblock {\em Journal of Computational Physics}, 375:1159--1178, 2018.
+
+\bibitem{pakravan2021solving}
+S.~Pakravan, P.~A. Mistani, M.~A. Aragon-Calvo, and F.~Gibou.
+\newblock Solving inverse-pde problems with physics-aware neural networks.
+\newblock {\em Journal of Computational Physics}, 440:110414, 2021.
+
+\bibitem{rahaman2019spectral}
+N.~Rahaman, A.~Baratin, D.~Arpit, F.~Draxler, M.~Lin, F.~Hamprecht, Y.~Bengio,
+  and A.~Courville.
+\newblock On the spectral bias of neural networks.
+\newblock In {\em International Conference on Machine Learning}, pages
+  5301--5310. PMLR, 2019.
+
+\bibitem{RAISSI2019686}
+M.~Raissi, P.~Perdikaris, and G.~Karniadakis.
+\newblock Physics-informed neural networks: A deep learning framework for
+  solving forward and inverse problems involving nonlinear partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 378:686--707, 2019.
+
+\bibitem{shallue2018measuring}
+C.~J. Shallue, J.~Lee, J.~Antognini, J.~Sohl-Dickstein, R.~Frostig, and G.~E.
+  Dahl.
+\newblock Measuring the effects of data parallelism on neural network training.
+\newblock {\em arXiv preprint arXiv:1811.03600}, 2018.
+
+\bibitem{sharp1990calculating}
+K.~A. Sharp and B.~Honig.
+\newblock Calculating total electrostatic energies with the nonlinear
+  poisson-boltzmann equation.
+\newblock {\em Journal of Physical Chemistry}, 94(19):7684--7692, 1990.
+
+\bibitem{SIRIGNANO20181339}
+J.~Sirignano and K.~Spiliopoulos.
+\newblock Dgm: A deep learning algorithm for solving partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 375:1339--1364, 2018.
+
+\bibitem{theillard2015sharp}
+M.~Theillard, F.~Gibou, and T.~Pollock.
+\newblock A sharp computational method for the simulation of the solidification
+  of binary alloys.
+\newblock {\em Journal of scientific computing}, 63(2):330--354, 2015.
+
+\bibitem{um2020solver}
+K.~Um, R.~Brand, Y.~R. Fei, P.~Holl, and N.~Thuerey.
+\newblock Solver-in-the-loop: Learning from differentiable physics to interact
+  with iterative pde-solvers.
+\newblock {\em Advances in Neural Information Processing Systems},
+  33:6111--6122, 2020.
+
+\bibitem{wang2022and}
+S.~Wang, X.~Yu, and P.~Perdikaris.
+\newblock When and why pinns fail to train: A neural tangent kernel
+  perspective.
+\newblock {\em Journal of Computational Physics}, 449:110768, 2022.
+
+\bibitem{yu2018deep}
+B.~Yu et~al.
+\newblock The deep ritz method: a deep learning-based numerical algorithm for
+  solving variational problems.
+\newblock {\em Communications in Mathematics and Statistics}, 6(1):1--12, 2018.
+
+\end{thebibliography}

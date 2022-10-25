@@ -5,12 +5,6 @@ L.~Adams and Z.~Li.
 \newblock The immersed interface/multigrid methods for interface problems.
 \newblock {\em SIAM Journal on Scientific Computing}, 24(2):463--479, 2002.
 
-\bibitem{ANDRIENKO2018520}
-D.~Andrienko.
-\newblock Introduction to liquid crystals.
-\newblock {\em Journal of Molecular Liquids}, 267:520--541, 2018.
-\newblock Special Issue Dedicated to the Memory of Professor Y. Reznikov.
-
 \bibitem{babuvska1970finite}
 I.~Babu{\v{s}}ka.
 \newblock The finite element method for elliptic equations with discontinuous
@@ -197,6 +191,13 @@ A.~N. Kolmogorov.
 \newblock In {\em Doklady Akademii Nauk}, volume 114, pages 953--956. Russian
   Academy of Sciences, 1957.
 
+\bibitem{krishnapriyan2021characterizing}
+A.~Krishnapriyan, A.~Gholami, S.~Zhe, R.~Kirby, and M.~W. Mahoney.
+\newblock Characterizing possible failure modes in physics-informed neural
+  networks.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:26548--26560, 2021.
+
 \bibitem{lagaris1998artificial}
 I.~E. Lagaris, A.~Likas, and D.~I. Fotiadis.
 \newblock Artificial neural networks for solving ordinary and partial
@@ -295,17 +296,15 @@ N.~Mo{\"e}s, J.~Dolbow, and T.~Belytschko.
 \newblock {\em International journal for numerical methods in engineering},
   46(1):131--150, 1999.
 
+\bibitem{tiny-cuda-nn}
+T.~M\"uller.
+\newblock {tiny-cuda-nn}, 4 2021.
+
 \bibitem{osher1988fronts}
 S.~Osher and J.~A. Sethian.
 \newblock Fronts propagating with curvature-dependent speed: Algorithms based
   on hamilton-jacobi formulations.
 \newblock {\em Journal of computational physics}, 79(1):12--49, 1988.
-
-\bibitem{oswald2005smectic}
-P.~Oswald and P.~Pieranski.
-\newblock {\em Smectic and columnar liquid crystals: concepts and physical
-  properties illustrated by experiments}.
-\newblock CRC press, 2005.
 
 \bibitem{ouaknin2018level}
 G.~Y. Ouaknin, N.~Laachi, K.~Delaney, G.~H. Fredrickson, and F.~Gibou.
@@ -346,12 +345,6 @@ K.~A. Sharp and B.~Honig.
   poisson-boltzmann equation.
 \newblock {\em Journal of Physical Chemistry}, 94(19):7684--7692, 1990.
 
-\bibitem{shu1988efficient}
-C.-W. Shu and S.~Osher.
-\newblock Efficient implementation of essentially non-oscillatory
-  shock-capturing schemes.
-\newblock {\em Journal of computational physics}, 77(2):439--471, 1988.
-
 \bibitem{SIRIGNANO20181339}
 J.~Sirignano and K.~Spiliopoulos.
 \newblock Dgm: A deep learning algorithm for solving partial differential
@@ -363,12 +356,6 @@ D.~A. Sprecher.
 \newblock On the structure of continuous functions of several variables.
 \newblock {\em Transactions of the American Mathematical Society},
   115:340--355, 1965.
-
-\bibitem{SUSSMAN1994146}
-M.~Sussman, P.~Smereka, and S.~Osher.
-\newblock A level set approach for computing solutions to incompressible
-  two-phase flow.
-\newblock {\em Journal of Computational Physics}, 114(1):146--159, 1994.
 
 \bibitem{theillard2015sharp}
 M.~Theillard, F.~Gibou, and T.~Pollock.
@@ -382,11 +369,6 @@ K.~Um, R.~Brand, Y.~R. Fei, P.~Holl, and N.~Thuerey.
   with iterative pde-solvers.
 \newblock {\em Advances in Neural Information Processing Systems},
   33:6111--6122, 2020.
-
-\bibitem{XIU2001658}
-D.~Xiu and G.~E. Karniadakis.
-\newblock A semi-lagrangian high-order method for navier–stokes equations.
-\newblock {\em Journal of Computational Physics}, 172(2):658--684, 2001.
 
 \bibitem{yu2018deep}
 B.~Yu et~al.

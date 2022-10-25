@@ -8,7 +8,8 @@
 
 % ready for submission
 %\usepackage{neurips_2022}
-\usepackage[preprint]{neurips_2022}
+%\usepackage[preprint]{neurips_2022}
+\usepackage[final]{neurips_2022}
 
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -75,6 +76,10 @@
   Nvidia \\
   \texttt{rilango@nvidia.com} \\
   \AND
+  Sanjay Choudhry \\
+  Nvidia \\
+  \texttt{schoudhry@nvidia.com}
+  \And  
   Frederic Gibou \\
   UCSB \\
   \texttt{fgibou@ucsb.edu} \\
@@ -108,7 +113,7 @@ Since the 1990s, artificial neural networks have been used for solving different
 
 In the first category, neurons output the discretized solution values over a set of grid points, and minimizing the network energy drives the neuronal values towards the solution at the mesh points. The neural network energy is the residual of the finite discretization, summed over all neurons \cite{lee1990neural}. A strong feature is the preservation of the finite discretization convergence; however, the computational cost grows with increasing resolution and dimensionality. Early examples include \cite{gobovic1993design,chua1988cellular,chua1988cellularA}.
 
-The second strategy, proposed by Lagaris \textit{et al.} \cite{lagaris1998artificial}, relies on the function approximation capabilities of the neural networks. Encoding the solution everywhere in the domain within a neural network offers a mesh-free, compact, and memory efficient surrogate model for the solution function, which can be used in subsequent inference tasks. This method has recently re-emerged as the physics-informed neural networks (PINNs) \cite{RAISSI2019686} and is widely used. Despite their advantages, these methods lack the controllable convergence properties of traditional numerical discretizations, and are biased towards the lower frequency features of the solutions \cite{wang2022and,rahaman2019spectral}.
+The second strategy, proposed by Lagaris \textit{et al.} \cite{lagaris1998artificial}, relies on the function approximation capabilities of the neural networks. Encoding the solution everywhere in the domain within a neural network offers a mesh-free, compact, and memory efficient surrogate model for the solution function, which can be used in subsequent inference tasks. This method has recently re-emerged as the physics-informed neural networks (PINNs) \cite{RAISSI2019686} and is widely used. Despite their advantages, these methods lack the controllable convergence properties of traditional numerical discretizations, and are biased towards the lower frequency features of the solutions \cite{wang2022and,rahaman2019spectral,krishnapriyan2021characterizing}.
 
 Hybridization frameworks seek to combine the performance of neural network inference on modern accelerated hardware with the guaranteed accuracy of traditional discretizations developed by the scientific community. The hybridization efforts are algorithmic or architectural.
 

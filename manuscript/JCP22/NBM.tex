@@ -107,7 +107,7 @@
 \address[2]{University of California, Santa Barbara, CA 93106-5070, USA}
 
 \begin{abstract}
-	We present a scalable strategy for development of mesh-free hybrid neuro-symbolic partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution functions and operators of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical solvers. The presented neural bootstrapping method (hereby dubbed NBM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply NBM to the important class of elliptic problems with jump conditions across irregular interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and \footnote{Pending NVIDIA open sourcing procedure.} in a software package named \texttt{JAX-DIPS} (\href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}), standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
+	We present a scalable strategy for development of mesh-free hybrid neuro-symbolic partial differential equation solvers based on existing mesh-based numerical discretization methods. Particularly, this strategy can be used to efficiently train neural network surrogate models for the solution functions and operators of partial differential equations while retaining the accuracy and convergence properties of the state-of-the-art numerical solvers. The presented neural bootstrapping method (hereby dubbed NBM) is based on evaluation of the finite discretization residuals of the PDE system obtained on implicit Cartesian cells centered on a set of random collocation points with respect to trainable parameters of the neural network. We apply NBM to the important class of elliptic problems with jump conditions across irregular interfaces in three spatial dimensions. We show the method is convergent such that model accuracy improves by increasing number of collocation points in the domain.  The algorithms presented here are implemented and released \footnote{Pending paper acceptance.} in a software package named \texttt{JAX-DIPS} (\href{https://github.com/JAX-DIPS/JAX-DIPS}{https://github.com/JAX-DIPS/JAX-DIPS}), standing for differentiable interfacial PDE solver. \texttt{JAX-DIPS} is purely developed in \texttt{JAX}, offering end-to-end differentiability from mesh generation to the higher level discretization abstractions, geometric integrations, and interpolations, thus facilitating research into use of differentiable algorithms for developing hybrid PDE solvers.
 
 \end{abstract}
 
@@ -154,7 +154,7 @@ Since early 1990s, artificial neural networks have been used for solving partial
 In the first category, neurons output the discretized solution values over a set number of grid points and minimizing the network energy drives the neuronal values towards the solution of the linear system at the mesh points. In this case, the neural network energy is the residual of the finite discretization method summed over all neurons of the network \cite{lee1990neural}. Although the convergence properties of the finite discretization methods gaurantee and control quality of the obtained solutions, the computational costs grow by increasing resolution and dimensionality. Interestingly, due to regular and sparse structure of the finite discretizations, such locally connected neural network PDE solvers have been implemented on VLSI analog CMOS circuits \cite{gobovic1993design,chua1988cellular,chua1988cellularA}.
 
 
-The second strategy proposed by Lagaris \textit{et al.} \cite{lagaris1998artificial} relies on the function approximation capabilities of the neural networks. Encoding the solution everywhere in the domain within a neural network offers a mesh-free, compact, and memory efficient surrogate model for the solution function that can be utilized in subsequent inference tasks. This method has recently re-emerged as the physics-informed neural networks (PINNs) \cite{RAISSI2019686} and is widely used. Despite their advantages, these methods lack controllable accuracy and convergence properties of finite discretization methods.
+The second strategy proposed by Lagaris \textit{et al.} \cite{lagaris1998artificial} relies on the function approximation capabilities of the neural networks. Encoding the solution everywhere in the domain within a neural network offers a mesh-free, compact, and memory efficient surrogate model for the solution function that can be utilized in subsequent inference tasks. This method has recently re-emerged as the physics-informed neural networks (PINNs) \cite{RAISSI2019686} and is widely used. Despite their advantages, these methods lack controllable accuracy and convergence properties of finite discretization methods \cite{krishnapriyan2021characterizing}.
 
 Pursuit of hybrid solvers aims at leveraging the performance gains of neural network inference on modern accelerated hardware with the gauranteed accuracy of finite discretization methods. The hybridization efforts are algorithmic or architectural.
 
@@ -162,7 +162,7 @@ One important algorithmic method is the deep Galerkin method (DGM) \cite{SIRIGNA
 
 Architectural hybridization methods are based on differentiable numerical linear algebra. One emerging class involves implementing differentiable finite discretization solvers and embedding them in the neural network architectures that enable application of end-to-end differentiable gradient based optimization methods. Recently, differentiable solvers have been developed in JAX \cite{jax2018github} for fluid dynamic problems, such as \texttt{Phi-Flow} \cite{holl2020phiflow}, \texttt{JAX-CFD} \cite{Kochkov2021-ML-CFD}, and \texttt{JAX-FLUIDS} \cite{bezgin2022jax}. These methods are suitable for inverse problems where an unknown field is modeled by the neural network, while the model influence is propagated by the differentiable solver into a measurable residual \cite{pakravan2021solving,dal2020data,lu2020extracting}. We also note the classic strategy for solving inverse problems is the adjoint method to obtain the gradient of the loss without differentiation across the solver \cite{berg2017neural}; however, deriving analytic expression for the adjoint equations is tedious, should be repeated after modification of the problem or its loss function, and can become impractical for multiphysics problems. Other important utilities of differentiable solvers are to model and correct for the solution errors of finite discretization methods \cite{um2020solver}, learning and controling PDE systems \cite{de2018end,holl2020learning}.
 
-Neural networks are not only universal approximators of continuous functions, but also of nonlinear operators \cite{chen1995universal}. Although this fact has been leveraged using data-driven strategies for learning differential operators by many authors \cite{lu2019deeponet,bhattacharya2020model,li2020neural,li2020fourier}, current authors have demonstrated utility of differentiable solvers to effectively train nonlinear operators without any data in a completely physics-driven fashion, see section on learning the inverse transforms in \cite{pakravan2021solving}.
+Neural networks are not only universal approximators of continuous functions, but also of nonlinear operators \cite{chen1995universal}. Although this fact has been leveraged using data-driven strategies for learning differential operators by many authors \cite{lu2019deeponet,bhattacharya2020model,li2020neural,li2020fourier}, current authors have demonstrated utility of differentiable solvers to effectively train nonlinear operators without any data in a completely physics-driven fashion, see section on learning the inverse transforms in \cite{pakravan2021solving}. In subsequent work we will demonstrate how NBM can be used to train neural operators in a purely physics-driven fashion.
 
 
  
@@ -203,9 +203,7 @@ In this work we propose a novel algorithm for solving PDEs based on deep neural 
 \end{figure}
 
 
-Figure \ref{fig:nbm} illustrates schematic of the proposed algorithm. Neural networks are used as surrogates for the solution function that are iteratively adjusted to minimize discretization residuals at a set of randomly sampled points and at arbitrary resolutions. The key idea is that neural netwroks can be evaluated over vertices of any discretization stencils centered at any point in the domain effectively emulating the effect of any structured mesh without ever matreializing the mesh. Therefore, we use neural networks to bootstrap mesh based finite discretization (FD) methods to compile mesh free numerical methods.
-
-Operations in differentiable NBM kernels are:
+Figure \ref{fig:nbm} illustrates schematic of the proposed algorithm. Neural networks are used as surrogates for the solution function that are iteratively adjusted to minimize discretization residuals at a set of randomly sampled points and at arbitrary resolutions. The key idea is that neural netwroks can be evaluated over vertices of any discretization stencils centered at any point in the domain effectively emulating the effect of any structured mesh without ever materializing the mesh. Therefore, we use neural networks to bootstrap mesh based finite discretization (FD) methods to compile mesh free numerical methods. Operations in differentiable NBM kernels are:
 \begin{enumerate}
 
 \item A compute cell is implicitly constructed at any input coordinate and at a specified resolution. At the presence of discontinuities a coarse mesh encapsulates an interpolant for the level-set function whose intersection with the implicit cell is calculated to obtain necessary geometric information for the FD kernel and preconditioner.
@@ -247,11 +245,7 @@ In the remainder of this manuscript we present details of applying NBM to solvin
 %\section{Level-set method for free boundary problems}
 %\section{Geometric Primitives}
 \section{JAX-DIPS: Differentiable Interfacial PDE Solver} \label{sec:dips}
-We developed an end-to-end differentiable library for solving the elliptic problems with discontinuities in solution and solution gradient across irregular geometries. We designed \texttt{JAX-DIPS} to be a modular open source library for the research community on the level-set methods for solving interfacial PDE problems. We invite the community to contribute to this project for further development of novel numerical algorithms for solving both forward and inverse interfacial PDE problems.
-
-A differentiable solver for free boundary problems requires a rich data structure capable to handle several geometric operations over a given mesh. We understand the mesh as a \textit{topological} relationship between cells that discretize a domain, the geometric information of this discretization as well as the relative configuration of the interfaces with respect to the cells need to be computed and stored in memory in traditional solvers. 
-
-In \texttt{JAX-DIPS}, we apply NBM to a finite volume discretization method to remove the need for underlying mesh data structures for the elliptic solver. The geometries are represented implicitly using the level-set method on a coarse mesh. We have implemented a uniform grid that supports operations such as interpolations, interface advection, integrations over interfaces as well as in domains. We describe the numerical algorithms for the level-set module and the elliptic solver in this section.
+We developed an end-to-end differentiable library for solving the elliptic problems with discontinuities in solution and solution gradient across irregular geometries. In \texttt{JAX-DIPS}, we bootstrap a sophisticated and modern finite volume discretization method \cite{BOCHKOV2020109269}. The geometries are represented implicitly using the level-set function on a coarse mesh. We have implemented a uniform grid that supports operations such as interpolations, interface advection, integrations over interfaces as well as in domains. We describe the numerical algorithms for the level-set module and the elliptic solver in this section.
 
 
 \subsection{Interpolation methods}
@@ -287,7 +281,7 @@ The level-set method for solving free boundary problems was introduced by Osher 
 \begin{align*}
 	\frac{\partial \phi}{\partial t} + \mathbf{v}\cdot \nabla \phi = 0
 \end{align*}
-This \textit{implicit} representation of the moving boundaries resolves the need for the challenging task of adapting the underlying grid to the yet-unknown discontinuities in the solution field. The computational simplicity of using Cartesian grids for solving free boundary problems with irregular geometries, as well as the ability to simulate freely moving discontinuities in a \textit{sharp}-manner, that is required by the physics of these problems, are the two main offerings of the level-set method for this class of PDE problems. Besides implicit representation of the free boundaries, the level-set function can be used to compute normal vectors to the interface 
+This \textit{implicit} representation of the moving boundaries resolves the need for the challenging task of adapting the underlying grid to the yet-unknown discontinuities in the solution field. The computational simplicity of using Cartesian grids for solving free boundary problems with irregular geometries, as well as the ability to simulate freely moving discontinuities in a \textit{sharp}-manner are the two main advantages of the level-set method for this class of PDE problems. Besides implicit representation of the free boundaries, the level-set function can be used to compute normal vectors to the interface 
 \begin{align*}
 	\mathbf{n} = \nabla\phi / \vert \nabla \phi \vert 
 \end{align*}
@@ -402,11 +396,11 @@ We use SIREN neural networks, where we implement fully connected feedforward arc
 
 Solution networks are evaluated on sampled points in the domain while the parameters of these networks are optimized using the loss function. We define the loss function by the mean-squared-error (MSE) of the residual of the discretized partial differential equation with jump conditions derived in section \ref{sec::FD} that is evaluated on the grid points:
 \begin{align*}
-	&\mathcal{L}(u) = \vert\vert A\hat{u}(\mathbf{x}_{ijk}\in \Omega) - b\vert\vert_2^2  
+	&\mathcal{L}(u) = \vert\vert A\hat{u}_{\theta}(\mathbf{x}_{ijk}\in \Omega) - b\vert\vert_2^2  
 \end{align*}
-\texttt{JAX-DIPS} allows for computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_u \mathcal{L}(u)$. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, RMSProp, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE problem.
+\texttt{JAX-DIPS} allows for computation of the gradient of the loss function using automatic differentiation, \textit{i.e.} $\nabla_\theta \mathcal{L}(u)$ where $\theta$'s are network parameters. Therefore, our strategy is to leverage this capability and use more sophisticated optimizers developed in the deep learning community (\textit{e.g.} Adam \cite{kingma2014adam}, \textit{etc}) to minimize the afforementioned loss function with the desired solution vector $\rm u^\ast$ of the PDE.
 
-We emphasize the main motivation for using first order gradient based optimization algorithms over the existing methods such as GMRES and Conjugate Gradient is that optimizers in the field of machine learning are suitable for large scale optimiziation problems (very large number of parameters of the deep neural networks) because they have better memory efficiency. This is critical for training large scale neural network models that can encode multiscale simulations.
+We emphasize the main motivation for using first order gradient based optimization algorithms is their better memory efficiency that are suitable for large scale optimiziation problems with very large number of parameters in the neural network model.
 
 
 
@@ -418,9 +412,7 @@ We emphasize the main motivation for using first order gradient based optimizati
 
 \subsection{Approach I. Finite discretization method fused with regression-based extrapolation}\label{sec::FD}
 
-For spatial discretizations at the presence of jump conditions we employ the numerical algorithm proposed by Bochkov and Gibou (2020) \cite{bochkov2020solving}. Method of \cite{bochkov2020solving} produces second-order accurate solutions and first-order accuracte gradients in the $L^\infty$-norm, while having a compact stencil that makes it a good candidate for parallelization. Moreover, treatment of the interface jump conditions do not introduce any augmented variables, this preserves the homogeneous structure of the linear system. Most importantly, jump conditions only appear on the right-hand-side of the discretization and do not pollute the matrix term, this is beneficial for accelerating the solver.
-
-Here we use a background uniform 2D grid only for presentation of the finite volume discretization equations; we will not use this grid in the actual implementation but instead assume a local 3D cell around random points spanning in the domain during optimization. 
+For spatial discretizations at the presence of jump conditions we employ the numerical algorithm proposed by Bochkov and Gibou (2020) \cite{bochkov2020solving}. This method produces second-order accurate solutions and first-order accuracte gradients in the $L^\infty$-norm, while having a compact stencil that makes it a good candidate for parallelization. Moreover, treatment of the interface jump conditions do not introduce any augmented variables, this preserves the homogeneous structure of the linear system. Most importantly, jump conditions only appear on the right-hand-side of the discretization and do not pollute the matrix term, this is beneficial for accelerating the solver. Here we use a background uniform 2D grid only for presentation of the finite volume discretization equations; we will not use this grid in the actual implementation but instead assume a local 3D cell around random points spanning in the domain during optimization. 
 
 At points where the finite volumes are crossed by $\rm \Gamma$ we have
 \begin{align*}
@@ -431,7 +423,6 @@ At points where the finite volumes are crossed by $\rm \Gamma$ we have
 	 & =  \sum_{s=-,+} f_{i,j}^{s} |\mathcal{V}_{i,j}^s| + \int_{\Gamma\cap \mathcal{V}_{i,j}} \beta d\Gamma + \mathcal{O}(\max(\Delta x, \Delta y)^\mathcal{D})
 \end{align*}
 where $\mathcal{D}$ is the problem dimensionality.
-
 \begin{figure}
 	\centering
 	\includegraphics[width=0.45\linewidth]{./figures/grids_full.png}
@@ -439,10 +430,7 @@ where $\mathcal{D}$ is the problem dimensionality.
 	\caption{Notation used in this paper. Close to the interface where finite volumes are crossed by the interface, there are extra degrees of freedom (open circles) that are extrapolations of solutions from each domain to the opposite domain. Jump conditions are implicitly encoded in these extrapolated values.}
 	\label{fig:grid}
 \end{figure}
-
-Note that far from interface either $s=-$ (for $\mathbf{x}\in \Omega^-$) or $s=+$ (for $\mathbf{x}\in \Omega^+$) is retained. This is automatically considered through zero values for sub-volumes $|\mathcal{V}_{i,j}^+|$ and $|\mathcal{V}_{i,j}^-|$ as well as their face areas. Note that $\mu_{i-1/2,j}^-$ (or $\mu_{i-1/2,j}^+$) corresponds to the value of diffusion coefficient at the middle of segment $A^-_{i-1/2,j}$ (or $A^+_{i-1/2,j}$) respectively, same is true for other edges as well. However, there are extra degrees of freedom on grid points whose finite volumes are crossed by the interface; \textit{i.e.}, see double circles in figure \ref{fig:grid}. \cite{bochkov2020solving} derived analytical expressions for the extra degrees of freedom ($u^+$ in $\Omega^-$ and $u^-$ in $\Omega^+$) in terms of the original degrees of freedom ($u^-$ in $\Omega^-$ and $u^+$ in $\Omega^+$) as well as the jump conditions, this preserves the original $\rm N_x \times N_y$ system size.
-
-In this scheme the basic idea is to extrapolate the jump at grid point from jump condition at the projected point onto the interface using a Taylor expansion: $u^+_{i,j} - u^-_{i,j}=[u]_{\mathbf{r}_{i,j}^{pr}} + \delta_{i,j}(\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) - \partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j})) $. The unknown value ($u^-_{i,j}$ or $u^+_{i,j}$) is obtained based on approximation of the normal derivatives (\textit{i.e.} $\partial_\mathbf{n}u^\pm(\mathbf{r}^{pr}_{i,j})$) which are computed using a least squares calculation on neighboring grid points that are in the fast-diffusion region (referred to as ``Bias Fast'') or in the slow diffusion region (referred to as ``Bias Slow''). This makes two sets of rules for unknown values $u^\pm_{i,j}$.
+Note that far from interface either $s=-$ (for $\mathbf{x}\in \Omega^-$) or $s=+$ (for $\mathbf{x}\in \Omega^+$) is retained. This is automatically considered through zero values for sub-volumes $|\mathcal{V}_{i,j}^+|$ and $|\mathcal{V}_{i,j}^-|$ as well as their face areas. Note that $\mu_{i-1/2,j}^-$ (or $\mu_{i-1/2,j}^+$) corresponds to the value of diffusion coefficient at the middle of segment $A^-_{i-1/2,j}$ (or $A^+_{i-1/2,j}$) respectively, same is true for other edges as well. However, there are extra degrees of freedom on grid points whose finite volumes are crossed by the interface; \textit{i.e.}, see double circles in figure \ref{fig:grid}. \cite{bochkov2020solving} derived analytical expressions for the extra degrees of freedom ($u^+$ in $\Omega^-$ and $u^-$ in $\Omega^+$) in terms of the original degrees of freedom ($u^-$ in $\Omega^-$ and $u^+$ in $\Omega^+$) as well as the jump conditions, this preserves the original $\rm N_x \times N_y$ system size. The basic idea is to extrapolate the jump at grid point from jump condition at the projected point onto the interface using a Taylor expansion: $u^+_{i,j} - u^-_{i,j}=[u]_{\mathbf{r}_{i,j}^{pr}} + \delta_{i,j}(\partial_\mathbf{n}u^+(\mathbf{r}^{pr}_{i,j}) - \partial_\mathbf{n}u^-(\mathbf{r}^{pr}_{i,j})) $. The unknown value ($u^-_{i,j}$ or $u^+_{i,j}$) is obtained based on approximation of the normal derivatives (\textit{i.e.} $\partial_\mathbf{n}u^\pm(\mathbf{r}^{pr}_{i,j})$) which are computed using a least squares calculation on neighboring grid points that are in the fast-diffusion region (referred to as ``Bias Fast'') or in the slow diffusion region (referred to as ``Bias Slow''). This makes two sets of rules for unknown values $u^\pm_{i,j}$.
 
 In two dimensions and on uniform grids, the gradient operator at the grid cell $(i,j)$ that is crossed by an interface is estimated by a least squares solution given by
 \begin{align*}
@@ -615,7 +603,7 @@ in matrix notation we have
 		u_{i,j}                                                                                                                                                                                                                                                                     & \text{ $\mathbf{x}_{i,j}\in \Omega^+$} \\
 	\end{cases}
 \end{equation}
-
+The overall algorithm is summarized in Algorithm \ref{euclid}.
 
 
 \begin{algorithm}
@@ -713,12 +701,7 @@ in matrix notation we have
 
 
 \subsection{Approach II. Finite discretization method fused with neural extrapolation}\label{sec:fusion}
-Our proposed hybrid PDE solver is based on the observation that the neural network models for negative and positive domains can be explicitly used as interpolation and extrapolation functions within the finite discretization schemes.  
-
-The basic idea of the finite discretization method of section \ref{sec::FD} is to impose the jump conditions on the already-available grid points in the computational cells that are crossed by the interface, instead of aspiring to impose the jump conditions exactly on the interface itself. This is achieved by a Taylor expansion to project the interfacial jump conditions onto adjacent grid points. Using the neural network models for solutions, we are able to naturally evaluate extrapolations of the solution functions in a banded region around the interface as illustrated in figure \ref{fig:shapes}.
-
-
-Starting from the jump conditions, for points on the interface, $\mathbf{x}\in \Gamma$, we have
+We point out that although in approach I we used a regression-based method to impose the jump conditions on the grid points around the interface, it is possible to evaluate the neural network models as interpolation and extrapolation functions within the finite discretization scheme. Using the neural network models for solutions, we are able to evaluate extrapolations of the solution functions in a banded region around the interface as illustrated in figure \ref{fig:shapes}. Starting from the jump conditions, for points on the interface, $\mathbf{x}\in \Gamma$, we have
 \begin{align*}
 u^+ - u^- &= \alpha\\
 \mu^+\partial_n u^+ - \mu^- \partial_n u^- &= \beta
@@ -752,7 +735,7 @@ In the second approach, the loss function remains as before, except the unknown 
 \end{align*}
 
 
-There is a major downside with this approach that during training the automatic differentiation has to be applied on the network one more time and therefore we need to compute second-order derivatives of the network during training. This slows down convergence, and the time-to-solution increases with square of depth of the neural network while in the regression based cost grows linearly in the network depth by restricting to only first order automatic differentiation. 
+However, there is a major downside with this approach for training because the automatic differentiation has to be applied on the network once more that effectively amounts to compute second-order derivatives of the network. This slows down convergence, and the time-to-solution increases with square of depth of the neural network while in the regression-based method the cost grows linearly in the network depth by restricting to only first order automatic differentiation. 
 
 
 
@@ -762,8 +745,6 @@ There is a major downside with this approach that during training the automatic 
 
 
 \subsection{Optimization scheme}
-Here we describe the optimization protocols for training neural models in \texttt{JAX-DIPS}.
-
 \subsubsection{Preconditioners are ideal network regularizers}
 Finite discretization methods lead to solving a linear algebraic system with gaurantees on convergence and accuracies. The geometric irregularities and fine-grain details of the system around interfaces often lead to bad condition number for the linear system, which can be remedied by applying preconditioners. Intuitively, condition number is caused by a separation of scales for geometric lengthscales or material properties that underly the solution patterns. One of the strengths of the presented approach is to readily enable usage of preconditioners for training neural network surrogate models.
 
@@ -784,12 +765,7 @@ Note that for memory efficiency we never explicitly compute the matrix, instead 
 
 
 \subsubsection{Learning rate scheduling}
-First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam \cite{kingma2014adam}. Second order methods such as Newton or BFGS certainly offer convergence in less iterations but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on building basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis.
-
-
-%\subsubsection{Gradient based optimization with learning rate annealing}
-
-We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam optimizer:
+First order methods are slow but cheap; second order methods are fast but expensive. In \texttt{JAX-DIPS} we primarily utilize first order optimization methods such as Adam \cite{kingma2014adam}. Second order methods such as Newton or BFGS certainly offer convergence in less iterations but require much more memory. Traditionally used GMRES or Conjugate Gradient methods for sparse linear systems are somewhere between first order and second order optimization methods that are based on building basis vectors by computing gradients that are conjugate to each other $\mathbf{p}_j^T A \mathbf{p}_i=0$ and will converge to the solution in at most $n$ steps; \textit{i.e.}, at most the solution vector is spanned in the full basis. We found that starting from a zero guess for the solution it is important to start from a large learning rate and gradually decay the learning rate in a process of exponential annealing. For this purpose, we use the exponential decay scheduler provided by \texttt{Optax} \cite{optax2020github} to control the learning rate in the Adam optimizer:
 \begin{align*}
 r_{k} = r_0 \alpha^{k / T}
 \end{align*}
@@ -806,9 +782,7 @@ where $r_k$ is the learning rate at step $k$ of optimization, $\alpha<1$ is the 
 
 
 \subsubsection{Domain switching optimization scheme}
-The linear system suffers from worse condition number in the domain with more variability in diffusion coefficient, or where diffusion coefficient is larger; \textit{i.e.,} the fast region. This leads to regionally unbalanced solution error where the overall error is systematically lopsided by the faster diffusion region. 
-
-We found this problem can be drastically improved by interleaving region-specific optimization epochs in the training pipeline, where only one of the networks is updated based on the loss computed in its region. See algorithm \ref{switching} for details of the algorithm.
+The linear system suffers from worse condition number in the domain with more variability in diffusion coefficient, or where diffusion coefficient is larger; \textit{i.e.,} the fast region. This leads to regionally unbalanced solution error where the overall error is systematically lopsided by the faster diffusion region. We found this problem can be improved by interleaving region-specific optimization epochs in the training pipeline, where only one of the networks is updated based on the loss computed in its region. See Algorithm \ref{switching} for details of the algorithm.
 
 \begin{algorithm}
 	\caption{Domain switching method. Switching interval is $\tau$.}\label{switching}
@@ -860,9 +834,7 @@ We found this problem can be drastically improved by interleaving region-specifi
 \subsubsection{Multi-GPU parallelization with model parallel training}
 The NBM is embarrasingly parallel and residual evaluation at each point is independent from other points. Therefore, multi-GPU parallelization does not involve inter-GPU communication for evaluating the residuals per point. We partition the training points and distribute them along with copies of neural network parameters among multiple GPUs to compute gradient updates per batch. Then we aggregate these updates by averaging the values on different GPUs. The updates are then broadcasted and model parameters are updated on each device.
 
-The ability to batch over grid points is one of the key enabling factors for reaching higher resolutions and higher dimensions. With NBM it is straightforward to scale finite discretization methods on GPU clusters. It is extremely important to randomly shuffle and redistribute the points among the batches at the beginning of each epoch, we found without shuffling the accuracy deteriorates and increasing resolution does not yield better solutions; see figure \ref{fig:batcheffect}.
-
-
+The ability to batch over grid points is one of the key enabling factors for reaching higher resolutions and higher dimensions. With NBM it is straightforward to scale finite discretization methods on GPU clusters. It is important to randomly shuffle and redistribute the points among the batches at the beginning of each epoch, we found without shuffling the accuracy deteriorates and increasing resolution does not yield better solutions; see figure \ref{fig:batcheffect}.
 \begin{figure}
 	\centering
 	\includegraphics[width=0.45\linewidth]{./figures/poisson_solver_loss_multires_64.png}
@@ -873,7 +845,6 @@ The ability to batch over grid points is one of the key enabling factors for rea
 
 
 \section{Numerical Results} \label{sec:examples}
-
 We consider examples for solution to elliptic problems of the form
 \begin{align*}
 	 & k^{\pm}u^{\pm} - \nabla \cdot (\mu^{\pm}\nabla u^\pm)=f^{\pm}, & \mathbf{x}\in\Omega^\pm \\
@@ -1164,10 +1135,10 @@ $8$        & $0.384$ &  $7.983$   & $3.340$  & $7.901$ & $26.799$ & $9.154$  &  
      \begin{subfigure}[b]{\textwidth}
          \centering
          \includegraphics[width=\textwidth]{./figures/dragonSlice.png}
-         \caption{Jump in solution and its gradient.}
+         \caption{Jump in solution and its gradient are accurately captured by the surrogate neural network model.}
          \label{fig:dragon2}
      \end{subfigure}
-        \caption{The NBM approach enables a $1024^3$ effective resolution on a single NVIDIA A6000 GPU.}
+        \caption{The NBM approach enables a $1024^3$ effective resolution on a single NVIDIA A6000 GPU. Once trained, it takes sub-milliseconds for the network to evaluate such a simulation that enables near-real-time digital twins for physical systems \cite{tiny-cuda-nn}.}
         \label{fig:dragon}
 \end{figure}
 %\begin{figure}
@@ -1218,11 +1189,14 @@ There are many improvements for \texttt{JAX-DIPS} that we will pursue for future
 
 \item Extension to adaptive grids with enhanced resolutions closer to the interfaces while coarsening the grid cells in the bulk.
 
+\item Training neural operators that can map from different geometries for discontinuities to the solution field is of utmost importance for developing time-evolving systems. The NBM is applicable for physics-driven training of neural operators for elliptic problems with freely moving boundaries, we will present this work in a future work.
+
+\item We are exploring utility of NBM for solving inverse-PDE problems as well as parameterized PDEs. 
 
 \end{itemize}
 
 \section*{Acknowledgement}
-
+This work has been partially funded by ONR N00014-11-1-0027
 
 
 %%%%%%%%%%%
