@@ -74,3 +74,17 @@ You can attach to the running `jax_dips` container by
 
 # Copyright
 All rights reserved. 
+
+
+# Citing
+If you use JAX-DIPS in your research please use the following citations:
+
+```bibtex
+@misc{jaxdips2022,
+title= {JAX-DIPS: A Differentiable Interfacial PDE Solver},
+author = {Pouria Mistani and Samira Pakravan},
+month = {October},
+year = {2022},
+howpublished = {\url{https://github.com/JAX-DIPS/JAX-DIPS}}
+}
+```
