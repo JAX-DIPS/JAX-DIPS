@@ -1,8 +1,0 @@
-\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
-\BOOKMARK [1][-]{section.2}{Problem statement}{}% 2
-\BOOKMARK [1][-]{section.3}{Scalable and Mesh-Freeing Neuro-Symbolic Differential Solver}{}% 3
-\BOOKMARK [1][-]{section.4}{Numerical results}{}% 4
-\BOOKMARK [2][-]{subsection.4.1}{Convergence and accuracy}{section.4}% 5
-\BOOKMARK [2][-]{subsection.4.2}{Time complexity and parallel scaling on GPU clusters}{section.4}% 6
-\BOOKMARK [1][-]{section.5}{Conclusion}{}% 7
-\BOOKMARK [1][-]{section*.7}{References}{}% 8

@@ -1,2 +1,0 @@
-pdflatex -pdf neurips_2022.tex
-bibtex neurips_2022
