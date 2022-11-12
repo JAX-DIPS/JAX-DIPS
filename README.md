@@ -20,10 +20,12 @@ Streamlines of solution gradients (left), and jump in solution (right) calculate
 <!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/gradient_U.png) -->
 
 # Testing
-Do `pytest tests` from parent directory and a suite of tests will run:
+Do `pytest tests/test_*.py` of each of the available tests from the parent directory:
 - `test_advection_semi_lagrangian`: a sphere is rotated 360 degrees around the box to replicate initial configuration. The L2 error in level-set function should be less than 1e-4 to pass. The advection is performed using semi-Lagrangian scheme with Sussman reinitialization.
 - `test_reinitialization`: starting from a sphere level-set function with -1 inside sphere and +1 outside, we repeatedly perform Sussman reinitialization until the signed-distance property of the level-set is achieved. Center of the box should have level-set value equal to radius of the sphere, and corner of the box should be at a pre-specified distance to pass.
 - `test_geometric_integrations`: integrating surface area of a sphere along with its volume. Small differences with associated theoretical values are expected to pass.
+- `test_geometric_integrations_per_point`: this is the pointwise version of the intergation methods on random point clouds.
+- `test_poisson_solver_{pointwise/grid_based}_{with/without}_jump_{sphere/star}`: tests for both the pointwise and the grid-based Poisson solvers over a star and a sphere interfaces. Note that in the current implementation the grid-based solver does not support batching and is therefore faster. Fixing this issue will be done in the future versions.
 # Pre-req
 
 ## Nvidia Driver
@@ -80,11 +82,17 @@ All rights reserved.
 If you use JAX-DIPS in your research please use the following citations:
 
 ```bibtex
-@misc{jaxdips2022,
-title= {JAX-DIPS: A Differentiable Interfacial PDE Solver},
-author = {Pouria Mistani and Samira Pakravan},
-month = {October},
-year = {2022},
-howpublished = {\url{https://github.com/JAX-DIPS/JAX-DIPS}}
+@article{mistani2022jax,
+  title={JAX-DIPS: Neural bootstrapping of finite discretization methods and application to elliptic problems with discontinuities},
+  author={Mistani, Pouria and Pakravan, Samira and Ilango, Rajesh and Gibou, Frederic},
+  journal={arXiv preprint arXiv:2210.14312},
+  year={2022}
+}
+
+@article{mistani2022neuro,
+  title={Neuro-symbolic partial differential equation solver},
+  author={Mistani, Pouria and Pakravan, Samira and Ilango, Rajesh and Choudhry, Sanjay and Gibou, Frederic},
+  journal={arXiv preprint arXiv:2210.14907},
+  year={2022}
 }
 ```
