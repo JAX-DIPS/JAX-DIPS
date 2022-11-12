@@ -2,8 +2,8 @@
 JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D. 
 
 JAX-DIPS implements the neural bootstrapping method (NBM):
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jax_dips_paper_kernel.png)
-
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/JAX-DIPS.png)
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jax_dips_design.png)
 
 Streamlines of solution gradients (left), and jump in solution (right) calculated by the `dragon` example.
 <p float="center">
