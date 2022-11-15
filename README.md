@@ -74,9 +74,6 @@ You can attach to the running `jax_dips` container by
 
 
 
-# Copyright
-All rights reserved. 
-
 
 # Citing
 If you use JAX-DIPS in your research please use the following citations:
