@@ -104,7 +104,7 @@ If you use JAX-DIPS in your research please use the following citations:
 
 ## The Team
 
-JAX-DIPS was developed by [Pouria Mistani](http://www.pouriamistani.com) and [Samira Pakravan](samirapakravan.github.io) under the supervision of Prof. [Frederic Gibou](https://sites.me.ucsb.edu/~fgibou/) during 2019-2022 at [University of California Santa Barbara](https://me.ucsb.edu/). This project was partially funded by the [US Office of Naval Research](https://www.nre.navy.mil/).
+JAX-DIPS was developed by [Pouria Mistani](http://www.pouriamistani.com) and [Samira Pakravan](https://samirapakravan.github.io/) under the supervision of Prof. [Frederic Gibou](https://sites.me.ucsb.edu/~fgibou/) during 2019-2022 at [University of California Santa Barbara](https://me.ucsb.edu/). This project was partially funded by the [US Office of Naval Research](https://www.nre.navy.mil/).
 
 
 ## License
