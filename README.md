@@ -45,13 +45,13 @@ Please refer https://nvidia.github.io/nvidia-docker/ to setup apt repo
 apt-get install nvidia-docker2
 
 
-# Build development container
+## Build development container
 
 ```
 ./launch build
 ```
 
-# Start developement container
+## Start developement container
 This will create a container and places the user in the container with source code mounted.
 
 Once the container is created, user can attach to this container from VS code.
@@ -75,7 +75,7 @@ You can attach to the running `jax_dips` container by
 
 
 
-# Citing
+## Cite JAX-DIPS
 If you use JAX-DIPS in your research please use the following citations:
 
 ```bibtex
@@ -93,3 +93,20 @@ If you use JAX-DIPS in your research please use the following citations:
   year={2022}
 }
 ```
+
+
+## Contributing to JAX-DIPS
+
+- **Reporting bugs.** To report a bug please open an issue in the GitHub [Issues](https://github.com/JAX-DIPS/JAX-DIPS/issues).
+- **Suggesting enhancements.** To submit an enhancement suggestion, including new features or improvements to existing functionality, let us know by opening an issue in the GitHub [Issues](https://github.com/JAX-DIPS/JAX-DIPS/issues).
+- **Pull requests.** If you made improvements to JAX-DIPS, fixed a bug, or added a new example, feel free to send us a pull-request.
+
+
+## The Team
+
+JAX-DIPS was developed by [Pouria Mistani](http://www.pouriamistani.com) and [Samira Pakravan](samirapakravan.github.io) under the supervision of Prof. [Frederic Gibou](https://sites.me.ucsb.edu/~fgibou/) during 2019-2022 at [University of California Santa Barbara](https://me.ucsb.edu/). This project was partially funded by the [US Office of Naval Research](https://www.nre.navy.mil/).
+
+
+## License
+
+[LGPL-2.1 License](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/LICENSE.md)

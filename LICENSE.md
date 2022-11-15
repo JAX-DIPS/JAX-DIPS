@@ -1,3 +1,9 @@
+---
+noteId: "90f86c4064a311ed97d6ff90756292f8"
+tags: []
+
+---
+
                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999
 
