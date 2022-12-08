@@ -11,7 +11,7 @@ from src.jaxmd_modules.quantity import EnergyFn
 config.update("jax_enable_x64", True)
 from src.jaxmd_modules.util import f32, i32
 from src import compositions
-from src import simulate_fields
+from src import solver_advection
 from src import simulate_particles
 from src import io
 from src import mesh
@@ -84,7 +84,7 @@ def phi_fn(r):
 
     # return x**2 + (y-1.0)**2 + z**2 - 0.25
 
-init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, shift_fn, dt)
+init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = solver_advection.level_set(phi_fn, shift_fn, dt)
 sim_state = init_fn(R)
 
 grad_fn = jax.vmap(jax.grad(phi_fn))

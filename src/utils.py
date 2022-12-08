@@ -17,7 +17,7 @@
   Primary Author: mistani
 
 """
-
+import signal
 import jax
 
 def print_architecture(params):

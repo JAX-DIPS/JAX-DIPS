@@ -8,7 +8,7 @@ from src.jaxmd_modules.quantity import EnergyFn
 config.update("jax_enable_x64", True)
 from src.jaxmd_modules.util import f32, i32
 from src.jaxmd_modules import space
-from src import simulate_fields
+from src import solver_advection
 from src import simulate_particles
 from src import visualization
 

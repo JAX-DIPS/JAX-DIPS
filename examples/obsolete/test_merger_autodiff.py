@@ -11,7 +11,7 @@ import jax.profiler
 from jax import (jit, random, lax, numpy as jnp, vmap)
 from src.jaxmd_modules.util import f32, i32
 from src.jaxmd_modules import space
-from src import simulate_fields, interpolate
+from src import interpolate, solver_advection
 from src import io
 from src import mesh, level_set, compositions
 from jax.config import config
@@ -63,7 +63,7 @@ def phi_fn(r):
     return jnp.min( jnp.array([jnp.sqrt(x**2 + (y-0.55)**2 + z**2) - 0.5,  jnp.sqrt(x**2 + (y+0.55)**2 + z**2) - 0.5]) )
     # return jnp.sqrt(x**2 + (y-0.55)**2 + z**2) - 0.5
 
-init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, shift_fn, dt)
+init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = solver_advection.level_set(phi_fn, shift_fn, dt)
 sim_state = init_fn(velocity_fn, R)
 
 # This section is autodiff for the spatial gradients rather than discretizations

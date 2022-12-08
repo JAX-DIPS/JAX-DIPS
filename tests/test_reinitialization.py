@@ -19,9 +19,9 @@
 """
 from jax.config import config
 from src.dips.utils.data import StateData
-from src import mesh, level_set
+from src import mesh, level_set, solver_advection
 from src import io
-from src import simulate_fields, interpolate
+from src import interpolate
 from src.jaxmd_modules.util import f32, i32
 from jax.experimental import host_callback
 from jax import (jit, lax, numpy as jnp, vmap)
@@ -92,7 +92,7 @@ def test_reinitialization():
         # return lax.cond(r[0]*r[0] + r[1]*r[1] + r[2]*r[2] > 0.25, lambda p: f32(1.0), lambda p: f32(-1.0), r)
         return jnp.where(r[0]*r[0] + r[1]*r[1] + r[2]*r[2] > 0.25, f32(1.0), f32(-1.0))
 
-    init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, dt)
+    init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = solver_advection.level_set(phi_fn, dt)
 
     # get normal vector and mean curvature
     normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature)

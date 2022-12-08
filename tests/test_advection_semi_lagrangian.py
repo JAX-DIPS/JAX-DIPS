@@ -20,7 +20,7 @@
 from jax.config import config
 from src import mesh, geometric_integrations
 from src import io
-from src import simulate_fields
+from src import solver_advection
 from src.jaxmd_modules.util import f32, i32
 from jax import (jit, lax, numpy as jnp)
 import jax.profiler
@@ -93,7 +93,7 @@ def test_spinning_sphere():
         return jnp.sqrt(x**2 + (y-1.0)**2 + z**2) - 0.5
 
 
-    init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = simulate_fields.level_set(phi_fn, dt)
+    init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = solver_advection.level_set(phi_fn, dt)
     sim_state = init_fn(velocity_fn, R)
     
     # grad_fn = jax.vmap(jax.grad(phi_fn))
