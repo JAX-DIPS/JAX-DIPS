@@ -141,6 +141,8 @@ class PDETrainer:
 
         self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_neural_network
         self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
+        self.compute_normal_gradient_solution_on_interface = self.compute_normal_gradient_solution_on_interface_neural_network
+        self.compute_gradient_solution = self.compute_gradient_solution_neural_network
 
         if precondition==1:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
@@ -693,8 +695,8 @@ class PDETrainer:
         grad_u_p = vmap(grad_u_at_point_fn, (0, None))(points,  1)
         grad_u_m = vmap(grad_u_at_point_fn, (0, None))(points, -1)
         normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(points, dx, dy, dz)
-        grad_n_u_m = vmap(jnp.dot, (0,0))(normal_vecs, grad_u_m)
-        grad_n_u_p = vmap(jnp.dot, (0,0))(normal_vecs, grad_u_p)
+        grad_n_u_m = vmap(jnp.dot, (0,0))(jnp.squeeze(normal_vecs), grad_u_m)
+        grad_n_u_p = vmap(jnp.dot, (0,0))(jnp.squeeze(normal_vecs), grad_u_p)
         return grad_n_u_m, grad_n_u_p
 
     def compute_gradient_solution_mp_neural_network(self, params, points):
@@ -702,6 +704,22 @@ class PDETrainer:
         grad_u_p = vmap(grad_u_at_point_fn, (0, None))(points,  1)
         grad_u_m = vmap(grad_u_at_point_fn, (0, None))(points, -1)
         return grad_u_m, grad_u_p
+    
+    
+    def compute_normal_gradient_solution_on_interface_neural_network(self, params, points, dx, dy, dz):
+        phi_flat = self.phi_interp_fn(points)
+        _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+        grad_u = vmap(grad_u_at_point_fn, (0, 0))(points,  phi_flat)
+        normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(points, dx, dy, dz)
+        grad_n_u = vmap(jnp.dot, (0,0))(jnp.squeeze(normal_vecs), grad_u)
+        return grad_n_u
+
+    def compute_gradient_solution_neural_network(self, params, points):
+        phi_flat = self.phi_interp_fn(points)
+        _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+        grad_u = vmap(grad_u_at_point_fn, (0, 0))(points,  phi_flat)
+        return grad_u
+
 
 
 def poisson_solver(gstate,
@@ -908,10 +926,15 @@ def poisson_solver(gstate,
 
     #------------- Gradients of discovered solutions are below:
     if algorithm==0:
-        grad_u_mp_normal_to_interface = None #trainer.compute_normal_gradient_solution_mp_on_interface(final_solution, None)
-        grad_u_mp = None #trainer.compute_gradient_solution_mp(final_solution, None)
+        grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
+        grad_u_mp = trainer.compute_gradient_solution_mp(params, eval_gstate.R)
+        grad_u_normal_to_interface = trainer.compute_normal_gradient_solution_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
+        grad_u = trainer.compute_gradient_solution(params, eval_gstate.R)
     elif algorithm==1:
         grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(None, params)
         grad_u_mp = trainer.compute_gradient_solution_mp(None, params)
+        grad_u_normal_to_interface = None
+        grad_u = None
 
-    return final_solution, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs
+    return final_solution, grad_u, grad_u_normal_to_interface, epoch_store, loss_epochs 
+    # return final_solution, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs

@@ -305,6 +305,7 @@ def level_set(level_set_fn: Callable[..., Array],
         # V = jnp.zeros(R.shape, dtype=R.dtype)
         # U = jnp.zeros(R.shape[0], dtype=R.dtype)
         # U = U + space.square_distance(R) - f32(0.25)
+        
         V = velocity_fn(R, 0.0) #,**kwargs)
         U = phi_fn(R)
         return SIMState(U, V)
