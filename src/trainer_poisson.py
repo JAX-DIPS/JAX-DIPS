@@ -64,22 +64,22 @@ signal.signal(signal.SIGINT, signalHandler)
 
 
 
-
 def poisson_solve(gstate,
-                   eval_gstate,
-                   sim_state,
-                   sim_state_fn,
-                   algorithm=0,
-                   switching_interval=3,
-                   Nx_tr=32,
-                   Ny_tr=32,
-                   Nz_tr=32,
-                   num_epochs=1000,
-                   multi_gpu=False,
-                   batch_size=131072,
-                   checkpoint_dir="./checkpoints",
-                   checkpoint_interval=2,
-                   currDir="./"):
+                            eval_gstate,
+                            sim_state,
+                            sim_state_fn,
+                            algorithm=0,
+                            switching_interval=3,
+                            Nx_tr=32,
+                            Ny_tr=32,
+                            Nz_tr=32,
+                            num_epochs=1000,
+                            multi_gpu=False,
+                            batch_size=131072,
+                            checkpoint_dir="./checkpoints",
+                            checkpoint_interval=2,
+                            currDir="./"):
+    
     global stop_training
     #--- Defining Optimizer
     learning_rate = 1e-2
@@ -118,11 +118,44 @@ def poisson_solve(gstate,
         resolution = state['resolution']
         print(f'Resuming training from epoch {epoch_start} with batch_size {batch_size}, resolution {resolution}.')
 
-    loss_epochs = []
-    epoch_store = []
 
-    if multi_gpu:
-        """ Multi-GPU Training """
+    start_time = time.time()
+
+    key = random.PRNGKey(758493)    
+    
+    if not multi_gpu:
+                
+        """ Single-GPU Update Preparation """
+
+        DD = data_management.DatasetDict(batch_size=batch_size, x_data=train_points)
+        batched_training_data = DD.get_batched_data()
+        update_fn = trainer.update
+        num_batches = batched_training_data.shape[1]
+        def learn_one_batch(carry, data_batch):
+            opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
+            opt_state, params, loss_epoch_ = update_fn(opt_state, params, data_batch, train_dx, train_dy, train_dz)
+            loss_epoch += loss_epoch_
+            return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
+        def learn_one_epoch(carry, epoch):
+            key, opt_state, params, loss_epochs, train_dx, train_dy, train_dz, batched_training_data = carry 
+            train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)  
+            batched_training_data = random.shuffle(key, batched_training_data, axis=1)
+            loss_epoch = 0.0   
+            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)  
+            loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
+            return (key, opt_state, params, loss_epochs, train_dx, train_dy, train_dz, batched_training_data), None
+        loss_epochs = jnp.zeros(num_epochs-epoch_start)
+        epoch_store = jnp.arange(epoch_start, num_epochs)
+        (key, opt_state, params, loss_epochs, train_dx, train_dy, train_dz, batched_training_data), _ = jax.lax.scan(learn_one_epoch, (key, opt_state, params, loss_epochs, train_dx, train_dy, train_dz, batched_training_data), epoch_store) 
+        loss_epochs /= num_batches
+        
+        
+    elif multi_gpu:
+        
+        """ Multi-GPU Update Preparation """
+        
+        loss_epochs = []
+        epoch_store = []
         n_devices = jax.local_device_count()
         train_dx = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dx)
         train_dy = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dy)
@@ -132,126 +165,43 @@ def poisson_solve(gstate,
         DD = data_management.DatasetDict(batch_size=n_devices*batch_size, x_data=train_points, num_gpus=n_devices)
         batched_training_data = DD.get_batched_data()
         update_fn = pmap(trainer.update_multi_gpu, in_axes=(0, 0, 0, 0, 0, 0), axis_name='num_devices')
-    else:
-        """ Single GPU """
-        DD = data_management.DatasetDict(batch_size=batch_size, x_data=train_points)
-        batched_training_data = DD.get_batched_data()
-        update_fn = trainer.update
-
-    num_batches = batched_training_data.shape[1]
-    start_time = time.time()
-
-    def learn_one_batch(carry, data_batch):
-        opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
-        opt_state, params, loss_epoch_ = update_fn(opt_state, params, data_batch, train_dx, train_dy, train_dz)
-        loss_epoch += loss_epoch_
-        return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
-
-    key = random.PRNGKey(758493)
-    for epoch in range(epoch_start, num_epochs):
-        if stop_training:
-            break
-
-        if multi_gpu:
+        
+        num_batches = batched_training_data.shape[1]
+    
+        for epoch in range(epoch_start, num_epochs):
+            if stop_training:
+                break
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0 )
             batched_training_data = random.shuffle(key, batched_training_data, axis=2)
             for i in range(num_batches):
                 opt_state, params, loss_epoch_ = update_fn(opt_state, params, batched_training_data[:,i,...], train_dx, train_dy, train_dz)
                 loss_epoch += loss_epoch_
-        else:
-            loss_epoch = 0.0
-            train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-            batched_training_data = random.shuffle(key, batched_training_data, axis=1)
-            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
-
-        loss_epoch /= num_batches
-        print(f"Epoch # {epoch} loss is {jnp.mean(loss_epoch)}. Exit training: {stop_training}")  # mean is to support multi-gpu as well.
-        loss_epochs.append(loss_epoch)
-        epoch_store.append(epoch)
-
-        if (epoch + 1) % checkpoint_interval == 0:
-            state = {
-                'opt_state': opt_state,
-                'params': params,
-                'epoch': epoch + 1,
-                'batch_size': batch_size,
-                'resolution': f'{Nx_tr}, {Ny_tr}, {Nz_tr}'
-            }
-            trainer.save_checkpoint(checkpoint_dir, state)
-
-    if multi_gpu:
+            print(f"Epoch # {epoch} loss is {jnp.mean(loss_epoch) / num_batches}. Exit training: {stop_training}")  # mean is to support multi-gpu as well.
+            loss_epochs.append(loss_epoch / num_batches)
+            epoch_store.append(epoch)
+            if (epoch + 1) % checkpoint_interval == 0:
+                state = {
+                    'opt_state': opt_state,
+                    'params': params,
+                    'epoch': epoch + 1,
+                    'batch_size': batch_size,
+                    'resolution': f'{Nx_tr}, {Ny_tr}, {Nz_tr}'
+                }
+                trainer.save_checkpoint(checkpoint_dir, state)
         params = jax.device_get(jax.tree_map(lambda x: x[0], params))
-
-    #for epoch in range(num_epochs):
-        # #train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-        # #train_points = TD.move_train_points(train_points, train_dx, train_dy, train_dz)
-        # ds_iter = DD(train_points)
-
-        # for x in ds_iter:
-        #    if multi_gpu: x = jax.tree_map(split, x)
-        #    opt_state, params, loss_epoch = update_fn(opt_state, params, x, train_dx, train_dy, train_dz)
-
-        # print(f"epoch # {epoch} loss is {loss_epoch}")
-        # loss_epochs.append(loss_epoch)
-        # epoch_store.append(epoch)
-
-    epoch_store = onp.array(epoch_store)
-    loss_epochs = onp.array(loss_epochs)
-
-
-
-    #----- HALF JITTED
-    # BATCH_SIZE_A6000 = 100000
-    # NUMDATA = len(eval_gstate.R)
-    # num_batches = jnp.ceil(NUMDATA // BATCH_SIZE_A6000)
-    # def learn_whole_batched(carry, batch_idx):
-    #     opt_state, params, egstate = carry
-    #     x = egstate.R[batch_idx: jnp.min(jnp.array([NUMDATA, batch_idx + BATCH_SIZE_A6000]))]
-    #     opt_state, params, loss_epoch = trainer.update(opt_state, params, x, egstate)
-    #     return (opt_state, params, loss_epoch, egstate), None
-    # epoch_store = []
-    # loss_epochs = []
-    # loss_epochs = jnp.zeros(num_epochs)
-    # batch_store = jnp.arange(num_batches)
-    # for epoch in range(num_epochs):
-    #     (opt_state, params, loss_epoch, eval_gstate), _ = jax.lax.scan(learn_whole_batched, (opt_state, params, eval_gstate), batch_store)
-    #     loss_epochs.append(loss_epoch)
-    #     epoch_store.append(epoch)
-    #     print(f"epoch # {epoch} loss is {loss_epoch}")
-
-
-
-    # def learn_whole(carry, epoch):
-    #     opt_state, params, loss_epochs = carry
-    #     opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)
-    #     loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
-    #     return (opt_state, params, loss_epochs), None
-    # loss_epochs = jnp.zeros(num_epochs)
-    # epoch_store = jnp.arange(num_epochs)
-    # (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
 
 
     end_time = time.time()
     print(f"solve took {end_time - start_time} (sec)")
     plot_loss_epochs(epoch_store, loss_epochs, currDir, TD.base_level, TD.alt_res)
-
+    
     final_solution = trainer.evaluate_solution_fn(params, eval_gstate.R).reshape(-1)
-
-    #------------- Gradients of discovered solutions are below:
-    if algorithm==0:
-        grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
-        grad_u_mp = trainer.compute_gradient_solution_mp(params, eval_gstate.R)
-        grad_u_normal_to_interface = trainer.compute_normal_gradient_solution_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
-        grad_u = trainer.compute_gradient_solution(params, eval_gstate.R)
-    elif algorithm==1:
-        grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(None, params)
-        grad_u_mp = trainer.compute_gradient_solution_mp(None, params)
-        grad_u_normal_to_interface = None
-        grad_u = None
-
+    
+    #------------- Gradients of discovered solutions:
+    grad_u_normal_to_interface = trainer.compute_normal_gradient_solution_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
+    grad_u = trainer.compute_gradient_solution(params, eval_gstate.R)
+    
     return final_solution, grad_u, grad_u_normal_to_interface, epoch_store, loss_epochs 
-    # return final_solution, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs
-
 
 
 
