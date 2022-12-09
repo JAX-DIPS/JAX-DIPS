@@ -37,7 +37,7 @@ from functools import partial
 
 
 
-class AdvectionPoissonTrainer:
+class PoissonAdvectionTrainer:
     """
         This is a completely local point-based Poisson solver.
     """

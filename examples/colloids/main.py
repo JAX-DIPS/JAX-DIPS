@@ -27,8 +27,8 @@ currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path:  
     sys.path.append(rootDir)
-    
-from jax import (jit, numpy as jnp)
+
+from jax import (jit, numpy as jnp, vmap)
 import jax
 import jax.profiler
 from functools import partial
@@ -40,7 +40,6 @@ from src.jaxmd_modules.util import f32, i32
 from src.jaxmd_modules import dataclasses
 from examples.colloids.coefficients import *
 from examples.colloids.geometry import get_initial_level_set_fn
-
 
 
 
@@ -93,55 +92,77 @@ def poisson_advection_simulation():
 
     ###########################################################
 
-    """ Solve Poisson """
-    init_fn, solve_fn = trainer_poisson_advection.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
-    sim_state = init_fn(R)
-    solve_poisson_fn = partial(solve_fn, gstate=gstate, eval_gstate=eval_gstate, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL, Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu, checkpoint_interval=checkpoint_interval)
+   
+    init_fn = trainer_poisson_advection.setup(initial_value_fn, 
+                                              dirichlet_bc_fn, 
+                                              phi_fn, 
+                                              mu_m_fn, 
+                                              mu_p_fn, 
+                                              k_m_fn, 
+                                              k_p_fn, 
+                                              f_m_fn, 
+                                              f_p_fn, 
+                                              alpha_fn, 
+                                              beta_fn)
     
+    sim_state, solve_fn = init_fn(dt=dt, 
+                                  gstate=gstate, 
+                                  eval_gstate=eval_gstate, 
+                                  algorithm=ALGORITHM, 
+                                  switching_interval=SWITCHING_INTERVAL, 
+                                  Nx_tr=Nx_tr, 
+                                  Ny_tr=Ny_tr, 
+                                  Nz_tr=Nz_tr, 
+                                  num_epochs=num_epochs, 
+                                  multi_gpu=multi_gpu, 
+                                  checkpoint_interval=checkpoint_interval,
+                                  currDir=currDir)
+    
+    sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
     """ Advect Level Set """
-    adv_init_fn, adv_apply_fn, adv_reinitialize_fn, adv_reinitialized_advect_fn = solver_advection.level_set(phi_fn, dt)
+    # adv_init_fn, adv_apply_fn, adv_reinitialize_fn, adv_reinitialized_advect_fn = solver_advection.level_set(phi_fn, dt)
      
     
-    def get_velocity_fn(vels):
-        interp_vel = interpolate.vec_multilinear_interpolation(vels, eval_gstate)
-        velocity_fn = lambda R, t: interp_vel(R)
-        return velocity_fn
+    # def get_velocity_fn(vels):
+    #     interp_vel = interpolate.vec_multilinear_interpolation(vels, eval_gstate)
+    #     velocity_fn = lambda R, t: interp_vel(R)
+    #     return velocity_fn
     
-    dummy_vels = jnp.zeros_like(eval_gstate.R)
-    velocity_fn = get_velocity_fn(dummy_vels) 
-    adv_sim_state = adv_init_fn(velocity_fn, R)
+    # dummy_vels = jnp.zeros_like(eval_gstate.R)
+    # velocity_fn = get_velocity_fn(dummy_vels) 
+    # adv_sim_state = adv_init_fn(velocity_fn, R)
     
     
 
-    @jit
-    def step_levelset(sim_state, adv_sim_state, gstate, time_):
-        velocity_fn = get_velocity_fn(sim_state.grad_solution)
-        adv_sim_state = adv_reinitialize_fn(adv_sim_state, gstate)
-        adv_sim_state = adv_apply_fn(velocity_fn, adv_sim_state, gstate, time_)
-        return dataclasses.replace(sim_state, phi=adv_sim_state.phi)
+    # @jit
+    # def step_levelset(sim_state, adv_sim_state, gstate, time_):
+    #     velocity_fn = get_velocity_fn(sim_state.grad_solution)
+    #     adv_sim_state = adv_reinitialize_fn(adv_sim_state, gstate)
+    #     adv_sim_state = adv_apply_fn(velocity_fn, adv_sim_state, gstate, time_)
+    #     return dataclasses.replace(sim_state, phi=adv_sim_state.phi)
         
         
         
         
-    t1 = time.time()
-    time_ = 0.0
+    # t1 = time.time()
+    # time_ = 0.0
 
-    for step in range(simulation_steps):
-        print(f"solving at {step}")
-        sim_state, epoch_store, loss_epochs = solve_poisson_fn(sim_state=sim_state)
-        print(f"advecting at {step}")
-        sim_state = step_levelset(sim_state, adv_sim_state, gstate, time_)
-        time_ += dt
+    # for step in range(simulation_steps):
+    #     print(f"solving at {step}")
+    #     sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+    #     print(f"advecting at {step}")
+    #     sim_state = step_levelset(sim_state, adv_sim_state, gstate, time_)
+    #     time_ += dt
     
-    t2 = time.time()
+    # t2 = time.time()
 
-    print(f"solve took {(t2 - t1)} seconds")
+    # print(f"solve took {(t2 - t1)} seconds")
  
     
     jax.profiler.save_device_memory_profile("memory_trainer_poisson_advection.prof")
 
 
-    eval_phi = adv_sim_state.phi #vmap(phi_fn)(eval_gstate.R)
+    eval_phi = vmap(phi_fn)(eval_gstate.R) #adv_sim_state.phi #
    
     log = {'phi': eval_phi, 
            'U': sim_state.solution, 

@@ -18,17 +18,50 @@
 
 """
 
-# from mayavi import mlab
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as onp
-# import moviepy.editor as mpy
+
+import os
+
+def plot_loss_epochs(epoch_store, loss_epochs, address, base_level, alt_res=True):
+    epoch_store = onp.array(epoch_store)
+    loss_epochs = onp.array(loss_epochs)
+    
+    fig, ax = plt.subplots(figsize=(8,8))
+
+    # plt.plot(epoch_store[epoch_store%switching_interval - 1 ==0], loss_epochs[epoch_store%switching_interval - 1 ==0], color='k', label='whole domain')
+    # plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
+    # plt.plot(epoch_store[epoch_store%switching_interval - 1 >0], loss_epochs[epoch_store%switching_interval - 1 >0], color='r', label='positive domain')
+
+    # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
+    # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
+
+    if alt_res:
+        ax.plot(epoch_store[epoch_store%4==0], loss_epochs[epoch_store%4==0], color='k', label=r'$\rm level=\ $'+str(base_level    ))
+        ax.plot(epoch_store[epoch_store%4==1], loss_epochs[epoch_store%4==1], color='b', label=r'$\rm level=\ $'+str(base_level + 1))
+        ax.plot(epoch_store[epoch_store%4==2], loss_epochs[epoch_store%4==2], color='r', label=r'$\rm level=\ $'+str(base_level + 2))
+        ax.plot(epoch_store[epoch_store%4==3], loss_epochs[epoch_store%4==3], color='g', label=r'$\rm level=\ $'+str(base_level + 3))
+
+    else:
+        ax.plot(epoch_store, loss_epochs, color='k', label=r'$\rm level\ =\ $'+str(base_level    ))
+
+    ax.set_yscale('log')
+    ax.set_xlabel(r'$\rm epoch$', fontsize=20)
+    ax.set_ylabel(r'$\rm loss$', fontsize=20)
+    plt.legend(fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.tick_params(axis='both', which='minor', labelsize=20)
+    plt.tight_layout()
+    filename = os.path.join(address , 'solver_loss.png')
+    plt.savefig(filename)
+    plt.close()
 
 
-def plot(R):
-    X = R[:,0]; Y=R[:,1]; Z=R[:,2]
-    p = mlab.points3d(X, Y, Z)
-    mlab.show()
+
+
 
 # alpha is transparency
 def get_rgba(V, alpha=1):

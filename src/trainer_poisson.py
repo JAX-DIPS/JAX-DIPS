@@ -18,21 +18,19 @@
 
 """
 
-from typing import Callable, TypeVar, Union, Tuple, Dict, Optional
-from src import data_management, solver_advection, solver_poisson_advection
+from typing import Callable, TypeVar, Tuple
+from src import data_management, solver_poisson
 from src.utils import print_architecture 
 import jax
 import optax
 from jax import (pmap, vmap, numpy as jnp, random)
 
 from src.jaxmd_modules import dataclasses, util
+from src.simulation_states import PoissonSimState, PoissonSimStateFn
+from src.visualization import plot_loss_epochs
 
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as onp
-from functools import partial
 import time
 import signal
 
@@ -61,36 +59,13 @@ signal.signal(signal.SIGINT, signalHandler)
 
 
 
-@dataclasses.dataclass
-class SState:
-    """A struct containing the state of the simulation.
-
-    This tuple stores the state of a simulation.
-
-    Attributes:
-    u: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
-    """
-    phi: Array
-    solution: Array
-    dirichlet_bc: Array
-    mu_m: Array
-    mu_p: Array
-    k_m: Array
-    k_p: Array
-    f_m: Array
-    f_p: Array
-    alpha: Array
-    beta: Array
-    grad_solution: Array
-    grad_normal_solution: Array
-    velocity_nm1: Array
 
 
 
 
 
 
-def advect_poisson_solver(gstate,
+def poisson_solve(gstate,
                    eval_gstate,
                    sim_state,
                    sim_state_fn,
@@ -103,21 +78,20 @@ def advect_poisson_solver(gstate,
                    multi_gpu=False,
                    batch_size=131072,
                    checkpoint_dir="./checkpoints",
-                   checkpoint_interval=2):
+                   checkpoint_interval=2,
+                   currDir="./"):
     global stop_training
     #--- Defining Optimizer
     learning_rate = 1e-2
     decay_rate_ = 0.975
-    scheduler = optax.exponential_decay(
-        init_value=learning_rate,
-        transition_steps=100,
-        decay_rate=decay_rate_)
-    optimizer = optax.chain(
-                            optax.clip_by_global_norm(1.0),
+    scheduler = optax.exponential_decay(init_value=learning_rate,
+                                        transition_steps=100,
+                                        decay_rate=decay_rate_)
+    
+    optimizer = optax.chain(optax.clip_by_global_norm(1.0),
                             optax.scale_by_adam(),
                             optax.scale_by_schedule(scheduler),
-                            optax.scale(-1.0)
-    )
+                            optax.scale(-1.0))
     #--------
     # optimizer = optax.adam(learning_rate)
     #--------
@@ -131,7 +105,7 @@ def advect_poisson_solver(gstate,
     train_dy = TD.gstate.dy
     train_dz = TD.gstate.dz
 
-    trainer = solver_poisson_advection.AdvectionPoissonTrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
+    trainer = solver_poisson.PoissonTrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
     state = trainer.fetch_checkpoint(checkpoint_dir)
     epoch_start = 0
     if state is None:
@@ -259,36 +233,7 @@ def advect_poisson_solver(gstate,
 
     end_time = time.time()
     print(f"solve took {end_time - start_time} (sec)")
-
-
-
-    fig, ax = plt.subplots(figsize=(8,8))
-
-    # plt.plot(epoch_store[epoch_store%switching_interval - 1 ==0], loss_epochs[epoch_store%switching_interval - 1 ==0], color='k', label='whole domain')
-    # plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
-    # plt.plot(epoch_store[epoch_store%switching_interval - 1 >0], loss_epochs[epoch_store%switching_interval - 1 >0], color='r', label='positive domain')
-
-    # plt.plot(epoch_store[epoch_store%switching_interval ==0], loss_epochs[epoch_store%switching_interval ==0], color='k', label='whole domain')
-    # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
-
-    if TD.alt_res:
-        ax.plot(epoch_store[epoch_store%4==0], loss_epochs[epoch_store%4==0], color='k', label=r'$\rm level=\ $'+str(TD.base_level    ))
-        ax.plot(epoch_store[epoch_store%4==1], loss_epochs[epoch_store%4==1], color='b', label=r'$\rm level=\ $'+str(TD.base_level + 1))
-        ax.plot(epoch_store[epoch_store%4==2], loss_epochs[epoch_store%4==2], color='r', label=r'$\rm level=\ $'+str(TD.base_level + 2))
-        ax.plot(epoch_store[epoch_store%4==3], loss_epochs[epoch_store%4==3], color='g', label=r'$\rm level=\ $'+str(TD.base_level + 3))
-
-    else:
-        ax.plot(epoch_store, loss_epochs, color='k', label=r'$\rm level\ =\ $'+str(TD.base_level    ))
-
-    ax.set_yscale('log')
-    ax.set_xlabel(r'$\rm epoch$', fontsize=20)
-    ax.set_ylabel(r'$\rm loss$', fontsize=20)
-    plt.legend(fontsize=20)
-    ax.tick_params(axis='both', which='major', labelsize=20)
-    ax.tick_params(axis='both', which='minor', labelsize=20)
-    plt.tight_layout()
-    plt.savefig('tests/poisson_solver_loss.png')
-    plt.close()
+    plot_loss_epochs(epoch_store, loss_epochs, currDir, TD.base_level, TD.alt_res)
 
     final_solution = trainer.evaluate_solution_fn(params, eval_gstate.R).reshape(-1)
 
@@ -340,8 +285,23 @@ def setup(initial_value_fn :  Callable[..., Array],
     f_p_fn   = vmap(f_p_fn_)
     alpha_fn = vmap(alpha_fn_)
     beta_fn  = vmap(beta_fn_)
+    sim_state_fn = PoissonSimStateFn(u_0_fn, dir_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
     
-    def init_fn(R):
+    def init_fn(gstate,
+                eval_gstate,
+                Nx_tr=32, 
+                Ny_tr=32, 
+                Nz_tr=32, 
+                num_epochs=1000, 
+                batch_size=131072, 
+                algorithm=0, 
+                switching_interval=3, 
+                multi_gpu=False, 
+                checkpoint_interval=1000, 
+                checkpoint_dir="./checkpoints",
+                currDir="./"):
+        
+        R = gstate.R
         PHI   = phi_fn(R)
         DIRBC = dir_bc_fn(R)
         U     = u_0_fn(R)
@@ -353,11 +313,26 @@ def setup(initial_value_fn :  Callable[..., Array],
         F_P   = f_p_fn(R)
         ALPHA = alpha_fn(R)
         BETA  = beta_fn(R)
-        return SState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA, None, None, None) 
+   
+        def solve_fn(sim_state):
+            U_sol, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs = poisson_solve(gstate, 
+                                                                                                    eval_gstate, 
+                                                                                                    sim_state, 
+                                                                                                    sim_state_fn, 
+                                                                                                    algorithm,
+                                                                                                    switching_interval=switching_interval,
+                                                                                                    Nx_tr=Nx_tr, 
+                                                                                                    Ny_tr=Ny_tr, 
+                                                                                                    Nz_tr=Nz_tr,
+                                                                                                    num_epochs=num_epochs, 
+                                                                                                    multi_gpu=multi_gpu, 
+                                                                                                    batch_size=batch_size, 
+                                                                                                    checkpoint_dir=checkpoint_dir, 
+                                                                                                    checkpoint_interval=checkpoint_interval,
+                                                                                                    currDir=currDir)
 
-    def solve_fn(gstate, sim_state, algorithm=0, switching_interval=3):
-        U_sol, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs = advect_poisson_solver(gstate, sim_state, algorithm, switching_interval=switching_interval)
-
-        return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface), epoch_store, loss_epochs
+            return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface), epoch_store, loss_epochs
+        
+        return PoissonSimState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA, None, None), solve_fn 
     
-    return init_fn, solve_fn
+    return init_fn

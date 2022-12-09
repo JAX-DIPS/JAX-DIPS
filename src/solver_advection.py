@@ -18,33 +18,23 @@
 
 """
 
-from collections import namedtuple
 
 from typing import Callable, TypeVar, Union, Tuple, Dict, Optional
 
 from jax import grad, vmap, jit
-from jax import ops
-from jax import random
-from jax._src.dtypes import dtype
 import jax.numpy as jnp
 from jax import lax, vmap
-from numpy import int32
-# from min_gibou_tests import velocity_fn
 
 from src import (interpolate, level_set as ls)
+from src.simulation_states import AdvectionSimState
 from src.jaxmd_modules import dataclasses, util
 
 
 static_cast = util.static_cast
 
-
 Array = util.Array
 i32 = util.i32
 f32 = util.f32
-
-
-
-
 
 T = TypeVar('T')
 InitFn = Callable[..., T]
@@ -265,17 +255,7 @@ def reinitialize_level_set(sstate: T,
 
 
 
-@dataclasses.dataclass
-class SIMState:
-    """A struct containing the state of the simulation.
 
-    This tuple stores the state of a simulation.
-
-    Attributes:
-    u: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
-    """
-    phi: Array
-    velocity_nm1: Array
 
 
 # def level_set(velocity_or_energy_fn: Callable[..., Array],
@@ -308,7 +288,7 @@ def level_set(level_set_fn: Callable[..., Array],
         
         V = velocity_fn(R, 0.0) #,**kwargs)
         U = phi_fn(R)
-        return SIMState(U, V)
+        return AdvectionSimState(U, V)
 
     def apply_fn(velocity_fn, sim_state, grid_state, time, **kwargs):
         return advect_one_step(velocity_fn, dt, sim_state, grid_state, time, **kwargs)

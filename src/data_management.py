@@ -214,17 +214,11 @@ class TrainData:
             new_points = Rnew - jnp.floor(Rnew / self.LL ) * self.LL - 0.5*self.LL
             return new_points
 
-
+        @partial(jit, static_argnums=(0))
         def alternate_res(self, epoch, train_dx, train_dy, train_dz):
             self.alt_res = True
-            if epoch % 4==0:
-                train_dx = self.gstate.dx
-                train_dy = self.gstate.dy
-                train_dz = self.gstate.dz
-            else:
-                train_dx *= 0.50
-                train_dy *= 0.50
-                train_dz *= 0.50
-
+            train_dx = jnp.where(epoch%4==0, self.gstate.dx, train_dx * 0.50)
+            train_dy = jnp.where(epoch%4==0, self.gstate.dy, train_dy * 0.50)
+            train_dz = jnp.where(epoch%4==0, self.gstate.dz, train_dz * 0.50)
             return train_dx, train_dy, train_dz
         
