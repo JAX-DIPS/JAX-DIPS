@@ -35,11 +35,11 @@ import pdb
 import numpy as onp
 
 from src import io, trainer_poisson, mesh, level_set
-from src.jaxmd_modules.util import f32, i32
+from src.jaxmd_modules.util import f32
 from examples.biomolecules.coefficients import *
 from examples.biomolecules.geometry import get_initial_level_set_fn
 from examples.biomolecules.load_pqr import base
-
+from examples.biomolecules.free_energy import get_free_energy
 
 
 
@@ -145,6 +145,9 @@ def biomolecule_solvation_energy():
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     chg_density = vmap(f_m_fn)(eval_gstate.R)
    
+    SFE = get_free_energy(eval_gstate, eval_phi, sim_state.solution, atom_xyz_rad_chg)
+    print(f"Solvaion Free Energy : {SFE} ")
+    
     log = {'phi'  : eval_phi, 
            'U'    : sim_state.solution, 
            'dU_dx': sim_state.grad_solution[:,0],

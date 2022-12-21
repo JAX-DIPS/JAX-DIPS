@@ -106,6 +106,7 @@ def nonlinear_operator_m(u):
     return 0.0 
 
 
+# TODO: Fix this
 @custom_jit
 def nonlinear_operator_p(u):
     return 0.01 * jnp.sinh(u)
