@@ -391,7 +391,9 @@ def setup(initial_value_fn :  Callable[..., Array],
           f_m_fn_          :  Callable[..., Array],
           f_p_fn_          :  Callable[..., Array],
           alpha_fn_        :  Callable[..., Array],
-          beta_fn_         :  Callable[..., Array]
+          beta_fn_         :  Callable[..., Array],
+          nonlinear_op_m   =  None,
+          nonlinear_op_p   =  None 
           ) -> Simulator:
 
     u_0_fn   = vmap(initial_value_fn)
@@ -405,7 +407,15 @@ def setup(initial_value_fn :  Callable[..., Array],
     f_p_fn   = vmap(f_p_fn_)
     alpha_fn = vmap(alpha_fn_)
     beta_fn  = vmap(beta_fn_)
-    sim_state_fn = PoissonSimStateFn(u_0_fn, dir_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
+    
+    if nonlinear_op_m==None:
+        print("nonlinear_op_m(u) is not defined. Setting it to zero.")
+        nonlinear_op_m = lambda x: 0.0
+    if nonlinear_op_p==None:
+        print("nonlinear_op_m(u) is not defined. Setting it to zero.")
+        nonlinear_op_p = lambda x: 0.0
+        
+    sim_state_fn = PoissonSimStateFn(u_0_fn, dir_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn, nonlinear_op_m, nonlinear_op_p)
     
     def init_fn(gstate,
                 eval_gstate,

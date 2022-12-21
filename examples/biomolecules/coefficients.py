@@ -1,6 +1,6 @@
-from jax import jit, numpy as jnp
+from jax import jit, numpy as jnp, lax
 from functools import partial
-
+from examples.biomolecules.units import *
 
 
 COMPILE_BACKEND = 'gpu'
@@ -19,7 +19,7 @@ def mu_m_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    return 1.0
+    return eps_m
 
 
 @custom_jit
@@ -30,7 +30,7 @@ def mu_p_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    return 80.0
+    return eps_s
 
 
 @custom_jit
@@ -74,17 +74,24 @@ def initial_value_fn(r):
     return 0.0
 
 
-@custom_jit
-def f_m_fn(r):
-    x = r[0]
-    y = r[1]
-    z = r[2]
-    fm   = -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z)) +\
-            -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*x) * 2*jnp.cos(2*x)*jnp.cos(2*y)*jnp.exp(z)   +\
-            -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*y) * (-2)*jnp.sin(2*x)*jnp.sin(2*y)*jnp.exp(z) +\
-            2*jnp.cos(2*jnp.pi*(x+y))*jnp.sin(2*jnp.pi*(x-y))*jnp.sin(z) * jnp.sin(2*x)*jnp.cos(2*y)*jnp.exp(z)
 
-    return fm
+def get_f_m_fn(atom_xyz_rad_chg):
+    @custom_jit
+    def f_m_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        def initialize(carry, xyzsc):
+            rho, = carry
+            xc, yc, zc, sigma, chg = xyzsc
+            rho += chg * jnp.exp( -((x-xc)**2 + (y-yc)**2 + (z-zc)**2) / (2*sigma*sigma) ) / ( (2*jnp.pi)**1.5 * sigma*sigma*sigma)
+            rho  = jnp.nan_to_num(rho)
+            return (rho,), None
+        fm = 0.0
+        (fm,), _ = lax.scan(initialize, (fm,), atom_xyz_rad_chg)
+        return fm
+    return f_m_fn
+
 
 @custom_jit
 def f_p_fn(r):
@@ -92,3 +99,13 @@ def f_p_fn(r):
     y = r[1]
     z = r[2]
     return 0.0
+
+
+@custom_jit
+def nonlinear_operator_m(u):
+    return 0.0 
+
+
+@custom_jit
+def nonlinear_operator_p(u):
+    return 0.01 * jnp.sinh(u)

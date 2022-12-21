@@ -32,13 +32,13 @@ from jax import (numpy as jnp, vmap)
 import jax
 import jax.profiler
 import pdb
-
+import numpy as onp
 
 from src import io, trainer_poisson, mesh, level_set
 from src.jaxmd_modules.util import f32, i32
 from examples.biomolecules.coefficients import *
 from examples.biomolecules.geometry import get_initial_level_set_fn
-
+from examples.biomolecules.load_pqr import base
 
 
 
@@ -49,21 +49,49 @@ def biomolecule_solvation_energy():
     
     num_epochs = 50
     
-    Nx_tr = Ny_tr = Nz_tr = 32                   # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 8                    # grid for training
     Nx = Ny = Nz = 512                           # grid for level-set
-    Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
+    Nx_eval = Ny_eval = Nz_eval = 128            # grid for visualization
     
     ALGORITHM = 0                                # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     multi_gpu = False
     checkpoint_interval = 1000
-        
+    
+    
+    file_name = 'pdb:1ajj.pqr'                                                      # change the name of the molecule
+    
     ###########################################################
     
-    dim = i32(3)
-    xmin = ymin = zmin = f32(-20.0)                             # length unit is nm
-    xmax = ymax = zmax = f32( 20.0)
-    init_mesh_fn, coord_at = mesh.construct(dim)
+    address = os.path.join(currDir, 'pqr_input_mols')
+    mol_base = base(address, file_name)
+    num_atoms = len(mol_base.atoms['x'])
+    print(f'\n number of atoms = {num_atoms} \n ')
+    
+    atom_locations = onp.stack([onp.array(mol_base.atoms['x']), 
+                                onp.array(mol_base.atoms['y']), 
+                                onp.array(mol_base.atoms['z'])
+                                ], axis=-1) * Angstroms_to_nm_coeff                 # was in Angstroms, converted to nm   
+    
+    sigma_i = onp.array(mol_base.atoms['R']) * Angstroms_to_nm_coeff                # was Angstroms, converted to nm
+    sigma_s = 0.65 * Angstroms_to_nm_coeff                                          # was Angstroms, converted to nm
+    atom_sigmas = sigma_i + sigma_s                                                 # is in nm
+    atom_charges = jnp.array(mol_base.atoms['q'])                                   # partial charges, in units of electron charge e
+    atom_xyz_rad_chg = jnp.concatenate((atom_locations, 
+                                        atom_sigmas[..., jnp.newaxis], 
+                                        atom_charges[..., jnp.newaxis]
+                                        ), axis=1)
+    
+    unperturbed_phi_fn = get_initial_level_set_fn(atom_xyz_rad_chg)  
+    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
+    
+    f_m_fn = get_f_m_fn(atom_xyz_rad_chg)
+    
+    ###########################################################
+    
+    xmin = ymin = zmin = atom_locations.min() * 3                                   # length unit is nm
+    xmax = ymax = zmax = atom_locations.max() * 3
+    init_mesh_fn, coord_at = mesh.construct(3)
 
     # --------- Grid nodes for level set
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -79,10 +107,7 @@ def biomolecule_solvation_energy():
 
     ###########################################################
     
-    unperturbed_phi_fn = get_initial_level_set_fn(file_name = 'keytruda.pqr')  # change the name of the molecule
-    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
-
-    ###########################################################
+    
 
    
     init_fn = trainer_poisson.setup(initial_value_fn, 
@@ -95,7 +120,9 @@ def biomolecule_solvation_energy():
                                     f_m_fn, 
                                     f_p_fn, 
                                     alpha_fn, 
-                                    beta_fn)
+                                    beta_fn,
+                                    nonlinear_operator_m,
+                                    nonlinear_operator_p)
     
     sim_state, solve_fn = init_fn(gstate=gstate, 
                                   eval_gstate=eval_gstate, 
@@ -116,13 +143,15 @@ def biomolecule_solvation_energy():
 
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
+    chg_density = vmap(f_m_fn)(eval_gstate.R)
    
     log = {'phi'  : eval_phi, 
            'U'    : sim_state.solution, 
            'dU_dx': sim_state.grad_solution[:,0],
            'dU_dy': sim_state.grad_solution[:,1],
            'dU_dz': sim_state.grad_solution[:,2],
-           'dU_dn': sim_state.grad_normal_solution
+           'dU_dn': sim_state.grad_normal_solution,
+           'rho'  : chg_density
            }
     io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
     

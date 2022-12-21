@@ -1,6 +1,7 @@
-from typing import Callable
+from typing import Callable, TypeVar
 from src.jaxmd_modules import dataclasses, util
 
+T = TypeVar('T')
 Array = util.Array
 i32 = util.i32
 f32 = util.f32
@@ -20,6 +21,8 @@ class PoissonSimStateFn:
     f_p_fn           :  Callable[..., Array]
     alpha_fn         :  Callable[..., Array]
     beta_fn          :  Callable[..., Array]
+    nonlinear_op_m   : Callable[..., T]
+    nonlinear_op_p   : Callable[..., T]
 
     
 @dataclasses.dataclass

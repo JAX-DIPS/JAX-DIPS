@@ -68,6 +68,8 @@ class PoissonTrainer:
         self.mu_p_interp_fn = self.sim_state_fn.mu_p_fn
         self.alpha_interp_fn = self.sim_state_fn.alpha_fn
         self.beta_interp_fn = self.sim_state_fn.beta_fn
+        self.nonlinear_op_m = self.sim_state_fn.nonlinear_op_m
+        self.nonlinear_op_p = self.sim_state_fn.nonlinear_op_p
 
         self.mu_m_over_mu_p_interp_fn = lambda r: self.mu_m_interp_fn(r) / self.mu_p_interp_fn(r)
         self.beta_over_mu_m_interp_fn = lambda r: self.beta_interp_fn(r) / self.mu_m_interp_fn(r)
@@ -469,6 +471,9 @@ class PoissonTrainer:
 
                 lhs  = k_m_ijk * V_m_ijk * u_m_ijk
                 lhs += k_p_ijk * V_p_ijk * u_p_ijk
+                
+                lhs += self.nonlinear_op_m(u_m_ijk) * V_m_ijk + self.nonlinear_op_p(u_p_ijk) * V_p_ijk
+                
                 lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) * u_m_ijk + \
                        (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]) * u_p_ijk
                 lhs += -1.0 * coeffs[0 ] * u_m_imjk - coeffs[1 ] * u_p_imjk
