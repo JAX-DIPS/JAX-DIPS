@@ -49,7 +49,7 @@ def biomolecule_solvation_energy():
     
     num_epochs = 50
     
-    Nx_tr = Ny_tr = Nz_tr = 8                    # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 32                   # grid for training
     Nx = Ny = Nz = 512                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
