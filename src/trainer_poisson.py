@@ -117,6 +117,7 @@ class PoissonSolve:
         self.train_dz = self.TD.gstate.dz
 
         #########################################################################
+        
         self.trainer = solver_poisson.PoissonTrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
         
         #########################################################################
@@ -420,7 +421,7 @@ def setup(initial_value_fn :  Callable[..., Array],
                 checkpoint_dir="./checkpoints",
                 currDir="./"):
         
-        R = gstate.R
+        R     = eval_gstate.R
         PHI   = phi_fn(R)
         DIRBC = dir_bc_fn(R)
         U     = u_0_fn(R)
@@ -449,22 +450,6 @@ def setup(initial_value_fn :  Callable[..., Array],
                                 checkpoint_dir=checkpoint_dir, 
                                 checkpoint_interval=checkpoint_interval,
                                 currDir=currDir)
-            # U_sol, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs = poisson_solve(gstate, 
-            #                                                                                         eval_gstate, 
-            #                                                                                         sim_state, 
-            #                                                                                         sim_state_fn, 
-            #                                                                                         algorithm,
-            #                                                                                         switching_interval=switching_interval,
-            #                                                                                         Nx_tr=Nx_tr, 
-            #                                                                                         Ny_tr=Ny_tr, 
-            #                                                                                         Nz_tr=Nz_tr,
-            #                                                                                         num_epochs=num_epochs, 
-            #                                                                                         multi_gpu=multi_gpu, 
-            #                                                                                         batch_size=batch_size, 
-            #                                                                                         checkpoint_dir=checkpoint_dir, 
-            #                                                                                         checkpoint_interval=checkpoint_interval,
-            #                                                                                         currDir=currDir)
-            # return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface), epoch_store, loss_epochs
             final_solution, grad_u, grad_u_normal_to_interface, epoch_store, loss_epochs = PAS.solve()
             sim_state = dataclasses.replace(sim_state, solution=final_solution, grad_solution=grad_u, grad_normal_solution=grad_u_normal_to_interface), epoch_store, loss_epochs
             return sim_state

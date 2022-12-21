@@ -428,7 +428,7 @@ def setup(initial_value_fn :  Callable[..., Array],
                 checkpoint_interval=1000, 
                 checkpoint_dir="./checkpoints",
                 currDir="./"):
-        R = gstate.R
+        R     = eval_gstate.R
         PHI   = phi_fn(R)
         DIRBC = dir_bc_fn(R)
         U     = u_0_fn(R)
