@@ -48,9 +48,10 @@ def biomolecule_solvation_energy():
     ###########################################################
     
     num_epochs = 50
+    
     Nx_tr = Ny_tr = Nz_tr = 8                    # grid for training
-    Nx = Ny = Nz = 128                           # grid for level-set
-    Nx_eval = Ny_eval = Nz_eval = 128            # grid for visualization
+    Nx = Ny = Nz = 512                           # grid for level-set
+    Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
     ALGORITHM = 0                                # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
@@ -60,8 +61,8 @@ def biomolecule_solvation_energy():
     ###########################################################
     
     dim = i32(3)
-    xmin = ymin = zmin = f32(-1.0)
-    xmax = ymax = zmax = f32(1.0)
+    xmin = ymin = zmin = f32(-20.0)                             # length unit is nm
+    xmax = ymax = zmax = f32( 20.0)
     init_mesh_fn, coord_at = mesh.construct(dim)
 
     # --------- Grid nodes for level set
@@ -78,7 +79,7 @@ def biomolecule_solvation_energy():
 
     ###########################################################
     
-    unperturbed_phi_fn = get_initial_level_set_fn()
+    unperturbed_phi_fn = get_initial_level_set_fn(file_name = 'keytruda.pqr')  # change the name of the molecule
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     ###########################################################

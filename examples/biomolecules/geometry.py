@@ -3,30 +3,35 @@ import jax
 from src.jaxmd_modules.util import f32
 
 
+from examples.biomolecules.load_pqr import base
+from examples.biomolecules.units import *
 
-def get_initial_level_set_fn():
-    # -- Initialize the STARS in the BOX
-    num_stars_x = num_stars_y = num_stars_z = 1      # Ensure you are solving your system
-    scale = 0.35                                     # This is for proper separation between stars
-
-    r0 = 0.483*scale; ri = 0.151*scale; re = 0.911*scale
-    n_1 = 3.0; beta_1 =  0.1*scale; theta_1 = 0.5
-    n_2 = 4.0; beta_2 = -0.1*scale; theta_2 = 1.8
-    n_3 = 7.0; beta_3 = 0.15*scale; theta_3 = 0.0
-
-    key = random.PRNGKey(0)
-    cov = jnp.eye(3)
-    mean = jnp.zeros(3)
-    angles = random.multivariate_normal(key, mean, cov, shape=(num_stars_x * num_stars_y * num_stars_z,))
-    xc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_x, dtype=f32)
-    yc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_y, dtype=f32)
-    zc = jnp.linspace(-1 + 1.15*re, 1 - 1.15*re, num_stars_z, dtype=f32)
-    Xce, Yce, Zce = jnp.meshgrid(xc, yc, zc)
-    positions = jnp.column_stack((Xce.reshape(-1), Yce.reshape(-1), Zce.reshape(-1)))
-
-    stars = jnp.concatenate((positions, angles), axis=1)
+import numpy as np
+import pdb
+import os
+currDir = os.path.dirname(os.path.realpath(__file__))
 
 
+def get_initial_level_set_fn(file_name = 'keytruda.pqr'):
+    
+    address = os.path.join(currDir, 'pqr_input_mols')
+    bs = base(address, file_name)
+    num_atoms = len(bs.atoms['x'])
+    print(f'\n number of atoms = {num_atoms} \n ')
+    
+    atom_locations = np.stack([np.array(bs.atoms['x']), 
+                                np.array(bs.atoms['y']), 
+                                np.array(bs.atoms['z'])
+                                ], axis=-1) * Angstroms_to_nm_coeff                  # was in Angstroms, converted to nm   
+    
+    sigma_i = np.array(bs.atoms['R']) * Angstroms_to_nm_coeff                       # was Angstroms, converted to nm
+    sigma_s = 0.65 * Angstroms_to_nm_coeff                                          # was Angstroms, converted to nm
+    atom_sigmas = sigma_i + sigma_s                                                 # is in nm
+    # atom_epsilon = np.full_like(atom_sigmas, 0.039 * kcal_to_kJ_coeff )             # was kcal/mol, converted to kJ/mol >> LJ epsilon, not needed for now.
+    
+    atom_charges = np.array(bs.atoms['q'])                                          # partial charges, in units of electron charge e
+    atom_xyz_rad = jnp.concatenate((atom_locations, atom_sigmas[..., jnp.newaxis]), axis=1)
+    
     @jit
     def unperturbed_phi_fn(r):
         """
@@ -36,19 +41,15 @@ def get_initial_level_set_fn():
         y = r[1]
         z = r[2]
 
-        def initialize(carry, xyz):
+        def initialize(carry, xyzs):
             phi_, = carry
-            xc, yc, zc, theta_1, theta_2, theta_3 = xyz
-            theta_1 *= jnp.pi; theta_2 *= jnp.pi; theta_3 *= jnp.pi;
-            core  = beta_1 * jnp.cos(n_1 * (jnp.arctan2(y-yc,x-xc) - theta_1))
-            core += beta_2 * jnp.cos(n_2 * (jnp.arctan2(y-yc,x-xc) - theta_2))
-            core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y-yc,x-xc) - theta_3))
-            phi_  = jnp.min( jnp.array([ phi_, jnp.sqrt((x-xc)**2 + (y-yc)**2 + (z-zc)**2) - 1.0*r0 * (1.0 + (((x-xc)**2 + (y-yc)**2)/((x-xc)**2 + (y-yc)**2 + (z-zc)**2))**2 * core) ]) )
-            phi_= jnp.nan_to_num(phi_, -r0*core)
+            xc, yc, zc, sigma = xyzs
+            phi_  = jnp.min( jnp.array([ phi_, jnp.sqrt((x-xc)**2 + (y-yc)**2 + (z-zc)**2) - sigma ] ) )
+            phi_= jnp.nan_to_num(phi_)
             return (phi_,), None
 
         phi_ = 1e9
-        (phi_,), _ = jax.lax.scan(initialize, (phi_,), stars)
+        (phi_,), _ = jax.lax.scan(initialize, (phi_,), atom_xyz_rad)
 
         return phi_
     
