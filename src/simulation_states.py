@@ -20,8 +20,22 @@ class PoissonSimStateFn:
     f_p_fn           :  Callable[..., Array]
     alpha_fn         :  Callable[..., Array]
     beta_fn          :  Callable[..., Array]
+
     
-    
+@dataclasses.dataclass
+class PoissonAdvectionSimStateFn:
+    u_0_fn           :  Callable[..., Array]
+    dir_bc_fn        :  Callable[..., Array]
+    phi_fn           :  Callable[..., Array]
+    mu_m_fn          :  Callable[..., Array]
+    mu_p_fn          :  Callable[..., Array]
+    k_m_fn           :  Callable[..., Array]
+    k_p_fn           :  Callable[..., Array]
+    f_m_fn           :  Callable[..., Array]
+    f_p_fn           :  Callable[..., Array]
+    alpha_fn         :  Callable[..., Array]
+    beta_fn          :  Callable[..., Array]
+    vel_fn           :  Callable[..., Array]
     
     
 @dataclasses.dataclass

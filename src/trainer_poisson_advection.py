@@ -19,7 +19,7 @@
 """
 
 from typing import Callable, TypeVar, Tuple
-from src import data_management, solver_poisson_advection
+from src import data_management, solver_poisson_advection, solver_advection
 from src.utils import print_architecture 
 from src.visualization import plot_loss_epochs
 import jax
@@ -27,7 +27,7 @@ import optax
 from jax import (pmap, vmap, numpy as jnp, random, jit)
 
 from src.jaxmd_modules import dataclasses, util
-from src.simulation_states import PoissonAdvectionSimState, PoissonSimStateFn
+from src.simulation_states import PoissonAdvectionSimState, PoissonAdvectionSimStateFn
 
 import time
 import signal
@@ -63,6 +63,7 @@ class PoissonAdvectionSolve:
                  Ny_tr=32,
                  Nz_tr=32,
                  num_epochs=1000,
+                 dt=0.1,
                  multi_gpu=False,
                  batch_size=131072,
                  checkpoint_dir="./checkpoints",
@@ -109,6 +110,9 @@ class PoissonAdvectionSolve:
         #########################################################################
         self.trainer = solver_poisson_advection.PoissonAdvectionTrainer(gstate, sim_state, sim_state_fn, optimizer, algorithm)
         
+        _, phi_apply_fn, phi_reinitialize_fn , phi_reinitialized_advect_fn = solver_advection.level_set(level_set_fn=sim_state_fn.phi_fn, 
+                                                                                                                  dt=dt)
+        sim_state.velocity_nm1 = sim_state_fn.velocity_fn(gstate.R)
         #########################################################################
         state = self.trainer.fetch_checkpoint(self.checkpoint_dir)
         self.epoch_start = 0
@@ -392,7 +396,8 @@ def setup(initial_value_fn :  Callable[..., Array],
           f_m_fn_          :  Callable[..., Array],
           f_p_fn_          :  Callable[..., Array],
           alpha_fn_        :  Callable[..., Array],
-          beta_fn_         :  Callable[..., Array]
+          beta_fn_         :  Callable[..., Array],
+          vel_fn_          :  Callable[..., Array]
           ) -> Simulator:
 
     u_0_fn   = vmap(initial_value_fn)
@@ -406,7 +411,8 @@ def setup(initial_value_fn :  Callable[..., Array],
     f_p_fn   = vmap(f_p_fn_)
     alpha_fn = vmap(alpha_fn_)
     beta_fn  = vmap(beta_fn_)
-    sim_state_fn = PoissonSimStateFn(u_0_fn, dir_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
+    vel_fn   = vmap(vel_fn_)
+    sim_state_fn = PoissonAdvectionSimStateFn(u_0_fn, dir_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn, vel_fn)
     
     def init_fn(dt, 
                 gstate,
@@ -434,26 +440,9 @@ def setup(initial_value_fn :  Callable[..., Array],
         F_P   = f_p_fn(R)
         ALPHA = alpha_fn(R)
         BETA  = beta_fn(R)
+        VEL   = vel_fn(R)
    
-        # def solve_fn(sim_state):
-        #     U_sol, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs = poisson_advection_solve(gstate, 
-        #                                                                                                         eval_gstate, 
-        #                                                                                                         sim_state, 
-        #                                                                                                         sim_state_fn, 
-        #                                                                                                         algorithm,
-        #                                                                                                         switching_interval=switching_interval,
-        #                                                                                                         Nx_tr=Nx_tr, 
-        #                                                                                                         Ny_tr=Ny_tr, 
-        #                                                                                                         Nz_tr=Nz_tr,
-        #                                                                                                         num_epochs=num_epochs, 
-        #                                                                                                         multi_gpu=multi_gpu, 
-        #                                                                                                         batch_size=batch_size, 
-        #                                                                                                         checkpoint_dir=checkpoint_dir, 
-        #                                                                                                         checkpoint_interval=checkpoint_interval,
-        #                                                                                                         currDir=currDir)
-
-        #     return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface), epoch_store, loss_epochs
-        
+       
         def solve_fn(sim_state):
             PAS = PoissonAdvectionSolve(gstate, 
                                         eval_gstate, 
@@ -465,6 +454,7 @@ def setup(initial_value_fn :  Callable[..., Array],
                                         Ny_tr=Ny_tr, 
                                         Nz_tr=Nz_tr,
                                         num_epochs=num_epochs, 
+                                        dt=dt,
                                         multi_gpu=multi_gpu, 
                                         batch_size=batch_size, 
                                         checkpoint_dir=checkpoint_dir, 
@@ -474,6 +464,6 @@ def setup(initial_value_fn :  Callable[..., Array],
             sim_state = dataclasses.replace(sim_state, solution=final_solution, grad_solution=grad_u, grad_normal_solution=grad_u_normal_to_interface), epoch_store, loss_epochs
             return sim_state
         
-        return PoissonAdvectionSimState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA, None, None, None, dt), solve_fn 
+        return PoissonAdvectionSimState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA, None, None, VEL, dt), solve_fn 
     
     return init_fn

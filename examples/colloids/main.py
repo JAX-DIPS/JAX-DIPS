@@ -90,6 +90,11 @@ def poisson_advection_simulation():
     unperturbed_phi_fn = get_initial_level_set_fn()
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
+    def velocity_fn(r):
+      x = r[0]
+      y = r[1]
+      z = r[2]
+      return jnp.array([-y, x, 0.0*z], dtype=f32)
     ###########################################################
 
    
@@ -103,7 +108,8 @@ def poisson_advection_simulation():
                                               f_m_fn, 
                                               f_p_fn, 
                                               alpha_fn, 
-                                              beta_fn)
+                                              beta_fn,
+                                              velocity_fn)
     
     sim_state, solve_fn = init_fn(dt=dt, 
                                   gstate=gstate, 
