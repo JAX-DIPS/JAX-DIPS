@@ -21,8 +21,8 @@ class PoissonSimStateFn:
     f_p_fn           :  Callable[..., Array]
     alpha_fn         :  Callable[..., Array]
     beta_fn          :  Callable[..., Array]
-    nonlinear_op_m   : Callable[..., T]
-    nonlinear_op_p   : Callable[..., T]
+    nonlinear_op_m   :  Callable[..., T]
+    nonlinear_op_p   :  Callable[..., T]
 
     
 @dataclasses.dataclass

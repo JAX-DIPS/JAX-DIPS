@@ -50,7 +50,9 @@ def setup(initial_value_fn :  Callable[..., Array],
           f_m_fn_          :  Callable[..., Array],
           f_p_fn_          :  Callable[..., Array],
           alpha_fn_        :  Callable[..., Array],
-          beta_fn_         :  Callable[..., Array]
+          beta_fn_         :  Callable[..., Array],
+          nonlinear_op_m   =  None,
+          nonlinear_op_p   =  None 
           ) -> Simulator:
 
     u_0_fn   = vmap(initial_value_fn)
@@ -64,7 +66,14 @@ def setup(initial_value_fn :  Callable[..., Array],
     f_p_fn   = vmap(f_p_fn_)
     alpha_fn = vmap(alpha_fn_)
     beta_fn  = vmap(beta_fn_)
-    sim_state_fn = PoissonSimStateFn(u_0_fn, dir_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
+    
+    if nonlinear_op_m==None:
+        print("nonlinear_op_m(u) is not defined. Setting it to zero.")
+        nonlinear_op_m = lambda x: 0.0
+    if nonlinear_op_p==None:
+        print("nonlinear_op_m(u) is not defined. Setting it to zero.")
+        nonlinear_op_p = lambda x: 0.0
+    sim_state_fn = PoissonSimStateFn(u_0_fn, dir_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn, nonlinear_op_m, nonlinear_op_p)
 
     def init_fn(R):
         PHI   = sim_state_fn.phi_fn(R)
@@ -81,12 +90,12 @@ def setup(initial_value_fn :  Callable[..., Array],
         sim_state = PoissonSimState(PHI, U, DIRBC, MU_M, MU_P, K_M, K_P, F_M, F_P, ALPHA, BETA, None, None)
         return sim_state
 
-    def solve_fn(gstate, eval_gstate, sim_state, algorithm=0, switching_interval=3, Nx_tr=32, Ny_tr=32, Nz_tr=32, num_epochs=1000, multi_gpu=False, batch_size=131072, checkpoint_dir="./checkpoints", checkpoint_interval=2):
+    def solve_fn(gstate, eval_gstate, sim_state, algorithm=0, switching_interval=3, Nx_tr=32, Ny_tr=32, Nz_tr=32, num_epochs=1000, multi_gpu=False, batch_size=131072, checkpoint_dir="./checkpoints", checkpoint_interval=2, currDir="./"):
         U_sol, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs = \
             poisson_kernels_cellular_core_algorithms_scalable.poisson_solver(gstate, eval_gstate, sim_state, sim_state_fn, algorithm,
                                                                              switching_interval=switching_interval,
                                                                              Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr,
-                                                                             num_epochs=num_epochs, multi_gpu=multi_gpu, batch_size=batch_size, checkpoint_dir=checkpoint_dir, checkpoint_interval=checkpoint_interval)
+                                                                             num_epochs=num_epochs, multi_gpu=multi_gpu, batch_size=batch_size, checkpoint_dir=checkpoint_dir, checkpoint_interval=checkpoint_interval, currDir=currDir)
         return dataclasses.replace(sim_state, solution=U_sol, grad_solution=grad_u_mp, grad_normal_solution=grad_u_mp_normal_to_interface), epoch_store, loss_epochs
 
     return init_fn, solve_fn

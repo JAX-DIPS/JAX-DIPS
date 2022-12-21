@@ -19,7 +19,7 @@ def mu_m_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    return eps_m
+    return eps_m_r
 
 
 @custom_jit
@@ -30,7 +30,7 @@ def mu_p_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    return eps_s
+    return eps_s_r
 
 
 @custom_jit
@@ -109,4 +109,4 @@ def nonlinear_operator_m(u):
 # TODO: Fix this
 @custom_jit
 def nonlinear_operator_p(u):
-    return 0.01 * jnp.sinh(u)
+    return 0.0 #0.01 * jnp.sinh(u)

@@ -735,7 +735,8 @@ def poisson_solver(gstate,
                    multi_gpu=False,
                    batch_size=131072,
                    checkpoint_dir="./checkpoints",
-                   checkpoint_interval=2):
+                   checkpoint_interval=2, 
+                   currDir="./"):
     global stop_training
     #--- Defining Optimizer
     learning_rate = 1e-2
@@ -919,7 +920,8 @@ def poisson_solver(gstate,
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.tick_params(axis='both', which='minor', labelsize=20)
     plt.tight_layout()
-    plt.savefig('tests/poisson_solver_loss.png')
+    filename = os.path.join(currDir , 'solver_loss.png')
+    plt.savefig(filename)
     plt.close()
 
     final_solution = trainer.evaluate_solution_fn(params, eval_gstate.R).reshape(-1)

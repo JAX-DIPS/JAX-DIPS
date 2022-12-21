@@ -34,7 +34,7 @@ import jax.profiler
 import pdb
 import numpy as onp
 
-from src import io, trainer_poisson, mesh, level_set
+from src import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
 from src.jaxmd_modules.util import f32
 from examples.biomolecules.coefficients import *
 from examples.biomolecules.geometry import get_initial_level_set_fn
@@ -47,19 +47,19 @@ def biomolecule_solvation_energy():
     
     ###########################################################
     
-    num_epochs = 50
+    num_epochs = 500
     
-    Nx_tr = Ny_tr = Nz_tr = 8                    # grid for training
-    Nx = Ny = Nz = 512                           # grid for level-set
+    Nx_tr = Ny_tr = Nz_tr = 32                   # grid for training
+    Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 128            # grid for visualization
     
     ALGORITHM = 0                                # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     multi_gpu = False
-    checkpoint_interval = 1000
+    checkpoint_interval = 10000
     
     
-    file_name = 'pdb:1ajj.pqr'                                                      # change the name of the molecule
+    file_name = 'pdb:1ajj.pqr'                   # change the name of the molecule
     
     ###########################################################
     
@@ -72,7 +72,7 @@ def biomolecule_solvation_energy():
                                 onp.array(mol_base.atoms['y']), 
                                 onp.array(mol_base.atoms['z'])
                                 ], axis=-1) * Angstroms_to_nm_coeff                 # was in Angstroms, converted to nm   
-    
+    atom_locations -= atom_locations.mean(axis=0)                                   # recenter in the box
     sigma_i = onp.array(mol_base.atoms['R']) * Angstroms_to_nm_coeff                # was Angstroms, converted to nm
     sigma_s = 0.65 * Angstroms_to_nm_coeff                                          # was Angstroms, converted to nm
     atom_sigmas = sigma_i + sigma_s                                                 # is in nm
@@ -107,36 +107,55 @@ def biomolecule_solvation_energy():
 
     ###########################################################
     
+    if False:
+      #-- v1 old code
+      init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, 
+                                                        dirichlet_bc_fn, 
+                                                        phi_fn, 
+                                                        mu_m_fn, 
+                                                        mu_p_fn, 
+                                                        k_m_fn, 
+                                                        k_p_fn, 
+                                                        f_m_fn, 
+                                                        f_p_fn, 
+                                                        alpha_fn, 
+                                                        beta_fn)
+      sim_state = init_fn(gstate.R)
+      checkpoint_dir = os.path.join(currDir, 'checkpoints')
+      sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL,
+                                                    Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu,
+                                                    checkpoint_dir=checkpoint_dir, checkpoint_interval=checkpoint_interval)
+      
     
-
-   
-    init_fn = trainer_poisson.setup(initial_value_fn, 
-                                    dirichlet_bc_fn, 
-                                    phi_fn, 
-                                    mu_m_fn, 
-                                    mu_p_fn, 
-                                    k_m_fn, 
-                                    k_p_fn, 
-                                    f_m_fn, 
-                                    f_p_fn, 
-                                    alpha_fn, 
-                                    beta_fn,
-                                    nonlinear_operator_m,
-                                    nonlinear_operator_p)
-    
-    sim_state, solve_fn = init_fn(gstate=gstate, 
-                                  eval_gstate=eval_gstate, 
-                                  algorithm=ALGORITHM, 
-                                  switching_interval=SWITCHING_INTERVAL, 
-                                  Nx_tr=Nx_tr, 
-                                  Ny_tr=Ny_tr, 
-                                  Nz_tr=Nz_tr, 
-                                  num_epochs=num_epochs, 
-                                  multi_gpu=multi_gpu, 
-                                  checkpoint_interval=checkpoint_interval,
-                                  currDir=currDir)
-    
-    sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+    else:    
+      #-- v2 new code
+      init_fn = trainer_poisson.setup(initial_value_fn, 
+                                      dirichlet_bc_fn, 
+                                      phi_fn, 
+                                      mu_m_fn, 
+                                      mu_p_fn, 
+                                      k_m_fn, 
+                                      k_p_fn, 
+                                      f_m_fn, 
+                                      f_p_fn, 
+                                      alpha_fn, 
+                                      beta_fn,
+                                      nonlinear_operator_m,
+                                      nonlinear_operator_p)
+      
+      sim_state, solve_fn = init_fn(gstate=gstate, 
+                                    eval_gstate=eval_gstate, 
+                                    algorithm=ALGORITHM, 
+                                    switching_interval=SWITCHING_INTERVAL, 
+                                    Nx_tr=Nx_tr, 
+                                    Ny_tr=Ny_tr, 
+                                    Nz_tr=Nz_tr, 
+                                    num_epochs=num_epochs, 
+                                    multi_gpu=multi_gpu, 
+                                    checkpoint_interval=checkpoint_interval,
+                                    currDir=currDir)
+      
+      sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
  
     
     jax.profiler.save_device_memory_profile("memory_biomolecule.prof")
