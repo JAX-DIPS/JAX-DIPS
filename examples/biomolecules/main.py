@@ -49,9 +49,9 @@ def biomolecule_solvation_energy():
     
     num_epochs = 500
     
-    Nx_tr = Ny_tr = Nz_tr = 32                   # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 64                   # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
-    Nx_eval = Ny_eval = Nz_eval = 128            # grid for visualization
+    Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
     ALGORITHM = 0                                # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
@@ -71,12 +71,13 @@ def biomolecule_solvation_energy():
     atom_locations = onp.stack([onp.array(mol_base.atoms['x']), 
                                 onp.array(mol_base.atoms['y']), 
                                 onp.array(mol_base.atoms['z'])
-                                ], axis=-1) * Angstroms_to_nm_coeff                 # was in Angstroms, converted to nm   
-    atom_locations -= atom_locations.mean(axis=0)                                   # recenter in the box
-    sigma_i = onp.array(mol_base.atoms['R']) * Angstroms_to_nm_coeff                # was Angstroms, converted to nm
-    sigma_s = 0.65 * Angstroms_to_nm_coeff                                          # was Angstroms, converted to nm
-    atom_sigmas = sigma_i + sigma_s                                                 # is in nm
-    atom_charges = jnp.array(mol_base.atoms['q'])                                   # partial charges, in units of electron charge e
+                                ], axis=-1) * Angstrom_in_m / l_tilde        # was in Angstroms, scaled to l_tilde units   
+    atom_locations -= atom_locations.mean(axis=0)                            # recenter in the box
+    sigma_i = onp.array(mol_base.atoms['R']) * Angstrom_in_m / l_tilde       # was Angstroms, scaled to l_tilde
+    sigma_s = 0.65 * Angstrom_in_m / l_tilde                                 # was Angstroms, converted to l_tilde
+    atom_sigmas = sigma_i + sigma_s                                          # is in l_tilde
+    
+    atom_charges = jnp.array(mol_base.atoms['q'])                            # partial charges, in units of electron charge e
     atom_xyz_rad_chg = jnp.concatenate((atom_locations, 
                                         atom_sigmas[..., jnp.newaxis], 
                                         atom_charges[..., jnp.newaxis]
@@ -85,11 +86,13 @@ def biomolecule_solvation_energy():
     unperturbed_phi_fn = get_initial_level_set_fn(atom_xyz_rad_chg)  
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
     
-    f_m_fn = get_f_m_fn(atom_xyz_rad_chg)
+    # f_m_fn = get_f_m_fn(atom_xyz_rad_chg)
     
+    psi_star_at_r, psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
+    alpha_fn, beta_fn = get_jump_conditions(psi_star_at_r)
     ###########################################################
     
-    xmin = ymin = zmin = atom_locations.min() * 3                                   # length unit is nm
+    xmin = ymin = zmin = atom_locations.min() * 3                             # length unit is l_tilde units
     xmax = ymax = zmax = atom_locations.max() * 3
     init_mesh_fn, coord_at = mesh.construct(3)
 
@@ -108,6 +111,16 @@ def biomolecule_solvation_energy():
     ###########################################################
     
     if False:
+      """ Testing u_star, without solvent, only singular point charges """
+      psi_star_sol = psi_star_vec_fn(eval_gstate.R)
+      eval_phi = vmap(phi_fn)(eval_gstate.R)
+      chg_density = vmap(f_m_fn)(eval_gstate.R)
+      log = {'phi': eval_phi, 'Ustar': psi_star_sol, 'rho': chg_density}
+      io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
+      pdb.set_trace()
+    
+    
+    if True:
       #-- v1 old code
       init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, 
                                                         dirichlet_bc_fn, 
@@ -179,8 +192,7 @@ def biomolecule_solvation_energy():
     
     pdb.set_trace()
 
-
-
+    
 
 
 if __name__ == "__main__":
