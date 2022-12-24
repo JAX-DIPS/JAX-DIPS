@@ -60,10 +60,10 @@ def biomolecule_solvation_energy():
     
     
     file_name = 'pdb:1ajj.pqr'                   # change the name of the molecule
-    
+    molecule_pqr_address = 'pqr_input_mols'
     ###########################################################
     
-    address = os.path.join(currDir, 'pqr_input_mols')
+    address = os.path.join(currDir, molecule_pqr_address)
     mol_base = base(address, file_name)
     num_atoms = len(mol_base.atoms['x'])
     print(f'\n number of atoms = {num_atoms} \n ')
@@ -83,12 +83,6 @@ def biomolecule_solvation_energy():
                                         atom_charges[..., jnp.newaxis]
                                         ), axis=1)
     
-    unperturbed_phi_fn = get_initial_level_set_fn(atom_xyz_rad_chg)  
-    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
-    
-    # f_m_fn = get_f_m_fn(atom_xyz_rad_chg)
-    psi_star_at_r_fn, psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
-    alpha_fn, beta_fn = get_jump_conditions(psi_star_at_r_fn, phi_fn)
     ###########################################################
     
     xmin = ymin = zmin = atom_locations.min() * 3                             # length unit is l_tilde units
@@ -109,6 +103,15 @@ def biomolecule_solvation_energy():
 
     ###########################################################
     
+    unperturbed_phi_fn = get_initial_level_set_fn(atom_xyz_rad_chg)  
+    phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
+    
+    psi_star_fn, psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
+    
+    alpha_fn, beta_fn = get_jump_conditions(psi_star_fn, phi_fn, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
+    
+    ###########################################################
+    
     if False:
       """ Testing u_star, without solvent, only singular point charges """
       psi_star = psi_star_vec_fn(eval_gstate.R)
@@ -119,7 +122,7 @@ def biomolecule_solvation_energy():
       pdb.set_trace()
     
     
-    if True:
+    if False:
       #-- v1 old code
       init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, 
                                                         dirichlet_bc_fn, 
@@ -174,7 +177,8 @@ def biomolecule_solvation_energy():
 
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
-    chg_density = vmap(f_m_fn)(eval_gstate.R)
+    rho_fn = get_rho_fn(atom_xyz_rad_chg)
+    chg_density = vmap(rho_fn)(eval_gstate.R)
     
     psi_star = psi_star_vec_fn(eval_gstate.R)
     psi_hat = sim_state.solution

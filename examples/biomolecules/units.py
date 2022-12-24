@@ -33,8 +33,8 @@ n_tilde                  = molar_density * (N_avogadro / liter_in_m_cubed)      
 z_solvent                = 1.0                                                            # overall charge of solvent in electron units
 solvent_chg_tilde        = z_solvent * e_tilde    
 lambda_tilde = np.sqrt( epsilon_0 * K_B * T / (2*z_solvent**2 * e_tilde**2 * n_tilde) )   # should be 1.08575 * Angstrom_in_m for an ionic strength of 0.1 molar
-kappa_p                  = l_tilde / lambda_tilde                                         # nondimensionalized coeff in nonlinear PB term in \Omega^+
-kappa_m                  = 0.0                                                            # nondimensionalized coeff in nonlinear PB term in \Omega^-
+kappa_p_sq               = (l_tilde / lambda_tilde)**2                                    # Square of nondimensionalized coeff in nonlinear PB term in \Omega^+
+kappa_m_sq               = 0.0                                                            # Square of nondimensionalized coeff in nonlinear PB term in \Omega^-
 
 
 # # For nonpolar terms (excluded for now)

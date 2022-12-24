@@ -21,6 +21,7 @@ def dirichlet_bc_fn(r):
     return 0.0
 
 
+
 ##-------------------------------------------------------
 ## Electric permittivities in nondimensionalized PBE
 ##-------------------------------------------------------
@@ -39,6 +40,59 @@ def mu_p_fn(r):
     Diffusion coefficient function in $\Omega^+$
     """
     return eps_s_r
+
+
+
+##-------------------------------------------------------
+## Solvent Effects
+##-------------------------------------------------------
+
+if LINEAR_PB:
+    @custom_jit
+    def k_m_fn(r):
+        """
+        Linear term function in $\Omega^-$
+        """
+        return kappa_m_sq
+
+    @custom_jit
+    def k_p_fn(r):
+        """
+        Linear term function in $\Omega^+$
+        """
+        return kappa_p_sq
+
+    @custom_jit
+    def nonlinear_operator_m(u):
+        return 0.0
+
+    @custom_jit
+    def nonlinear_operator_p(u):
+        return 0.0
+
+else:
+    @custom_jit
+    def k_m_fn(r):
+        """
+        Linear term function in $\Omega^-$
+        """
+        return 0.0
+
+    @custom_jit
+    def k_p_fn(r):
+        """
+        Linear term function in $\Omega^+$
+        """
+        return 0.0
+
+    @custom_jit
+    def nonlinear_operator_m(u):
+        return kappa_m_sq * jnp.sinh(u) 
+
+    @custom_jit
+    def nonlinear_operator_p(u):
+        return kappa_p_sq * jnp.sinh(u)
+    
 
 
 
@@ -80,9 +134,58 @@ def get_psi_star(atom_xyz_rad_chg):
 
 
 
-def get_jump_conditions(psi_fn, phi_fn):
-    del_psi_fn = grad(psi_fn)
-    normal_fn = grad(phi_fn)
+def get_jump_conditions(psi_fn_uns, phi_fn_uns, dx, dy, dz):
+    
+    def psi_fn(r):
+        return psi_fn_uns(jnp.squeeze(r))
+    
+    def phi_fn(r):
+        return phi_fn_uns(jnp.squeeze(r))
+    
+    @custom_jit
+    def normal_fn(point):
+        """
+            Evaluate normal vector at a given point based on interpolated values
+            of the level set function at the face-centers of a 3D cell centered at the
+            point with each side length given by dx, dy, dz.
+        """
+        point_ip1_j_k = jnp.array([[point[0] + dx, point[1], point[2]]])
+        point_im1_j_k = jnp.array([[point[0] - dx, point[1], point[2]]])
+        phi_x = (phi_fn(point_ip1_j_k) - phi_fn(point_im1_j_k) ) / (2 * dx)
+
+        point_i_jp1_k = jnp.array([[point[0], point[1] + dy, point[2]]])
+        point_i_jm1_k = jnp.array([[point[0], point[1] - dy, point[2]]])
+        phi_y = (phi_fn(point_i_jp1_k) - phi_fn(point_i_jm1_k) ) / (2 * dy)
+
+        point_i_j_kp1 = jnp.array([[point[0], point[1], point[2] + dz]])
+        point_i_j_km1 = jnp.array([[point[0], point[1], point[2] - dz]])
+        phi_z = (phi_fn(point_i_j_kp1) - phi_fn(point_i_j_km1) ) / (2 * dz)
+
+        norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
+        return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm])
+    
+    
+    # del_psi_fn = grad(psi_fn)
+    @custom_jit
+    def grad_psi_fn(point):
+        """
+            Evaluate normal vector at a given point based on interpolated values
+            of the level set function at the face-centers of a 3D cell centered at the
+            point with each side length given by dx, dy, dz.
+        """
+        point_ip1_j_k = jnp.array([[point[0] + dx, point[1], point[2]]])
+        point_im1_j_k = jnp.array([[point[0] - dx, point[1], point[2]]])
+        psi_x = (psi_fn(point_ip1_j_k) - psi_fn(point_im1_j_k) ) / (2 * dx)
+
+        point_i_jp1_k = jnp.array([[point[0], point[1] + dy, point[2]]])
+        point_i_jm1_k = jnp.array([[point[0], point[1] - dy, point[2]]])
+        psi_y = (psi_fn(point_i_jp1_k) - psi_fn(point_i_jm1_k) ) / (2 * dy)
+
+        point_i_j_kp1 = jnp.array([[point[0], point[1], point[2] + dz]])
+        point_i_j_km1 = jnp.array([[point[0], point[1], point[2] - dz]])
+        psi_z = (psi_fn(point_i_j_kp1) - psi_fn(point_i_j_km1) ) / (2 * dz)
+        return jnp.array([psi_x, psi_y, psi_z])
+    
     
     @custom_jit
     def alpha_fn(r):
@@ -91,68 +194,15 @@ def get_jump_conditions(psi_fn, phi_fn):
         """
         return psi_fn(r)
 
+
     @custom_jit
     def beta_fn(r):
         """
         Jump in flux at interface
         """
-        return eps_m_r * jnp.dot(del_psi_fn(r), normal_fn(r))  # TODO: this after ab-goosht!
-    return alpha_fn, beta_fn 
-
-
-
-##-------------------------------------------------------
-## Solvent Effects
-##-------------------------------------------------------
-
-if LINEAR_PB:
-    @custom_jit
-    def k_m_fn(r):
-        """
-        Linear term function in $\Omega^-$
-        """
-        return kappa_m
-
-    @custom_jit
-    def k_p_fn(r):
-        """
-        Linear term function in $\Omega^+$
-        """
-        return kappa_p
-
-    @custom_jit
-    def nonlinear_operator_m(u):
-        return 0.0
-
-    @custom_jit
-    def nonlinear_operator_p(u):
-        return 0.0
-
-else:
-    @custom_jit
-    def k_m_fn(r):
-        """
-        Linear term function in $\Omega^-$
-        """
-        return 0.0
-
-    @custom_jit
-    def k_p_fn(r):
-        """
-        Linear term function in $\Omega^+$
-        """
-        return 0.0
-
-    @custom_jit
-    def nonlinear_operator_m(u):
-        return kappa_m * jnp.sinh(u) 
-
-    @custom_jit
-    def nonlinear_operator_p(u):
-        return kappa_p * jnp.sinh(u)
+        return eps_m_r * jnp.dot(grad_psi_fn(r), normal_fn(r))  
     
-
-
+    return alpha_fn, beta_fn 
 
 ##-------------------------------------------------------
 ## Source terms in the nondimensionalized PBE with Guo-Wei's 
@@ -160,22 +210,25 @@ else:
 ##-------------------------------------------------------
 
 """ Note: we use Guo-Wei's strategy, point charges are treated separately through psi_star """
-# def get_f_m_fn(atom_xyz_rad_chg):
-#     @custom_jit
-#     def f_m_fn(r):
-#         x = r[0]
-#         y = r[1]
-#         z = r[2]
-#         def initialize(carry, xyzsc):
-#             rho, = carry
-#             xc, yc, zc, sigma, chg = xyzsc
-#             rho += chg * jnp.exp( -((x-xc)**2 + (y-yc)**2 + (z-zc)**2) / (2*sigma*sigma) ) / ( (2*jnp.pi)**1.5 * sigma*sigma*sigma)
-#             rho  = jnp.nan_to_num(rho)
-#             return (rho,), None
-#         fm = 0.0
-#         (fm,), _ = lax.scan(initialize, (fm,), atom_xyz_rad_chg)
-#         return fm
-#     return f_m_fn
+def get_rho_fn(atom_xyz_rad_chg):
+    """ Charge density function """
+    @custom_jit
+    def rho_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        def initialize(carry, xyzsc):
+            rho, = carry
+            xc, yc, zc, sigma, chg = xyzsc
+            rho += chg * jnp.exp( -((x-xc)**2 + (y-yc)**2 + (z-zc)**2) / (2*sigma*sigma) ) / ( (2*jnp.pi)**1.5 * sigma*sigma*sigma)
+            rho  = jnp.nan_to_num(rho)
+            return (rho,), None
+        fm = 0.0
+        (fm,), _ = lax.scan(initialize, (fm,), atom_xyz_rad_chg)
+        return fm
+    return rho_fn
+
+
 @custom_jit
 def f_m_fn(r):
     return 0.0
