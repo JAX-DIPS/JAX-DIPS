@@ -49,7 +49,7 @@ def biomolecule_solvation_energy():
     
     num_epochs = 1000
     
-    Nx_tr = Ny_tr = Nz_tr = 32                   # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 64                   # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -67,6 +67,8 @@ def biomolecule_solvation_energy():
     mol_base = base(address, file_name)
     num_atoms = len(mol_base.atoms['x'])
     print(f'\n number of atoms = {num_atoms} \n ')
+    # l_tilde = 3.0 * Angstrom_in_m * ( onp.max((mol_base.atoms['x'], mol_base.atoms['y'],mol_base.atoms['z'])) 
+    #                                  - onp.min((mol_base.atoms['x'], mol_base.atoms['y'],mol_base.atoms['z'])) )
     
     atom_locations = onp.stack([onp.array(mol_base.atoms['x']), 
                                 onp.array(mol_base.atoms['y']), 
@@ -191,7 +193,7 @@ def biomolecule_solvation_energy():
     
     SFE = get_free_energy(eval_gstate, eval_phi, psi_solution, psi_hat, atom_xyz_rad_chg)
     
-    print(f"Solvaion Free Energy : {SFE} ")
+    print(f"Solvaion Free Energy : {SFE} (kcal/mol) ")
     
     log = {'phi'  : eval_phi,
            'rho'  : chg_density, 

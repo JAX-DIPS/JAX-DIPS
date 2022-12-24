@@ -17,7 +17,7 @@ def get_free_energy(gstate, phi, u, uhat, atom_xyz_rad_chg):
     sigma, chg = jnp.split(rad_chg, [1], axis=1)
     uhat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(uhat, gstate)
     KbTper2z = K_B * T / 2.0 / z_solvent                                                                  
-    sfe_component_1 = jnp.sum( uhat_interp_fn(xyz) * jnp.squeeze(chg) * KbTper2z )
+    sfe_component_1 = jnp.sum( uhat_interp_fn(xyz) * jnp.squeeze(chg) * KbTper2z ) * N_avogadro / (kcal_in_kJ * 1000)   # from Joules to kcal/mol
     
     
     #---- Second term in the equation 
@@ -31,8 +31,8 @@ def get_free_energy(gstate, phi, u, uhat, atom_xyz_rad_chg):
                                                                                                                  is_cell_crossed_by_interface, 
                                                                                                                  integral_interp_fn)
     sfe_component_2 = jnp.sum(vmap(integrate_in_negative_domain_at_point, (0, None, None, None))(gstate.R, gstate.dx, gstate.dy, gstate.dz))
+    sfe_component_2 *= N_avogadro / (kcal_in_kJ * 1000)                                                                 # convert from Joules to kcal/mol
     
-    # pdb.set_trace()
     return sfe_component_1 + sfe_component_2
     
     

@@ -2,7 +2,7 @@
 LINEAR_PB                = True                                     # if True solves linear Poisson-Boltzmann, otherwise solves nonlinear PB.
 
 # For scaling length
-l_tilde                  = 1.0e-10                                  # l tilde in meters
+l_tilde                  = 1.0e-8                                  # l tilde in meters
 
 # Physical constants in SI units
 N_avogadro               = 6.022e23                                 # number per 1 mole
@@ -28,7 +28,7 @@ nm_in_m                  = 1e-9
 import numpy as np
 
 T                        = 298.15                                                         # Kelvin
-molar_density            = 0.1                                                            # molar density of solvent mole/liter
+molar_density            = 1e-6                                                           # molar density of solvent mole/liter
 n_tilde                  = molar_density * (N_avogadro / liter_in_m_cubed)                # number density = number/m^3. 
 z_solvent                = 1.0                                                            # overall charge of solvent in electron units
 solvent_chg_tilde        = z_solvent * e_tilde    
