@@ -32,7 +32,7 @@ def get_free_energy(gstate, phi, u, uhat, atom_xyz_rad_chg):
                                                                                                                  integral_interp_fn)
     sfe_component_2 = jnp.sum(vmap(integrate_in_negative_domain_at_point, (0, None, None, None))(gstate.R, gstate.dx, gstate.dy, gstate.dz))
     
-    pdb.set_trace()
+    # pdb.set_trace()
     return sfe_component_1 + sfe_component_2
     
     

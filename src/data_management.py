@@ -206,6 +206,7 @@ class TrainData:
 
             self.boundary_points = jnp.concatenate(( self.gstate.R_xmin_boundary, self.gstate.R_xmax_boundary, self.gstate.R_ymin_boundary, self.gstate.R_ymax_boundary, self.gstate.R_zmin_boundary, self.gstate.R_zmax_boundary ))
 
+
         @partial(jit, static_argnums=(0))
         def move_train_points(self, points, dx, dy, dz):
             cov = jnp.array([[dx, 0.0, 0.0], [0.0, dy, 0.0], [0.0, 0.0, dz]])*0.5
@@ -214,6 +215,7 @@ class TrainData:
             new_points = Rnew - jnp.floor(Rnew / self.LL ) * self.LL - 0.5*self.LL
             return new_points
 
+
         @partial(jit, static_argnums=(0))
         def alternate_res(self, epoch, train_dx, train_dy, train_dz):
             self.alt_res = True
@@ -221,4 +223,72 @@ class TrainData:
             train_dy = jnp.where(epoch%4==0, self.gstate.dy, train_dy * 0.50)
             train_dz = jnp.where(epoch%4==0, self.gstate.dz, train_dz * 0.50)
             return train_dx, train_dy, train_dz
+        
+        
+        def plot_slice(self, base_points):
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            import os
+            
+            points = base_points.reshape((self.Nx, self.Ny, self.Nz, 3))
+            currDir = os.path.dirname(os.path.realpath(__file__))
+            rootDir = os.path.abspath(os.path.join(currDir, '..'))
+            fig, ax = plt.subplots(figsize=(8,8))
+            ax.scatter(points[:,:,self.Nz//2,0], points[:,:,self.Nz//2,1], points[:,:,self.Nz//2,2], color='k')
+            filename = os.path.join(rootDir , 'tests/grid.png')
+            plt.savefig(filename)
+            plt.close()
+        
+        
+        
+        def refine(self, phi_fn_uns, max_iters=20):
+            from jax import vmap, jit
+        
+            def phi_fn(r):
+                return phi_fn_uns(jnp.squeeze(r))
+    
+            def normal_fn(point, dx, dy, dz):
+                """
+                    Evaluate normal vector at a given point based on interpolated values
+                    of the level set function at the face-centers of a 3D cell centered at the
+                    point with each side length given by dx, dy, dz.
+                """
+                point_ip1_j_k = jnp.array([[point[0] + dx, point[1], point[2]]])
+                point_im1_j_k = jnp.array([[point[0] - dx, point[1], point[2]]])
+                phi_x = (phi_fn(point_ip1_j_k) - phi_fn(point_im1_j_k) ) / (2 * dx)
+
+                point_i_jp1_k = jnp.array([[point[0], point[1] + dy, point[2]]])
+                point_i_jm1_k = jnp.array([[point[0], point[1] - dy, point[2]]])
+                phi_y = (phi_fn(point_i_jp1_k) - phi_fn(point_i_jm1_k) ) / (2 * dy)
+
+                point_i_j_kp1 = jnp.array([[point[0], point[1], point[2] + dz]])
+                point_i_j_km1 = jnp.array([[point[0], point[1], point[2] - dz]])
+                phi_z = (phi_fn(point_i_j_kp1) - phi_fn(point_i_j_km1) ) / (2 * dz)
+                
+                norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
+                return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm])
+            
+        
+            base_points = self.gstate.R
+            dx = self.gstate.dx
+            dy = self.gstate.dy
+            dz = self.gstate.dz
+            
+            vphi_fn = jit(vmap(phi_fn))
+            vnormal_fn = jit(vmap(normal_fn, (0, None, None, None)))
+            
+            dt = 0.1    
+            max_disp = 0.0
+            counter = 0
+            while counter < max_iters:
+                counter+= 1
+                arr_normal = vnormal_fn(base_points, dx, dy, dz)
+                arr_phi    = vphi_fn(base_points)
+                displacement = -arr_phi[...,jnp.newaxis] * arr_normal * dt
+                base_points += displacement
+                max_disp += jnp.max(jnp.linalg.norm(displacement, axis=1))
+            
+            # self.plot_slice(base_points)
+            return base_points
         

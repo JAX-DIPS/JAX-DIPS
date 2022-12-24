@@ -47,7 +47,7 @@ def biomolecule_solvation_energy():
     
     ###########################################################
     
-    num_epochs = 50
+    num_epochs = 1000
     
     Nx_tr = Ny_tr = Nz_tr = 32                   # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
@@ -56,7 +56,7 @@ def biomolecule_solvation_energy():
     ALGORITHM = 0                                # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     multi_gpu = False
-    checkpoint_interval = 10000
+    checkpoint_interval = 500
     
     
     file_name = 'pdb:1ajj.pqr'                   # change the name of the molecule
@@ -179,7 +179,6 @@ def biomolecule_solvation_energy():
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     rho_fn = get_rho_fn(atom_xyz_rad_chg)
     chg_density = vmap(rho_fn)(eval_gstate.R)
-    
     psi_star = psi_star_vec_fn(eval_gstate.R)
     psi_hat = sim_state.solution
     

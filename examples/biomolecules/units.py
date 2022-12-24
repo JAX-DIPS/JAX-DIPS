@@ -2,7 +2,7 @@
 LINEAR_PB                = True                                     # if True solves linear Poisson-Boltzmann, otherwise solves nonlinear PB.
 
 # For scaling length
-l_tilde                  = 30.0e-9                                  # l tilde in meters
+l_tilde                  = 1.0e-10                                  # l tilde in meters
 
 # Physical constants in SI units
 N_avogadro               = 6.022e23                                 # number per 1 mole

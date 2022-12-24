@@ -72,6 +72,7 @@ class PoissonSolve:
                  Nx_tr=32,
                  Ny_tr=32,
                  Nz_tr=32,
+                 lvl_set_fn=None,
                  num_epochs=1000,
                  multi_gpu=False,
                  batch_size=131072,
@@ -111,7 +112,10 @@ class PoissonSolve:
         
         #########################################################################
         self.TD = data_management.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
-        self.train_points = self.TD.gstate.R
+        train_points = self.TD.gstate.R
+        extra_points = self.TD.refine(lvl_set_fn, max_iters=15)
+        self.train_points = jnp.concatenate((train_points, extra_points))
+        
         self.train_dx = self.TD.gstate.dx
         self.train_dy = self.TD.gstate.dy
         self.train_dz = self.TD.gstate.dz
@@ -454,6 +458,7 @@ def setup(initial_value_fn :  Callable[..., Array],
                                 Nx_tr=Nx_tr, 
                                 Ny_tr=Ny_tr, 
                                 Nz_tr=Nz_tr,
+                                lvl_set_fn=lvl_set_fn,
                                 num_epochs=num_epochs, 
                                 multi_gpu=multi_gpu, 
                                 batch_size=batch_size, 
