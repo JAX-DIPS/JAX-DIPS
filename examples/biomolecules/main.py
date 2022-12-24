@@ -47,9 +47,9 @@ def biomolecule_solvation_energy():
     
     ###########################################################
     
-    num_epochs = 500
+    num_epochs = 50
     
-    Nx_tr = Ny_tr = Nz_tr = 64                   # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 32                   # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -87,9 +87,8 @@ def biomolecule_solvation_energy():
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
     
     # f_m_fn = get_f_m_fn(atom_xyz_rad_chg)
-    
-    psi_star_at_r, psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
-    alpha_fn, beta_fn = get_jump_conditions(psi_star_at_r)
+    psi_star_at_r_fn, psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
+    alpha_fn, beta_fn = get_jump_conditions(psi_star_at_r_fn, phi_fn)
     ###########################################################
     
     xmin = ymin = zmin = atom_locations.min() * 3                             # length unit is l_tilde units
@@ -112,10 +111,10 @@ def biomolecule_solvation_energy():
     
     if False:
       """ Testing u_star, without solvent, only singular point charges """
-      psi_star_sol = psi_star_vec_fn(eval_gstate.R)
+      psi_star = psi_star_vec_fn(eval_gstate.R)
       eval_phi = vmap(phi_fn)(eval_gstate.R)
       chg_density = vmap(f_m_fn)(eval_gstate.R)
-      log = {'phi': eval_phi, 'Ustar': psi_star_sol, 'rho': chg_density}
+      log = {'phi': eval_phi, 'Ustar': psi_star, 'rho': chg_density}
       io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
       pdb.set_trace()
     
@@ -176,17 +175,26 @@ def biomolecule_solvation_energy():
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     chg_density = vmap(f_m_fn)(eval_gstate.R)
-   
-    SFE = get_free_energy(eval_gstate, eval_phi, sim_state.solution, atom_xyz_rad_chg)
+    
+    psi_star = psi_star_vec_fn(eval_gstate.R)
+    psi_hat = sim_state.solution
+    
+    
+    def compose_psi_fn(r, psi_hat_r, psi_star_r):
+      phi_at_r = phi_fn(r)
+      return jnp.where(phi_at_r>=0, psi_hat_r, psi_hat_r + psi_star_r)
+    
+    psi_solution = vmap(compose_psi_fn, (0, 0, 0))(eval_gstate.R, psi_hat, psi_star)
+    
+    SFE = get_free_energy(eval_gstate, eval_phi, psi_solution, psi_hat, atom_xyz_rad_chg)
+    
     print(f"Solvaion Free Energy : {SFE} ")
     
-    log = {'phi'  : eval_phi, 
-           'U'    : sim_state.solution, 
-           'dU_dx': sim_state.grad_solution[:,0],
-           'dU_dy': sim_state.grad_solution[:,1],
-           'dU_dz': sim_state.grad_solution[:,2],
-           'dU_dn': sim_state.grad_normal_solution,
-           'rho'  : chg_density
+    log = {'phi'  : eval_phi,
+           'rho'  : chg_density, 
+           'U'    : psi_solution,
+           'Uhat' : psi_hat, 
+           'Ustar': psi_star
            }
     io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
     

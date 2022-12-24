@@ -1,5 +1,7 @@
+# Simulation Parameters
+LINEAR_PB                = True                                     # if True solves linear Poisson-Boltzmann, otherwise solves nonlinear PB.
 
-# For normalization
+# For scaling length
 l_tilde                  = 30.0e-9                                  # l tilde in meters
 
 # Physical constants in SI units
@@ -13,7 +15,7 @@ eps_m                    = eps_m_r * epsilon_0
 eps_s                    = eps_s_r * epsilon_0
 
 
-# unit conversions
+# Unit conversions
 Angstrom_in_m            = 1e-10                                    # 1 Ang = 1e-10 m
 Angstrom_in_nm           = 0.1                                      # conversion factor from Ang to nm
 kcal_in_kJ               = 4.184                                    # conversion factor from kcal to kJ
@@ -31,12 +33,9 @@ n_tilde                  = molar_density * (N_avogadro / liter_in_m_cubed)      
 z_solvent                = 1.0                                                            # overall charge of solvent in electron units
 solvent_chg_tilde        = z_solvent * e_tilde    
 lambda_tilde = np.sqrt( epsilon_0 * K_B * T / (2*z_solvent**2 * e_tilde**2 * n_tilde) )   # should be 1.08575 * Angstrom_in_m for an ionic strength of 0.1 molar
-
 kappa_p                  = l_tilde / lambda_tilde                                         # nondimensionalized coeff in nonlinear PB term in \Omega^+
 kappa_m                  = 0.0                                                            # nondimensionalized coeff in nonlinear PB term in \Omega^-
 
-
-LINEAR_PB                = True                                                           # if True solves linear Poisson-Boltzmann, otherwise solves nonlinear PB.
 
 # # For nonpolar terms (excluded for now)
 # water_density            = 33.4567                                  # number / nm^3

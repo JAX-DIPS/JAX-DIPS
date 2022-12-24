@@ -1,5 +1,6 @@
 from jax import vmap, numpy as jnp
 from src import interpolate, geometric_integrations_per_point
+from examples.biomolecules.units import *
 """
     * Based on equation 9 in `Eﬃcient calculation of fully resolved electrostatics around large biomolecules`
     
@@ -7,19 +8,18 @@ from src import interpolate, geometric_integrations_per_point
         'Numerical Considerations in the Computation of the Electrostatic Free Energy of Interaction within the Poisson-Boltzmann Theory'
 """
 
-def get_free_energy(gstate, phi, u, atom_xyz_rad_chg):
+def get_free_energy(gstate, phi, u, uhat, atom_xyz_rad_chg):
     
     #---- First term in the equation 
-    # TODO: the following is wrong, I will fix later. Use Micu eqn 19 or 20.
     xyz, rad_chg = jnp.split(atom_xyz_rad_chg, [3], axis=1)
     sigma, chg = jnp.split(rad_chg, [1], axis=1)
-    u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(u, gstate)
-    KbTper2z = 1.0                                                                  # TODO: fix this
-    sfe_component_1 = jnp.sum( u_interp_fn(xyz) * jnp.squeeze(chg) * KbTper2z )
+    uhat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(uhat, gstate)
+    KbTper2z = K_B * T / 2.0 / z_solvent                                                                  
+    sfe_component_1 = jnp.sum( uhat_interp_fn(xyz) * jnp.squeeze(chg) * KbTper2z )
     
     
     #---- Second term in the equation 
-    KbTnl3 = 1e-5                                                                    # TODO: fix this
+    KbTnl3 = K_B * T * n_tilde * l_tilde**3                                                                   
     integrand = KbTnl3 * ( u * jnp.sinh(u) - 2 * (jnp.cosh(u) - 1.0) )
     
     phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(-phi, gstate)

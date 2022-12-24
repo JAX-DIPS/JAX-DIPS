@@ -1,7 +1,7 @@
-from jax import jit, numpy as jnp, lax, vmap
+from jax import jit, numpy as jnp, lax, vmap, grad
 from functools import partial
 from examples.biomolecules.units import *
-
+import pdb
 
 COMPILE_BACKEND = 'gpu'
 custom_jit = partial(jit, backend=COMPILE_BACKEND)
@@ -60,7 +60,7 @@ def get_psi_star(atom_xyz_rad_chg):
     Returns:
         psi_fn: a function that outputs psi at given coordinates.
     """
-    psi_star_coeff = e_tilde * solvent_chg_tilde / (4 * 3.141592653589793 * eps_s * K_B * T * l_tilde)
+    psi_star_coeff = e_tilde * solvent_chg_tilde / (4 * 3.141592653589793 * eps_m * K_B * T * l_tilde)
     def psi_at_r(r):
         x = r[0]
         y = r[1]
@@ -80,7 +80,10 @@ def get_psi_star(atom_xyz_rad_chg):
 
 
 
-def get_jump_conditions(psi_fn):
+def get_jump_conditions(psi_fn, phi_fn):
+    del_psi_fn = grad(psi_fn)
+    normal_fn = grad(phi_fn)
+    
     @custom_jit
     def alpha_fn(r):
         """
@@ -93,8 +96,7 @@ def get_jump_conditions(psi_fn):
         """
         Jump in flux at interface
         """
-        return 0.0  # TODO: this after ab-goosht!
-    
+        return eps_m_r * jnp.dot(del_psi_fn(r), normal_fn(r))  # TODO: this after ab-goosht!
     return alpha_fn, beta_fn 
 
 
