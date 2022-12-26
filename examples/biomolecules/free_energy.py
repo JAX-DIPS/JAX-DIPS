@@ -13,17 +13,19 @@ import numpy as onp
 def get_free_energy(gstate, phi, u, uhat, atom_xyz_rad_chg):
     
     #---- First term in the equation 
+    KbTper2z = K_B * T / 2.0 / z_solvent
+    
     xyz, rad_chg = jnp.split(atom_xyz_rad_chg, [3], axis=1)
     sigma, chg = jnp.split(rad_chg, [1], axis=1)
-    uhat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(uhat, gstate)
-    KbTper2z = K_B * T / 2.0 / z_solvent                                                                  
+    uhat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(uhat, gstate)                                                                  
     sfe_component_1 = jnp.sum( uhat_interp_fn(xyz) * jnp.squeeze(chg) * KbTper2z ) * N_avogadro / (kcal_in_kJ * 1000)   # from Joules to kcal/mol
     
     
     #---- Second term in the equation 
+    KbTnl3 = K_B * T * n_tilde * l_tilde**3
+    
     diag = sigma.max() #jnp.sqrt(gstate.dx**2 + gstate.dy**2 + gstate.dz**2)
-    mask_p = 0.5*(jnp.sign(phi - diag) + 1)
-    KbTnl3 = K_B * T * n_tilde * l_tilde**3   
+    mask_p = 0.5*(jnp.sign(phi - diag) + 1)   
     u_clipped = mask_p * u                                                                 
     integrand = u_clipped * KbTnl3 * onp.sinh(u_clipped) - 2 * KbTnl3 * (onp.cosh(u_clipped) - 1.0) 
     
