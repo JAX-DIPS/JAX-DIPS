@@ -1,8 +1,7 @@
 # Simulation Parameters
 LINEAR_PB                = True                                     # if True solves linear Poisson-Boltzmann, otherwise solves nonlinear PB.
 
-# For scaling length
-l_tilde                  = 1.0e-8                                  # l tilde in meters
+
 
 # Physical constants in SI units
 N_avogadro               = 6.022e23                                 # number per 1 mole
@@ -23,16 +22,18 @@ liter_in_nm_cubed        = 1e24
 liter_in_m_cubed         = 1e-3
 nm_in_m                  = 1e-9
 
+joule_in_kcal_per_mol    = N_avogadro / (kcal_in_kJ * 1000)         # from Joule of 1 molecule to kcal/mole
 
 # Solvent parameters
-import numpy as np
 
 T                        = 298.15                                                         # Kelvin
-molar_density            = 1e-6                                                           # molar density of solvent mole/liter
+molar_density            = 1e-3                                                           # molar density of solvent mole/liter
 n_tilde                  = molar_density * (N_avogadro / liter_in_m_cubed)                # number density = number/m^3. 
-z_solvent                = 1.0                                                            # overall charge of solvent in electron units
+z_solvent                = 1.0                                                            # charge of ions in 1:1 solvent in electron units
 solvent_chg_tilde        = z_solvent * e_tilde    
-lambda_tilde = np.sqrt( epsilon_0 * K_B * T / (2*z_solvent**2 * e_tilde**2 * n_tilde) )   # should be 1.08575 * Angstrom_in_m for an ionic strength of 0.1 molar
+lambda_tilde   = ( epsilon_0 * K_B * T / (2*z_solvent**2 * e_tilde**2 * n_tilde) )**0.5   # should be 1.08575 * Angstrom_in_m for an ionic strength of 0.1 molar
+# For scaling length
+l_tilde                  = 0.9 * lambda_tilde                                             # l tilde in meters
 kappa_p_sq               = (l_tilde / lambda_tilde)**2                                    # Square of nondimensionalized coeff in nonlinear PB term in \Omega^+
 kappa_m_sq               = 0.0                                                            # Square of nondimensionalized coeff in nonlinear PB term in \Omega^-
 

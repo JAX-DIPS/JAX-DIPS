@@ -2,7 +2,7 @@ from jax import vmap, numpy as jnp
 from src import interpolate, geometric_integrations_per_point
 from examples.biomolecules.units import *
 import pdb
-
+import numpy as onp
 """
     * Based on equation 9 in `Eﬃcient calculation of fully resolved electrostatics around large biomolecules`
     
@@ -21,18 +21,20 @@ def get_free_energy(gstate, phi, u, uhat, atom_xyz_rad_chg):
     
     
     #---- Second term in the equation 
-    KbTnl3 = K_B * T * n_tilde * l_tilde**3                                                                   
-    integrand = KbTnl3 * ( u * jnp.sinh(u) - 2 * (jnp.cosh(u) - 1.0) )
+    diag = sigma.max() #jnp.sqrt(gstate.dx**2 + gstate.dy**2 + gstate.dz**2)
+    mask_p = 0.5*(jnp.sign(phi - diag) + 1)
+    KbTnl3 = K_B * T * n_tilde * l_tilde**3   
+    u_clipped = mask_p * u                                                                 
+    integrand = u_clipped * KbTnl3 * onp.sinh(u_clipped) - 2 * KbTnl3 * (onp.cosh(u_clipped) - 1.0) 
     
     phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(-phi, gstate)
     integral_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(integrand, gstate)
     get_vertices_of_cell_intersection_with_interface_at_point, is_cell_crossed_by_interface = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(phi_interp_fn)
-    _, integrate_in_negative_domain_at_point = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_point, 
-                                                                                                                 is_cell_crossed_by_interface, 
-                                                                                                                 integral_interp_fn)
-    sfe_component_2 = jnp.sum(vmap(integrate_in_negative_domain_at_point, (0, None, None, None))(gstate.R, gstate.dx, gstate.dy, gstate.dz))
-    sfe_component_2 *= N_avogadro / (kcal_in_kJ * 1000)                                                                 # convert from Joules to kcal/mol
+    _, integrate_in_negative_domain_at_point = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_point, is_cell_crossed_by_interface, integral_interp_fn)
+    partial_integrals = vmap(integrate_in_negative_domain_at_point, (0, None, None, None))(gstate.R, gstate.dx, gstate.dy, gstate.dz)
+    sfe_component_2 = jnp.sum(partial_integrals * mask_p) * N_avogadro / (kcal_in_kJ * 1000)                                                                 # convert from Joules to kcal/mol
     
-    return sfe_component_1 + sfe_component_2
+    
+    return sfe_component_1, sfe_component_2
     
     

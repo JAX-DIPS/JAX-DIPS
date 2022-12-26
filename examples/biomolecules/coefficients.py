@@ -101,7 +101,7 @@ else:
 ## Jump conditions, and the effect of atomic charges
 ##-------------------------------------------------------
 
-def get_psi_star(atom_xyz_rad_chg):
+def get_psi_star(atom_xyz_rad_chg, EPS=1e-6):
     """Function for calculating psi_star which is the Coloumbic potential generated 
     by singular charges; according to Guo-Wei's method.
 
@@ -122,19 +122,20 @@ def get_psi_star(atom_xyz_rad_chg):
         def psi_pairwise_kernel(carry, xyzsc):
             psi, = carry
             xc, yc, zc, sigma, chg = xyzsc
-            dst = jnp.sqrt( (x - xc)**2 + (y - yc)**2 + (z - zc)**2 )
-            tmp_psi = psi_star_coeff * chg / dst
+            dst = jnp.sqrt( (x - xc)**2 + (y - yc)**2 + (z - zc)**2)  
+            dst = jnp.clip(dst, a_min=sigma)
+            tmp_psi = chg / dst
             psi += jnp.nan_to_num(tmp_psi)
             return (psi,), None
         psi = 0.0
         (psi,), _ = lax.scan(psi_pairwise_kernel, (psi,), atom_xyz_rad_chg)
-        return psi
+        return psi_star_coeff * psi
     psi_vec_fn = vmap(psi_at_r)
     return jit(psi_at_r), jit(psi_vec_fn)
 
 
 
-def get_jump_conditions(psi_fn_uns, phi_fn_uns, dx, dy, dz):
+def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
     
     def psi_fn(r):
         return psi_fn_uns(jnp.squeeze(r))
@@ -165,27 +166,23 @@ def get_jump_conditions(psi_fn_uns, phi_fn_uns, dx, dy, dz):
         return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm])
     
     
-    # del_psi_fn = grad(psi_fn)
+    psi_star_coeff = e_tilde * solvent_chg_tilde / (4 * 3.141592653589793 * eps_m * K_B * T * l_tilde)
     @custom_jit
-    def grad_psi_fn(point):
-        """
-            Evaluate normal vector at a given point based on interpolated values
-            of the level set function at the face-centers of a 3D cell centered at the
-            point with each side length given by dx, dy, dz.
-        """
-        point_ip1_j_k = jnp.array([[point[0] + dx, point[1], point[2]]])
-        point_im1_j_k = jnp.array([[point[0] - dx, point[1], point[2]]])
-        psi_x = (psi_fn(point_ip1_j_k) - psi_fn(point_im1_j_k) ) / (2 * dx)
-
-        point_i_jp1_k = jnp.array([[point[0], point[1] + dy, point[2]]])
-        point_i_jm1_k = jnp.array([[point[0], point[1] - dy, point[2]]])
-        psi_y = (psi_fn(point_i_jp1_k) - psi_fn(point_i_jm1_k) ) / (2 * dy)
-
-        point_i_j_kp1 = jnp.array([[point[0], point[1], point[2] + dz]])
-        point_i_j_km1 = jnp.array([[point[0], point[1], point[2] - dz]])
-        psi_z = (psi_fn(point_i_j_kp1) - psi_fn(point_i_j_km1) ) / (2 * dz)
-        return jnp.array([psi_x, psi_y, psi_z])
-    
+    def grad_psi_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        def grad_psi_pairwise_kernel(carry, xyzsc):
+            grad_psi, = carry
+            xc, yc, zc, sigma, chg = xyzsc
+            dst = jnp.sqrt( (x - xc)**2 + (y - yc)**2 + (z - zc)**2)  
+            dst = jnp.clip(dst, a_min=sigma)
+            tmp_psi = chg * jnp.array([xc - x, yc - y, zc - z]) / dst
+            grad_psi += jnp.nan_to_num(tmp_psi)
+            return (grad_psi,), None
+        grad_psi = jnp.array([0., 0., 0.])
+        (grad_psi,), _ = lax.scan(grad_psi_pairwise_kernel, (grad_psi,), atom_xyz_rad_chg)
+        return psi_star_coeff * grad_psi
     
     @custom_jit
     def alpha_fn(r):
