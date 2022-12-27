@@ -123,7 +123,7 @@ def get_psi_star(atom_xyz_rad_chg, EPS=1e-6):
             psi, = carry
             xc, yc, zc, sigma, chg = xyzsc
             dst = jnp.sqrt( (x - xc)**2 + (y - yc)**2 + (z - zc)**2)  
-            dst = jnp.clip(dst, a_min=sigma)
+            # dst = jnp.clip(dst, a_min=sigma*0.1)
             tmp_psi = chg / dst
             psi += jnp.nan_to_num(tmp_psi)
             return (psi,), None
@@ -176,8 +176,8 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
             grad_psi, = carry
             xc, yc, zc, sigma, chg = xyzsc
             dst = jnp.sqrt( (x - xc)**2 + (y - yc)**2 + (z - zc)**2)  
-            dst = jnp.clip(dst, a_min=sigma)
-            tmp_psi = chg * jnp.array([xc - x, yc - y, zc - z]) / dst
+            # dst = jnp.clip(dst, a_min=0.1*sigma)
+            tmp_psi = chg * jnp.array([xc - x, yc - y, zc - z]) / dst**3
             grad_psi += jnp.nan_to_num(tmp_psi)
             return (grad_psi,), None
         grad_psi = jnp.array([0., 0., 0.])
@@ -197,7 +197,7 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
         """
         Jump in flux at interface
         """
-        return -eps_m_r * jnp.dot(grad_psi_fn(r), normal_fn(r))  
+        return eps_m_r * jnp.dot(grad_psi_fn(r), normal_fn(r))  
     
     return alpha_fn, beta_fn 
 

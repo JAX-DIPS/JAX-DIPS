@@ -47,9 +47,9 @@ def biomolecule_solvation_energy():
     
     ###########################################################
     
-    num_epochs = 1000
+    num_epochs = 50
     
-    Nx_tr = Ny_tr = Nz_tr = 64                   # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 128                   # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -187,7 +187,7 @@ def biomolecule_solvation_energy():
     psi_hat = sim_state.solution
     def compose_psi_fn(r, psi_hat_r, psi_star_r):
       phi_at_r = phi_fn(r)
-      return jnp.where(phi_at_r>=0, psi_hat_r, psi_hat_r + psi_star_r)
+      return jnp.where(phi_at_r>0, psi_hat_r, psi_hat_r + psi_star_r)
     psi_solution = vmap(compose_psi_fn, (0, 0, 0))(eval_gstate.R, psi_hat, psi_star)
     
     
@@ -205,9 +205,9 @@ def biomolecule_solvation_energy():
            }
     io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
     
-    SFE1, SFE2 = get_free_energy(eval_gstate, eval_phi, psi_solution, psi_hat, atom_xyz_rad_chg)
+    SFE1, SFE2, SFE3 = get_free_energy(eval_gstate, eval_phi, psi_solution, psi_hat, atom_xyz_rad_chg)
     print(f"Solvaion Free Energy : {SFE1} (kcal/mol) and {SFE2} (kcal/mol) ")
-    
+    print(f"with new definition it is {SFE3}")
     pdb.set_trace()
 
     
