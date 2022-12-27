@@ -24,7 +24,7 @@ def get_free_energy(gstate, phi, u, uhat, atom_xyz_rad_chg):
     #---- Second term in the equation 
     KbTnl3 = K_B * T * n_tilde * l_tilde**3
     
-    diag = sigma.max() #jnp.sqrt(gstate.dx**2 + gstate.dy**2 + gstate.dz**2)
+    diag = 0.0 #jnp.sqrt(gstate.dx**2 + gstate.dy**2 + gstate.dz**2)
     mask_p = 0.5*(jnp.sign(phi - diag) + 1)   
     u_clipped = mask_p * u                                                                 
     integrand = u_clipped * KbTnl3 * onp.sinh(u_clipped) - 2 * KbTnl3 * (onp.cosh(u_clipped) - 1.0) 

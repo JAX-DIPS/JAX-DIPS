@@ -197,7 +197,7 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
         """
         Jump in flux at interface
         """
-        return eps_m_r * jnp.dot(grad_psi_fn(r), normal_fn(r))  
+        return -eps_m_r * jnp.dot(grad_psi_fn(r), normal_fn(r))  
     
     return alpha_fn, beta_fn 
 
