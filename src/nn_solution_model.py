@@ -29,8 +29,8 @@ class DoubleMLP(hk.Module):
     def __init__(self, name=None):
         super().__init__(name=name)
 
-        self.num_hidden_layers = 1
-        self.hidden_dim = 100
+        self.num_hidden_layers = 2
+        self.hidden_dim = 64
         self.activation_fn = jnp.sin
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
