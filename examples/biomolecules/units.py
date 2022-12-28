@@ -1,6 +1,6 @@
 # Simulation Parameters
 LINEAR_PB                = True                                     # if True solves linear Poisson-Boltzmann, otherwise solves nonlinear PB.
-l_tilde                  = 1.085e-9
+l_tilde                  = 1.0e-10
 
 
 # Physical constants in SI units
@@ -44,3 +44,5 @@ kappa_m_sq               = 0.0                                                  
 
 
 
+# import pdb
+# pdb.set_trace()
