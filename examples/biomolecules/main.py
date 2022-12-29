@@ -49,7 +49,7 @@ def biomolecule_solvation_energy():
     
     num_epochs = 1000
     
-    Nx_tr = Ny_tr = Nz_tr = 256                  # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -122,7 +122,7 @@ def biomolecule_solvation_energy():
       pdb.set_trace()
     
     
-    if False:
+    if True:
       #-- v1 old code
       init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, 
                                                         dirichlet_bc_fn, 

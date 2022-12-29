@@ -23,7 +23,14 @@ from jax import (numpy as jnp, nn as jnn)
 from jax import config
 config.update("jax_debug_nans", False)
 
+from typing import Optional
 
+def layer_norm(x: jnp.ndarray, name: Optional[str] = None) -> jnp.ndarray:
+    """Apply a unique LayerNorm to x with default settings."""
+    return hk.LayerNorm(axis=-1, create_scale=True, create_offset=True, name=name)(x)
+    
+    
+    
 class DoubleMLP(hk.Module):
 
     def __init__(self, name=None):
@@ -61,6 +68,7 @@ class DoubleMLP(hk.Module):
         # h = self.positional_encoding_p(h)
         for _ in range(self.num_hidden_layers):
             h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
+            h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h
@@ -76,6 +84,7 @@ class DoubleMLP(hk.Module):
         # h = self.positional_encoding_m(h)
         for _ in range(self.num_hidden_layers):
             h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
+            h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h
@@ -124,7 +133,6 @@ class DoubleMLP(hk.Module):
         self.encoding_m = self.encoding_m.at[4*self.L:5*self.L].set(z_sin)
         self.encoding_m = self.encoding_m.at[5*self.L:        ].set(z_cos)
         return self.encoding_m
-
 
 
     @staticmethod

@@ -927,16 +927,21 @@ def poisson_solver(gstate,
     final_solution = trainer.evaluate_solution_fn(params, eval_gstate.R).reshape(-1)
 
     #------------- Gradients of discovered solutions are below:
-    if algorithm==0:
-        grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
-        grad_u_mp = trainer.compute_gradient_solution_mp(params, eval_gstate.R)
-        grad_u_normal_to_interface = trainer.compute_normal_gradient_solution_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
-        grad_u = trainer.compute_gradient_solution(params, eval_gstate.R)
-    elif algorithm==1:
-        grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(None, params)
-        grad_u_mp = trainer.compute_gradient_solution_mp(None, params)
-        grad_u_normal_to_interface = None
-        grad_u = None
+    grad_u_mp_normal_to_interface = None
+    grad_u_mp = None
+    grad_u_normal_to_interface = None
+    grad_u = None
+        
+    # if algorithm==0:
+    #     grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
+    #     grad_u_mp = trainer.compute_gradient_solution_mp(params, eval_gstate.R)
+    #     grad_u_normal_to_interface = trainer.compute_normal_gradient_solution_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
+    #     grad_u = trainer.compute_gradient_solution(params, eval_gstate.R)
+    # elif algorithm==1:
+    #     grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(None, params)
+    #     grad_u_mp = trainer.compute_gradient_solution_mp(None, params)
+    #     grad_u_normal_to_interface = None
+    #     grad_u = None
 
     return final_solution, grad_u, grad_u_normal_to_interface, epoch_store, loss_epochs 
     # return final_solution, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs

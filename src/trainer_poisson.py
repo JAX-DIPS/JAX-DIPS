@@ -145,7 +145,7 @@ class PoissonSolve:
     #############################-----------------------
     def solve(self):
         if self.multi_gpu:
-            return self.multi_GPU_train(self, self.opt_state, self.params)
+            return self.multi_GPU_train(self.opt_state, self.params)
         else:
             return self.single_GPU_solve()
         
