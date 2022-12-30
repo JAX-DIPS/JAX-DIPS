@@ -254,10 +254,12 @@ if __name__ == "__main__":
         tmp = glob.glob(currDir + '/' + molecule_pqr_address + '/*.pqr')
         molecules = [mol.split('/')[-1] for mol in tmp]
       
-        gpu_count = len(jax.devices())
-        print(f"JAX found {gpu_count} devices!")
+        gpu_count = 3 
+        
+        print(f"Using {gpu_count} devices!")
         gpu_ids = [str(i) for i in range(gpu_count)] 
-        process_pool = [mp.Process(target=biomolecule_solvation_energy, args=(molecules[i], molecule_pqr_address, gpu_ids[ i % len(gpu_ids) ],)) for i in range(len(molecules)) ]
+        
+        process_pool = [mp.Process(target=biomolecule_solvation_energy, args=(molecules[i], molecule_pqr_address, gpu_ids[ i % gpu_count ],)) for i in range(len(molecules)) ]
         
         
         mol_count = 0
@@ -273,7 +275,7 @@ if __name__ == "__main__":
                     process_pool[i + mol_count].join()
                 except:
                     pass
-            mol_count += len(gpu_ids)
+            mol_count += gpu_count
     
     
  
