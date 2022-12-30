@@ -16,7 +16,14 @@
 ======================== END OF LICENSE NOTICE ========================
   Primary Author: mistani
 
+
+This example is based on https://www.sciencedirect.com/science/article/pii/S0021999117306861
+
 """
+
+
+
+
 
 from jax.config import config
 config.update("jax_enable_x64", False)
@@ -49,7 +56,7 @@ def biomolecule_solvation_energy():
     
     num_epochs = 100
     
-    Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 128                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -122,7 +129,7 @@ def biomolecule_solvation_energy():
       pdb.set_trace()
     
     
-    if True:
+    if False:
       #-- v1 old code
       init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, 
                                                         dirichlet_bc_fn, 
@@ -206,7 +213,7 @@ def biomolecule_solvation_energy():
     io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
     
     SFE = get_free_energy(eval_gstate, psi_hat, atom_xyz_rad_chg)
-    print(f"Solvation Free Energy is {SFE} (kcal/mol/e_C)")
+    print(f"Molecule = {file_name} \t grid spacing (h_g) = {(xmax - xmin)/Nx_tr} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol/e_C)")
     pdb.set_trace()
 
     

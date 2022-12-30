@@ -6,7 +6,7 @@ LINEAR_PB                = True                                     # if True so
 C                        = 1.0                                      # C = e_C/(K_B T) term in the rhs of eqn 2 in Geng & Zhao's two-component formulation
 
 T                        = 298.0                                    # Kelvin
-ionic_strength           = 1e-3                                     # molar density of solvent mol/liter
+ionic_strength           = 9.317                                    # molar density of solvent mol/liter
 
 eps_m_r                  = 1.0                                      # relative electric permittivity of molecule
 eps_p_r                  = 78.54                                    # relative electric permittivity of water
