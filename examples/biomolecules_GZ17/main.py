@@ -36,10 +36,10 @@ import numpy as onp
 
 from src import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
 from src.jaxmd_modules.util import f32
-from examples.biomolecules.coefficients import *
-from examples.biomolecules.geometry import get_initial_level_set_fn
-from examples.biomolecules.load_pqr import base
-from examples.biomolecules.free_energy import get_free_energy
+from examples.biomolecules_GZ17.coefficients import *
+from examples.biomolecules_GZ17.geometry import get_initial_level_set_fn
+from examples.biomolecules_GZ17.load_pqr import base
+from examples.biomolecules_GZ17.free_energy import get_free_energy
 
 
 
@@ -71,11 +71,11 @@ def biomolecule_solvation_energy():
     atom_locations = onp.stack([onp.array(mol_base.atoms['x']), 
                                 onp.array(mol_base.atoms['y']), 
                                 onp.array(mol_base.atoms['z'])
-                                ], axis=-1) * Angstrom_in_m / l_tilde        # was in Angstroms, scaled to l_tilde units   
+                                ], axis=-1)                                  # in Angstroms   
     atom_locations -= atom_locations.mean(axis=0)                            # recenter in the box
-    sigma_i = onp.array(mol_base.atoms['R']) * Angstrom_in_m / l_tilde       # was Angstroms, scaled to l_tilde
-    sigma_s = 1.4 * Angstrom_in_m / l_tilde                                  # was Angstroms, converted to l_tilde
-    atom_sigmas = sigma_i + sigma_s                                          # is in l_tilde
+    sigma_i = onp.array(mol_base.atoms['R'])        
+    sigma_s = 1.4                                  
+    atom_sigmas = sigma_i + sigma_s                                          
     
     atom_charges = jnp.array(mol_base.atoms['q'])                            # partial charges, in units of electron charge e
     atom_xyz_rad_chg = jnp.concatenate((atom_locations, 
@@ -205,9 +205,8 @@ def biomolecule_solvation_energy():
            }
     io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
     
-    SFE1, SFE2, SFE3 = get_free_energy(eval_gstate, eval_phi, psi_solution, psi_hat, atom_xyz_rad_chg)
-    print(f"Solvaion Free Energy : {SFE1} (kcal/mol) and {SFE2} (kcal/mol) ")
-    print(f"with new definition it is {SFE3}")
+    SFE = get_free_energy(eval_gstate, psi_hat, atom_xyz_rad_chg)
+    print(f"Solvation Free Energy is {SFE} (kcal/mol/e_C)")
     pdb.set_trace()
 
     
