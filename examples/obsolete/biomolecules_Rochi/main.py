@@ -36,10 +36,10 @@ import numpy as onp
 
 from src import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
 from src.jaxmd_modules.util import f32
-from examples.biomolecules.coefficients import *
-from examples.biomolecules.geometry import get_initial_level_set_fn
-from examples.biomolecules.load_pqr import base
-from examples.biomolecules.free_energy import get_free_energy
+from examples.obsolete.biomolecules_Rochi.coefficients import *
+from examples.obsolete.biomolecules_Rochi.geometry import get_initial_level_set_fn
+from examples.obsolete.biomolecules_Rochi.load_pqr import base
+from examples.obsolete.biomolecules_Rochi.free_energy import get_free_energy
 
 
 

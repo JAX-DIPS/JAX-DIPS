@@ -1,6 +1,6 @@
 from jax import jit, numpy as jnp, lax, vmap, grad
 from functools import partial
-from examples.biomolecules.units import *
+from examples.obsolete.biomolecules_Rochi.units import *
 import pdb
 
 COMPILE_BACKEND = 'gpu'

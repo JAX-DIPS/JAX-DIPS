@@ -1,6 +1,6 @@
 from jax import vmap, numpy as jnp
 from src import interpolate, geometric_integrations_per_point
-from examples.biomolecules.units import *
+from examples.obsolete.biomolecules_Rochi.units import *
 import pdb
 import numpy as onp
 """

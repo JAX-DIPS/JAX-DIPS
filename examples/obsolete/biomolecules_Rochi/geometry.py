@@ -1,6 +1,6 @@
 from jax import numpy as jnp, jit
 import jax
-from examples.biomolecules.units import *
+from examples.obsolete.biomolecules_Rochi.units import *
 import os
 currDir = os.path.dirname(os.path.realpath(__file__))
 
