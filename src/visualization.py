@@ -26,7 +26,7 @@ import numpy as onp
 
 import os
 
-def plot_loss_epochs(epoch_store, loss_epochs, address, base_level, alt_res=True):
+def plot_loss_epochs(epoch_store, loss_epochs, address, base_level, alt_res=True, name='solver_loss'):
     epoch_store = onp.array(epoch_store)
     loss_epochs = onp.array(loss_epochs)
     
@@ -55,7 +55,7 @@ def plot_loss_epochs(epoch_store, loss_epochs, address, base_level, alt_res=True
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.tick_params(axis='both', which='minor', labelsize=20)
     plt.tight_layout()
-    filename = os.path.join(address , 'solver_loss.png')
+    filename = os.path.join(address , name+'.png')
     plt.savefig(filename)
     plt.close()
 

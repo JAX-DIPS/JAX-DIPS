@@ -50,11 +50,16 @@ from examples.biomolecules_GZ17.free_energy import get_free_energy
 
 
 
-def biomolecule_solvation_energy():
+def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_address = 'pqr_input_mols', gpu_id=None):   
+    
+    if gpu_id==None:
+      pass
+    else:
+      os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
     
     ###########################################################
     
-    num_epochs = 100
+    num_epochs = 1000
     
     Nx_tr = Ny_tr = Nz_tr = 128                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
@@ -65,9 +70,8 @@ def biomolecule_solvation_energy():
     multi_gpu = False
     checkpoint_interval = 500
     
+    molecule_name = file_name.split('.pqr')[0]
     
-    file_name = 'pdb:1ajj.pqr'                   # change the name of the molecule
-    molecule_pqr_address = 'pqr_input_mols'
     ###########################################################
     
     address = os.path.join(currDir, molecule_pqr_address)
@@ -175,12 +179,13 @@ def biomolecule_solvation_energy():
                                     num_epochs=num_epochs, 
                                     multi_gpu=multi_gpu, 
                                     checkpoint_interval=checkpoint_interval,
-                                    currDir=currDir)
+                                    currDir=currDir + '/results/',
+                                    loss_plot_name=molecule_name)
       
       sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
  
     
-    jax.profiler.save_device_memory_profile("memory_biomolecule.prof")
+    # jax.profiler.save_device_memory_profile("memory_biomolecule.prof")
 
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
@@ -210,14 +215,65 @@ def biomolecule_solvation_energy():
            'jump' : u_jump,
            'grad_jump': grad_u_jump
            }
-    io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
+    save_name = currDir + '/results/' + molecule_name
+    io.write_vtk_manual(eval_gstate, log, filename=save_name)
     
     SFE = get_free_energy(eval_gstate, psi_hat, atom_xyz_rad_chg)
-    print(f"Molecule = {file_name} \t grid spacing (h_g) = {(xmax - xmin)/Nx_tr} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol/e_C)")
-    pdb.set_trace()
+    train_grid_size = (xmax - xmin)/Nx_tr
+    print(f"Molecule = {file_name} \t grid spacing (h_g) = {train_grid_size} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol/e_C)")
+    
+    data_file = currDir + '/results/data_logs.txt'
+    with open(data_file, "a") as f:
+      result = f"{molecule_name} \t {train_grid_size} \t {SFE} \n"
+      f.write(result)
+   
 
     
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
-    biomolecule_solvation_energy()
+  
+    if False:
+        """ For testing only run 1 molecule """
+        biomolecule_solvation_energy()
+        
+    else:
+        """ For final evaluation, run over all molecules in parallel """
+        import multiprocessing as mp
+        import glob
+        
+        molecule_pqr_address = 'pqr_input_mols'
+        tmp = glob.glob(currDir + '/' + molecule_pqr_address + '/*.pqr')
+        molecules = [mol.split('/')[-1] for mol in tmp]
+      
+        gpu_count = len(jax.devices())
+        print(f"JAX found {gpu_count} devices!")
+        gpu_ids = [str(i) for i in range(gpu_count)] 
+        process_pool = [mp.Process(target=biomolecule_solvation_energy, args=(molecules[i], molecule_pqr_address, gpu_ids[ i % len(gpu_ids) ],)) for i in range(len(molecules)) ]
+        
+        
+        mol_count = 0
+        while mol_count < len(molecules):
+            for i, gpu in enumerate(gpu_ids):
+                try:
+                    process_pool[i + mol_count].start()
+                except:
+                    pass
+              
+            for i, gpu in enumerate(gpu_ids):
+                try:
+                    process_pool[i + mol_count].join()
+                except:
+                    pass
+            mol_count += len(gpu_ids)
+    
+    
+ 

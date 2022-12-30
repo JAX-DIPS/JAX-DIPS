@@ -78,7 +78,8 @@ class PoissonSolve:
                  batch_size=131072,
                  checkpoint_dir="./checkpoints",
                  checkpoint_interval=2,
-                 currDir="./") -> None:
+                 currDir="./",
+                 loss_plot_name='solver_loss') -> None:
         
         #########################################################################
         global stop_training
@@ -90,6 +91,7 @@ class PoissonSolve:
         self.checkpoint_dir = checkpoint_dir
         self.checkpoint_interval = checkpoint_interval
         self.currDir = currDir
+        self.loss_plot_name = loss_plot_name
         self.Nx_tr = Nx_tr; self.Ny_tr = Ny_tr; self.Nz_tr = Nz_tr
         
         #########################################################################
@@ -157,7 +159,7 @@ class PoissonSolve:
         self.opt_state, self.params, self.epoch_store, self.loss_epochs = self.single_GPU_train(self.opt_state, self.params)
         end_time = time.time()
         print(f"solve took {end_time - start_time} (sec)")
-        plot_loss_epochs(self.epoch_store, self.loss_epochs, self.currDir, self.TD.base_level, self.TD.alt_res)
+        plot_loss_epochs(self.epoch_store, self.loss_epochs, self.currDir, self.TD.base_level, self.TD.alt_res, self.loss_plot_name)
         final_solution, grad_u, grad_u_normal_to_interface = self.evaluate_solution_and_gradients(self.params, self.eval_gstate)
         return final_solution, grad_u, grad_u_normal_to_interface, self.epoch_store, self.loss_epochs 
             
@@ -433,7 +435,8 @@ def setup(initial_value_fn :  Callable[..., Array],
                 multi_gpu=False, 
                 checkpoint_interval=1000, 
                 checkpoint_dir="./checkpoints",
-                currDir="./"):
+                currDir="./",
+                loss_plot_name='solver_loss'):
         
         R     = eval_gstate.R
         PHI   = phi_fn(R)
@@ -464,7 +467,8 @@ def setup(initial_value_fn :  Callable[..., Array],
                                 batch_size=batch_size, 
                                 checkpoint_dir=checkpoint_dir, 
                                 checkpoint_interval=checkpoint_interval,
-                                currDir=currDir)
+                                currDir=currDir,
+                                loss_plot_name=loss_plot_name)
             final_solution, grad_u, grad_u_normal_to_interface, epoch_store, loss_epochs = PAS.solve()
             sim_state = dataclasses.replace(sim_state, solution=final_solution, grad_solution=grad_u, grad_normal_solution=grad_u_normal_to_interface), epoch_store, loss_epochs
             return sim_state
