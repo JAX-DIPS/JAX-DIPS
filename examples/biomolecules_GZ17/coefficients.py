@@ -16,9 +16,26 @@ def initial_value_fn(r):
     return 0.0
 
 
-@custom_jit
-def dirichlet_bc_fn(r):
-    return 0.0
+def get_dirichlet_bc_fn(atom_xyz_rad_chg):
+    psi_star_coeff = C / eps_p_r
+    kappa = (kappa_sq_p / eps_p_r)**0.5
+    def dirichlet_bc_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        def psi_pairwise_kernel(carry, xyzsc):
+            psi, = carry
+            xc, yc, zc, sigma, chg = xyzsc
+            dst = jnp.sqrt( (x - xc)**2 + (y - yc)**2 + (z - zc)**2)  
+            dst = jnp.clip(dst, a_min=sigma*0.01)
+            tmp_psi = chg * jnp.exp(-dst * kappa) / dst
+            psi += jnp.nan_to_num(tmp_psi)
+            return (psi,), None
+        psi = 0.0
+        (psi,), _ = lax.scan(psi_pairwise_kernel, (psi,), atom_xyz_rad_chg)
+        return psi_star_coeff * psi
+    
+    return jit(dirichlet_bc_fn)
 
 
 
@@ -131,7 +148,25 @@ def get_psi_star(atom_xyz_rad_chg, EPS=1e-6):
         (psi,), _ = lax.scan(psi_pairwise_kernel, (psi,), atom_xyz_rad_chg)
         return psi_star_coeff * psi
     psi_vec_fn = vmap(psi_at_r)
-    return jit(psi_at_r), jit(psi_vec_fn)
+    
+    @custom_jit
+    def grad_psi_fn(r):
+        x = r[0]
+        y = r[1]
+        z = r[2]
+        def grad_psi_pairwise_kernel(carry, xyzsc):
+            grad_psi, = carry
+            xc, yc, zc, sigma, chg = xyzsc
+            dst = jnp.sqrt( (x - xc)**2 + (y - yc)**2 + (z - zc)**2)  
+            dst = jnp.clip(dst, a_min=0.01*sigma)
+            tmp_psi = chg * jnp.array([xc - x, yc - y, zc - z]) / dst**3
+            grad_psi += jnp.nan_to_num(tmp_psi)
+            return (grad_psi,), None
+        grad_psi = jnp.array([0., 0., 0.])
+        (grad_psi,), _ = lax.scan(grad_psi_pairwise_kernel, (grad_psi,), atom_xyz_rad_chg)
+        return psi_star_coeff * grad_psi
+    grad_vec_psi_fn = vmap(grad_psi_fn)
+    return jit(psi_at_r), jit(psi_vec_fn), jit(grad_psi_fn), jit(grad_vec_psi_fn)
 
 
 
@@ -217,7 +252,8 @@ def get_rho_fn(atom_xyz_rad_chg):
         def initialize(carry, xyzsc):
             rho, = carry
             xc, yc, zc, sigma, chg = xyzsc
-            rho += chg * jnp.exp( -((x-xc)**2 + (y-yc)**2 + (z-zc)**2) / (2*sigma*sigma) ) / ( (2*jnp.pi)**1.5 * sigma*sigma*sigma)
+            ch_sigma = 0.1 * sigma
+            rho += chg * jnp.exp( -((x-xc)**2 + (y-yc)**2 + (z-zc)**2) / (2*ch_sigma*ch_sigma) ) / ( (2*jnp.pi)**1.5 * ch_sigma*ch_sigma*ch_sigma)
             rho  = jnp.nan_to_num(rho)
             return (rho,), None
         fm = 0.0

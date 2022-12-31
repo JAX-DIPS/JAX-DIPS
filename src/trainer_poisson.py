@@ -99,7 +99,7 @@ class PoissonSolve:
         optimizer = None
         if OPTZ=='custom':
             learning_rate = 1e-2
-            decay_rate_ = 0.975
+            decay_rate_ = 0.96 #0.975
             scheduler = optax.exponential_decay(init_value=learning_rate,
                                                 transition_steps=100,
                                                 decay_rate=decay_rate_)

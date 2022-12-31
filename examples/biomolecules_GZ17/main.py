@@ -61,7 +61,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     num_epochs = 1000
     
-    Nx_tr = Ny_tr = Nz_tr = 128                  # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -113,11 +113,12 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     eval_gstate = init_mesh_fn(exc, eyc, ezc)
 
     ###########################################################
+    dirichlet_bc_fn = get_dirichlet_bc_fn(atom_xyz_rad_chg)
     
     unperturbed_phi_fn = get_initial_level_set_fn(atom_xyz_rad_chg)  
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
     
-    psi_star_fn, psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
+    psi_star_fn, psi_star_vec_fn, grad_psi_star_fn, grad_psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
     
     alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, eval_gstate.dx*0.01, eval_gstate.dy*0.01, eval_gstate.dz*0.01)
     
@@ -195,6 +196,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     chg_density = vmap(rho_fn)(eval_gstate.R)
     
     
+    
     psi_star = psi_star_vec_fn(eval_gstate.R)
     psi_hat = sim_state.solution
     def compose_psi_fn(r, psi_hat_r, psi_star_r):
@@ -205,8 +207,6 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     grad_u_jump = vmap(beta_fn)(eval_gstate.R)
     u_jump = vmap(alpha_fn)(eval_gstate.R)
-    
-    
     log = {'phi'  : eval_phi,
            'rho'  : chg_density, 
            'U'    : psi_solution,
@@ -218,7 +218,21 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     save_name = currDir + '/results/' + molecule_name
     io.write_vtk_manual(eval_gstate, log, filename=save_name)
     
-    SFE = get_free_energy(eval_gstate, psi_hat, atom_xyz_rad_chg)
+    
+    grad_psi_hat = sim_state.grad_solution
+    grad_psi_star = grad_psi_star_vec_fn(eval_gstate.R)
+    def get_epsilon_E_sq_field(r, g_hat_r, g_star_r):
+      phi_at_r = phi_fn(r)
+      return jnp.where(phi_at_r>0, mu_p_fn(r) * jnp.dot(g_hat_r, g_hat_r), mu_m_fn(r) * jnp.dot(g_hat_r + g_star_r, g_hat_r + g_star_r) )
+    epsilon_grad_psi_sq = vmap(get_epsilon_E_sq_field, (0, 0, 0))(eval_gstate.R, grad_psi_hat, grad_psi_star)
+    
+    def get_epsilon_E_coul_sq_field(r, g_star_r):
+      phi_at_r = phi_fn(r)
+      return jnp.where(phi_at_r>0, mu_p_fn(r) * jnp.dot(g_star_r, g_star_r), mu_m_fn(r) * jnp.dot(g_star_r, g_star_r) )
+    epsilon_grad_psi_star_sq = vmap(get_epsilon_E_coul_sq_field, (0, 0))(eval_gstate.R, grad_psi_star)
+    epsilon_grad_psi_hat_sq = vmap(get_epsilon_E_coul_sq_field, (0, 0))(eval_gstate.R, grad_psi_hat)
+    
+    SFE = get_free_energy(eval_gstate, eval_phi, psi_hat, atom_xyz_rad_chg, epsilon_grad_psi_sq, psi_solution, epsilon_grad_psi_star_sq, epsilon_grad_psi_hat_sq)
     train_grid_size = (xmax - xmin)/Nx_tr
     print(f"Molecule = {file_name} \t grid spacing (h_g) = {train_grid_size} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol/e_C)")
     
@@ -241,7 +255,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
 
 if __name__ == "__main__":
   
-    if False:
+    if True:
         """ For testing only run 1 molecule """
         biomolecule_solvation_energy()
         
