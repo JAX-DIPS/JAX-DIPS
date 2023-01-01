@@ -7,6 +7,11 @@ COMPILE_BACKEND = 'gpu'
 custom_jit = partial(jit, backend=COMPILE_BACKEND)
 
 
+
+psi_star_coeff = (1.0/eps_m_r)  #eC2_per_KbT_per_eps_m_in_Angstroms
+psi_bc_coeff = (1.0/eps_p_r) # so unit of phi be eC/Angstroms #eC2_per_KbT_per_eps_p_in_Angstroms
+
+
 ##-------------------------------------------------------
 ## Setting far-field to 0. Start from uniform 0 guess.
 ##-------------------------------------------------------
@@ -17,8 +22,8 @@ def initial_value_fn(r):
 
 
 def get_dirichlet_bc_fn(atom_xyz_rad_chg):
-    psi_star_coeff = C / eps_p_r
-    kappa = (kappa_sq_p / eps_p_r)**0.5
+    
+    kappa = (kappa_sq_in_angs2)**0.5
     def dirichlet_bc_fn(r):
         x = r[0]
         y = r[1]
@@ -33,7 +38,7 @@ def get_dirichlet_bc_fn(atom_xyz_rad_chg):
             return (psi,), None
         psi = 0.0
         (psi,), _ = lax.scan(psi_pairwise_kernel, (psi,), atom_xyz_rad_chg)
-        return psi_star_coeff * psi
+        return psi_bc_coeff * psi
     
     return jit(dirichlet_bc_fn)
 
@@ -70,14 +75,14 @@ if LINEAR_PB:
         """
         Linear term function in $\Omega^-$
         """
-        return kappa_sq_m
+        return kappa_bar_sq_m
 
     @custom_jit
     def k_p_fn(r):
         """
         Linear term function in $\Omega^+$
         """
-        return kappa_sq_p
+        return kappa_bar_sq_p
 
     @custom_jit
     def nonlinear_operator_m(u):
@@ -104,11 +109,11 @@ else:
 
     @custom_jit
     def nonlinear_operator_m(u):
-        return kappa_sq_m * jnp.sinh(u) 
+        return kappa_bar_sq_m * jnp.sinh(u) 
 
     @custom_jit
     def nonlinear_operator_p(u):
-        return kappa_sq_p * jnp.sinh(u)
+        return kappa_bar_sq_p * jnp.sinh(u)
     
 
 
@@ -117,6 +122,7 @@ else:
 ##-------------------------------------------------------
 ## Jump conditions, and the effect of atomic charges
 ##-------------------------------------------------------
+
 
 def get_psi_star(atom_xyz_rad_chg, EPS=1e-6):
     """Function for calculating psi_star which is the Coloumbic potential generated 
@@ -131,7 +137,7 @@ def get_psi_star(atom_xyz_rad_chg, EPS=1e-6):
     Returns:
         psi_fn: a function that outputs psi at given coordinates.
     """
-    psi_star_coeff = C / eps_m_r
+    
     def psi_at_r(r):
         x = r[0]
         y = r[1]
@@ -201,7 +207,7 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
         return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm])
     
     
-    psi_star_coeff = C / eps_m_r
+    
     @custom_jit
     def grad_psi_fn(r):
         x = r[0]
@@ -243,7 +249,7 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
 
 """ Note: we use Guo-Wei's strategy, point charges are treated separately through psi_star """
 def get_rho_fn(atom_xyz_rad_chg):
-    """ Charge density function """
+    """ Charge density function; in units of eC/Angstrom^3 """
     @custom_jit
     def rho_fn(r):
         x = r[0]

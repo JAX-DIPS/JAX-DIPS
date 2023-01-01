@@ -59,7 +59,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     ###########################################################
     
-    num_epochs = 1000
+    num_epochs = 100
     
     Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
@@ -120,7 +120,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     psi_star_fn, psi_star_vec_fn, grad_psi_star_fn, grad_psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
     
-    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, eval_gstate.dx*0.01, eval_gstate.dy*0.01, eval_gstate.dz*0.01)
+    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
     
     ###########################################################
     
@@ -199,6 +199,8 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     psi_star = psi_star_vec_fn(eval_gstate.R)
     psi_hat = sim_state.solution
+    
+    
     def compose_psi_fn(r, psi_hat_r, psi_star_r):
       phi_at_r = phi_fn(r)
       return jnp.where(phi_at_r>0, psi_hat_r, psi_hat_r + psi_star_r)
@@ -255,7 +257,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
 
 if __name__ == "__main__":
   
-    if True:
+    if False:
         """ For testing only run 1 molecule """
         biomolecule_solvation_energy()
         

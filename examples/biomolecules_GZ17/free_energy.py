@@ -18,11 +18,18 @@ def get_free_energy(gstate, phi, psi_hat, atom_xyz_rad_chg, epsilon_grad_psi_sq,
     
     psi_hat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(psi_hat, gstate)                                
                                       
-    sfe = jnp.sum( psi_hat_interp_fn(xyz) * jnp.squeeze(chg)  ) * e2_per_Angs_to_kcal_per_mol   # convert to kcal/mol/eC
+    core = jnp.sum( psi_hat_interp_fn(xyz) * jnp.squeeze(chg)  )   
+    sfe = core * e2_per_Angs_to_kcal_per_mol * PI/2.0
     
+    ionic_term = psi_hat * jnp.sinh(psi_hat) - 2*(jnp.cosh(psi_hat) - 1)
+    integral_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(ionic_term, gstate)
+    phi_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(-phi, gstate)
+    get_vertices_of_cell_intersection_with_interface_at_point, is_cell_crossed_by_interface = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(phi_p_interp_fn)
+    _, integrate_in_positive_domain_at_point = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_point, is_cell_crossed_by_interface, integral_interp_fn)
+    partial_integrals_positive = vmap(integrate_in_positive_domain_at_point, (0, None, None, None))(gstate.R, gstate.dx, gstate.dy, gstate.dz)
     
-    
-    
+    sfe_z = partial_integrals_positive.sum() * KbT_in_kcal_per_mol
+    # pdb.set_trace()
     # # method 2:
     # epsilon_E_sq = 0.5 * epsilon_grad_psi_sq - 0.5 * epsilon_grad_psi_star_sq
     # E_correction = epsilon_E_sq.sum() * (gstate.dx*gstate.dy*gstate.dz) * e2_per_Angs_to_kcal_per_mol * 1e-10
