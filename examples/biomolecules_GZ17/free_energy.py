@@ -18,8 +18,8 @@ def get_free_energy(gstate, phi, psi_hat, atom_xyz_rad_chg, epsilon_grad_psi_sq,
     
     psi_hat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(psi_hat, gstate)                                
                                       
-    core = 0.5*jnp.sum( psi_hat_interp_fn(xyz) * jnp.squeeze(chg)  )   
-    sfe = core * e2_per_Angs_to_kcal_per_mol #eC2_per_KbT_per_eps_m_in_Angstroms * KbT_in_kcal_per_mol / 2.0
+    core = 0.5 * jnp.sum( psi_hat_interp_fn(xyz) * jnp.squeeze(chg)  )   
+    sfe = core * e2_per_Angs_to_kcal_per_mol 
     
     
     ionic_term = psi_hat * jnp.sinh(psi_hat) - 2*(jnp.cosh(psi_hat) - 1)
@@ -60,6 +60,6 @@ def get_free_energy(gstate, phi, psi_hat, atom_xyz_rad_chg, epsilon_grad_psi_sq,
     
     
     
-    return sfe
+    return sfe, sfe_z
     
     
