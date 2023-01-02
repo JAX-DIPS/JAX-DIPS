@@ -7,9 +7,9 @@ COMPILE_BACKEND = 'gpu'
 custom_jit = partial(jit, backend=COMPILE_BACKEND)
 
 
-
-psi_star_coeff = (1.0/eps_m_r)  #eC2_per_KbT_per_eps_m_in_Angstroms
-psi_bc_coeff = (1.0/eps_p_r) # so unit of phi be eC/Angstroms #eC2_per_KbT_per_eps_p_in_Angstroms
+C = 1.0 #rhs_per_Angs2  # e2_per_Angs_to_kcal_per_mol / KbT_in_kcal_per_mol = 560.745
+psi_star_coeff = (C / eps_m_r)  #eC2_per_KbT_per_eps_m_in_Angstroms
+psi_bc_coeff   = (C / eps_p_r) # so unit of phi be eC/Angstroms #eC2_per_KbT_per_eps_p_in_Angstroms
 
 
 ##-------------------------------------------------------

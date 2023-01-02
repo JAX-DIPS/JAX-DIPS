@@ -75,7 +75,7 @@ class DoubleMLP(hk.Module):
         output:
             one scalar value representing the solution u_p
         '''
-        h = self.positional_encoding_p(h)
+        # h = self.positional_encoding_p(h)
         for _ in range(self.num_hidden_layers):
             h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
             h = layer_norm(h)
@@ -91,7 +91,7 @@ class DoubleMLP(hk.Module):
         output:
             one scalar value representing the solution u_m
         '''
-        h = self.positional_encoding_m(h)
+        # h = self.positional_encoding_m(h)
         for _ in range(self.num_hidden_layers):
             h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
             h = layer_norm(h)

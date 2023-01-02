@@ -40,6 +40,7 @@ import jax
 import jax.profiler
 import pdb
 import numpy as onp
+import time
 
 from src import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
 from src.jaxmd_modules.util import f32
@@ -59,7 +60,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     ###########################################################
     
-    num_epochs = 100
+    num_epochs = 3000
     
     Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
@@ -85,7 +86,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
                                 ], axis=-1)                                  # in Angstroms   
     atom_locations -= atom_locations.mean(axis=0)                            # recenter in the box
     sigma_i = onp.array(mol_base.atoms['R'])        
-    sigma_s = 1.4                                  
+    sigma_s = 0.0                                  
     atom_sigmas = sigma_i + sigma_s                                          
     
     atom_charges = jnp.array(mol_base.atoms['q'])                            # partial charges, in units of electron charge e
@@ -96,8 +97,8 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     ###########################################################
     
-    xmin = ymin = zmin = atom_locations.min() * 3                             # length unit is l_tilde units
-    xmax = ymax = zmax = atom_locations.max() * 3
+    xmin = ymin = zmin = min((atom_locations.min(), (-atom_sigmas).min())) * 3                             # length unit is l_tilde units
+    xmax = ymax = zmax = max((atom_locations.max(), atom_sigmas.max())) * 3
     init_mesh_fn, coord_at = mesh.construct(3)
 
     # --------- Grid nodes for level set
@@ -112,6 +113,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
     eval_gstate = init_mesh_fn(exc, eyc, ezc)
 
+    
     ###########################################################
     dirichlet_bc_fn = get_dirichlet_bc_fn(atom_xyz_rad_chg)
     
@@ -120,7 +122,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     psi_star_fn, psi_star_vec_fn, grad_psi_star_fn, grad_psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
     
-    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
+    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, gstate.dx, gstate.dy, gstate.dz)
     
     ###########################################################
     
@@ -133,7 +135,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
       io.write_vtk_manual(eval_gstate, log, filename=currDir + '/results/biomolecules')
       pdb.set_trace()
     
-    
+    t0 = t1 = 0.0
     if False:
       #-- v1 old code
       init_fn, solve_fn = poisson_solver_scalable.setup(initial_value_fn, 
@@ -149,10 +151,11 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
                                                         beta_fn)
       sim_state = init_fn(gstate.R)
       checkpoint_dir = os.path.join(currDir, 'checkpoints')
+      t0 = time.time()
       sim_state, epoch_store, loss_epochs = solve_fn(gstate, eval_gstate, sim_state, algorithm=ALGORITHM, switching_interval=SWITCHING_INTERVAL,
                                                     Nx_tr=Nx_tr, Ny_tr=Ny_tr, Nz_tr=Nz_tr, num_epochs=num_epochs, multi_gpu=multi_gpu,
                                                     checkpoint_dir=checkpoint_dir, checkpoint_interval=checkpoint_interval)
-      
+      t1 = time.time()
     
     else:    
       #-- v2 new code
@@ -182,9 +185,11 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
                                     checkpoint_interval=checkpoint_interval,
                                     currDir=currDir + '/results/',
                                     loss_plot_name=molecule_name)
-      
+      t0 = time.time()
       sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
- 
+      t1 = time.time()
+      
+    elapsed_time = t1 - t0
     
     # jax.profiler.save_device_memory_profile("memory_biomolecule.prof")
 
@@ -224,24 +229,24 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     grad_psi_hat = sim_state.grad_solution
     grad_psi_star = grad_psi_star_vec_fn(eval_gstate.R)
     def get_epsilon_E_sq_field(r, g_hat_r, g_star_r):
-      phi_at_r = phi_fn(r)
-      return jnp.where(phi_at_r>0, mu_p_fn(r) * jnp.dot(g_hat_r, g_hat_r), mu_m_fn(r) * jnp.dot(g_hat_r + g_star_r, g_hat_r + g_star_r) )
+        phi_at_r = phi_fn(r)
+        return jnp.where(phi_at_r>0, mu_p_fn(r) * jnp.dot(g_hat_r, g_hat_r), mu_m_fn(r) * jnp.dot(g_hat_r + g_star_r, g_hat_r + g_star_r) )
     epsilon_grad_psi_sq = vmap(get_epsilon_E_sq_field, (0, 0, 0))(eval_gstate.R, grad_psi_hat, grad_psi_star)
     
     def get_epsilon_E_coul_sq_field(r, g_star_r):
-      phi_at_r = phi_fn(r)
-      return jnp.where(phi_at_r>0, mu_p_fn(r) * jnp.dot(g_star_r, g_star_r), mu_m_fn(r) * jnp.dot(g_star_r, g_star_r) )
+        phi_at_r = phi_fn(r)
+        return jnp.where(phi_at_r>0, mu_p_fn(r) * jnp.dot(g_star_r, g_star_r), mu_m_fn(r) * jnp.dot(g_star_r, g_star_r) )
     epsilon_grad_psi_star_sq = vmap(get_epsilon_E_coul_sq_field, (0, 0))(eval_gstate.R, grad_psi_star)
     epsilon_grad_psi_hat_sq = vmap(get_epsilon_E_coul_sq_field, (0, 0))(eval_gstate.R, grad_psi_hat)
     
     SFE = get_free_energy(eval_gstate, eval_phi, psi_hat, atom_xyz_rad_chg, epsilon_grad_psi_sq, psi_solution, epsilon_grad_psi_star_sq, epsilon_grad_psi_hat_sq)
     train_grid_size = (xmax - xmin)/Nx_tr
-    print(f"Molecule = {file_name} \t grid spacing (h_g) = {train_grid_size} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol/e_C)")
+    print(f"Molecule = {file_name} \t training grid spacing (h_g) = {train_grid_size} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol) \t elapsed time = {elapsed_time} (sec)")
     
     data_file = currDir + '/results/data_logs.txt'
     with open(data_file, "a") as f:
-      result = f"{molecule_name} \t {train_grid_size} \t {SFE} \n"
-      f.write(result)
+        result = f"{molecule_name} \t {train_grid_size} \t {SFE} \t {elapsed_time} \n"
+        f.write(result)
    
 
     
@@ -256,42 +261,48 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
 
 
 if __name__ == "__main__":
-  
-    if False:
-        """ For testing only run 1 molecule """
-        biomolecule_solvation_energy()
-        
-    else:
-        """ For final evaluation, run over all molecules in parallel """
-        import multiprocessing as mp
-        import glob
-        
-        molecule_pqr_address = 'pqr_input_mols'
-        tmp = glob.glob(currDir + '/' + molecule_pqr_address + '/*.pqr')
-        molecules = [mol.split('/')[-1] for mol in tmp]
+    Kirkwood_test = True
+    
+    if Kirkwood_test:
+        biomolecule_solvation_energy(file_name = 'case_0.pqr', molecule_pqr_address = 'kirkwood_test')
       
-        gpu_count = 3 
-        
-        print(f"Using {gpu_count} devices!")
-        gpu_ids = [str(i) for i in range(gpu_count)] 
-        
-        process_pool = [mp.Process(target=biomolecule_solvation_energy, args=(molecules[i], molecule_pqr_address, gpu_ids[ i % gpu_count ],)) for i in range(len(molecules)) ]
-        
-        
-        mol_count = 0
-        while mol_count < len(molecules):
-            for i, gpu in enumerate(gpu_ids):
-                try:
-                    process_pool[i + mol_count].start()
-                except:
-                    pass
-              
-            for i, gpu in enumerate(gpu_ids):
-                try:
-                    process_pool[i + mol_count].join()
-                except:
-                    pass
-            mol_count += gpu_count
+    else:
+      
+        if False:
+            """ For testing only run 1 molecule """
+            biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_address = 'pqr_input_mols')
+            
+        else:
+            """ For final evaluation, run over all molecules in parallel """
+            import multiprocessing as mp
+            import glob
+            
+            molecule_pqr_address = 'pqr_input_mols'
+            tmp = glob.glob(currDir + '/' + molecule_pqr_address + '/*.pqr')
+            molecules = [mol.split('/')[-1] for mol in tmp]
+          
+            gpu_count = 3 
+            
+            print(f"Using {gpu_count} devices!")
+            gpu_ids = [str(i) for i in range(gpu_count)] 
+            
+            process_pool = [mp.Process(target=biomolecule_solvation_energy, args=(molecules[i], molecule_pqr_address, gpu_ids[ i % gpu_count ],)) for i in range(len(molecules)) ]
+            
+            
+            mol_count = 0
+            while mol_count < len(molecules):
+                for i, gpu in enumerate(gpu_ids):
+                    try:
+                        process_pool[i + mol_count].start()
+                    except:
+                        pass
+                  
+                for i, gpu in enumerate(gpu_ids):
+                    try:
+                        process_pool[i + mol_count].join()
+                    except:
+                        pass
+                mol_count += gpu_count
     
     
  
