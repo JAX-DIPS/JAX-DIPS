@@ -29,7 +29,7 @@ def get_free_energy(gstate, phi, psi_hat, atom_xyz_rad_chg, epsilon_grad_psi_sq,
     _, integrate_in_positive_domain_at_point = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_point, is_cell_crossed_by_interface, integral_interp_fn)
     partial_integrals_positive = vmap(integrate_in_positive_domain_at_point, (0, None, None, None))(gstate.R, gstate.dx, gstate.dy, gstate.dz)
     
-    sfe_z = partial_integrals_positive.sum() * KbT_in_kcal_per_mol * (ionic_strength * 1e24/N_A)
+    sfe_z = partial_integrals_positive.sum() * KbT_in_kcal_per_mol * (ionic_strength * 1e-24 * N_A)
     
     
     

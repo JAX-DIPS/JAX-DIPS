@@ -62,7 +62,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     num_epochs = 1500
     
-    Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 128                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -241,11 +241,11 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     SFE, SFE_z = get_free_energy(eval_gstate, eval_phi, psi_hat, atom_xyz_rad_chg, epsilon_grad_psi_sq, psi_solution, epsilon_grad_psi_star_sq, epsilon_grad_psi_hat_sq)
     train_grid_size = (xmax - xmin)/Nx_tr
-    print(f"Molecule = {file_name} \t training grid spacing (h_g) = {train_grid_size} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol) \t SFE ionic = {SFE_z} (kcal/mol) \t elapsed time = {elapsed_time} (sec)")
+    print(f"Molecule = {file_name} \t training grid spacing (h_g) = {train_grid_size} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol) \t SFE ionic = {SFE_z} (kcal/mol) \t total SFE = {SFE + SFE_z} (kcal/mol) \t elapsed time = {elapsed_time} (sec)")
     
     data_file = currDir + '/results/data_logs.txt'
     with open(data_file, "a") as f:
-        result = f"{molecule_name} \t {train_grid_size} \t {SFE} \t {SFE_z} \t {elapsed_time} \n"
+        result = f"{molecule_name} \t {train_grid_size} \t {SFE} \t {SFE_z} \t {SFE + SFE_z} \t {elapsed_time} \n"
         f.write(result)
    
 
@@ -269,7 +269,7 @@ if __name__ == "__main__":
       
     else:
       
-        if False:
+        if True:
             """ For testing only run 1 molecule """
             biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_address = 'pqr_input_mols')
             
