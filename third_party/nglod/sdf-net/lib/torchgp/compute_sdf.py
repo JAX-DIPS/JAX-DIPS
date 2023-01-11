@@ -34,7 +34,7 @@ def compute_sdf(
     points_cpu = points.cpu().numpy().reshape(-1).astype(np.float64)
     mesh_cpu = mesh.cpu().numpy().reshape(-1).astype(np.float64)
 
-    # Legacy, open source mesh2sdf code
+    # Legacy, open source mesh2sdf code    
     dist = mesh2sdf.mesh2sdf_gpu(points.contiguous(), mesh)[0]
-    
+
     return dist
