@@ -2,8 +2,27 @@ https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.3.14+cuda11.cudnn82-
 jax[cuda11_cudnn82] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 dm-haiku
 optax
+jaxopt
 # torch --extra-index-url https://download.pytorch.org/whl/cu114
+cython==0.29.20
+pillow
+pandas
 pytest
 matplotlib
 meshio[all]
 gdown
+usd-core
+warp-lang
+
+
+pyexr
+# git+https://github.com/tinyobjloader/tinyobjloader.git#subdirectory=python
+trimesh>=3.0
+scipy
+scikit-image
+six==1.12.0
+moviepy
+opencv-python
+plyfile
+polyscope
+mesh2sdf

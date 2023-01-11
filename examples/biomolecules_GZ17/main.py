@@ -60,9 +60,9 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     ###########################################################
     
-    num_epochs = 1500
+    num_epochs = 100
     
-    Nx_tr = Ny_tr = Nz_tr = 128                  # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -125,7 +125,28 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, gstate.dx, gstate.dy, gstate.dz)
     
     ###########################################################
+    # Kaolin Wisp Octree?
+    # import kaolin
+    # import torch
+    # from src.conversions import jax_to_torch, torch_to_jax
+    # def torch_phi_fn(points):
+    #   phis = vmap(phi_fn)(torch_to_jax(points))
+    #   return jax_to_torch(phis)
+      
+    # binary_voxelgrid = kaolin.ops.conversions.sdf_to_voxelgrids([torch_phi_fn], init_res=32, bbox_center=0.0, bbox_dim=(xmax-xmin), upsampling_steps=4)
+    # verts, faces = kaolin.ops.conversions.voxelgrids_to_cubic_meshes(binary_voxelgrid)
+    # binary_surface_voxelgrids = kaolin.ops.voxelgrid.extract_surface(binary_voxelgrid, mode='wide')
     
+    # # viz_log_dir= os.path.join(currDir, "kaolin_viz")
+    # # timelapse = kaolin.visualize.Timelapse(viz_log_dir)
+    # # timelapse.add_voxelgrid_batch(iteration=0, category="octree", voxelgrid_list=binary_voxelgrid, colors=)
+    # pdb.set_trace()
+    
+    # NGLOD?
+    # pdb.set_trace()
+    
+    
+    ###########################################################
     if False:
       """ Testing u_star, without solvent, only singular point charges """
       psi_star = psi_star_vec_fn(eval_gstate.R)

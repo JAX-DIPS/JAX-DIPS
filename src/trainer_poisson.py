@@ -159,14 +159,14 @@ class PoissonSolve:
         self.opt_state, self.params, self.epoch_store, self.loss_epochs = self.single_GPU_train(self.opt_state, self.params)
         end_time = time.time()
         print(f"solve took {end_time - start_time} (sec)")
-        state = {
-            'opt_state': self.opt_state,
-            'params': self.params,
-            'epoch': self.epoch_store[-1] + 1,
-            'batch_size': self.batch_size,
-            'resolution': f'{self.Nx_tr}, {self.Ny_tr}, {self.Nz_tr}'
-        }
-        self.trainer.save_checkpoint(self.checkpoint_dir, state)
+        # state = {
+        #     'opt_state': self.opt_state,
+        #     'params': self.params,
+        #     'epoch': self.epoch_store[-1] + 1,
+        #     'batch_size': self.batch_size,
+        #     'resolution': f'{self.Nx_tr}, {self.Ny_tr}, {self.Nz_tr}'
+        # }
+        # self.trainer.save_checkpoint(self.checkpoint_dir, state)
         plot_loss_epochs(self.epoch_store, self.loss_epochs, self.currDir, self.TD.base_level, self.TD.alt_res, self.loss_plot_name)
         final_solution, grad_u, grad_u_normal_to_interface = self.evaluate_solution_and_gradients(self.params, self.eval_gstate)
         return final_solution, grad_u, grad_u_normal_to_interface, self.epoch_store, self.loss_epochs 
@@ -192,7 +192,8 @@ class PoissonSolve:
             return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
         def learn_one_epoch(carry, epoch):
             key, opt_state, params, loss_epochs, train_dx, train_dy, train_dz, batched_training_data = carry 
-            train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz)  
+            # train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz)  
+            train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(self.num_epochs, epoch, train_dx, train_dy, train_dz)  
             batched_training_data = random.shuffle(key, batched_training_data, axis=1)
             loss_epoch = 0.0   
             (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)  
@@ -203,6 +204,10 @@ class PoissonSolve:
         return opt_state, params, self.epoch_store, self.loss_epochs
     
     
+    # def single_GPU_train(self, opt_state, params):
+    #     batched_training_data = self.DD.get_batched_data()
+    #     import pdb; pdb.set_trace()
+    #     opt_state, params = self.trainer.update_lbfgs(params, batched_training_data[0], self.train_dx, self.train_dy, self.train_dz, maxiter=10)
     
     #############################-----------------------
     def multi_GPU_train(self, opt_state, params):

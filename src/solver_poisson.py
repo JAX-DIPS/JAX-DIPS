@@ -23,8 +23,9 @@ import pickle
 import jax
 from jax import (numpy as jnp, vmap, jit, grad, random, value_and_grad, config)
 config.update("jax_debug_nans", False)
-import optax
 import haiku as hk
+import jaxopt
+import optax
 
 from src import (interpolate, geometric_integrations_per_point)
 from src.jaxmd_modules.util import f32, i32
@@ -32,7 +33,7 @@ from src.nn_solution_model import DoubleMLP
 
 
 from functools import partial
-
+import pdb
 
 
 
@@ -388,6 +389,11 @@ class PoissonTrainer:
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
 
+
+    # def update_lbfgs(self, params, points, dx, dy, dz, maxiter=10):
+    #     solver = jaxopt.LBFGS(fun=self.loss, maxiter=maxiter)
+    #     params, opt_state = solver.run(params, points=points, dx=dx, dy=dy, dz=dz)
+    #     return opt_state, params
 
 
     @partial(jit, static_argnums=(0))

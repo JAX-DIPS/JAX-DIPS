@@ -225,6 +225,16 @@ class TrainData:
             return train_dx, train_dy, train_dz
         
         
+        @partial(jit, static_argnums=(0))
+        def alternate_res_sequentially(self, num_epochs, epoch, train_dx, train_dy, train_dz):
+            self.alt_res = False
+            zoom_lvl = epoch // (num_epochs // 4)
+            train_dx = self.gstate.dx * 0.5**zoom_lvl
+            train_dy = self.gstate.dy * 0.5**zoom_lvl
+            train_dz = self.gstate.dz * 0.5**zoom_lvl
+            return train_dx, train_dy, train_dz
+        
+        
         def plot_slice(self, base_points):
             import matplotlib
             matplotlib.use('Agg')
