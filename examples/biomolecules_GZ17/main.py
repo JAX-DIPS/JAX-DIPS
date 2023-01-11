@@ -62,7 +62,7 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     num_epochs = 100
     
-    Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 32                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -132,14 +132,24 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     # def torch_phi_fn(points):
     #   phis = vmap(phi_fn)(torch_to_jax(points))
     #   return jax_to_torch(phis)
-      
-    # binary_voxelgrid = kaolin.ops.conversions.sdf_to_voxelgrids([torch_phi_fn], init_res=32, bbox_center=0.0, bbox_dim=(xmax-xmin), upsampling_steps=4)
-    # verts, faces = kaolin.ops.conversions.voxelgrids_to_cubic_meshes(binary_voxelgrid)
-    # binary_surface_voxelgrids = kaolin.ops.voxelgrid.extract_surface(binary_voxelgrid, mode='wide')
     
-    # # viz_log_dir= os.path.join(currDir, "kaolin_viz")
-    # # timelapse = kaolin.visualize.Timelapse(viz_log_dir)
-    # # timelapse.add_voxelgrid_batch(iteration=0, category="octree", voxelgrid_list=binary_voxelgrid, colors=)
+    # init_res = 4
+    # upsamples = 6
+    # Lx = xmax - xmin
+    # nx = (init_res * 2**upsamples)
+    # dx = Lx / nx
+    
+    # binary_voxelgrid = kaolin.ops.conversions.sdf_to_voxelgrids([torch_phi_fn], init_res=init_res, bbox_center=0.0, bbox_dim=Lx, upsampling_steps=upsamples)    
+    
+    # ijk = jnp.where(torch_to_jax(binary_voxelgrid[0])>0)
+    # xp = xmin + ijk[0]*dx
+    # yp = xmin + ijk[1]*dx
+    # zp = xmin + ijk[2]*dx
+    # xyz_surface = jnp.column_stack((xp, yp, zp))
+
+    # viz_log_dir= os.path.join(currDir, "kaolin_viz")
+    # timelapse = kaolin.visualize.Timelapse(viz_log_dir)
+    # timelapse.add_voxelgrid_batch(iteration=0, category="octree", voxelgrid_list=binary_voxelgrid, colors=)
     # pdb.set_trace()
     
     # NGLOD?

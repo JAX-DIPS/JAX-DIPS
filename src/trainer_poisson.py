@@ -114,9 +114,11 @@ class PoissonSolve:
         
         #########################################################################
         self.TD = data_management.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
-        self.train_points = self.TD.gstate.R
+        train_points = self.TD.gstate.R
         # extra_points = self.TD.refine(lvl_set_fn, max_iters=15)
         # self.train_points = jnp.concatenate((train_points, extra_points))
+        extra_points = self.TD.refine_LOD(lvl_set_fn, init_res=4, upsamples=6)
+        self.train_points = jnp.concatenate((train_points, extra_points))
         
         self.train_dx = self.TD.gstate.dx
         self.train_dy = self.TD.gstate.dy

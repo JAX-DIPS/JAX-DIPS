@@ -1,10 +1,12 @@
 
-from jax import (numpy as jnp, random, jit)
+from jax import (numpy as jnp, random, jit, vmap)
 from functools import partial
 import numpy as onp
 
 from src.jaxmd_modules.util import f32, i32
 from src import mesh
+import kaolin
+from src.conversions import jax_to_torch, torch_to_jax
 
 
 class DatasetDictMGPU:
@@ -207,6 +209,8 @@ class TrainData:
             self.boundary_points = jnp.concatenate(( self.gstate.R_xmin_boundary, self.gstate.R_xmax_boundary, self.gstate.R_ymin_boundary, self.gstate.R_ymax_boundary, self.gstate.R_zmin_boundary, self.gstate.R_zmax_boundary ))
 
 
+
+
         @partial(jit, static_argnums=(0))
         def move_train_points(self, points, dx, dy, dz):
             cov = jnp.array([[dx, 0.0, 0.0], [0.0, dy, 0.0], [0.0, 0.0, dz]])*0.5
@@ -302,3 +306,26 @@ class TrainData:
             # self.plot_slice(base_points)
             return base_points
         
+
+
+        def refine_LOD(self, phi_fn_uns, init_res=4, upsamples=6):
+            def phi_fn(r):
+                return phi_fn_uns(jnp.squeeze(r))
+            
+            def torch_phi_fn(points):
+                phis = vmap(phi_fn)(torch_to_jax(points))
+                return jax_to_torch(phis)
+            
+            Lx = float(self.LL.max()) #xmax - xmin
+            xmin = -Lx / 2.0
+            nx = (init_res * 2**upsamples)
+            dx = Lx / nx
+
+            binary_voxelgrid = kaolin.ops.conversions.sdf_to_voxelgrids([torch_phi_fn], init_res=init_res, bbox_center=0.0, bbox_dim=Lx, upsampling_steps=upsamples)    
+            
+            ijk = jnp.where(torch_to_jax(binary_voxelgrid[0])>0)
+            xp = xmin + ijk[0]*dx
+            yp = xmin + ijk[1]*dx
+            zp = xmin + ijk[2]*dx
+            xyz_surface = jnp.column_stack((xp, yp, zp))
+            return xyz_surface
