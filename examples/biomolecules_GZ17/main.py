@@ -60,9 +60,9 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     ###########################################################
     
-    num_epochs = 100
+    num_epochs = 1000
     
-    Nx_tr = Ny_tr = Nz_tr = 32                  # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     
@@ -123,38 +123,6 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     psi_star_fn, psi_star_vec_fn, grad_psi_star_fn, grad_psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
     
     alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, gstate.dx, gstate.dy, gstate.dz)
-    
-    ###########################################################
-    # Kaolin Wisp Octree?
-    # import kaolin
-    # import torch
-    # from src.conversions import jax_to_torch, torch_to_jax
-    # def torch_phi_fn(points):
-    #   phis = vmap(phi_fn)(torch_to_jax(points))
-    #   return jax_to_torch(phis)
-    
-    # init_res = 4
-    # upsamples = 6
-    # Lx = xmax - xmin
-    # nx = (init_res * 2**upsamples)
-    # dx = Lx / nx
-    
-    # binary_voxelgrid = kaolin.ops.conversions.sdf_to_voxelgrids([torch_phi_fn], init_res=init_res, bbox_center=0.0, bbox_dim=Lx, upsampling_steps=upsamples)    
-    
-    # ijk = jnp.where(torch_to_jax(binary_voxelgrid[0])>0)
-    # xp = xmin + ijk[0]*dx
-    # yp = xmin + ijk[1]*dx
-    # zp = xmin + ijk[2]*dx
-    # xyz_surface = jnp.column_stack((xp, yp, zp))
-
-    # viz_log_dir= os.path.join(currDir, "kaolin_viz")
-    # timelapse = kaolin.visualize.Timelapse(viz_log_dir)
-    # timelapse.add_voxelgrid_batch(iteration=0, category="octree", voxelgrid_list=binary_voxelgrid, colors=)
-    # pdb.set_trace()
-    
-    # NGLOD?
-    # pdb.set_trace()
-    
     
     ###########################################################
     if False:

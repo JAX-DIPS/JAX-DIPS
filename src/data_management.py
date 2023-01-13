@@ -7,7 +7,7 @@ from src.jaxmd_modules.util import f32, i32
 from src import mesh
 import kaolin
 from src.conversions import jax_to_torch, torch_to_jax
-
+import torch
 
 class DatasetDictMGPU:
     def __init__(self,
@@ -321,11 +321,25 @@ class TrainData:
             nx = (init_res * 2**upsamples)
             dx = Lx / nx
 
-            binary_voxelgrid = kaolin.ops.conversions.sdf_to_voxelgrids([torch_phi_fn], init_res=init_res, bbox_center=0.0, bbox_dim=Lx, upsampling_steps=upsamples)    
+            binary_voxelgrid = kaolin.ops.conversions.sdf_to_voxelgrids([torch_phi_fn], init_res=init_res, bbox_center=0.0, bbox_dim=Lx, upsampling_steps=upsamples) 
             
-            ijk = jnp.where(torch_to_jax(binary_voxelgrid[0])>0)
+            bool_surface_voxels = kaolin.ops.voxelgrid.extract_surface(binary_voxelgrid, mode='wide')   
+            
+            surface_voxels = torch.tensor(bool_surface_voxels, dtype=torch.uint8)
+            ijk = jnp.where(torch_to_jax(surface_voxels[0])>0)
+            
+            # ijk = jnp.where(torch_to_jax(binary_voxelgrid[0])>0)
             xp = xmin + ijk[0]*dx
             yp = xmin + ijk[1]*dx
             zp = xmin + ijk[2]*dx
             xyz_surface = jnp.column_stack((xp, yp, zp))
+            
+            # import matplotlib
+            # matplotlib.use('Agg')
+            # import matplotlib.pyplot as plt
+            # fig = plt.figure(figsize=(12, 12))
+            # ax = fig.add_subplot(projection='3d')
+            # ax.scatter(extra_points[:,0], extra_points[:,1], extra_points[:,2])
+            # plt.savefig('octree.png')
+        
             return xyz_surface
