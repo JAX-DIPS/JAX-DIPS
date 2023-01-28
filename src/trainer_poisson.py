@@ -140,7 +140,6 @@ class PoissonSolve:
         self.train_points = jnp.concatenate((train_points, surface_points))
 
         # self.train_points = train_points
-
         self.train_dx = self.TD.gstate.dx
         self.train_dy = self.TD.gstate.dy
         self.train_dz = self.TD.gstate.dz
