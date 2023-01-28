@@ -16,4 +16,3 @@ add_library(
 )
 target_link_libraries(cnpy ${ZLIB_LIBRARIES})
 target_include_directories(cnpy PUBLIC ${ZLIB_INCLUDE_DIRS})
-

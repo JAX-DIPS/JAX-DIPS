@@ -38,7 +38,7 @@ float4x4 Quat2Mat(quat& q)
     zw = q.z * q.w;
     ww = q.w * q.w;
 
-    return make_float4x4(ww + xx - yy - zz, 2.0f*(xy + zw), 2.0f*(xz - yw), 0.0f, 
+    return make_float4x4(ww + xx - yy - zz, 2.0f*(xy + zw), 2.0f*(xz - yw), 0.0f,
                          2.0f*(xy - zw), ww - xx + yy - zz, 2.0f*(yz + xw), 0.0f,
                          2.0f*(xz + yw), 2.0f*(yz - xw), ww - xx - yy + zz, 0.0f,
                          0.0f, 0.0f, 0.0f, 1.0f);
@@ -68,7 +68,7 @@ float4x4 lookAt
     float3 f = normalize(at - eye);
     float3 s = normalize(cross(f, up));
     float3 u = cross(s, f);
-    
+
     return make_float4x4(s.x, u.x, -f.x, 0.0f,
                 s.y, u.y, -f.y, 0.0f,
                 s.z, u.z, -f.z, 0.0f,
@@ -86,7 +86,7 @@ float4x4 lookAtInv
     float3 f = normalize(at - eye);
     float3 s = normalize(cross(f, up));
     float3 u = cross(s, f);
-    
+
     return make_float4x4(s.x, s.y, s.z, 0.0f,
                 u.x, u.y, u.z, 0.0f,
                 -f.x, -f.y, -f.z, 0.0f,

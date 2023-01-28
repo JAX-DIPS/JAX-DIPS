@@ -38,4 +38,3 @@ find_path(SOLR_INCLUDE_DIR solr/solr.cuh
 )
 
 set(SOLR_INCLUDE_DIRS ${SOLR_INCLUDE_DIR})
-

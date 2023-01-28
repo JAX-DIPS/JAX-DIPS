@@ -52,7 +52,7 @@ public:
     torch::Tensor forward(
         const torch::Tensor  & x,
         const int lod);
-    
+
     torch::Tensor getNormal(
         const torch::Tensor & x,
         const torch::Tensor & pidx,
@@ -82,11 +82,11 @@ private:
 
     // Corner Features
     torch::Tensor cf;
-    
-    // Pyramid of # sparse voxels per level 
+
+    // Pyramid of # sparse voxels per level
     // (note this is in increasing order of levels, unlike SPC pyramid)
     // (it also only contains Levels - 2 levels compared to SPC pyramid)
-    uint* pyramid_cf; 
+    uint* pyramid_cf;
     std::vector<uint> pyramid_cf_cpu;
 
     // SPC point (voxel) idx -> 8 cf idx
@@ -95,4 +95,3 @@ private:
     uint* m_pyramid;
     uint* m_res;
 };
-

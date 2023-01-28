@@ -53,30 +53,30 @@ python app/sdf_renderer.py \
 
 By default, this will populate `_results` with the rendered image.
 
-If you want to export a `.npz` model which can be loaded into the C++ real-time renderer, add the argument 
+If you want to export a `.npz` model which can be loaded into the C++ real-time renderer, add the argument
 `--export path/file.npz`. Note that the renderer only supports the base Neural LOD configuration
 (the default parameters with `OctreeSDF`).
 
 ## Core Library Development Guide
 
-To add new functionality, you will likely want to make edits to the files in `lib`. 
+To add new functionality, you will likely want to make edits to the files in `lib`.
 
-We try our best to keep our code modular, such that key components such as `trainer.py` and `renderer.py` 
+We try our best to keep our code modular, such that key components such as `trainer.py` and `renderer.py`
 need not be modified very frequently to add new functionalities.
 
 To add a new network architecture for an example, you can simply add a new Python file in `lib/models` that
-inherits from a base class of choice. You will probably only need to implement the `sdf` method which 
+inherits from a base class of choice. You will probably only need to implement the `sdf` method which
 implements the forward pass, but you have the option to override other methods as needed if more custom
-operations are needed. 
+operations are needed.
 
 By default, the loss function used are defined in a CLI argument, which the code will automatically parse
-and iterate through each loss function. The network architecture class is similarly defined in the CLI 
-argument; simply use the exact class name, and don't forget to add a line in `__init__.py` to resolve the 
+and iterate through each loss function. The network architecture class is similarly defined in the CLI
+argument; simply use the exact class name, and don't forget to add a line in `__init__.py` to resolve the
 namespace.
 
 ## App Development Guide
 
-To make apps that use the core library, add the `sdf-net` directory into the Python `sys.path`, so 
+To make apps that use the core library, add the `sdf-net` directory into the Python `sys.path`, so
 the modules can be loaded correctly. Then, you will likely want to inherit the same CLI parser defined
 in `lib/options.py` to save time. You can then add a new argument group `app` to the parser to add custom
 CLI arguments to be used in conjunction with the defaults. See `app/sdf_renderer.py` for an example.
@@ -86,5 +86,3 @@ Examples of things that are considered `apps` include, but are not limited to:
 - visualizers
 - training code
 - downstream applications
-
-

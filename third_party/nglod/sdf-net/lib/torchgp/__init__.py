@@ -32,4 +32,3 @@ from .barycentric_coordinates import barycentric_coordinates
 from .sample_tex import sample_tex
 from .per_face_normals import per_face_normals
 from .sample_spc import sample_spc
-

@@ -39,4 +39,3 @@ find_path(CNPY_INCLUDE_DIR cnpy/cnpy.h
 )
 
 set(CNPY_INCLUDE_DIRS ${CNPY_INCLUDE_DIR})
-

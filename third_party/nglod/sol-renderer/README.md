@@ -20,4 +20,3 @@ To run,
 ```
 ./sdfRenderer {path_to_model.npz}
 ```
-

@@ -95,7 +95,7 @@ def positional_encoding(
         )
     else:
         frequency_bands = torch.linspace(
-            2.0 ** 0.0,
+            2.0**0.0,
             2.0 ** (num_encoding_functions - 1),
             num_encoding_functions,
             dtype=tensor.dtype,
@@ -111,4 +111,3 @@ def positional_encoding(
         return encoding[0]
     else:
         return torch.cat(encoding, dim=-1)
-

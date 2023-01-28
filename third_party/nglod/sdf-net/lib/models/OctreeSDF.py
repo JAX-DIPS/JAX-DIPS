@@ -19,7 +19,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import math 
+import math
 
 import numpy as np
 
@@ -31,30 +31,37 @@ from lib.models.BaseLOD import BaseLOD
 from lib.models.BasicDecoder import BasicDecoder
 from lib.utils import PerfTimer
 
+
 class MyActivation(nn.Module):
     def forward(self, x):
         return torch.sin(x)
+
 
 class FeatureVolume(nn.Module):
     def __init__(self, fdim, fsize):
         super().__init__()
         self.fsize = fsize
         self.fdim = fdim
-        self.fm = nn.Parameter(torch.randn(1, fdim, fsize+1, fsize+1, fsize+1) * 0.01)
+        self.fm = nn.Parameter(
+            torch.randn(1, fdim, fsize + 1, fsize + 1, fsize + 1) * 0.01
+        )
         self.sparse = None
 
     def forward(self, x):
         N = x.shape[0]
         if x.shape[1] == 3:
-            sample_coords = x.reshape(1, N, 1, 1, 3) # [N, 1, 1, 3]    
-            sample = F.grid_sample(self.fm, sample_coords, 
-                                   align_corners=True, padding_mode='border')[0,:,:,0,0].transpose(0,1)
+            sample_coords = x.reshape(1, N, 1, 1, 3)  # [N, 1, 1, 3]
+            sample = F.grid_sample(
+                self.fm, sample_coords, align_corners=True, padding_mode="border"
+            )[0, :, :, 0, 0].transpose(0, 1)
         else:
-            sample_coords = x.reshape(1, N, x.shape[1], 1, 3) # [N, 1, 1, 3]    
-            sample = F.grid_sample(self.fm, sample_coords, 
-                                   align_corners=True, padding_mode='border')[0,:,:,:,0].permute([1,2,0])
-        
+            sample_coords = x.reshape(1, N, x.shape[1], 1, 3)  # [N, 1, 1, 3]
+            sample = F.grid_sample(
+                self.fm, sample_coords, align_corners=True, padding_mode="border"
+            )[0, :, :, :, 0].permute([1, 2, 0])
+
         return sample
+
 
 class OctreeSDF(BaseLOD):
     def __init__(self, args, init=None):
@@ -67,7 +74,9 @@ class OctreeSDF(BaseLOD):
 
         self.features = nn.ModuleList([])
         for i in range(self.args.num_lods):
-            self.features.append(FeatureVolume(self.fdim, (2**(i+self.args.base_lod))))
+            self.features.append(
+                FeatureVolume(self.fdim, (2 ** (i + self.args.base_lod)))
+            )
         self.interpolate = self.args.interpolate
 
         self.louts = nn.ModuleList([])
@@ -76,7 +85,7 @@ class OctreeSDF(BaseLOD):
         if not self.pos_invariant:
             self.sdf_input_dim += self.input_dim
 
-        self.num_decoder = 1 if args.joint_decoder else self.args.num_lods 
+        self.num_decoder = 1 if args.joint_decoder else self.args.num_lods
 
         for i in range(self.num_decoder):
             self.louts.append(
@@ -86,7 +95,7 @@ class OctreeSDF(BaseLOD):
                     nn.Linear(self.hidden_dim, 1, bias=True),
                 )
             )
-        
+
     def encode(self, x):
         # Disable encoding
         return x
@@ -94,21 +103,21 @@ class OctreeSDF(BaseLOD):
     def sdf(self, x, lod=None, return_lst=False):
         if lod is None:
             lod = self.lod
-        
+
         # Query
         l = []
         samples = []
 
         for i in range(self.num_lods):
-            
+
             # Query features
             sample = self.features[i](x)
             samples.append(sample)
-            
+
             # Sum queried features
             if i > 0:
-                samples[i] += samples[i-1]
-            
+                samples[i] += samples[i - 1]
+
             # Concatenate xyz
             ex_sample = samples[i]
             if not self.pos_invariant:
@@ -118,27 +127,27 @@ class OctreeSDF(BaseLOD):
                 prev_decoder = self.louts[0]
                 curr_decoder = self.louts[0]
             else:
-                prev_decoder = self.louts[i-1]
+                prev_decoder = self.louts[i - 1]
                 curr_decoder = self.louts[i]
-            
+
             d = curr_decoder(ex_sample)
 
             # Interpolation mode
             if self.interpolate is not None and lod is not None:
-                
+
                 if i == len(self.louts) - 1:
                     return d
 
-                if lod+1 == i:
-                    _ex_sample = samples[i-1]
+                if lod + 1 == i:
+                    _ex_sample = samples[i - 1]
                     if not self.pos_invariant:
                         _ex_sample = torch.cat([x, _ex_sample], dim=-1)
                     _d = prev_decoder(_ex_sample)
 
                     return (1.0 - self.interpolate) * _l + self.interpolate * d
-            
+
             # Get distance
-            else: 
+            else:
                 d = curr_decoder(ex_sample)
 
                 # Return distance if in prediction mode
@@ -153,4 +162,3 @@ class OctreeSDF(BaseLOD):
             return l
         else:
             return l[-1]
-    

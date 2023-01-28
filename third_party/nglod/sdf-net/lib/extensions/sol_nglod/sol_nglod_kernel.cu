@@ -41,13 +41,13 @@
 
 #ifdef DEBUG
 #   define TIMER PerfTimer timer = PerfTimer()
-#   define TIMER_CHECK(x) timer.check(x) 
+#   define TIMER_CHECK(x) timer.check(x)
 #   define DEBUG_PRINT(x) std::cout << STRINGIFY(x) ":" << x << std::endl
 #else
 #   define TIMER
 #   define TIMER_CHECK(x)
 #   define DEBUG_PRINT(x)
-#endif 
+#endif
 
 namespace F = torch::nn::functional;
 namespace I = torch::indexing;
@@ -58,9 +58,9 @@ class PerfTimer {
     std::chrono::time_point<std::chrono::system_clock> m_curr;
 
 public:
-    
+
     PerfTimer() {
-        m_stream = at::cuda::getCurrentCUDAStream();    
+        m_stream = at::cuda::getCurrentCUDAStream();
         cudaStreamSynchronize(m_stream);
         m_curr = std::chrono::system_clock::now();
     }
@@ -88,21 +88,21 @@ __global__ void aabb_kernel(
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
-    
+
     for (int i=idx; i<n; i+=stride) {
         const float3 dir = make_float3(ray_d[3*i], ray_d[3*i+1], ray_d[3*i+2]);
         const float3 invdir = make_float3(1.0/ray_d[3*i], 1.0/ray_d[3*i+1], 1.0/ray_d[3*i+2]);
-        
+
         const float sgn0 = signbit(dir.x) ? 1.0 : -1.0;
         const float sgn1 = signbit(dir.y) ? 1.0 : -1.0;
         const float sgn2 = signbit(dir.z) ? 1.0 : -1.0;
-        
+
         float _t = 500.0;
         bool _hit = false;
         float3 _normal = make_float3(0.0, 0.0, 0.0);
 
         const float3 o = make_float3(ray_o[3*i], ray_o[3*i+1], ray_o[3*i+2]);
-        float cmax = fmaxf(fmaxf(fabs(o.x), fabs(o.y)), fabs(o.z));    
+        float cmax = fmaxf(fmaxf(fabs(o.x), fabs(o.y)), fabs(o.z));
 
         float r = 1.0;
 
@@ -110,20 +110,20 @@ __global__ void aabb_kernel(
         if (winding < 0) {
             continue; // check perf implications here if slow
         }
-        
+
         float d0 = (r * winding * sgn0 - o.x) * invdir.x;
         float d1 = (r * winding * sgn1 - o.y) * invdir.y;
         float d2 = (r * winding * sgn2 - o.z) * invdir.z;
 
         float ltxy = fmaf(dir.y, d0, o.y);
         float ltxz = fmaf(dir.z, d0, o.z);
-        
+
         float ltyx = fmaf(dir.x, d1, o.x);
         float ltyz = fmaf(dir.z, d1, o.z);
-        
+
         float ltzx = fmaf(dir.x, d2, o.x);
         float ltzy = fmaf(dir.y, d2, o.y);
-        
+
         bool test0 = (d0 >= 0.0) && (fabs(ltxy) < r) && (fabs(ltxz) < r);
         bool test1 = (d1 >= 0.0) && (fabs(ltyx) < r) && (fabs(ltyz) < r);
         bool test2 = (d2 >= 0.0) && (fabs(ltzx) < r) && (fabs(ltzy) < r);
@@ -135,7 +135,7 @@ __global__ void aabb_kernel(
         else if (test2) { sgn.z = sgn2; }
 
         float d = 0.0;
-        if (sgn.x != 0.0) { d = d0; } 
+        if (sgn.x != 0.0) { d = d0; }
         else if (sgn.y != 0.0) { d = d1; }
         else if (sgn.z != 0.0) { d = d2; }
 
@@ -154,7 +154,7 @@ __global__ void aabb_kernel(
         //x[3*i]   = fmaf(ray_d[3*i],   t[i], ray_o[3*i]  );
         //x[3*i+1] = fmaf(ray_d[3*i+1], t[i], ray_o[3*i+1]);
         //x[3*i+2] = fmaf(ray_d[3*i+2], t[i], ray_o[3*i+2]);
-    
+
     }
 }
 
@@ -165,10 +165,10 @@ std::vector<torch::Tensor> f_aabb(
     int n = ray_o.size(0);
     //torch::Tensor x = torch::zeros_like(ray_o);
     torch::Tensor x = ray_o.clone();
-    
+
     auto b_opt = torch::TensorOptions().dtype(torch::kBool).device(ray_o.device());
     torch::Tensor hit = torch::zeros({n}, b_opt);
-    
+
     auto f_opt = torch::TensorOptions().dtype(torch::kF32).device(ray_o.device());
     torch::Tensor t = torch::zeros({n, 1}, f_opt);
 
@@ -181,7 +181,7 @@ std::vector<torch::Tensor> f_aabb(
             x.data_ptr<scalar_t>(),
             t.data_ptr<scalar_t>(),
             hit.data_ptr<bool>(),
-            n); 
+            n);
     }));
     return { x, t, hit };
 
@@ -190,5 +190,3 @@ std::vector<torch::Tensor> f_aabb(
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("aabb", &f_aabb, "Ray-AABB intersect");
 }
-
-

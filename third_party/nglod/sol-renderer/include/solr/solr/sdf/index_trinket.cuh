@@ -21,7 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-#pragma once 
+#pragma once
 
 #include "../common/array.cuh"
 #include "../util_structs.cuh"
@@ -33,7 +33,7 @@ __global__ void index_trinket_kernel(
     const int* __restrict__ coords,       // [N,3] tensor of coords
     const float* __restrict__ feats,      // [N,32] tensor of features
     solr::Trinket* __restrict__ trinkets, // idx correspondence per point
-    const int num_coords,                 // N 
+    const int num_coords,                 // N
     const int offset_cf,     // offset (starting pointer) of the coords tensor
     const int n,             // PSize of current layer
     const int offset,        // offset (starting pointer) of parent layer
@@ -44,11 +44,11 @@ __global__ void index_trinket_kernel(
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
-    
+
     for (int i=idx; i<n; i+=stride) {
         // Move pointer to start of current layer
         int iidx = i + offset;
-        
+
         // Initialize parent to -1
         trinkets[iidx].parent = -1;
 
@@ -65,7 +65,7 @@ __global__ void index_trinket_kernel(
 
                 // If they match, that is the parent
                 if (p0 == points[jidx].x &&
-                    p1 == points[jidx].y && 
+                    p1 == points[jidx].y &&
                     p2 == points[jidx].z) {
                     trinkets[iidx].parent = jidx;
                 }
@@ -75,7 +75,7 @@ __global__ void index_trinket_kernel(
         // Set the trinkets up
         for (int j=0; j<8; ++j) {
 
-            //trinkets[i].v[j] = -1; // Initialize 
+            //trinkets[i].v[j] = -1; // Initialize
 
             // Getting the 8 corners with bitwise magic...
             int c0 = points[iidx].x + ((j & 4) >> 2);
@@ -91,11 +91,10 @@ __global__ void index_trinket_kernel(
                 if (v0 == c0 && v1 == c1 && v2 == c2) {
                     trinkets[iidx].v[j] = kidx; // casting?
                     break;
-                }    
+                }
             }
         }
     }
 }
 
 }
-

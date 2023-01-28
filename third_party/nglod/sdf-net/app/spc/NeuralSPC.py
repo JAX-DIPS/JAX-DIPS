@@ -39,36 +39,39 @@ import kaolin.render.spc as spc_render
 import app.spc.spc_utils as spc_utils
 from app.spc.SPC import SPC
 
-class NeuralSPC(SPC):
 
-    def __init__(self, 
-        args                   = None,
-        mesh_path      : str   = None,
-        normalize_mesh : bool  = None,
-        feature_dim    : int   = None,
-        feature_std    : float = None,
-        hidden_dim     : int   = None,
-        num_lods       : int   = None, 
-        base_lod       : int   = None,
-        sample_tex     : bool  = None,
-        joint_decoder  : bool  = None,
-        feat_sum       : bool  = None,
-        num_layers     : int   = None
+class NeuralSPC(SPC):
+    def __init__(
+        self,
+        args=None,
+        mesh_path: str = None,
+        normalize_mesh: bool = None,
+        feature_dim: int = None,
+        feature_std: float = None,
+        hidden_dim: int = None,
+        num_lods: int = None,
+        base_lod: int = None,
+        sample_tex: bool = None,
+        joint_decoder: bool = None,
+        feat_sum: bool = None,
+        num_layers: int = None,
     ):
         self.args = args
-        self.mesh_path = setparam(args, mesh_path, 'mesh_path')
-        self.normalize_mesh = setparam(args, normalize_mesh, 'normalize_mesh')
-        self.feature_dim = setparam(args, feature_dim, 'feature_dim')
-        self.feature_std = setparam(args, feature_std, 'feature_std')
-        self.hidden_dim = setparam(args, hidden_dim, 'hidden_dim')
-        self.num_lods = setparam(args, num_lods, 'num_lods') 
-        self.base_lod = setparam(args, base_lod, 'base_lod')
-        self.sample_tex = setparam(args, sample_tex, 'sample_tex')
-        self.joint_decoder = setparam(args, joint_decoder, 'joint_decoder')
-        self.feat_sum = setparam(args, feat_sum, 'feat_sum')
-        self.num_layers = setparam(args, num_layers, 'num_layers')
-        
-        self.active_lods = [self.base_lod] + [self.base_lod + x for x in range(self.num_lods-1)]
+        self.mesh_path = setparam(args, mesh_path, "mesh_path")
+        self.normalize_mesh = setparam(args, normalize_mesh, "normalize_mesh")
+        self.feature_dim = setparam(args, feature_dim, "feature_dim")
+        self.feature_std = setparam(args, feature_std, "feature_std")
+        self.hidden_dim = setparam(args, hidden_dim, "hidden_dim")
+        self.num_lods = setparam(args, num_lods, "num_lods")
+        self.base_lod = setparam(args, base_lod, "base_lod")
+        self.sample_tex = setparam(args, sample_tex, "sample_tex")
+        self.joint_decoder = setparam(args, joint_decoder, "joint_decoder")
+        self.feat_sum = setparam(args, feat_sum, "feat_sum")
+        self.num_layers = setparam(args, num_layers, "num_layers")
+
+        self.active_lods = [self.base_lod] + [
+            self.base_lod + x for x in range(self.num_lods - 1)
+        ]
         self.max_lod = self.num_lods + self.base_lod - 1
 
         if self.sample_tex:
@@ -80,8 +83,13 @@ class NeuralSPC(SPC):
             self.V, self.F = normalize(self.V, self.F)
         octree = spc_utils.mesh_to_octree(self.V, self.F, self.max_lod)
 
-        super().__init__(octree, self.feature_dim, self.base_lod, 
-                         num_lods=self.num_lods, feature_std=self.feature_std)
+        super().__init__(
+            octree,
+            self.feature_dim,
+            self.base_lod,
+            num_lods=self.num_lods,
+            feature_std=self.feature_std,
+        )
 
         self.louts = nn.ModuleList([])
 
@@ -92,20 +100,27 @@ class NeuralSPC(SPC):
 
         for i in range(self.num_decoders):
             self.louts.append(
-                BasicDecoder(self.feature_dim, 1, F.relu, True, 
-                             num_layers=self.num_layers, hidden_dim=self.hidden_dim, skip=False)
+                BasicDecoder(
+                    self.feature_dim,
+                    1,
+                    F.relu,
+                    True,
+                    num_layers=self.num_layers,
+                    hidden_dim=self.hidden_dim,
+                    skip=False,
+                )
             )
-        
+
         self.lod = None
         self.feat = None
         torch.cuda.empty_cache()
-        
+
     def forward(self, x):
         return self.sdf(x)
 
     def sdf(self, x, lod=None, pidx=None, return_lst=False):
         if x.shape[0] == 0:
-            return torch.zeros_like(x)[...,0:1]
+            return torch.zeros_like(x)[..., 0:1]
 
         if self.lod is None:
             self.lod = self.num_lods - 1
@@ -120,20 +135,22 @@ class NeuralSPC(SPC):
         self.feats.append(feat)
 
         # Climb the tree back to the base lod
-        
+
         if self.feat_sum or return_lst:
             parent = self.parents[pidx]
             for i in range(lod):
-                feat = self.interpolate(x, lod-i-1, parent)
+                feat = self.interpolate(x, lod - i - 1, parent)
                 self.feats.append(feat)
                 parent = self.parents[parent]
             self.feats = self.feats[::-1]
 
         if self.feat_sum:
             for i in range(1, len(self.feats)):
-                self.feats[i] += self.feats[i-1]
+                self.feats[i] += self.feats[i - 1]
 
-        decoder = lambda i, j : self.louts[i](self.feats[j][...,:self.feature_dim])[...,0:1]
+        decoder = lambda i, j: self.louts[i](self.feats[j][..., : self.feature_dim])[
+            ..., 0:1
+        ]
 
         if return_lst:
             if self.joint_decoder:
@@ -145,4 +162,3 @@ class NeuralSPC(SPC):
             fidx = 0 if not self.feat_sum else lod
             sdf = decoder(didx, fidx)
             return sdf
-

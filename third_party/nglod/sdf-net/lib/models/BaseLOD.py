@@ -28,6 +28,7 @@ import torch.nn.functional as F
 
 from lib.models.BaseSDF import BaseSDF
 
+
 class BaseLOD(BaseSDF):
     def __init__(self, args):
         super().__init__(args)
@@ -44,5 +45,3 @@ class BaseLOD(BaseSDF):
         if lod is None:
             lod = self.lod
         return None
-
-

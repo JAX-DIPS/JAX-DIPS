@@ -21,4 +21,3 @@
 
 from .SphereTracer import SphereTracer
 from .RenderBuffer import RenderBuffer
-

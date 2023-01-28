@@ -35,14 +35,15 @@ import spc_utils as spc_utils
 import kaolin.ops.spc as spc_ops
 import kaolin.render.spc as spc_render
 
-class SPC(nn.Module):
 
-    def __init__(self, 
-        octree         : torch.Tensor,
-        feature_dim    : int,
-        base_lod       : int,
-        num_lods       : int   = 1, 
-        feature_std    : float = 0.0,
+class SPC(nn.Module):
+    def __init__(
+        self,
+        octree: torch.Tensor,
+        feature_dim: int,
+        base_lod: int,
+        num_lods: int = 1,
+        feature_std: float = 0.0,
     ):
         super().__init__()
         self.feature_dim = feature_dim
@@ -51,11 +52,13 @@ class SPC(nn.Module):
         self.feature_std = feature_std
 
         # List of octree levels which are optimized.
-        self.active_lods = [self.base_lod] + [self.base_lod + x for x in range(self.num_lods-1)]
+        self.active_lods = [self.base_lod] + [
+            self.base_lod + x for x in range(self.num_lods - 1)
+        ]
         self.max_lod = self.num_lods + self.base_lod - 1
 
         log.info(f"Active LODs: {self.active_lods}")
-        
+
         self.build(octree)
 
         # SPC initialization uses lots of spare memory, so clear cache
@@ -64,17 +67,20 @@ class SPC(nn.Module):
     def build(self, octree):
         self.octree = octree
         self.points, self.pyramid, self.prefix = spc_utils.octree_to_spc(self.octree)
-        
-        self.points_dual, self.pyramid_dual = spc_utils.create_dual(self.points, self.pyramid)
 
-        self.trinkets, self.parents = spc_utils.create_trinkets(self.points, self.pyramid, 
-                                                                self.points_dual, self.pyramid_dual)
+        self.points_dual, self.pyramid_dual = spc_utils.create_dual(
+            self.points, self.pyramid
+        )
+
+        self.trinkets, self.parents = spc_utils.create_trinkets(
+            self.points, self.pyramid, self.points_dual, self.pyramid_dual
+        )
         log.info("Built dual octree and trinkets")
-        
+
         # Create features.
         self.features = nn.ParameterList([])
         for al in self.active_lods:
-            fts = torch.zeros(self.pyramid_dual[0,al]+1, self.feature_dim)
+            fts = torch.zeros(self.pyramid_dual[0, al] + 1, self.feature_dim)
             fts += torch.randn_like(fts) * self.feature_std
             self.features.append(nn.Parameter(fts))
 
@@ -84,25 +90,40 @@ class SPC(nn.Module):
         log.info(f"# Feature Vectors: {num_feat}")
 
     def query(self, x, lod):
-        qpts = spc_ops.quantize_points(x, lod+self.base_lod)
-        return spc_ops.unbatched_query(self.octree, self.points, self.pyramid, self.prefix, 
-                                       qpts, lod+self.base_lod).long()
- 
+        qpts = spc_ops.quantize_points(x, lod + self.base_lod)
+        return spc_ops.unbatched_query(
+            self.octree,
+            self.points,
+            self.pyramid,
+            self.prefix,
+            qpts,
+            lod + self.base_lod,
+        ).long()
+
     def interpolate(self, x, lod, pidx=None):
         if pidx is None:
             pidx = self.query(x, lod)
-        coeffs = spc_ops.points_to_coeffs(spc_utils.points_to_coords(x, lod+self.base_lod), 
-                                          self.points[pidx])
+        coeffs = spc_ops.points_to_coeffs(
+            spc_utils.points_to_coords(x, lod + self.base_lod), self.points[pidx]
+        )
         coeffs = torch.clamp(coeffs, 0.0, 1.0)
         return self._interpolate(coeffs, self.features[lod][self.trinkets[pidx]])
 
     def _interpolate(self, coeffs, feats):
         shape = feats.shape[2:]
-        feats = (coeffs.view(*coeffs.shape, 1) * feats.view(*feats.shape[:2], -1)).sum(-2)
+        feats = (coeffs.view(*coeffs.shape, 1) * feats.view(*feats.shape[:2], -1)).sum(
+            -2
+        )
         return feats.reshape(-1, *shape)
 
     def raytrace(self, ray_o, ray_d, lod):
-        nugs = spc_render.unbatched_raytrace(self.octree, self.points, self.pyramid, self.prefix,
-                                             ray_o, ray_d, lod+self.base_lod)
+        nugs = spc_render.unbatched_raytrace(
+            self.octree,
+            self.points,
+            self.pyramid,
+            self.prefix,
+            ray_o,
+            ray_d,
+            lod + self.base_lod,
+        )
         return nugs
-

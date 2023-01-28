@@ -30,4 +30,3 @@
 
 #include "util_structs.cuh"
 #include "util_timer.cuh"
-

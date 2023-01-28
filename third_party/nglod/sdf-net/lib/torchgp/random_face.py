@@ -24,11 +24,8 @@ import torch
 from .area_weighted_distribution import area_weighted_distribution
 from .per_face_normals import per_face_normals
 
-def random_face(
-    V : torch.Tensor, 
-    F : torch.Tensor, 
-    num_samples : int, 
-    distrib=None):
+
+def random_face(V: torch.Tensor, F: torch.Tensor, num_samples: int, distrib=None):
     """Return an area weighted random sample of faces and their normals from the mesh.
 
     Args:
@@ -45,4 +42,3 @@ def random_face(
     idx = distrib.sample([num_samples])
 
     return F[idx], normals[idx]
-

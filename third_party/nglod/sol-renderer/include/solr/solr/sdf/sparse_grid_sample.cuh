@@ -54,16 +54,16 @@ __global__ void sparse_grid_sample_kernel(
         feats_out[_i*(dim+3)+0] = x[i*3]  ;
         feats_out[_i*(dim+3)+1] = x[i*3+1];
         feats_out[_i*(dim+3)+2] = x[i*3+2];
-        
+
         //int offset = 0;
         //int offset = pyramid[lod];
 
         int offset = pyramid[lod+1];
-        
+
         //for (int j=0; j < lod+2; ++j) {
         //    offset += pyramid[j];
         //}
-        
+
         int cidx = pidx[i] + offset;
         float nx = fmaf(x[i*3]  , 0.5f, 0.5f);
         float ny = fmaf(x[i*3+1], 0.5f, 0.5f);
@@ -77,10 +77,10 @@ __global__ void sparse_grid_sample_kernel(
             // res should be precalculated, will also result in -6 ops per thread
             //float res = powf(2, nl-j+1);
             float res = resolutions[nl-j-1];
-            float iz = nx * res; 
+            float iz = nx * res;
             float iy = ny * res;
             float ix = nz * res;
-            
+
             // Get the feature coords
             // note: pidx[i] = voxel idx
             // trinkets maps from voxel idx to cf idx
@@ -103,10 +103,9 @@ __global__ void sparse_grid_sample_kernel(
                 feats_out[_i*(dim+3)+k+3] += feats_in[v101*dim+k] * (ix-cc[v010*3+2]) * (cc[v010*3+1]-iy) * (iz-cc[v010*3]);
                 feats_out[_i*(dim+3)+k+3] += feats_in[v110*dim+k] * (ix-cc[v001*3+2]) * (iy-cc[v001*3+1]) * (cc[v001*3]-iz);
                 feats_out[_i*(dim+3)+k+3] += feats_in[v111*dim+k] * (ix-cc[v000*3+2]) * (iy-cc[v000*3+1]) * (iz-cc[v000*3]);
-            } 
+            }
         }
     }
 }
 
 }
-

@@ -25,4 +25,3 @@
 
 #include "gfx/ray_aabb.cuh"
 #include "gfx/ray_plane.cuh"
-

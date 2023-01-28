@@ -23,7 +23,7 @@
 
 #define CUB_NS_PREFIX namespace kaolin {
 #define CUB_NS_POSTFIX }
-    
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -59,17 +59,17 @@
 
 #ifdef DEBUG
 #   define TIMER PerfTimer timer = PerfTimer()
-#   define TIMER_CHECK(x) timer.check(x) 
+#   define TIMER_CHECK(x) timer.check(x)
 #   define DEBUG_PRINT(x) std::cout << STRINGIFY(x) ":" << x << std::endl
 #else
 #   define TIMER
 #   define TIMER_CHECK(x)
 #   define DEBUG_PRINT(x)
-#endif 
+#endif
 
 // These are for hot testing
 #   define PROBE PerfTimer probe_timer = PerfTimer()
-#   define PROBE_CHECK(x) probe_timer.check(x) 
+#   define PROBE_CHECK(x) probe_timer.check(x)
 
 using namespace solr;
 
@@ -173,16 +173,16 @@ d_renderNormal(uint num, float* ray_o, float* ray_d, float* normal, uchar4 *d_ou
 }
 
 
-extern "C" 
+extern "C"
 uint RenderImage(
-    uchar4 *d_output, 
-    uint imageW, 
-    uint imageH, 
-    torch::Tensor Org, 
-    torch::Tensor Dir, 
-    torch::Tensor Nuggets, 
-    SPC* spc, 
-    SDF* sdf) 
+    uchar4 *d_output,
+    uint imageW,
+    uint imageH,
+    torch::Tensor Org,
+    torch::Tensor Dir,
+    torch::Tensor Nuggets,
+    SPC* spc,
+    SDF* sdf)
 {
     CUDA_PRINT_ERROR();
 
@@ -193,7 +193,7 @@ uint RenderImage(
     cudaEventRecord(start);
 
     uint num_rays = imageW*imageH;
-    
+
     CUDA_PRINT_ERROR();
 
     // map PBO to get CUDA device pointer
@@ -208,17 +208,17 @@ uint RenderImage(
     torch::Tensor Info = torch::zeros({SCAN_MAX_VOXELS}, torch::device(torch::kCUDA).dtype(torch::kInt32));
     int num_nuggets = Nuggets.size(0);
     d_MarkUniqueRays << <(num_nuggets + 1023) / 1024, 1024 >> > (
-            num_nuggets, 
+            num_nuggets,
             reinterpret_cast<Nugget*>(Nuggets.data_ptr<int>()),
             reinterpret_cast<uint*>(Info.data_ptr<int>()));
-    
+
     TIMER_CHECK("Postprocess SPC  ");
 
     CUDA_PRINT_ERROR();
     TIMER_CHECK("generate rays    ");
 
     int lod = std::max(0, (int) g_TargetLevel - 2);
-    
+
     torch::Tensor Points = spc->GetPoints(g_TargetLevel).index({I::Slice(), torch::tensor({0,1,2})});
 
     auto out = sdf->sphereTrace(Org, Dir, Nuggets, Points, Info, lod);
@@ -226,7 +226,7 @@ uint RenderImage(
     CUDA_PRINT_ERROR();
 
     TIMER_CHECK("st               ");
-    
+
     switch (g_Renderer)
     {
     case 0:
@@ -258,5 +258,3 @@ uint RenderImage(
 
     return num_rays;
 }
-
-

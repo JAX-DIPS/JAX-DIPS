@@ -78,12 +78,12 @@ public:
     }
 
     float4x4 m_mWorld;              // Projection matrix
-    float4x4 m_mView;              // View matrix 
+    float4x4 m_mView;              // View matrix
     float4x4 m_mProj;              // Projection matrix
 
     float4x4 m_mWorldInv;
-    float4x4 m_mViewInv;    
-    float4x4 m_mProjInv;    
+    float4x4 m_mViewInv;
+    float4x4 m_mProjInv;
 
 
 private:
@@ -115,4 +115,3 @@ private:
 
     float3 mouse2vector(int mx, int my);
 };
-

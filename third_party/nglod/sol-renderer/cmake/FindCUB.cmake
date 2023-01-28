@@ -33,4 +33,3 @@ find_path(CUB_INCLUDE_DIR cub/cub.cuh
 )
 
 set(CUB_INCLUDE_DIRS ${CUB_INCLUDE_DIR})
-

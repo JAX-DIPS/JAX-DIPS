@@ -30,8 +30,8 @@ if(NOT DEFINED CMAKE_CUDA_STANDARD)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 endif()
 
-list(APPEND CMAKE_PREFIX_PATH 
-    "include/libtorch" 
+list(APPEND CMAKE_PREFIX_PATH
+    "include/libtorch"
     "libtorch"
     "third-party"
     "third-party/libtorch")
@@ -70,8 +70,8 @@ set_property(TARGET lib_renderer PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 
 target_include_directories(
     lib_renderer PUBLIC
-    /usr/local/cuda/samples/common/inc   
-    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} 
+    /usr/local/cuda/samples/common/inc
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 #######################################
@@ -129,8 +129,8 @@ target_link_libraries(
     lib_renderer
     lib_sdf
     spc
-    ${GLUT_LIBRARIES} 
-    ${OPENGL_LIBRARIES} 
+    ${GLUT_LIBRARIES}
+    ${OPENGL_LIBRARIES}
     ${CUDART_LIBRARY}
     ${TORCH_LIBRARIES}
     ${ZLIB_LIBRARIES}

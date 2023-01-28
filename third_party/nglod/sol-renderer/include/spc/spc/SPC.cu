@@ -23,14 +23,14 @@
 
 #define CUB_NS_PREFIX namespace kaolin {
 #define CUB_NS_POSTFIX }
-    
+
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 #include "SPC.h"
 
 #include <cub/device/device_scan.cuh>
 
-using namespace torch::indexing;  
+using namespace torch::indexing;
 
 extern inline void              cudaPrintError(const char* file, const int line);
 
@@ -49,7 +49,7 @@ void SPC::SaveNPZ(std::string filename)
     uint m_Osize = GetOSize();
     cnpy::npz_save(filename, "octree", reinterpret_cast<uchar*>(OctreeCPU.data_ptr<uchar>()), { m_Osize }, "w");
 }
-    
+
 
 void SPC::LoadNPZ(std::string filename)
 {
@@ -57,26 +57,26 @@ void SPC::LoadNPZ(std::string filename)
 
     cnpy::NpyArray O = F["octree"];
     uchar* octree = O.data<uchar>();
-    
+
     m_Osize = O.num_vals;
 
     m_Octree = torch::zeros({m_Osize}, torch::device(torch::kCUDA).dtype(torch::kByte));
     uchar* octreeT = reinterpret_cast<uchar*>(m_Octree.data_ptr<uchar>());
     cudaMemcpy(octreeT, octree, m_Osize, cudaMemcpyHostToDevice);
 
-    std::vector<at::Tensor> tmp;   
+    std::vector<at::Tensor> tmp;
     tmp = SetGeometry(m_Octree);
 
     m_Points = tmp[0];
     m_Pyramid = tmp[1];
 
     uint* h_pyramid = reinterpret_cast<uint*>(m_Pyramid.data_ptr<int>());
-   
+
     m_Level = m_Pyramid.size(1) - 2;
     m_Psize = h_pyramid[m_Level];
 }
-    
-        
+
+
 __global__ void MortonToPoint(
     const uint Psize,
     morton_code *DataIn,
@@ -132,7 +132,7 @@ torch::Tensor SPC::GetPoints(uint l)
 }
 
 
-__global__ void 
+__global__ void
 d_ScanNodes(
     const uint numBytes,
     const uchar *d_octree,
@@ -154,11 +154,11 @@ std::vector<at::Tensor> SPC::SetGeometry(torch::Tensor Octree)
     m_Info = torch::zeros({m_Osize+1}, torch::device(torch::kCUDA).dtype(torch::kInt32));
     m_PrefixSum = torch::zeros({m_Osize+1}, torch::device(torch::kCUDA).dtype(torch::kInt32));
     torch::Tensor Pyramid = torch::zeros({2, MAX_LEVELS+2}, torch::device(torch::kCPU).dtype(torch::kInt32));
-  
+
     uint*   d_Info = reinterpret_cast<uint*>(m_Info.data_ptr<int>());
     uint*   d_PrefixSum = reinterpret_cast<uint*>(m_PrefixSum.data_ptr<int>());
     int*    h_Pyramid = Pyramid.data_ptr<int>();
-  
+
     void*           d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
     kaolin::cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_Info, d_PrefixSum, m_Osize+1);
@@ -176,11 +176,11 @@ std::vector<at::Tensor> SPC::SetGeometry(torch::Tensor Octree)
 
     torch::Tensor Points = torch::zeros({psize, 4}, torch::device(torch::kCUDA).dtype(torch::kInt16));
     point_data* Pdata = reinterpret_cast<point_data*>(Points.data_ptr<short>());
- 
+
     //TODO: share this memory with Points
     torch::Tensor Mortons = torch::zeros({psize}, torch::device(torch::kCUDA).dtype(torch::kInt64));
     morton_code* Mdata = reinterpret_cast<morton_code*>(Mortons.data_ptr<long>());
-    
+
     int* pyramid = h_Pyramid;
     int* pyramidSum = h_Pyramid + MAX_LEVELS + 2;
 
@@ -236,5 +236,3 @@ std::vector<at::Tensor> SPC::SetGeometry(torch::Tensor Octree)
 
     return result;
 }
-
-

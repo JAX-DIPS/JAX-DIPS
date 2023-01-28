@@ -24,12 +24,14 @@ import torch
 from .sample_surface import sample_surface
 from .area_weighted_distribution import area_weighted_distribution
 
+
 def sample_near_surface(
-    V : torch.Tensor,
-    F : torch.Tensor, 
-    num_samples: int, 
-    variance : float = 0.01,
-    distrib=None):
+    V: torch.Tensor,
+    F: torch.Tensor,
+    num_samples: int,
+    variance: float = 0.01,
+    distrib=None,
+):
     """Sample points near the mesh surface.
 
     Args:

@@ -27,7 +27,7 @@ namespace solr {
 
     // Copies source array into a target array
     template<
-        typename IN, 
+        typename IN,
         typename OUT>
     __global__ void copy(
         const IN* __restrict__ src,
@@ -45,7 +45,7 @@ namespace solr {
     // Copies source array into a target array,
     // for indices specified by idxes
     template<
-        typename IN, 
+        typename IN,
         typename OUT>
     __global__ void copy(
         const IN* __restrict__ src,
@@ -62,5 +62,3 @@ namespace solr {
         }
     }
 }
-
-

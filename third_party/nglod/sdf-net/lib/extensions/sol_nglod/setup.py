@@ -24,20 +24,24 @@ import torch
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension, CppExtension
 import os
 
-#os.environ["CC"] = "gcc" 
-#os.environ["CXX"] = "g++" 
+# os.environ["CC"] = "gcc"
+# os.environ["CXX"] = "g++"
 
-PACKAGE_NAME = 'sol_nglod'
+PACKAGE_NAME = "sol_nglod"
 
 # Standalone package (old way)
 setup(
     name=PACKAGE_NAME,
-    license='MIT',
+    license="MIT",
     ext_modules=[
         CUDAExtension(
-            name='sol_nglod',
-            sources=['sol_nglod_kernel.cu'],
-            extra_compile_args={'cxx': ['-std=c++14', '-ffast-math'], 'nvcc': ['-std=c++14']})],
-    cmdclass={ 'build_ext' : BuildExtension }
+            name="sol_nglod",
+            sources=["sol_nglod_kernel.cu"],
+            extra_compile_args={
+                "cxx": ["-std=c++14", "-ffast-math"],
+                "nvcc": ["-std=c++14"],
+            },
+        )
+    ],
+    cmdclass={"build_ext": BuildExtension},
 )
-

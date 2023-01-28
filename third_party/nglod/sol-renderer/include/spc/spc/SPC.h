@@ -36,7 +36,7 @@
 
 
 #define MAX_LEVELS          16
-#define SCAN_MAX_VOXELS     (0x1 << 27) 
+#define SCAN_MAX_VOXELS     (0x1 << 27)
 
 
 typedef unsigned char       uchar;
@@ -136,15 +136,3 @@ public:
     void SaveNPZ(std::string filename);
     void LoadNPZ(std::string filename);
 };
-
-
-
-
-
-
-
-
-
-
-
-

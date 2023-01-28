@@ -31,9 +31,9 @@ class PerfTimer {
     std::chrono::time_point<std::chrono::system_clock> m_curr;
 
 public:
-    
+
     PerfTimer() {
-        m_stream = at::cuda::getCurrentCUDAStream();    
+        m_stream = at::cuda::getCurrentCUDAStream();
         cudaStreamSynchronize(m_stream);
         m_curr = std::chrono::system_clock::now();
     }
@@ -48,4 +48,3 @@ public:
 };
 
 }
-

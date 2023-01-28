@@ -38,7 +38,7 @@ __global__ void finitediff_allocate_kernel(
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
-    
+
     for (int _i=idx; _i<n; _i+=stride) {
         int i = idxes[_i];
         _x[_i*3  ]         = x[i*3  ] + eps;
@@ -59,7 +59,7 @@ __global__ void finitediff_allocate_kernel(
         _x[_i*3   + (n*5)] = x[i*3  ];
         _x[_i*3+1 + (n*5)] = x[i*3+1];
         _x[_i*3+2 + (n*5)] = x[i*3+2] - eps;
-        
+
         #pragma unroll
         for (int j=0; j<6; ++j) {
             _pidx[_i + (n*j)] = pidx[i];
@@ -79,7 +79,7 @@ __global__ void finitediff_kernel(
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
-    
+
     for (int _i=idx; _i<n; _i+=stride) {
         int i = idxes[_i];
         float diffx = d[_i] - d[_i+n];
@@ -93,4 +93,3 @@ __global__ void finitediff_kernel(
 }
 
 }
-

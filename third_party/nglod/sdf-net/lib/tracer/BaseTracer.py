@@ -23,27 +23,30 @@ import numpy as np
 
 from lib.utils import setparam
 
+
 class BaseTracer(object):
     """Virtual base class for tracer"""
 
-    def __init__(self,
-        args                 = None,
-        camera_clamp : list  = None,
-        step_size    : float = None,
-        grad_method  : str   = None,
-        num_steps    : int   = None, # samples for raymaching, iterations for sphere trace
-        min_dis      : float = None): 
+    def __init__(
+        self,
+        args=None,
+        camera_clamp: list = None,
+        step_size: float = None,
+        grad_method: str = None,
+        num_steps: int = None,  # samples for raymaching, iterations for sphere trace
+        min_dis: float = None,
+    ):
 
         self.args = args
-        self.camera_clamp = setparam(args, camera_clamp, 'camera_clamp')
-        self.step_size = setparam(args, step_size, 'step_size')
-        self.grad_method = setparam(args, grad_method, 'grad_method')
-        self.num_steps = setparam(args, num_steps, 'num_steps')
-        self.min_dis = setparam(args, min_dis, 'min_dis')
+        self.camera_clamp = setparam(args, camera_clamp, "camera_clamp")
+        self.step_size = setparam(args, step_size, "step_size")
+        self.grad_method = setparam(args, grad_method, "grad_method")
+        self.num_steps = setparam(args, num_steps, "num_steps")
+        self.min_dis = setparam(args, min_dis, "min_dis")
 
         self.inv_num_steps = 1.0 / self.num_steps
         self.diagonal = np.sqrt(3) * 2.0
-    
+
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 

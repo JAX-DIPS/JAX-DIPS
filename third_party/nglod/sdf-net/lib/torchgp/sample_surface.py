@@ -24,11 +24,8 @@ import torch
 from .random_face import random_face
 from .area_weighted_distribution import area_weighted_distribution
 
-def sample_surface(
-    V : torch.Tensor,
-    F : torch.Tensor,
-    num_samples : int,
-    distrib = None):
+
+def sample_surface(V: torch.Tensor, F: torch.Tensor, num_samples: int, distrib=None):
     """Sample points and their normals on mesh surface.
 
     Args:
@@ -47,7 +44,6 @@ def sample_surface(
     u = torch.sqrt(torch.rand(num_samples)).to(V.device).unsqueeze(-1)
     v = torch.rand(num_samples).to(V.device).unsqueeze(-1)
 
-    samples = (1 - u) * f[:,0,:] + (u * (1 - v)) * f[:,1,:] + u * v * f[:,2,:]
-    
-    return samples, normals
+    samples = (1 - u) * f[:, 0, :] + (u * (1 - v)) * f[:, 1, :] + u * v * f[:, 2, :]
 
+    return samples, normals

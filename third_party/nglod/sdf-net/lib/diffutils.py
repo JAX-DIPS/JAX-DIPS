@@ -26,25 +26,26 @@ from lib.utils import PerfTimer
 
 # Differentiable Operators for General Functions
 
-def gradient(x, f, method='autodiff'):
-    """Compute gradient.
-    """
-    if method == 'autodiff':
+
+def gradient(x, f, method="autodiff"):
+    """Compute gradient."""
+    if method == "autodiff":
         with torch.enable_grad():
             x = x.requires_grad_(True)
             y = f(x)
-            grad = torch.autograd.grad(y, x, 
-                                       grad_outputs=torch.ones_like(y), create_graph=True)[0]
-    elif method == 'tetrahedron':
+            grad = torch.autograd.grad(
+                y, x, grad_outputs=torch.ones_like(y), create_graph=True
+            )[0]
+    elif method == "tetrahedron":
         h = 1.0 / (64.0 * 3.0)
-        k0 = torch.tensor([ 1.0, -1.0, -1.0], device=x.device, requires_grad=False)
-        k1 = torch.tensor([-1.0, -1.0,  1.0], device=x.device, requires_grad=False)
-        k2 = torch.tensor([-1.0,  1.0, -1.0], device=x.device, requires_grad=False)
-        k3 = torch.tensor([ 1.0,  1.0,  1.0], device=x.device, requires_grad=False)
-        h0 = torch.tensor([ h, -h, -h], device=x.device, requires_grad=False)
-        h1 = torch.tensor([-h, -h,  h], device=x.device, requires_grad=False)
-        h2 = torch.tensor([-h,  h, -h], device=x.device, requires_grad=False)
-        h3 = torch.tensor([ h,  h,  h], device=x.device, requires_grad=False)
+        k0 = torch.tensor([1.0, -1.0, -1.0], device=x.device, requires_grad=False)
+        k1 = torch.tensor([-1.0, -1.0, 1.0], device=x.device, requires_grad=False)
+        k2 = torch.tensor([-1.0, 1.0, -1.0], device=x.device, requires_grad=False)
+        k3 = torch.tensor([1.0, 1.0, 1.0], device=x.device, requires_grad=False)
+        h0 = torch.tensor([h, -h, -h], device=x.device, requires_grad=False)
+        h1 = torch.tensor([-h, -h, h], device=x.device, requires_grad=False)
+        h2 = torch.tensor([-h, h, -h], device=x.device, requires_grad=False)
+        h3 = torch.tensor([h, h, h], device=x.device, requires_grad=False)
         h0 = x + h0
         h1 = x + h1
         h2 = x + h2
@@ -57,31 +58,38 @@ def gradient(x, f, method='autodiff'):
         h1 = k1 * f(h1)
         h2 = k2 * f(h2)
         h3 = k3 * f(h3)
-        grad = (h0+h1+h2+h3) / (h*4.0)
-    elif method == 'finitediff':
-        min_dist = 1.0/(64.0 * 3.0)
+        grad = (h0 + h1 + h2 + h3) / (h * 4.0)
+    elif method == "finitediff":
+        min_dist = 1.0 / (64.0 * 3.0)
         eps_x = torch.tensor([min_dist, 0.0, 0.0], device=x.device)
         eps_y = torch.tensor([0.0, min_dist, 0.0], device=x.device)
         eps_z = torch.tensor([0.0, 0.0, min_dist], device=x.device)
 
-        grad = torch.cat([f(x + eps_x) - f(x - eps_x),
-                          f(x + eps_y) - f(x - eps_y),
-                          f(x + eps_z) - f(x - eps_z)], dim=-1)
-        grad = grad / (min_dist*2.0)
-    elif method == 'multilayer':
+        grad = torch.cat(
+            [
+                f(x + eps_x) - f(x - eps_x),
+                f(x + eps_y) - f(x - eps_y),
+                f(x + eps_z) - f(x - eps_z),
+            ],
+            dim=-1,
+        )
+        grad = grad / (min_dist * 2.0)
+    elif method == "multilayer":
         # TODO: Probably remove this
         grad = []
         with torch.enable_grad():
             _y = f.sdf(x, return_lst=True)
             for i in range(len(_y)):
-                _grad = torch.autograd.grad(_y[i], x, 
-                                           grad_outputs=torch.ones_like(_y[i]), create_graph=True)[0]
+                _grad = torch.autograd.grad(
+                    _y[i], x, grad_outputs=torch.ones_like(_y[i]), create_graph=True
+                )[0]
                 grad.append(_grad)
         return grad
     else:
         raise NotImplementedError
 
     return grad
+
 
 # from https://github.com/krrish94/nerf-pytorch
 def positional_encoding(
@@ -111,7 +119,7 @@ def positional_encoding(
         )
     else:
         frequency_bands = torch.linspace(
-            2.0 ** 0.0,
+            2.0**0.0,
             2.0 ** (num_encoding_functions - 1),
             num_encoding_functions,
             dtype=tensor.dtype,
@@ -127,4 +135,3 @@ def positional_encoding(
         return encoding[0]
     else:
         return torch.cat(encoding, dim=-1)
-

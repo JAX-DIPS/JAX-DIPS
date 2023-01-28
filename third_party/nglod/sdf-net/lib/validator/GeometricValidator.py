@@ -32,6 +32,7 @@ from torch.utils.data import Dataset, DataLoader
 from lib.datasets import *
 from lib.validator.metrics import *
 
+
 class GeometricValidator(object):
     """Geometric validation; sample 3D points for distance/occupancy metrics."""
 
@@ -42,23 +43,25 @@ class GeometricValidator(object):
         self.num_samples = 100000
         self.set_dataset()
 
-    
     def set_dataset(self):
         """Two datasets; 1) samples uniformly for volumetric IoU, 2) samples surfaces only."""
 
         # Same as training since we're overfitting
         self.val_dataset = MeshDataset(self.args, num_samples=self.num_samples)
-        self.val_data_loader = DataLoader(self.val_dataset, 
-                                          batch_size=self.num_samples*len(self.args.sample_mode),
-                                          shuffle=False, pin_memory=True, num_workers=4)
-
+        self.val_data_loader = DataLoader(
+            self.val_dataset,
+            batch_size=self.num_samples * len(self.args.sample_mode),
+            shuffle=False,
+            pin_memory=True,
+            num_workers=4,
+        )
 
     def validate(self, epoch):
         """Geometric validation; sample surface points."""
 
         val_dict = {}
-        val_dict['vol_iou'] = []
-        
+        val_dict["vol_iou"] = []
+
         # Uniform points metrics
         for n_iter, data in enumerate(self.val_data_loader):
 
@@ -72,8 +75,7 @@ class GeometricValidator(object):
 
                 # Volumetric IoU
                 pred = self.net(pts, gts=gts, grad=nrm, ids=ids)
-                val_dict['vol_iou'] += [float(compute_iou(gts, pred))]
+                val_dict["vol_iou"] += [float(compute_iou(gts, pred))]
                 self.net.lod = None
 
         return val_dict
-

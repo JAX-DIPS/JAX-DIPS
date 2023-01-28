@@ -27,9 +27,9 @@ namespace solr {
 
 // Ray-plane intersection
 __global__ void ray_plane_kernel(
-    const float* __restrict__ ray_o, 
-    const float* __restrict__ ray_d, 
-    bool* __restrict__ model_hit, 
+    const float* __restrict__ ray_o,
+    const float* __restrict__ ray_d,
+    bool* __restrict__ model_hit,
     float* __restrict__ x,
     float* __restrict__ t,
     float* __restrict__ normal,
@@ -41,12 +41,12 @@ __global__ void ray_plane_kernel(
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
 
-    for (int i=idx; i<n; i+=stride) { 
-        
+    for (int i=idx; i<n; i+=stride) {
+
         if (model_hit[i]) continue;
-        
+
         float rate = -ray_d[3*i+1];
-        
+
         if (fabs(rate) < 0.00001) continue;
 
         float delta = ray_o[3*i+1] - height;
@@ -70,4 +70,3 @@ __global__ void ray_plane_kernel(
 
 
 }
-

@@ -20,10 +20,10 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
-    
+
 #define CUB_NS_PREFIX namespace kaolin {
 #define CUB_NS_POSTFIX }
-    
+
 #include <torch/torch.h>
 #include <stdio.h>
 
@@ -33,7 +33,7 @@
 #include "spc_math.h"
 
 using namespace std;
-using namespace torch::indexing;  
+using namespace torch::indexing;
 
 
 __constant__ uint Order[8][8] = {
@@ -48,7 +48,7 @@ __constant__ uint Order[8][8] = {
 
 
 
-__global__ void 
+__global__ void
 d_ScanNodesA(
     const uint numBytes,
     const uchar *d_octree,
@@ -64,7 +64,7 @@ d_ScanNodesA(
 ulong GetStorageBytes(void* d_temp_storage, uint* d_Info, uint* d_PrefixSum, uint max_total_points)
 {
     ulong       temp_storage_bytes = 0;
-    kaolin::cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_Info, d_PrefixSum, max_total_points); 
+    kaolin::cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_Info, d_PrefixSum, max_total_points);
     return temp_storage_bytes;
 }
 
@@ -82,7 +82,7 @@ d_InitNuggets(uint num, uint2* nuggets)
 }
 
 
-__device__ bool 
+__device__ bool
 d_FaceEval(ushort i, ushort j, float a, float b, float c)
 {
     float result[4];
@@ -150,7 +150,7 @@ d_Subdivide(uint num, uint2* nuggetsIn, uint2* nuggetsOut, float3* rorg, point_d
         point_data p = points[pidx];
 
         uint IdxBase = prefix_sum[tidx];
-        
+
         uchar o = O[offset0 + pidx];
         uint s = S[offset0 + pidx];
 
@@ -191,21 +191,21 @@ d_Compactify(uint num, uint2* nuggetsIn, uint2* nuggetsOut, uint* info, uint* pr
 
 
 
-uint spc_raytrace_cuda( 
+uint spc_raytrace_cuda(
     uchar* d_octree,
     uint Level,
     uint targetLevel,
     point_data* d_points,
     uint* h_pyramid,
     uint*   d_D,
-    uint*   d_S, 
+    uint*   d_S,
     uint num,
     float3* d_Org,
     float3* d_Dir,
     uint2*  d_NuggetBuffers,
     uint*   d_Info,
-    uint*   d_PrefixSum, 
-    void* d_temp_storage, 
+    uint*   d_PrefixSum,
+    void* d_temp_storage,
     ulong temp_storage_bytes)
 {
 #ifdef VERBOSE

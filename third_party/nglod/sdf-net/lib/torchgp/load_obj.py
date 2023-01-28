@@ -28,28 +28,28 @@ import torch
 
 from PIL import Image
 
-# Refer to 
+# Refer to
 # https://github.com/tinyobjloader/tinyobjloader/blob/master/tiny_obj_loader.h
 # for conventions for tinyobjloader data structures.
 
 texopts = [
-    'ambient_texname',
-    'diffuse_texname',
-    'specular_texname',
-    'specular_highlight_texname',
-    'bump_texname',
-    'displacement_texname',
-    'alpha_texname',
-    'reflection_texname',
-    'roughness_texname',
-    'metallic_texname',
-    'sheen_texname',
-    'emissive_texname',
-    'normal_texname'
+    "ambient_texname",
+    "diffuse_texname",
+    "specular_texname",
+    "specular_highlight_texname",
+    "bump_texname",
+    "displacement_texname",
+    "alpha_texname",
+    "reflection_texname",
+    "roughness_texname",
+    "metallic_texname",
+    "sheen_texname",
+    "emissive_texname",
+    "normal_texname",
 ]
 
-def load_mat(
-    fname : str):
+
+def load_mat(fname: str):
 
     img = torch.FloatTensor(np.array(Image.open(fname)))
     img = img / 255.0
@@ -57,23 +57,22 @@ def load_mat(
     return img
 
 
-def load_obj(
-    fname : str, 
-    load_materials : bool = False):
+def load_obj(fname: str, load_materials: bool = False):
     """Load .obj file using TinyOBJ and extract info.
-    This is more robust since it can triangulate polygon meshes 
+    This is more robust since it can triangulate polygon meshes
     with up to 255 sides per face.
-    
+
     Args:
         fname (str): path to Wavefront .obj file
     """
 
-    assert fname is not None and os.path.exists(fname), \
-        'Invalid file path and/or format, must be an existing Wavefront .obj'
+    assert fname is not None and os.path.exists(
+        fname
+    ), "Invalid file path and/or format, must be an existing Wavefront .obj"
 
     reader = tinyobjloader.ObjReader()
     config = tinyobjloader.ObjReaderConfig()
-    config.triangulate = True # Ensure we don't have any polygons
+    config.triangulate = True  # Ensure we don't have any polygons
 
     reader.ParseFromFile(fname, config)
 
@@ -87,7 +86,7 @@ def load_obj(
     for shape in shapes:
         faces += [idx.vertex_index for idx in shape.mesh.indices]
     faces = torch.LongTensor(faces).reshape(-1, 3)
-    
+
     mats = {}
 
     if load_materials:
@@ -104,23 +103,22 @@ def load_obj(
 
         # Load texcoords
         texv = torch.FloatTensor(attrib.texcoords).reshape(-1, 2)
-        
+
         # Load texture maps
-        parent_path = os.path.dirname(fname) 
+        parent_path = os.path.dirname(fname)
         materials = reader.GetMaterials()
         for i, material in enumerate(materials):
             mats[i] = {}
-            diffuse = getattr(material, 'diffuse')
-            if diffuse != '':
-                mats[i]['diffuse'] = torch.FloatTensor(diffuse)
+            diffuse = getattr(material, "diffuse")
+            if diffuse != "":
+                mats[i]["diffuse"] = torch.FloatTensor(diffuse)
 
             for texopt in texopts:
                 mat_path = getattr(material, texopt)
-                if mat_path != '':
+                if mat_path != "":
                     img = load_mat(os.path.join(parent_path, mat_path))
                     mats[i][texopt] = img
-                    #mats[i][texopt.split('_')[0]] = img
+                    # mats[i][texopt.split('_')[0]] = img
         return vertices, faces, texv, texf, mats
 
     return vertices, faces
-

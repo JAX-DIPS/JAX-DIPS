@@ -28,12 +28,13 @@ from lib.spc3d import SPC3D, to_morton
 from lib.renderutils import voxel_sparsify, sample_surface
 from lib.geoutils import unique_corners
 
+
 class SOL_NGLOD(object):
     def __init__(self, net):
         self.feat = []
         for f in net.features:
             self.feat.append(f.fm.detach())
-        
+
         self.w0 = []
         self.b0 = []
         self.w1 = []
@@ -43,20 +44,20 @@ class SOL_NGLOD(object):
             self.b0.append(l[0].bias.half())
             self.w1.append(l[2].weight.half())
             self.b1.append(l[2].bias.half())
-        
-        self.lod = len(net.louts)-1
+
+        self.lod = len(net.louts) - 1
 
         # Brute force function to get all occupied voxels
         self.vs = voxel_sparsify(2000000, net, self.lod, sol=False)
 
         _vs = self.vs[self.lod].cpu().numpy().astype(np.uint16)
         # Convert to SPC
-        self.spc = SPC3D(self.lod+2)
+        self.spc = SPC3D(self.lod + 2)
         for i in range(_vs.shape[0]):
             self.spc.mdata[i] = to_morton(_vs[i])
             self.spc.psize += 1
-        _sorted = np.sort(self.spc.mdata[:self.spc.psize])
-        self.spc.mdata[:self.spc.psize] = _sorted
+        _sorted = np.sort(self.spc.mdata[: self.spc.psize])
+        self.spc.mdata[: self.spc.psize] = _sorted
         self.spc.morton_to_point(self.spc.psize, self.spc.mdata, self.spc.pdata)
         self.spc.points_to_nodes()
 
@@ -65,9 +66,9 @@ class SOL_NGLOD(object):
         self.cf = []
         self.pyramid = []
 
-        for i in range(self.lod+1):
-            res = 2**(i+2)
-            #self.vc.append((((self.vs[i].float() + 0.5) / float(res)) * 2.0 - 1.0).half())
+        for i in range(self.lod + 1):
+            res = 2 ** (i + 2)
+            # self.vc.append((((self.vs[i].float() + 0.5) / float(res)) * 2.0 - 1.0).half())
             corners, features = unique_corners(self.vs[i], self.feat[i])
             self.pyramid.append(corners.shape[0])
             self.cc.append(corners.byte())
@@ -88,14 +89,14 @@ class SOL_NGLOD(object):
         b1 = torch.stack(self.b1, dim=0).cpu().detach()
         pyramid = self.pyramid
 
-        np.savez_compressed(os.path.join(path), 
-                octree=self.spc.oroot,
-                cc=cc,
-                cf=cf,
-                w0=w0,
-                b0=b0,
-                w1=w1,
-                b1=b1,
-                pyramid=pyramid
+        np.savez_compressed(
+            os.path.join(path),
+            octree=self.spc.oroot,
+            cc=cc,
+            cf=cf,
+            w0=w0,
+            b0=b0,
+            w1=w1,
+            b1=b1,
+            pyramid=pyramid,
         )
-

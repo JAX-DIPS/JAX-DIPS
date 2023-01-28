@@ -50,14 +50,14 @@ __device__ float ray_aabb(
     // From Majercik et. al 2018
 
     float3 o = make_float3(query.x-origin.x, query.y-origin.y, query.z-origin.z);
-    float cmax = fmaxf(fmaxf(fabs(o.x), fabs(o.y)), fabs(o.z));    
+    float cmax = fmaxf(fmaxf(fabs(o.x), fabs(o.y)), fabs(o.z));
 
     float winding = cmax < r ? -1.0f : 1.0f;
     winding *= r;
     if (winding < 0) {
         return winding;
     }
-    
+
     float d0 = fmaf(winding, sgn.x, - o.x) * invdir.x;
     float d1 = fmaf(winding, sgn.y, - o.y) * invdir.y;
     float d2 = fmaf(winding, sgn.z, - o.z) * invdir.z;
@@ -78,7 +78,7 @@ __device__ float ray_aabb(
     else if (test2) { _sgn.z = sgn.z; }
 
     float d = 0.0f;
-    if (_sgn.x != 0.0f) { d = d0; } 
+    if (_sgn.x != 0.0f) { d = d0; }
     else if (_sgn.y != 0.0f) { d = d1; }
     else if (_sgn.z != 0.0f) { d = d2; }
     if (d != 0.0f) {
@@ -119,7 +119,7 @@ __global__ void ray_aabb_kernel(
     const int num_rays,                  // # of nugget indices
     const int n                          // # of active nugget indices
 ){
-    
+
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
@@ -127,25 +127,25 @@ __global__ void ray_aabb_kernel(
     for (int _i=idx; _i<n; _i+=stride) {
         // Get index of corresponding nugget
         int i = info_idxes[_i];
-        
+
         // Get index of ray
         uint ridx = nuggets[i].x;
 
         // If this ray is already terminated, continue
         if (!cond[ridx] && !init) continue;
-        
+
         bool _hit = false;
 
         // Get the direction and inverse direction
         const float3 dir = solr::xyz(ray_d, ridx);
         const float3 invdir = solr::xyz(ray_inv, ridx);
         const float3 query_pt = solr::xyz(query, ridx);
-        
+
         // Sign bit
         const float3 sgn = solr::ray_sgn(dir);
-            
+
         bool _cond = false;
-        
+
         int j = 0;
         // In order traversal of the voxels
         do {
@@ -171,13 +171,13 @@ __global__ void ray_aabb_kernel(
                     x[3*ridx+1] = fmaf(ray_d[3*ridx+1], t[ridx], ray_o[3*ridx+1]);
                     x[3*ridx+2] = fmaf(ray_d[3*ridx+2], t[ridx], ray_o[3*ridx+2]);
                 }
-            } 
-           
+            }
+
             ++i;
             ++j;
-            
+
         } while (i < num_rays && info[i] != 1 && _hit == false);
-        
+
 
         if (!_hit) {
             // Should only reach here if it misses
@@ -187,7 +187,7 @@ __global__ void ray_aabb_kernel(
             x[3*ridx+1] = fmaf(ray_d[3*ridx+1], t[ridx], ray_o[3*ridx+1]);
             x[3*ridx+2] = fmaf(ray_d[3*ridx+2], t[ridx], ray_o[3*ridx+2]);
         }
-        
+
     }
 }
 
@@ -206,21 +206,21 @@ __global__ void ray_aabb_kernel(
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
-    
+
     for (int i=idx; i<n; i+=stride) {
         const float3 dir = solr::xyz(ray_d, i);
         const float3 invdir = solr::xyz(ray_inv, i);
         const float3 query_pt = solr::xyz(ray_o, i);
-        
+
         const float3 sgn = solr::ray_sgn(dir);
 
         bool _hit = false;
-        int j = 0; 
-        do { 
+        int j = 0;
+        do {
             const float3 _vc = make_float3(vc[3*j], vc[3*j+1], vc[3*j+2]);
 
             float d = solr::ray_aabb(query_pt, dir, invdir, sgn, _vc, r);
-            
+
             if (d > 0.0) {
                 _hit = true;
                 hit[i] = true;
@@ -231,5 +231,3 @@ __global__ void ray_aabb_kernel(
 }
 
 }
-
-

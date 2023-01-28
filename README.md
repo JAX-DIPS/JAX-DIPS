@@ -1,5 +1,5 @@
 # JAX-DIPS
-JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D. 
+JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D.
 
 JAX-DIPS implements the neural bootstrapping method (NBM):
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/JAX-DIPS.png)
@@ -8,7 +8,7 @@ JAX-DIPS implements the neural bootstrapping method (NBM):
 Streamlines of solution gradients (left), and jump in solution (right) calculated by the `dragon` example.
 <p float="center">
   <img src="docs/dragon.png" width="518" />
-  <img src="docs/jump_dragon.png" width="300" /> 
+  <img src="docs/jump_dragon.png" width="300" />
 </p>
 
 <!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/dragon.png)![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jump_dragon.png) -->
@@ -66,7 +66,7 @@ You can also run the container in background, by passing the `-d` flag for daemo
 ./launch dev -d
 ```
 
-You can attach to the running `jax_dips` container by 
+You can attach to the running `jax_dips` container by
 
 ```
 ./launch attach

@@ -27,5 +27,3 @@
 #include "sdf/index_trinket.cuh"
 #include "sdf/sparse_grid_sample.cuh"
 #include "sdf/step.cuh"
-
-

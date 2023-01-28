@@ -35,7 +35,7 @@ __global__ void normalize_kernel(
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
-    
+
     for (int _i=idx; _i<n; _i+=stride) {
         int i = idxes[_i];
         float nrm = norm3df(x[3*i], x[3*i+1], x[3*i+2]);
@@ -46,4 +46,3 @@ __global__ void normalize_kernel(
 }
 
 }
-

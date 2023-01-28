@@ -38,4 +38,3 @@ find_path(SPC_INCLUDE_DIR spc/SPC.h
 )
 
 set(SPC_INCLUDE_DIRS ${SPC_INCLUDE_DIR})
-

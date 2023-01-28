@@ -21,9 +21,10 @@
 
 import torch
 
+
 def compute_iou(dist_gt, dist_pr):
     """Intersection over Union.
-    
+
     Args:
         dist_gt (torch.Tensor): Groundtruth signed distances
         dist_pr (torch.Tensor): Predicted signed distances
@@ -36,5 +37,4 @@ def compute_iou(dist_gt, dist_pr):
     area_intersect = torch.sum((occ_gt & occ_pr).float())
 
     iou = area_intersect / area_union
-    return 100. * iou
-
+    return 100.0 * iou

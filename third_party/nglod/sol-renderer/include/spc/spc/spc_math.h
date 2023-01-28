@@ -28,7 +28,7 @@
 
 using namespace std;
 
-  
+
 #define MAX_LEVELS          15
 #define MAX_TOTAL_POINTS    (0x1<<27)
 
@@ -180,4 +180,3 @@ static __inline__ __host__ __device__ float4x4 transpose(const float4x4& a)
             b.m[i][j] = a.m[j][i];
     return b;
 }
-

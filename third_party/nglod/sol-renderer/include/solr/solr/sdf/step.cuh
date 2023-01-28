@@ -29,7 +29,7 @@
 namespace solr {
 
 __global__ void step_kernel(
-    const float* __restrict__ ray_o, // ray origin array 
+    const float* __restrict__ ray_o, // ray origin array
     const float* __restrict__ ray_d, // ray direction array
     const int* __restrict__ idxes,   // active ray indices
     const float* __restrict__ _d,    // temp distance (fuse this..)
@@ -44,18 +44,18 @@ __global__ void step_kernel(
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int stride = blockDim.x*gridDim.x;
     if (idx > n) return;
-    
+
     for (int _i=idx; _i<n; _i+=stride) {
-        
+
         int i = idxes[_i];
-        
+
         d[i] = _d[_i];
-        
+
         //if (cond[i] == false) {
         //    continue;
         //}
-        
-        // First, update conditions 
+
+        // First, update conditions
 
         t[i] += d[i];
 
@@ -86,4 +86,3 @@ __global__ void step_kernel(
 }
 
 }
-

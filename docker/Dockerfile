@@ -43,7 +43,8 @@ RUN cd /opt \
     && cd tinyobjloader \
     && python -m pip install .
 
-# RUN cd /workspace/third_party \
-#     && git clone https://github.com/nv-tlabs/nglod.git 
-RUN cd /workspace/third_party/nglod/sdf-net/lib/extensions \
+RUN mkdir -p /workspace/third_party \
+    && cd /workspace/third_party \
+    && git clone https://github.com/nv-tlabs/nglod.git \
+    && cd /workspace/third_party/nglod/sdf-net/lib/extensions \
     && bash build_ext.sh

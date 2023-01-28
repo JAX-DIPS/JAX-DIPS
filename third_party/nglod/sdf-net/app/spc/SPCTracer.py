@@ -27,7 +27,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from lib.utils import PerfTimer
 from lib.diffutils import gradient
@@ -39,8 +39,8 @@ import kaolin
 import kaolin.ops.spc as spc_ops
 import kaolin.render.spc as spc_render
 
-class SPCTracer(BaseTracer):
 
+class SPCTracer(BaseTracer):
     def forward(self, net, ray_o, ray_d):
         timer = PerfTimer(activate=False)
 
@@ -59,8 +59,9 @@ class SPCTracer(BaseTracer):
         timer.check("info")
 
         # Trace against the SPC
-        d, pidx, cond = spc_render.unbatched_ray_aabb(nugs, net.points, ray_o, ray_d, net.lod+net.base_lod, 
-                                                      info, info_idxes)
+        d, pidx, cond = spc_render.unbatched_ray_aabb(
+            nugs, net.points, ray_o, ray_d, net.lod + net.base_lod, info, info_idxes
+        )
         pidx = pidx.long()
         t += d
         x = torch.addcmul(ray_o, ray_d, t)
@@ -70,7 +71,7 @@ class SPCTracer(BaseTracer):
         hit = torch.zeros_like(cond)
         normal = torch.zeros_like(x)
 
-        res = float(2**(net.lod+net.base_lod))
+        res = float(2 ** (net.lod + net.base_lod))
 
         with torch.no_grad():
             _d = net.sdf(x[cond], net.lod, pidx[cond]) / res
@@ -82,10 +83,16 @@ class SPCTracer(BaseTracer):
                 timer.check("start iter")
                 t += d
 
-                x = torch.where(cond.view(cond.shape[0], 1), torch.addcmul(ray_o, ray_d, t), x)
-                hit = torch.where(cond, torch.abs(d)[...,0] < self.min_dis / res, hit)
-                hit |= torch.where(cond, torch.abs(d+dprev)[...,0] * 0.5 < (self.min_dis*5) / res,  hit)
-                cond = torch.where(cond, (t < self.camera_clamp[1])[...,0], cond)
+                x = torch.where(
+                    cond.view(cond.shape[0], 1), torch.addcmul(ray_o, ray_d, t), x
+                )
+                hit = torch.where(cond, torch.abs(d)[..., 0] < self.min_dis / res, hit)
+                hit |= torch.where(
+                    cond,
+                    torch.abs(d + dprev)[..., 0] * 0.5 < (self.min_dis * 5) / res,
+                    hit,
+                )
+                cond = torch.where(cond, (t < self.camera_clamp[1])[..., 0], cond)
                 cond &= ~hit
 
                 timer.check("step")
@@ -93,15 +100,27 @@ class SPCTracer(BaseTracer):
                 if not cond.any():
                     break
 
-                x = torch.where(cond.view(cond.shape[0], 1), torch.addcmul(ray_o, ray_d, t), x)
+                x = torch.where(
+                    cond.view(cond.shape[0], 1), torch.addcmul(ray_o, ray_d, t), x
+                )
                 dprev = torch.where(cond.view(cond.shape[0], 1), d, dprev)
 
-                _d, _pidx, cond = spc_render.unbatched_ray_aabb(nugs, net.points, x, ray_d, 
-                        net.lod+net.base_lod, info, info_idxes, cond)
+                _d, _pidx, cond = spc_render.unbatched_ray_aabb(
+                    nugs,
+                    net.points,
+                    x,
+                    ray_d,
+                    net.lod + net.base_lod,
+                    info,
+                    info_idxes,
+                    cond,
+                )
                 _pidx = _pidx.long()
                 pidx = torch.where(cond, _pidx, pidx)
                 t += _d
-                x = torch.where(cond.view(cond.shape[0], 1), torch.addcmul(ray_o, ray_d, t), x)
+                x = torch.where(
+                    cond.view(cond.shape[0], 1), torch.addcmul(ray_o, ray_d, t), x
+                )
                 timer.check("everything but sdf")
                 _d = net.sdf(x[cond], net.lod, pidx[cond]) / res
                 d[cond] = _d * self.step_size
@@ -111,4 +130,3 @@ class SPCTracer(BaseTracer):
         normal[hit] = F.normalize(grad, p=2, dim=-1, eps=1e-5)
 
         return RenderBuffer(x=x, depth=t, hit=hit, normal=normal)
-

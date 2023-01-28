@@ -7,13 +7,12 @@ project(solr LANGUAGES CXX CUDA)
 
 include_directories("solr/")
 add_library(
-    solr    
+    solr
 )
 
 set_property(TARGET solr PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 
 target_include_directories(
     solr PUBLIC
-    /usr/local/cuda/samples/common/inc    
+    /usr/local/cuda/samples/common/inc
 )
-

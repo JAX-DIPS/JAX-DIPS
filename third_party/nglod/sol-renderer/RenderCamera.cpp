@@ -55,12 +55,12 @@ float3 RenderCamera::mouse2vector(int mx, int my)
 
     float3 v = make_float3(xsize - (float)mx, (float)my - ysize, 0.0f);
 
-    if (xsize >= ysize) 
+    if (xsize >= ysize)
     {
         v.x = 1.1f*v.x/ysize;
         v.y = 1.1f*v.y/ysize;
     }
-    else 
+    else
     {
         v.x = 1.1f*v.x/xsize;
         v.y = 1.1f*v.y/xsize;
@@ -68,11 +68,11 @@ float3 RenderCamera::mouse2vector(int mx, int my)
 
     float tmp = v.x*v.x + v.y*v.y;
 
-    if (tmp < 1.0f) 
+    if (tmp < 1.0f)
     {
         v.z = (float)(-sqrt(1.0 - tmp));
     }
-    else 
+    else
     {
         tmp = (float)sqrt(tmp);
         v.x = v.x/tmp;

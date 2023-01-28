@@ -9,6 +9,3 @@ python app/spc/main_spc.py \
     --num-samples 5000000 --samples-per-voxel 32 \
     --exp-name armadillo-spc
 ```
-
-
-

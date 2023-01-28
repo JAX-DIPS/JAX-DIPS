@@ -24,7 +24,7 @@ from src import io
 from src import interpolate
 from src.jaxmd_modules.util import f32, i32
 from jax.experimental import host_callback
-from jax import (jit, lax, numpy as jnp, vmap)
+from jax import jit, lax, numpy as jnp, vmap
 import jax.profiler
 import jax
 from functools import partial
@@ -34,7 +34,7 @@ import sys
 import queue
 
 currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, '..'))
+rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
@@ -46,7 +46,7 @@ jax.profiler.start_trace("./tensorboard")
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # specify which GPU(s) to be used
 
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
-os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
+os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 
@@ -75,7 +75,6 @@ def test_reinitialization():
     # Create helper functions to define a periodic box of some size.
     init_mesh_fn, coord_at = mesh.construct(dim)
 
-
     # -- define velocity field as gradient of a scalar field
     @jit
     def velocity_fn(r, time_=0.0):
@@ -83,6 +82,7 @@ def test_reinitialization():
         y = r[1]
         z = r[2]
         return jnp.array([0.0, 0.0, 0.0], dtype=f32)
+
     velocity_fn = vmap(velocity_fn, (0, None))
 
     def phi_fn(r):
@@ -90,9 +90,16 @@ def test_reinitialization():
         y = r[1]
         z = r[2]
         # return lax.cond(r[0]*r[0] + r[1]*r[1] + r[2]*r[2] > 0.25, lambda p: f32(1.0), lambda p: f32(-1.0), r)
-        return jnp.where(r[0]*r[0] + r[1]*r[1] + r[2]*r[2] > 0.25, f32(1.0), f32(-1.0))
+        return jnp.where(
+            r[0] * r[0] + r[1] * r[1] + r[2] * r[2] > 0.25, f32(1.0), f32(-1.0)
+        )
 
-    init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = solver_advection.level_set(phi_fn, dt)
+    (
+        init_fn,
+        apply_fn,
+        reinitialize_fn,
+        reinitialized_advect_fn,
+    ) = solver_advection.level_set(phi_fn, dt)
 
     # get normal vector and mean curvature
     normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature)
@@ -100,6 +107,7 @@ def test_reinitialization():
     def add_null_argument(func):
         def func_(x, y):
             return func(x)
+
         return func_
 
     @partial(jit, static_argnums=0)
@@ -109,14 +117,19 @@ def test_reinitialization():
 
         normal, curve = normal_curve_fn(state.phi, gstate)
 
-        host_callback.call(state_cb_fn,
-                           ({'t': time_,
-                             'U': state.phi,
-                             'kappaM': curve,
-                             'nx': normal[:, 0],
-                             'ny': normal[:, 1],
-                             'nz': normal[:, 2]
-                             }))
+        host_callback.call(
+            state_cb_fn,
+            (
+                {
+                    "t": time_,
+                    "U": state.phi,
+                    "kappaM": curve,
+                    "nx": normal[:, 0],
+                    "ny": normal[:, 1],
+                    "nz": normal[:, 2],
+                }
+            ),
+        )
         state = reinitialize_fn(state, gstate)
         return state, gstate, dt
 
@@ -126,28 +139,37 @@ def test_reinitialization():
     R = gstate.R
     sim_state = init_fn(velocity_fn, R)
 
-    
     q = queue.Queue()
-    state_data = StateData(q, content_dir='./database_tmp', cols=['t', 'U', 'kappaM', 'nx', 'ny', 'nz'])
+    state_data = StateData(
+        q, content_dir="./database_tmp", cols=["t", "U", "kappaM", "nx", "ny", "nz"]
+    )
     state_data.start()
-    
+
     partial_step_func = partial(step_func, state_data.queue_state)
 
     t1 = time.time()
-    sim_state, gstate, dt = lax.fori_loop(i32(0), i32(simulation_steps), partial_step_func, (sim_state, gstate, dt))
+    sim_state, gstate, dt = lax.fori_loop(
+        i32(0), i32(simulation_steps), partial_step_func, (sim_state, gstate, dt)
+    )
     sim_state.phi.block_until_ready()
     t2 = time.time()
-    print(f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}")
+    print(
+        f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}"
+    )
 
     state_data.stop()
 
     jax.profiler.save_device_memory_profile("memory.prof")
     jax.profiler.stop_trace()
 
-    print(f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5")
-    print(f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0")
-    assert jnp.isclose(sim_state.phi.min(), -0.5, atol=2*dx)
-    assert jnp.isclose(sim_state.phi.max(), 3.0, atol=2*dx)
+    print(
+        f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5"
+    )
+    print(
+        f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0"
+    )
+    assert jnp.isclose(sim_state.phi.min(), -0.5, atol=2 * dx)
+    assert jnp.isclose(sim_state.phi.max(), 3.0, atol=2 * dx)
 
     # --- if you want to visualize simulation uncomment below line
     # io.write_vtk_log(gstate, state_data)

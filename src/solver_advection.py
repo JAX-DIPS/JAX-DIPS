@@ -25,7 +25,7 @@ from jax import grad, vmap, jit
 import jax.numpy as jnp
 from jax import lax, vmap
 
-from src import (interpolate, level_set as ls)
+from src import interpolate, level_set as ls
 from src.simulation_states import AdvectionSimState
 from src.jaxmd_modules import dataclasses, util
 
@@ -36,25 +36,17 @@ Array = util.Array
 i32 = util.i32
 f32 = util.f32
 
-T = TypeVar('T')
+T = TypeVar("T")
 InitFn = Callable[..., T]
-ApplyFn = Callable[[T,T], T]
-ReinitializeFn = Callable[[T,T], T]
-ReinitializedAdvectFn = Callable[[T,T], T]
+ApplyFn = Callable[[T, T], T]
+ReinitializeFn = Callable[[T, T], T]
+ReinitializedAdvectFn = Callable[[T, T], T]
 Simulator = Tuple[InitFn, ApplyFn, ReinitializeFn, ReinitializedAdvectFn]
 
 
-
-
-
-
-
-
-
-def advect_level_set(gstate: T,
-                     V_nm1: Array,
-                     velocity_fn: Callable[..., Array],
-                     time: float):
+def advect_level_set(
+    gstate: T, V_nm1: Array, velocity_fn: Callable[..., Array], time: float
+):
 
     R = gstate.R
     V_n = vmap(velocity_fn, (0, None))(R, time)
@@ -63,9 +55,7 @@ def advect_level_set(gstate: T,
     Vn_interp_fn = interpolate.vec_multilinear_interpolation(V_n, gstate)
     Vnm1_interp_fn = interpolate.vec_multilinear_interpolation(V_nm1, gstate)
 
-    def advect_one_step_at_node(point: Array,
-                                U_n: Array,
-                                dt: float) -> T:
+    def advect_one_step_at_node(point: Array, U_n: Array, dt: float) -> T:
         """Apply a single step of semi-Lagrangian integration to a state."""
         Un_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(U_n, gstate)
         dt = f32(dt)
@@ -76,38 +66,49 @@ def advect_level_set(gstate: T,
 
         # Find Departure Point
         r_star = point - dt_2 * vel_n_point
-        r_star = r_star.reshape(1,-1)
+        r_star = r_star.reshape(1, -1)
 
         vel_n_star_point = Vn_interp_fn(r_star)
         vel_nm1_star_point = Vnm1_interp_fn(r_star)
         v_mid = f32(1.5) * vel_n_star_point - f32(0.5) * vel_nm1_star_point
 
-        point_d =  point - dt * v_mid
+        point_d = point - dt * v_mid
         # substitute solution from departure point to arrival points (=grid points)
-        u_np1_point = Un_interp_fn(point_d) #.flatten()
+        u_np1_point = Un_interp_fn(point_d)  # .flatten()
         return u_np1_point.reshape()
 
-    advect_semi_lagrangian_one_step_grid_fn = jit( vmap(advect_one_step_at_node, (0, None, None) ))
+    advect_semi_lagrangian_one_step_grid_fn = jit(
+        vmap(advect_one_step_at_node, (0, None, None))
+    )
 
     grad_advect_level_set_one_step_at_node_fn = jit(grad(advect_one_step_at_node))
-    grad_semi_lagrangian_one_step_grid_fn = jit(vmap(grad_advect_level_set_one_step_at_node_fn, (0, None, None)))
-
+    grad_semi_lagrangian_one_step_grid_fn = jit(
+        vmap(grad_advect_level_set_one_step_at_node_fn, (0, None, None))
+    )
 
     def reinitialized_level_set_point_fn(point: Array, U_n: Array, dt: float) -> T:
         dtau = 0.001
 
-        #--- one semi Lagrangian step.
+        # --- one semi Lagrangian step.
         phi_np1 = advect_one_step_at_node(point, U_n, dt)
         grad_phi_np1 = grad_advect_level_set_one_step_at_node_fn(point, U_n, dt)
         sign_phi_0 = jnp.sign(phi_np1)
-        #---
+        # ---
 
-        def phi_tilde_np1_point(point: Array, U_n: Array, phi_np1: Array, sign_phi_0: float, dt: float, dtau: float):
+        def phi_tilde_np1_point(
+            point: Array,
+            U_n: Array,
+            phi_np1: Array,
+            sign_phi_0: float,
+            dt: float,
+            dtau: float,
+        ):
             # phi_np1 = advect_one_step_at_node(point, U_n, dt)
             grad_phi_np1 = grad_advect_level_set_one_step_at_node_fn(point, U_n, dt)
             norm_grad_phi_np1 = jnp.linalg.norm(grad_phi_np1)
             phi_t_np1 = phi_np1 - dtau * sign_phi_0 * (norm_grad_phi_np1 - 1.0)
             return phi_t_np1
+
         grad_phi_tilde_np1_point_fn = jit(grad(phi_tilde_np1_point))
 
         # phi_t_np1 = phi_tilde_np1_point(point, U_n, sign_phi_0, dt, dtau)
@@ -116,16 +117,17 @@ def advect_level_set(gstate: T,
 
         # phi_t_np2 = phi_t_np1 - dtau * sign_phi_0 * (norm_grad_phi_t_np1 - 1.0)
         # phi_final = 0.5 * (phi_np1 + phi_t_np2)
-        #----
+        # ----
         phi_t_np1 = phi_tilde_np1_point(point, U_n, phi_np1, sign_phi_0, dt, dtau)
-        grad_phi_t_np1 = grad_phi_tilde_np1_point_fn(point, U_n, phi_np1, sign_phi_0, dt, dtau)
+        grad_phi_t_np1 = grad_phi_tilde_np1_point_fn(
+            point, U_n, phi_np1, sign_phi_0, dt, dtau
+        )
         norm_grad_phi_t_np1 = jnp.linalg.norm(grad_phi_t_np1)
 
         phi_t_np2 = phi_t_np1 - dtau * sign_phi_0 * (norm_grad_phi_t_np1 - 1.0)
         phi_np1_ = 0.5 * (phi_np1 + phi_t_np2)
 
         return phi_np1_
-
 
     # def reinitialized_level_set_point_fn(point: Array, U_n: Array, dt: float) -> T:
     #     dtau = f32(0.5 * dt)
@@ -168,28 +170,35 @@ def advect_level_set(gstate: T,
 
     #     return phi_np1
 
-    reinitialized_level_set_grid_fn = jit(vmap(reinitialized_level_set_point_fn, (0, None, None)))
-    grad_reinitialized_level_set_grid_fn = jit(vmap(grad(reinitialized_level_set_point_fn), (0, None, None)))
+    reinitialized_level_set_grid_fn = jit(
+        vmap(reinitialized_level_set_point_fn, (0, None, None))
+    )
+    grad_reinitialized_level_set_grid_fn = jit(
+        vmap(grad(reinitialized_level_set_point_fn), (0, None, None))
+    )
 
-    return advect_semi_lagrangian_one_step_grid_fn, grad_semi_lagrangian_one_step_grid_fn, reinitialized_level_set_grid_fn, grad_reinitialized_level_set_grid_fn
+    return (
+        advect_semi_lagrangian_one_step_grid_fn,
+        grad_semi_lagrangian_one_step_grid_fn,
+        reinitialized_level_set_grid_fn,
+        grad_reinitialized_level_set_grid_fn,
+    )
 
 
-
-
-
-
-def advect_one_step(velocity_fn: Callable[..., Array],
-                    dt: float,
-                    sstate: T,
-                    gstate: T,
-                    time: float,
-                    **kwargs) -> T:
+def advect_one_step(
+    velocity_fn: Callable[..., Array],
+    dt: float,
+    sstate: T,
+    gstate: T,
+    time: float,
+    **kwargs
+) -> T:
     """Apply a single step of semi-Lagrangian integration to a state."""
 
     dt = f32(dt)
     dt_2 = f32(dt / 2.0)
 
-    R, U_n, V_nm1= gstate.R, sstate.phi, sstate.velocity_nm1
+    R, U_n, V_nm1 = gstate.R, sstate.phi, sstate.velocity_nm1
     V_n = velocity_fn(R, time)
 
     # Get interpolation functions
@@ -204,7 +213,7 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     V_n_star = Vn_interp_fn(R_star)
     V_nm1_star = Vnm1_interp_fn(R_star)
     V_mid = f32(1.5) * V_n_star - f32(0.5) * V_nm1_star
-    R_d =  R - dt * V_mid
+    R_d = R - dt * V_mid
     # substitute solution from departure point to arrival points (=grid points)
     U_np1 = Un_interp_fn(R_d).flatten()
 
@@ -215,15 +224,10 @@ def advect_one_step(velocity_fn: Callable[..., Array],
     #     return lax.cond(jnp.sign(u)==0, lambda p: p + EPS, lambda p: p + EPS * jnp.sign(p), u)
     # U_np1 = perturb(U_np1)
 
-    return dataclasses.replace(sstate,
-                               phi=U_np1,
-                               velocity_nm1=V_n)
+    return dataclasses.replace(sstate, phi=U_np1, velocity_nm1=V_n)
 
 
-
-def reinitialize_level_set(sstate: T,
-                           gstate: T,
-                           **kwargs) -> T:
+def reinitialize_level_set(sstate: T, gstate: T, **kwargs) -> T:
     """
     Sussman's reinitialization of the level set function
     to retain its signed distance nature.
@@ -242,10 +246,12 @@ def reinitialize_level_set(sstate: T,
 
     def step_phi_fn(i, sgn_phi_n):
         sgn_0, phi_n_ = sgn_phi_n
-        hg_n = interpolate.godunov_hamiltonian(phi_n_, sgn_0, gstate)              # this function pre-multiplies by proper dt, subtracts -1, multiplies by sign of phi_ijk
-        phi_t_np1 = phi_n_ - hg_n                                          # jnp.multiply(sgn_0, hg_n)
+        hg_n = interpolate.godunov_hamiltonian(
+            phi_n_, sgn_0, gstate
+        )  # this function pre-multiplies by proper dt, subtracts -1, multiplies by sign of phi_ijk
+        phi_t_np1 = phi_n_ - hg_n  # jnp.multiply(sgn_0, hg_n)
         hg_np1 = interpolate.godunov_hamiltonian(phi_t_np1, sgn_0, gstate)
-        phi_t_np2 = phi_t_np1 - hg_np1                            # jnp.multiply(sgn_0, hg_np1)
+        phi_t_np2 = phi_t_np1 - hg_np1  # jnp.multiply(sgn_0, hg_np1)
         phi_n_ = f32(0.5) * (phi_n_ + phi_t_np2)
         return sgn_0, phi_n_
 
@@ -254,13 +260,8 @@ def reinitialize_level_set(sstate: T,
     return dataclasses.replace(sstate, phi=phi_n)
 
 
-
-
-
-
 # def level_set(velocity_or_energy_fn: Callable[..., Array],
-def level_set(level_set_fn: Callable[..., Array],
-              dt: float) -> Simulator:
+def level_set(level_set_fn: Callable[..., Array], dt: float) -> Simulator:
     """
     Simulates a system.
 
@@ -285,8 +286,8 @@ def level_set(level_set_fn: Callable[..., Array],
         # V = jnp.zeros(R.shape, dtype=R.dtype)
         # U = jnp.zeros(R.shape[0], dtype=R.dtype)
         # U = U + space.square_distance(R) - f32(0.25)
-        
-        V = velocity_fn(R, 0.0) #,**kwargs)
+
+        V = velocity_fn(R, 0.0)  # ,**kwargs)
         U = phi_fn(R)
         return AdvectionSimState(U, V)
 
@@ -297,17 +298,18 @@ def level_set(level_set_fn: Callable[..., Array],
         return reinitialize_level_set(sim_state, grid_state, **kwargs)
 
     def reinitialized_advect_fn(velocity_fn, sim_state, grid_state, time, **kwargs):
-        _, _, reinitialized_fn, _ = advect_level_set(grid_state, sim_state.velocity_nm1, velocity_fn, time)
+        _, _, reinitialized_fn, _ = advect_level_set(
+            grid_state, sim_state.velocity_nm1, velocity_fn, time
+        )
+
         def wrapper(func):
             def wrapped(sim_state, grid_state, time):
                 U_np1 = func(grid_state.R, sim_state.phi, dt)
                 V_n = velocity_fn(grid_state.R, time)
                 return dataclasses.replace(sim_state, phi=U_np1, velocity_nm1=V_n)
+
             return wrapped
 
         return wrapper(reinitialized_fn)(sim_state, grid_state, time)
 
-    return init_fn, apply_fn, reinitialize_fn , reinitialized_advect_fn
-
-
-
+    return init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn

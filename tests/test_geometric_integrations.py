@@ -21,15 +21,16 @@ from jax.config import config
 from src import io, mesh, interpolate, geometric_integrations
 from src.jaxmd_modules import dataclasses, util
 from src.jaxmd_modules.util import f32, i32
-from jax import (random, numpy as jnp, vmap)
+from jax import random, numpy as jnp, vmap
 
 import os
 import sys
+
 Array = util.Array
 
 
 currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, '..'))
+rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
@@ -37,7 +38,7 @@ config.update("jax_enable_x64", True)
 
 
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
-os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
+os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 # --- Parameters of test
@@ -60,14 +61,15 @@ dx = xc[1] - xc[0]
 init_mesh_fn, coord_at = mesh.construct(dim)
 gstate = init_mesh_fn(xc, yc, zc)
 R = gstate.R
-ii = jnp.arange(2, Nx+2)
-jj = jnp.arange(2, Ny+2)
-kk = jnp.arange(2, Nz+2)
-I, J, K = jnp.meshgrid(ii, jj, kk, indexing='ij')
+ii = jnp.arange(2, Nx + 2)
+jj = jnp.arange(2, Ny + 2)
+kk = jnp.arange(2, Nz + 2)
+I, J, K = jnp.meshgrid(ii, jj, kk, indexing="ij")
 nodes = jnp.column_stack((I.reshape(-1), J.reshape(-1), K.reshape(-1)))
 
 
 # --- Data structures and functions for testing
+
 
 @dataclasses.dataclass
 class CaseClass:
@@ -78,6 +80,7 @@ class CaseClass:
     Attributes:
     solution: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
     """
+
     phi: Array
     solution: Array
     jump: Array
@@ -89,7 +92,7 @@ def lvl_set_node_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    return jnp.sqrt(x*x + y*y + z*z) - 0.5
+    return jnp.sqrt(x * x + y * y + z * z) - 0.5
 
 
 def u_node_fn(r):
@@ -127,18 +130,55 @@ test_state = CaseClass(PHI, U, ALPHA, MU_M, MU_P)
 
 
 # --- Get interpolants
-phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.phi, gstate)
-u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.solution, gstate)
-mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.mu_m, gstate)
-mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.mu_p, gstate)
-jump_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.jump, gstate)
+phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
+    test_state.phi, gstate
+)
+u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
+    test_state.solution, gstate
+)
+mu_m_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
+    test_state.mu_m, gstate
+)
+mu_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
+    test_state.mu_p, gstate
+)
+jump_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
+    test_state.jump, gstate
+)
 
 
 # --- Get functions
-get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, test_state)
-integrate_over_interface_at_node, integrate_in_negative_domain_at_node = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, u_interp_fn)
-alpha_integrate_over_interface_at_node, _ = geometric_integrations.integrate_over_gamma_and_omega_m(get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, jump_interp_fn)
-compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(gstate, get_vertices_of_cell_intersection_with_interface_at_node, is_cell_crossed_by_interface, mu_m_interp_fn, mu_p_interp_fn)
+(
+    get_vertices_of_cell_intersection_with_interface_at_node,
+    is_cell_crossed_by_interface,
+) = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(
+    gstate, test_state
+)
+(
+    integrate_over_interface_at_node,
+    integrate_in_negative_domain_at_node,
+) = geometric_integrations.integrate_over_gamma_and_omega_m(
+    get_vertices_of_cell_intersection_with_interface_at_node,
+    is_cell_crossed_by_interface,
+    u_interp_fn,
+)
+(
+    alpha_integrate_over_interface_at_node,
+    _,
+) = geometric_integrations.integrate_over_gamma_and_omega_m(
+    get_vertices_of_cell_intersection_with_interface_at_node,
+    is_cell_crossed_by_interface,
+    jump_interp_fn,
+)
+compute_face_centroids_values_plus_minus_at_node = (
+    geometric_integrations.compute_cell_faces_areas_values(
+        gstate,
+        get_vertices_of_cell_intersection_with_interface_at_node,
+        is_cell_crossed_by_interface,
+        mu_m_interp_fn,
+        mu_p_interp_fn,
+    )
+)
 
 
 # --- Measurements: PyTest will pick this up
@@ -152,15 +192,18 @@ def test_surface_area_and_volume():
     print("\n\n\n")
 
     u_dOmegas = vmap(integrate_in_negative_domain_at_node)(nodes)
-    print(f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
+    print(
+        f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}"
+    )
     print("\n\n\n")
 
     assert jnp.isclose(u_dGammas.sum(), jnp.pi, atol=0.02)
     assert jnp.isclose(u_dOmegas.sum(), 4.0 * jnp.pi * 0.5**3 / 3.0, atol=0.02)
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     test_surface_area_and_volume()
-    
+
 # log = {
 #         'U' : sim_state.solution,
 #         'phi': sim_state.phi

@@ -43,3 +43,5 @@ tstex_modules
 *.ply
 *.obj
 .vimrc
+.wget-hsts
+third_party/

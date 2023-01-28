@@ -49,22 +49,22 @@ using namespace torch::indexing;
 
 
 extern ulong GetStorageBytes(
-  void* d_temp_storage, 
-  uint* d_Info, 
-  uint* d_PrefixSum, 
+  void* d_temp_storage,
+  uint* d_Info,
+  uint* d_PrefixSum,
   uint max_total_points);
 
 extern void generate_primary_rays_cuda(
-  uint imageW, 
-  uint imageH, 
-  float4x4& nM, 
-  float3* d_org, 
+  uint imageW,
+  uint imageH,
+  float4x4& nM,
+  float3* d_org,
   float3* d_dir);
-  
+
 
 std::vector<at::Tensor>  spc_generate_primary_rays(
     torch::Tensor Eye, torch::Tensor At, torch::Tensor Up,
-    uint imageW, uint imageH, float fov, torch::Tensor World) 
+    uint imageW, uint imageH, float fov, torch::Tensor World)
 {
     uint num = imageW * imageH;
     torch::Tensor Org = torch::zeros({num, 3}, torch::device(torch::kCUDA).dtype(torch::kFloat));
@@ -82,7 +82,7 @@ std::vector<at::Tensor>  spc_generate_primary_rays(
 
     float ar = (float)imageW / (float)imageH;
     float const rad = 0.01745329f * fov;
-    float tanHalfFov = tanf(0.5f * rad);    
+    float tanHalfFov = tanf(0.5f * rad);
 
     float4x4 mPvpInv = make_float4x4(
         2.0f*ar*tanHalfFov/ imageW, 0.0f, 0.0f, 0.0f,
@@ -121,30 +121,30 @@ std::vector<at::Tensor>  spc_generate_primary_rays(
 }
 
 
-extern uint spc_raytrace_cuda( 
+extern uint spc_raytrace_cuda(
     uchar* d_octree,
     uint Level,
     uint targetLevel,
     point_data* d_points,
     uint* h_pyramid,
     uint*   d_D,
-    uint*   d_S, 
+    uint*   d_S,
     uint num,
     float3* d_Org,
     float3* d_Dir,
     uint2* d_Nuggets,
     uint*   d_Info,
-    uint*   d_PrefixSum, 
-    void* d_temp_storage, 
+    uint*   d_PrefixSum,
+    void* d_temp_storage,
     ulong temp_storage_bytes);
 
 torch::Tensor spc_raytrace(
     torch::Tensor octree,
     torch::Tensor points,
-    torch::Tensor pyramid, 
+    torch::Tensor pyramid,
     torch::Tensor Org,
     torch::Tensor Dir,
-    uint targetLevel) 
+    uint targetLevel)
 {
     CHECK_BYTE(octree);
     CHECK_PACKED_SHORT4(points);
@@ -189,8 +189,8 @@ torch::Tensor spc_raytrace(
     d_temp_storage = (void*)temp_storage.data_ptr<uchar>();
 
     // do cuda
-    num = spc_raytrace_cuda(d_octree, Level, targetLevel, d_points, h_pyramid, 
-                        d_D, d_S, num, d_org, d_dir, d_Nuggets, 
+    num = spc_raytrace_cuda(d_octree, Level, targetLevel, d_points, h_pyramid,
+                        d_D, d_S, num, d_org, d_dir, d_Nuggets,
                         d_Info, d_PrefixSum, d_temp_storage, temp_storage_bytes);
 
     uint pad = ((targetLevel+1) % 2) * MAX_TOTAL_POINTS;

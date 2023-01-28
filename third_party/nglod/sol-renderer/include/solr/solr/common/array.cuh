@@ -50,4 +50,3 @@ __device__ short3 xyz(
 }
 
 }
-

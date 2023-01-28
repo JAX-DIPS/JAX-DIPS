@@ -23,7 +23,7 @@
 
 #include <torch/torch.h>
 
-#include <iostream> 
+#include <iostream>
 
 // OpenGL Graphics includes
 #include <helper_gl.h>
@@ -48,7 +48,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include <iostream> 
+#include <iostream>
 #include <vector>
 
 #include <solr/util_timer.cuh>
@@ -57,9 +57,9 @@
 
 #ifdef VERBOSE
 #   define PROBE solr::PerfTimer probe_timer = solr::PerfTimer()
-#   define PROBE_CHECK(x) probe_timer.check(x) 
+#   define PROBE_CHECK(x) probe_timer.check(x)
 #else
-#   define PROBE 
+#   define PROBE
 #   define PROBE_CHECK(x)
 #endif
 
@@ -105,7 +105,7 @@ at::Tensor              g_tWorld;
 
 SDF                     g_SDF; // The Signed Distance Function
 
-SPC                     g_SPC; // The Structured Point Cloud 
+SPC                     g_SPC; // The Structured Point Cloud
 
 extern uint             g_Renderer;
 uint                    g_NumRenderers = 3;
@@ -127,7 +127,7 @@ extern std::vector<at::Tensor>  spc_generate_primary_rays(
 extern torch::Tensor spc_raytrace(
     torch::Tensor octree,
     torch::Tensor points,
-    torch::Tensor pyramid, 
+    torch::Tensor pyramid,
     torch::Tensor Org,
     torch::Tensor Dir,
     uint targetLevel
@@ -300,12 +300,12 @@ void mouse(int button, int state, int x, int y)
     else if (button == 3)
     {
         g_Camera.OnMouseWheel(dir);
-        g_FOV = g_Camera.GetFOV();    
+        g_FOV = g_Camera.GetFOV();
     }
     else if (button == 4)
     {
         g_Camera.OnMouseWheel(-dir);
-        g_FOV = g_Camera.GetFOV();    
+        g_FOV = g_Camera.GetFOV();
     }
 }
 
@@ -401,10 +401,9 @@ int main(int argc, char **argv)
     //// GL initialization
     initGLBuffers(g_Width, g_Height);
     CUDA_PRINT_ERROR();
- 
+
     //// start rendering mainloop
     glutMainLoop();
 
     return 0;
 }
-

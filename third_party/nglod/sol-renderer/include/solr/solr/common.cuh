@@ -26,4 +26,3 @@
 #include "common/array.cuh"
 #include "common/copy.cuh"
 #include "common/normalize.cuh"
-

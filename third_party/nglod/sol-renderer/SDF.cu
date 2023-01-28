@@ -40,15 +40,15 @@ extern inline void              cudaPrintError(const char* file, const int line)
 #   define STRINGIFY2(X) #X
 #   define STRINGIFY(X) STRINGIFY2(X)
 #   define TIMER solr::PerfTimer timer = solr::PerfTimer()
-#   define TIMER_CHECK(x) timer.check(x) 
+#   define TIMER_CHECK(x) timer.check(x)
 #   define DEBUG_PRINT(x) std::cout << STRINGIFY(x) ":" << x << std::endl
 #else
 #   define TIMER
 #   define TIMER_CHECK(x)
 #   define DEBUG_PRINT(x)
-#endif 
+#endif
 
-#define PROBE_CHECK(x) timer.check(x) 
+#define PROBE_CHECK(x) timer.check(x)
 
 namespace F = torch::nn::functional;
 namespace I = torch::indexing;
@@ -63,13 +63,13 @@ SDF::~SDF(void) {
 }
 
 void SDF::loadWeights(std::string filename) {
-    
+
     cnpy::npz_t F = cnpy::npz_load(filename);
-    
+
     auto h_opt = torch::TensorOptions().dtype(torch::kHalf);
     cnpy::NpyArray w0_npz = F["w0"];
-    long w0_shape[3] = { static_cast<long>(w0_npz.shape[0]), 
-                         static_cast<long>(w0_npz.shape[1]), 
+    long w0_shape[3] = { static_cast<long>(w0_npz.shape[0]),
+                         static_cast<long>(w0_npz.shape[1]),
                          static_cast<long>(w0_npz.shape[2]) };
     torch::Tensor _w0 = torch::from_blob(
             w0_npz.data<short>(), w0_shape, h_opt);
@@ -81,8 +81,8 @@ void SDF::loadWeights(std::string filename) {
     }
 
     cnpy::NpyArray w1_npz = F["w1"];
-    long w1_shape[3] = { static_cast<long>(w1_npz.shape[0]), 
-                         static_cast<long>(w1_npz.shape[1]), 
+    long w1_shape[3] = { static_cast<long>(w1_npz.shape[0]),
+                         static_cast<long>(w1_npz.shape[1]),
                          static_cast<long>(w1_npz.shape[2]) };
     torch::Tensor _w1 = torch::from_blob(
             w1_npz.data<short>(), w1_shape, h_opt);
@@ -94,7 +94,7 @@ void SDF::loadWeights(std::string filename) {
     }
 
     cnpy::NpyArray b0_npz = F["b0"];
-    long b0_shape[2] = { static_cast<long>(b0_npz.shape[0]), 
+    long b0_shape[2] = { static_cast<long>(b0_npz.shape[0]),
                          static_cast<long>(b0_npz.shape[1]) };
     torch::Tensor _b0 = torch::from_blob(
             b0_npz.data<short>(), b0_shape, h_opt);
@@ -106,7 +106,7 @@ void SDF::loadWeights(std::string filename) {
     }
 
     cnpy::NpyArray b1_npz = F["b1"];
-    long b1_shape[2] = { static_cast<long>(b1_npz.shape[0]), 
+    long b1_shape[2] = { static_cast<long>(b1_npz.shape[0]),
                          static_cast<long>(b1_npz.shape[1]) };
     torch::Tensor _b1 = torch::from_blob(
             b1_npz.data<short>(), b1_shape, h_opt);
@@ -119,14 +119,14 @@ void SDF::loadWeights(std::string filename) {
 
     cnpy::NpyArray cc_npz = F["cc"];
     auto b_opt = torch::TensorOptions().dtype(torch::kByte);
-    long cc_shape[2] = { static_cast<long>(cc_npz.shape[0]), 
+    long cc_shape[2] = { static_cast<long>(cc_npz.shape[0]),
                          static_cast<long>(cc_npz.shape[1]) };
     cc = torch::from_blob(cc_npz.data<char>(), cc_shape, b_opt);
     cc = cc.to(torch::kInt);
     cc = cc.to(torch::kCUDA);
 
     cnpy::NpyArray cf_npz = F["cf"];
-    long cf_shape[2] = { static_cast<long>(cf_npz.shape[0]), 
+    long cf_shape[2] = { static_cast<long>(cf_npz.shape[0]),
                          static_cast<long>(cf_npz.shape[1]) };
     cf = torch::from_blob(cf_npz.data<char>(), cf_shape, h_opt);
     cf = cf.to(torch::kFloat);
@@ -140,7 +140,7 @@ void SDF::loadWeights(std::string filename) {
 
 void SDF::initTrinkets(uint num_pts, uint num_levels, uint* pyramid, ushort4* points) {
     m_points = points;
-        
+
     cudaMalloc<solr::Trinket>(&trinkets, num_pts * sizeof(solr::Trinket));
     size_t sz = (num_levels+1) * sizeof(uint);
     cudaMallocManaged((void **)&m_pyramid, sz);
@@ -163,7 +163,7 @@ void SDF::initTrinkets(uint num_pts, uint num_levels, uint* pyramid, ushort4* po
         uint offset = 0;
         uint parent_offset = 0;
         int parent_i = std::max(i-1, 2);
-        
+
         for (int j=0; j<parent_i; j++) {
             parent_offset = m_pyramid[j];
         }
@@ -171,7 +171,7 @@ void SDF::initTrinkets(uint num_pts, uint num_levels, uint* pyramid, ushort4* po
         for (int j=0; j<i; j++) {
             offset = m_pyramid[j];
         }
-        
+
 #       ifdef VERBOSE
         printf("offset on cf level %d            : %d\n", i-2, offset_cf);
         printf("# elem in cf level %d            : %d\n", i-2, pyramid_cf_cpu[i-2]);
@@ -181,15 +181,15 @@ void SDF::initTrinkets(uint num_pts, uint num_levels, uint* pyramid, ushort4* po
         printf("# elem in nuggets level %d       : %d\n", i, pyramid[i]);
         printf("\n");
 #       endif
-        
+
         const int threads = 1024;
         const int blocks = (pyramid[i] + threads - 1) / threads;
         // generalize this to multiple levels
         solr::index_trinket_kernel<<<blocks, threads>>>(
-            points, 
-            cc.data_ptr<int>(), 
-            cf.data_ptr<float>(), 
-            trinkets, 
+            points,
+            cc.data_ptr<int>(),
+            cf.data_ptr<float>(),
+            trinkets,
             pyramid_cf_cpu[i-2],
             offset_cf,
             pyramid[i],
@@ -197,16 +197,16 @@ void SDF::initTrinkets(uint num_pts, uint num_levels, uint* pyramid, ushort4* po
             pyramid[parent_i],
             parent_offset,
             i);
-        
+
         offset_cf += pyramid_cf_cpu[i-2];
-        
+
 #       ifdef DEBUG
             const int _tnum = 50;
             solr::Trinket* hosttrinkets = new solr::Trinket[_tnum];
             cudaMemcpy(hosttrinkets, trinkets+offset, _tnum*sizeof(solr::Trinket), cudaMemcpyDeviceToHost);
             for (int i=0; i<_tnum; ++i) {
                 solr::Trinket _t = hosttrinkets[i];
-                printf("%d: %d %d %d %d %d %d %d %d %d\n", 
+                printf("%d: %d %d %d %d %d %d %d %d %d\n",
                         i+offset, _t.v[0], _t.v[1], _t.v[2], _t.v[3],
                                   _t.v[4], _t.v[5], _t.v[6], _t.v[7], _t.parent);
             }
@@ -220,21 +220,21 @@ torch::Tensor SDF::getNormal(
     const torch::Tensor & pidx,
     const torch::Tensor & hit,
     const int lod) {
-    
+
     int nr = x.size(0);
     int nf = cf.size(0);
     int nl = w0.size();
     int fdim = cf.size(1);
-    
+
     torch::Tensor active_x  = x.index({ hit });
     torch::Tensor active_pidx  = pidx.index({ hit });
-    
+
     torch::Tensor active_idxes = torch::nonzero(hit).to(torch::kInt);
     int active_n = active_idxes.size(0);
-    
+
     const int threads = 128;
     const int blocks = (active_n + threads - 1) / threads;
-    
+
     auto f_opt = torch::TensorOptions().dtype(torch::kF32).device(x.device());
     torch::Tensor normal = torch::ones({ nr, 3 }, f_opt);
 
@@ -284,14 +284,14 @@ torch::Tensor SDF::getNormal(
         auto d = d_fwd - d_bck;
         normal.index_put_({ hit, i }, d.index({ I::Slice(), 0 }));
     }
-    
+
     solr::normalize_kernel<<<blocks, threads>>>(
-            active_idxes.data_ptr<int>(), 
-            normal.data_ptr<float>(), 
+            active_idxes.data_ptr<int>(),
+            normal.data_ptr<float>(),
             active_n);
 
     return normal;
-    
+
 }
 
 std::vector<torch::Tensor> SDF::sphereTrace(
@@ -304,7 +304,7 @@ std::vector<torch::Tensor> SDF::sphereTrace(
 {
     TIMER;
 
-    // Convert to solr::Nuggets 
+    // Convert to solr::Nuggets
     solr::Nugget* nuggets_ptr = reinterpret_cast<solr::Nugget*>(nuggets.contiguous().data_ptr<int>());
     int nn = nuggets.size(0);
 
@@ -317,9 +317,9 @@ std::vector<torch::Tensor> SDF::sphereTrace(
     int nr = ray_o.size(0); // # rays
     int nf = cf.size(0);    // # feats
     int nl = w0.size();     // # lods
-    
+
     int fdim = cf.size(1);  // feat dim
-    
+
     auto f_opt = torch::TensorOptions().dtype(torch::kF32).device(ray_o.device());
     torch::Tensor x = ray_o.clone();
     torch::Tensor t = torch::zeros({ nr, 1 }, f_opt);
@@ -329,7 +329,7 @@ std::vector<torch::Tensor> SDF::sphereTrace(
     torch::Tensor ray_inv = 1.0 / ray_d;
 
     auto i_opt = torch::TensorOptions().dtype(torch::kInt32).device(ray_o.device());
-    
+
     // Tensor to store the hit-point index of each ray
     torch::Tensor pidx = torch::zeros({ nr, 1 }, i_opt) - 1;
 
@@ -337,12 +337,12 @@ std::vector<torch::Tensor> SDF::sphereTrace(
     torch::Tensor info_idxes = torch::nonzero(info).index({I::Slice(), 0}).to(torch::kInt);
 
     // # ray-nugget hits
-    int n_iidx = info_idxes.size(0); 
+    int n_iidx = info_idxes.size(0);
 
     // Voxel size
     int voxel_res = pow(2, lod+2);
     float voxel_radius = (1.0 / voxel_res);
-    
+
     // cond is the active rays
     // hit is the rays that have hit a surface
     auto b_opt = torch::TensorOptions().dtype(torch::kBool).device(ray_o.device());
@@ -370,24 +370,24 @@ std::vector<torch::Tensor> SDF::sphereTrace(
         nn,
         n_iidx);
     TIMER_CHECK(" trace ");
-    
+
     // # of voxel centers
     //int nvc = vc[lod].size(0);
 
     //return {x, t, cond, normal}; // uncomment to return voxels
-    
+
     TIMER_CHECK(" post  ");
 
     CUDA_PRINT_ERROR();
-    
+
     for (int i=0; i<MARCH_ITER; ++i) {
-        
+
         // probably write a cuda kernel here... first a sum kernel, allocate, then populate?
         torch::Tensor active_idxes = torch::nonzero(cond).index({I::Slice(), 0}).to(torch::kInt);
         int n_active = active_idxes.size(0); // # active
-        
+
         TIMER_CHECK("  get sizes");
-        
+
         if (n_active == 0) {
             DEBUG_PRINT(i);
             break;
@@ -420,7 +420,7 @@ std::vector<torch::Tensor> SDF::sphereTrace(
         auto xsw0 = torch::relu(torch::addmm(b0[lod], xs, w0[lod]));
         auto _d =  torch::addmm(b1[lod], xsw0, w1[lod]);
         TIMER_CHECK("  d        ");
-        
+
         int _step_threads = 128;
         int _step_blocks = (n_active + _step_threads - 1) / _step_threads;
         solr::step_kernel<<<_step_blocks, _step_threads>>>(
@@ -436,7 +436,7 @@ std::vector<torch::Tensor> SDF::sphereTrace(
             hit.data_ptr<bool>(),
             n_active);
         TIMER_CHECK("  step     ");
-    
+
         CUDA_PRINT_ERROR();
 
         const int _sample_threads = 128;
@@ -458,7 +458,7 @@ std::vector<torch::Tensor> SDF::sphereTrace(
             pidx.data_ptr<int>(),
             nn,
             n_iidx);
-        
+
         TIMER_CHECK("  sample   ");
         CUDA_PRINT_ERROR();
     }
@@ -470,4 +470,3 @@ std::vector<torch::Tensor> SDF::sphereTrace(
 
     return {x, t, hit, normal};
 }
-

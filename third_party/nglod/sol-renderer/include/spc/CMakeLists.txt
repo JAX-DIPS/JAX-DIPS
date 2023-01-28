@@ -16,7 +16,7 @@ add_library(
     spc/SPC.cu
     spc/spc_math.h
     spc/spc_raytrace_cuda.cpp
-    spc/spc_raytrace_cuda_kernel.cu    
+    spc/spc_raytrace_cuda_kernel.cu
 )
 
 set_property(TARGET spc PROPERTY CUDA_SEPARABLE_COMPILATION ON)
@@ -28,7 +28,7 @@ target_include_directories(
 
 target_include_directories(
     spc SYSTEM PUBLIC
-    /usr/local/cuda/samples/common/inc  
+    /usr/local/cuda/samples/common/inc
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
     ${TORCH_INCLUDE_DIRS}
     ${CNPY_INCLUDE_DIRS}
@@ -38,4 +38,3 @@ target_link_libraries(
     spc
     cnpy
 )
-

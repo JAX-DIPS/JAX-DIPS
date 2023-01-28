@@ -3,7 +3,6 @@ jax[cuda11_cudnn82] -f https://storage.googleapis.com/jax-releases/jax_cuda_rele
 dm-haiku
 optax
 jaxopt
-# torch --extra-index-url https://download.pytorch.org/whl/cu114
 cython==0.29.20
 pillow
 pandas
@@ -14,9 +13,7 @@ gdown
 usd-core
 warp-lang
 
-
 pyexr
-# git+https://github.com/tinyobjloader/tinyobjloader.git#subdirectory=python
 trimesh>=3.0
 scipy
 scikit-image
@@ -26,3 +23,11 @@ opencv-python
 plyfile
 polyscope
 mesh2sdf
+
+black
+flake8
+pre-commit
+
+biopython==1.79
+biopandas==0.4.1
+rdkit-pypi==2022.3.5

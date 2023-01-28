@@ -8,6 +8,7 @@ from jax.config import config
 from src.jaxmd_modules import quantity, space, util
 from src.jaxmd_modules import energy, partition
 from src.jaxmd_modules.quantity import EnergyFn
+
 config.update("jax_enable_x64", True)
 from src.jaxmd_modules.util import f32, i32
 from src import compositions
@@ -21,13 +22,13 @@ import numpy as onp
 from functools import partial
 
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
-os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
+os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 
 # Use JAX's random number generator to generate random initial positions.
 key = random.PRNGKey(0)
-#key, split = random.split(key)
+# key, split = random.split(key)
 
 dim = i32(3)
 xmin = ymin = zmin = f32(-2.0)
@@ -41,9 +42,7 @@ dimension = i32(3)
 tf = f32(2 * jnp.pi / 30.0)
 
 
-
-
-#--------- Grid nodes
+# --------- Grid nodes
 xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
 yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
 zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
@@ -53,18 +52,18 @@ dx = xc[1] - xc[0]
 dt = dx * f32(0.8)
 simulation_steps = i32(tf / dt)
 
-#---------------
+# ---------------
 # Create helper functions to define a periodic box of some size.
 
 
 init_mesh_fn, coord_at = mesh.construct(dim)
 gstate = init_mesh_fn(xc, yc, zc)
 R = gstate.R
-sample_pnt = coord_at(gstate, [1,1,1])
+sample_pnt = coord_at(gstate, [1, 1, 1])
 
 displacement_fn, shift_fn = space.periodic(box_size)
 
-#-- define velocity field as gradient of a scalar field
+# -- define velocity field as gradient of a scalar field
 # def energy_fn(r):
 #     x = r[0]; y = r[1]; z = r[2]
 #     engy =  0.5 * space.square_distance(r)
@@ -72,19 +71,30 @@ displacement_fn, shift_fn = space.periodic(box_size)
 # velocity_fn = grad(jit(energy_fn))
 @jit
 def velocity_fn(r, time=0.0):
-    x = r[0]; y = r[1]; z = r[2]
+    x = r[0]
+    y = r[1]
+    z = r[2]
     # return lax.cond(time < 0.5, lambda p : jnp.array([-p[1], p[0], 0.0], dtype=f32), lambda p : jnp.array([p[1], -p[0], 0.0], dtype=f32), (x,y,z))
     # return lax.cond(time < 0.5, lambda p : jnp.array([1.0, 1.0, 0.0], dtype=f32), lambda p : jnp.array([-1.0, -1.0, 0.0], dtype=f32), (x,y,z))
-    return jnp.array([-y, x, 0.0*z], dtype=f32)
+    return jnp.array([-y, x, 0.0 * z], dtype=f32)
     # return jnp.array([0.0*x, 0.0*y, 0.0*z], dtype=f32)
 
+
 def phi_fn(r):
-    x = r[0]; y = r[1]; z = r[2]
-    return jnp.sqrt(x**2 + (y-1.0)**2 + z**2) - 0.5
+    x = r[0]
+    y = r[1]
+    z = r[2]
+    return jnp.sqrt(x**2 + (y - 1.0) ** 2 + z**2) - 0.5
 
     # return x**2 + (y-1.0)**2 + z**2 - 0.25
 
-init_fn, apply_fn, reinitialize_fn, reinitialized_advect_fn = solver_advection.level_set(phi_fn, shift_fn, dt)
+
+(
+    init_fn,
+    apply_fn,
+    reinitialize_fn,
+    reinitialized_advect_fn,
+) = solver_advection.level_set(phi_fn, shift_fn, dt)
 sim_state = init_fn(R)
 
 grad_fn = jax.vmap(jax.grad(phi_fn))
@@ -134,7 +144,7 @@ curvature_phi_np2 =  curve_phi_np2_fn(gstate.R)
 """
 
 
-#---
+# ---
 # time = 0
 # advect_phi_fn, grad_advect_phi_fn, reinitialized_fn, grad_reinitialized_fn = simulate_fields.advect_level_set(gstate, sim_state.velocity_nm1, velocity_fn, time)
 
@@ -155,17 +165,16 @@ curvature_phi_np2 =  curve_phi_np2_fn(gstate.R)
 # print(f"2-norm error was {err1} and is now {err2}")
 # print(f"infinity-norm error was {abs(norm_grad_phi_np1 - 1.0).max()} and is now {abs(norm_grad_out - 1.0).max()}" )
 
-#---
+# ---
 # phi_0 = vmap(phi_fn)(gstate.R)
 # g_phi_0 = vmap(grad(phi_fn))(gstate.R)
 
 
-
 log = {
-        'U' : jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
-        # 'V' : jnp.zeros((simulation_steps,) + sim_state.velocity_nm1.shape, dtype=f32),
-        't' : jnp.zeros((simulation_steps,), dtype=f32)
-      }
+    "U": jnp.zeros((simulation_steps,) + sim_state.solution.shape, dtype=f32),
+    # 'V' : jnp.zeros((simulation_steps,) + sim_state.velocity_nm1.shape, dtype=f32),
+    "t": jnp.zeros((simulation_steps,), dtype=f32),
+}
 
 # log = {
 #     'U' : jnp.zeros((2,) + sim_state.solution.shape, dtype=f32),
@@ -175,13 +184,14 @@ log = {
 # log['U'] = log['U'].at[0].set(sim_state.solution)
 # log['t'] = log['t'].at[0].set(0.0)
 
+
 @jit
 def step_func(i, state_and_nbrs):
     state, log, dt = state_and_nbrs
 
     time_ = i * dt
-    log['t'] = log['t'].at[i].set(time_)
-    log['U'] = log['U'].at[i].set(state.solution)
+    log["t"] = log["t"].at[i].set(time_)
+    log["U"] = log["U"].at[i].set(state.solution)
 
     # vel = state.velocity_nm1
     # log['V'] = ops.index_update(log['V'], i, vel)
@@ -193,8 +203,11 @@ def step_func(i, state_and_nbrs):
 
 
 import time
+
 t1 = time.time()
-sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log, dt))
+sim_state, log, dt = lax.fori_loop(
+    i32(0), i32(simulation_steps), step_func, (sim_state, log, dt)
+)
 sim_state.solution.block_until_ready()
 t2 = time.time()
 print(f"time per timestep is {(t2 - t1)/simulation_steps}")
@@ -209,8 +222,7 @@ jax.profiler.save_device_memory_profile("memory.prof")
 io.write_vtk_solution(gstate, log)
 
 
-
-#--- TEST INTERPOLATION
+# --- TEST INTERPOLATION
 # u1 = log['U'][0]
 # interp_fn = interpolate.multilinear_interpolation(u1, gstate)
 # u2 = interp_fn(R).flatten().reshape(gstate.shape())

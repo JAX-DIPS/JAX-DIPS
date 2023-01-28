@@ -34,9 +34,8 @@ typedef struct
 {
     uint v[8];
     int parent;
-} Trinket; 
+} Trinket;
 
 typedef uint2   Nugget;
 
 }
-

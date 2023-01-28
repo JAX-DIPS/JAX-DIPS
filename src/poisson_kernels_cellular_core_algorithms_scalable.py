@@ -22,18 +22,20 @@ import os
 import pickle
 import signal
 import jax
-from jax import (numpy as jnp, vmap, pmap, jit, grad, random, value_and_grad, config)
+from jax import numpy as jnp, vmap, pmap, jit, grad, random, value_and_grad, config
+
 config.update("jax_debug_nans", False)
 import optax
 import haiku as hk
 
-from src import (data_management, interpolate, geometric_integrations_per_point)
+from src import data_management, interpolate, geometric_integrations_per_point
 from src.jaxmd_modules.util import f32, i32
 from src.nn_solution_model import DoubleMLP
 from src.utils import print_architecture
 
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as onp
 
@@ -48,7 +50,7 @@ def signalHandler(signal_num, frame):
     global stop_training
     stop_training = True
     print("Signal:", signal_num, " Frame: ", frame)
-    print('Training will stop after the completion of current epoch')
+    print("Training will stop after the completion of current epoch")
 
 
 signal.signal(signal.SIGINT, signalHandler)
@@ -56,12 +58,15 @@ signal.signal(signal.SIGINT, signalHandler)
 
 class PDETrainer:
     """
-        This is a completely local point-based Poisson solver.
+    This is a completely local point-based Poisson solver.
     """
-    def __init__(self, gstate, sim_state, sim_state_fn, optimizer, algorithm=0, precondition=1):
+
+    def __init__(
+        self, gstate, sim_state, sim_state_fn, optimizer, algorithm=0, precondition=1
+    ):
         """
-            algorithm = 0: use regression to evaluate u^\pm
-            algorithm = 1: use neural network to evaluate u^\pm
+        algorithm = 0: use regression to evaluate u^\pm
+        algorithm = 1: use neural network to evaluate u^\pm
         """
         self.optimizer = optimizer
         self.gstate = gstate
@@ -71,9 +76,12 @@ class PDETrainer:
 
         """ Grid Info """
         # self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
-        self.xmin = gstate.xmin(); self.xmax = gstate.xmax()
-        self.ymin = gstate.ymin(); self.ymax = gstate.ymax()
-        self.zmin = gstate.zmin(); self.zmax = gstate.zmax()
+        self.xmin = gstate.xmin()
+        self.xmax = gstate.xmax()
+        self.ymin = gstate.ymin()
+        self.ymax = gstate.ymax()
+        self.zmin = gstate.zmin()
+        self.zmax = gstate.zmax()
 
         """ functions for the method """
         self.dir_bc_fn = self.sim_state_fn.dir_bc_fn
@@ -86,9 +94,15 @@ class PDETrainer:
         self.alpha_interp_fn = self.sim_state_fn.alpha_fn
         self.beta_interp_fn = self.sim_state_fn.beta_fn
 
-        self.mu_m_over_mu_p_interp_fn = lambda r: self.mu_m_interp_fn(r) / self.mu_p_interp_fn(r)
-        self.beta_over_mu_m_interp_fn = lambda r: self.beta_interp_fn(r) / self.mu_m_interp_fn(r)
-        self.beta_over_mu_p_interp_fn = lambda r: self.beta_interp_fn(r) / self.mu_p_interp_fn(r)
+        self.mu_m_over_mu_p_interp_fn = lambda r: self.mu_m_interp_fn(
+            r
+        ) / self.mu_p_interp_fn(r)
+        self.beta_over_mu_m_interp_fn = lambda r: self.beta_interp_fn(
+            r
+        ) / self.mu_m_interp_fn(r)
+        self.beta_over_mu_p_interp_fn = lambda r: self.beta_interp_fn(
+            r
+        ) / self.mu_p_interp_fn(r)
 
         """ The level set function or its interpolant (if is free boundary) """
         # self.phi_cube_ = sim_state.phi.reshape(self.grid_shape)
@@ -99,9 +113,28 @@ class PDETrainer:
         self.phi_interp_fn = self.sim_state_fn.phi_fn
 
         """ Geometric operations per point """
-        self.get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(self.phi_interp_fn)
-        self.beta_integrate_over_interface_at_point, self.beta_integrate_in_negative_domain = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(self.get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.beta_interp_fn)
-        self.compute_face_centroids_values_plus_minus_at_point = geometric_integrations_per_point.compute_cell_faces_areas_values(self.get_vertices_of_cell_intersection_with_interface_at_point, self.is_cell_crossed_by_interface, self.mu_m_interp_fn, self.mu_p_interp_fn)
+        (
+            self.get_vertices_of_cell_intersection_with_interface_at_point,
+            self.is_cell_crossed_by_interface,
+        ) = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(
+            self.phi_interp_fn
+        )
+        (
+            self.beta_integrate_over_interface_at_point,
+            self.beta_integrate_in_negative_domain,
+        ) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
+            self.get_vertices_of_cell_intersection_with_interface_at_point,
+            self.is_cell_crossed_by_interface,
+            self.beta_interp_fn,
+        )
+        self.compute_face_centroids_values_plus_minus_at_point = (
+            geometric_integrations_per_point.compute_cell_faces_areas_values(
+                self.get_vertices_of_cell_intersection_with_interface_at_point,
+                self.is_cell_crossed_by_interface,
+                self.mu_m_interp_fn,
+                self.mu_p_interp_fn,
+            )
+        )
 
         # self.ngbs = jnp.array([ [-1, -1, -1],
         #                         [0, -1, -1],
@@ -132,106 +165,117 @@ class PDETrainer:
         #                         [1,  1,  1]], dtype=i32)
 
         """ initialize configurated solver """
-        if self.algorithm==0:
+        if self.algorithm == 0:
             self.u_mp_fn = self.get_u_mp_by_regression_at_point_fn
 
-        elif self.algorithm==1:
+        elif self.algorithm == 1:
             self.initialize_neural_based_algorithm()
-            self.u_mp_fn = NotImplemented #self.get_u_mp_by_neural_network_at_node_fn
+            self.u_mp_fn = NotImplemented  # self.get_u_mp_by_neural_network_at_node_fn
 
-        self.compute_normal_gradient_solution_mp_on_interface = self.compute_normal_gradient_solution_mp_on_interface_neural_network
-        self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
-        self.compute_normal_gradient_solution_on_interface = self.compute_normal_gradient_solution_on_interface_neural_network
+        self.compute_normal_gradient_solution_mp_on_interface = (
+            self.compute_normal_gradient_solution_mp_on_interface_neural_network
+        )
+        self.compute_gradient_solution_mp = (
+            self.compute_gradient_solution_mp_neural_network
+        )
+        self.compute_normal_gradient_solution_on_interface = (
+            self.compute_normal_gradient_solution_on_interface_neural_network
+        )
         self.compute_gradient_solution = self.compute_gradient_solution_neural_network
 
-        if precondition==1:
+        if precondition == 1:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
-        elif precondition==0:
+        elif precondition == 0:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
 
     def fetch_checkpoint(self, checkpoint_dir):
         if checkpoint_dir is None or not os.path.exists(checkpoint_dir):
             return None
         else:
-            checkpoints = [p for p in os.listdir(checkpoint_dir) if 'checkpoint_' in p]
-            if checkpoints==[]: return None
+            checkpoints = [p for p in os.listdir(checkpoint_dir) if "checkpoint_" in p]
+            if checkpoints == []:
+                return None
             checkpoint = os.path.join(checkpoint_dir, max(checkpoints))
-            print(f'Loading checkpoint {checkpoint}')
-            with open(checkpoint, 'rb') as f:
+            print(f"Loading checkpoint {checkpoint}")
+            with open(checkpoint, "rb") as f:
                 state = pickle.load(f)
             return state
 
     def save_checkpoint(self, checkpoint_dir, state):
         if checkpoint_dir is None:
-            print('No checkpoint dir. specified. Skipping checkpoint.')
+            print("No checkpoint dir. specified. Skipping checkpoint.")
             return
 
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
-        checkpoint = os.path.join(checkpoint_dir,
-                                  'checkpoint_' + str(state['epoch']))
-        print(f'Saving checkpoint {checkpoint}')
-        with open(checkpoint, 'wb') as f:
+        checkpoint = os.path.join(checkpoint_dir, "checkpoint_" + str(state["epoch"]))
+        print(f"Saving checkpoint {checkpoint}")
+        with open(checkpoint, "wb") as f:
             pickle.dump(state, f)
         return checkpoint
 
     def get_Xijk(self, cell_dx, cell_dy, cell_dz):
-        Xijk = jnp.array([  [-cell_dx, -cell_dy, -cell_dz],
-                            [     0.0, -cell_dy, -cell_dz],
-                            [ cell_dx, -cell_dy, -cell_dz],
-                            [-cell_dx,      0.0, -cell_dz],
-                            [     0.0,      0.0, -cell_dz],
-                            [ cell_dx,      0.0, -cell_dz],
-                            [-cell_dx,  cell_dy, -cell_dz],
-                            [     0.0,  cell_dy, -cell_dz],
-                            [ cell_dx,  cell_dy, -cell_dz],
-                            [-cell_dx, -cell_dy,      0.0],
-                            [     0.0, -cell_dy,      0.0],
-                            [ cell_dx, -cell_dy,      0.0],
-                            [-cell_dx,      0.0,      0.0],
-                            [     0.0,      0.0,      0.0],
-                            [ cell_dx,      0.0,      0.0],
-                            [-cell_dx,  cell_dy,      0.0],
-                            [     0.0,  cell_dy,      0.0],
-                            [ cell_dx,  cell_dy,      0.0],
-                            [-cell_dx, -cell_dy,  cell_dz],
-                            [     0.0, -cell_dy,  cell_dz],
-                            [ cell_dx, -cell_dy,  cell_dz],
-                            [-cell_dx,      0.0,  cell_dz],
-                            [     0.0,      0.0,  cell_dz],
-                            [ cell_dx,      0.0,  cell_dz],
-                            [-cell_dx,  cell_dy,  cell_dz],
-                            [     0.0,  cell_dy,  cell_dz],
-                            [ cell_dx,  cell_dy,  cell_dz]], dtype=f32)
+        Xijk = jnp.array(
+            [
+                [-cell_dx, -cell_dy, -cell_dz],
+                [0.0, -cell_dy, -cell_dz],
+                [cell_dx, -cell_dy, -cell_dz],
+                [-cell_dx, 0.0, -cell_dz],
+                [0.0, 0.0, -cell_dz],
+                [cell_dx, 0.0, -cell_dz],
+                [-cell_dx, cell_dy, -cell_dz],
+                [0.0, cell_dy, -cell_dz],
+                [cell_dx, cell_dy, -cell_dz],
+                [-cell_dx, -cell_dy, 0.0],
+                [0.0, -cell_dy, 0.0],
+                [cell_dx, -cell_dy, 0.0],
+                [-cell_dx, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [cell_dx, 0.0, 0.0],
+                [-cell_dx, cell_dy, 0.0],
+                [0.0, cell_dy, 0.0],
+                [cell_dx, cell_dy, 0.0],
+                [-cell_dx, -cell_dy, cell_dz],
+                [0.0, -cell_dy, cell_dz],
+                [cell_dx, -cell_dy, cell_dz],
+                [-cell_dx, 0.0, cell_dz],
+                [0.0, 0.0, cell_dz],
+                [cell_dx, 0.0, cell_dz],
+                [-cell_dx, cell_dy, cell_dz],
+                [0.0, cell_dy, cell_dz],
+                [cell_dx, cell_dy, cell_dz],
+            ],
+            dtype=f32,
+        )
         return Xijk
-
-
 
     def normal_point_fn(self, point, dx, dy, dz):
         """
-            Evaluate normal vector at a given point based on interpolated values
-            of the level set function at the face-centers of a 3D cell centered at the
-            point with each side length given by dx, dy, dz.
+        Evaluate normal vector at a given point based on interpolated values
+        of the level set function at the face-centers of a 3D cell centered at the
+        point with each side length given by dx, dy, dz.
         """
         point_ip1_j_k = jnp.array([[point[0] + dx, point[1], point[2]]])
         point_im1_j_k = jnp.array([[point[0] - dx, point[1], point[2]]])
-        phi_x = (self.phi_interp_fn(point_ip1_j_k) - self.phi_interp_fn(point_im1_j_k) ) / (2 * dx)
+        phi_x = (
+            self.phi_interp_fn(point_ip1_j_k) - self.phi_interp_fn(point_im1_j_k)
+        ) / (2 * dx)
 
         point_i_jp1_k = jnp.array([[point[0], point[1] + dy, point[2]]])
         point_i_jm1_k = jnp.array([[point[0], point[1] - dy, point[2]]])
-        phi_y = (self.phi_interp_fn(point_i_jp1_k) - self.phi_interp_fn(point_i_jm1_k) ) / (2 * dy)
+        phi_y = (
+            self.phi_interp_fn(point_i_jp1_k) - self.phi_interp_fn(point_i_jm1_k)
+        ) / (2 * dy)
 
         point_i_j_kp1 = jnp.array([[point[0], point[1], point[2] + dz]])
         point_i_j_km1 = jnp.array([[point[0], point[1], point[2] - dz]])
-        phi_z = (self.phi_interp_fn(point_i_j_kp1) - self.phi_interp_fn(point_i_j_km1) ) / (2 * dz)
+        phi_z = (
+            self.phi_interp_fn(point_i_j_kp1) - self.phi_interp_fn(point_i_j_km1)
+        ) / (2 * dz)
 
         norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
         return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm], dtype=f32)
-
-
-
-
 
     def initialize_neural_based_algorithm(self):
         def sign_p_fn(a):
@@ -247,16 +291,14 @@ class PDETrainer:
         self.mask_region_m = sign_m_fn(self.phi_flat)
         self.mask_region_p = sign_p_fn(self.phi_flat)
 
-        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat**2 - self.bandwidth_squared)
-        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat**2 - self.bandwidth_squared)
-
-
-
-
-
+        self.mask_interface_bandwidth = sign_m_fn(
+            self.phi_flat**2 - self.bandwidth_squared
+        )
+        self.mask_non_interface_bandwidth = sign_p_fn(
+            self.phi_flat**2 - self.bandwidth_squared
+        )
 
     def get_regression_coeffs_at_point(self, point, dx, dy, dz):
-
         def sign_p_fn(a):
             # returns 1 only if a>0, otherwise is 0
             sgn = jnp.sign(a)
@@ -280,17 +322,28 @@ class PDETrainer:
         D_m_mat = jnp.nan_to_num(Dm)
         D_p_mat = jnp.nan_to_num(Dp)
 
-
         normal_vec = self.normal_point_fn(point, dx, dy, dz).T
         phi_point = self.phi_interp_fn(point[jnp.newaxis])
 
         Cm_ijk_pqm = normal_vec @ D_m_mat
         Cp_ijk_pqm = normal_vec @ D_p_mat
 
-        zeta_p_ijk_pqm = ((self.mu_p_interp_fn(point[jnp.newaxis]) - self.mu_m_interp_fn(point[jnp.newaxis])) / self.mu_m_interp_fn(point[jnp.newaxis])) * phi_point
-        zeta_p_ijk_pqm = zeta_p_ijk_pqm[...,jnp.newaxis] * Cp_ijk_pqm
-        zeta_m_ijk_pqm = ((self.mu_p_interp_fn(point[jnp.newaxis]) - self.mu_m_interp_fn(point[jnp.newaxis])) / self.mu_p_interp_fn(point[jnp.newaxis])) * phi_point
-        zeta_m_ijk_pqm = zeta_m_ijk_pqm[...,jnp.newaxis] * Cm_ijk_pqm
+        zeta_p_ijk_pqm = (
+            (
+                self.mu_p_interp_fn(point[jnp.newaxis])
+                - self.mu_m_interp_fn(point[jnp.newaxis])
+            )
+            / self.mu_m_interp_fn(point[jnp.newaxis])
+        ) * phi_point
+        zeta_p_ijk_pqm = zeta_p_ijk_pqm[..., jnp.newaxis] * Cp_ijk_pqm
+        zeta_m_ijk_pqm = (
+            (
+                self.mu_p_interp_fn(point[jnp.newaxis])
+                - self.mu_m_interp_fn(point[jnp.newaxis])
+            )
+            / self.mu_p_interp_fn(point[jnp.newaxis])
+        ) * phi_point
+        zeta_m_ijk_pqm = zeta_m_ijk_pqm[..., jnp.newaxis] * Cm_ijk_pqm
         zeta_p_ijk = (zeta_p_ijk_pqm.sum(axis=1) - zeta_p_ijk_pqm[:, 13]) * f32(-1.0)
         zeta_m_ijk = (zeta_m_ijk_pqm.sum(axis=1) - zeta_m_ijk_pqm[:, 13]) * f32(-1.0)
 
@@ -299,15 +352,17 @@ class PDETrainer:
         gamma_p_ijk = (gamma_p_ijk_pqm.sum(axis=1) - gamma_p_ijk_pqm[:, 13]) * f32(-1.0)
         gamma_m_ijk = (gamma_m_ijk_pqm.sum(axis=1) - gamma_m_ijk_pqm[:, 13]) * f32(-1.0)
 
-        return normal_vec, gamma_m_ijk, gamma_m_ijk_pqm, gamma_p_ijk, gamma_p_ijk_pqm, \
-                           zeta_m_ijk , zeta_m_ijk_pqm , zeta_p_ijk , zeta_p_ijk_pqm
-
-
-
-
-
-
-
+        return (
+            normal_vec,
+            gamma_m_ijk,
+            gamma_m_ijk_pqm,
+            gamma_p_ijk,
+            gamma_p_ijk_pqm,
+            zeta_m_ijk,
+            zeta_m_ijk_pqm,
+            zeta_p_ijk,
+            zeta_p_ijk_pqm,
+        )
 
     @staticmethod
     @hk.transform
@@ -324,8 +379,6 @@ class PDETrainer:
         model = DoubleMLP()
         return model(x, phi_x)
 
-
-
     @partial(jit, static_argnums=0)
     def init(self, seed=42):
         rng = random.PRNGKey(seed)
@@ -333,68 +386,59 @@ class PDETrainer:
         opt_state = self.optimizer.init(params)
         return opt_state, params
 
-
-
-
-
-
-
     @partial(jit, static_argnums=(0))
     def evaluate_solution_fn(self, params, R_flat):
         phi_flat = self.phi_interp_fn(R_flat)
-        sol_fn =  partial(self.forward.apply, params, None)
-        pred_sol = vmap(sol_fn, (0,0))(R_flat, phi_flat)
+        sol_fn = partial(self.forward.apply, params, None)
+        pred_sol = vmap(sol_fn, (0, 0))(R_flat, phi_flat)
         return pred_sol
 
     def solution_at_point_fn(self, params, r_point, phi_point):
-        sol_fn =  partial(self.forward.apply, params, None)
+        sol_fn = partial(self.forward.apply, params, None)
         return sol_fn(r_point, phi_point).reshape()
-
 
     def get_sol_grad_sol_fn(self, params):
         u_at_point_fn = partial(self.solution_at_point_fn, params)
         grad_u_at_point_fn = grad(u_at_point_fn)
         return u_at_point_fn, grad_u_at_point_fn
 
-
     def get_mask_plus(self, points):
-        '''
-            For a set of points, returns 1 if in external region
-            returns 0 if inside the geometry.
-        '''
+        """
+        For a set of points, returns 1 if in external region
+        returns 0 if inside the geometry.
+        """
         phi_points = self.phi_interp_fn(points)
+
         def sign_p_fn(a):
             # returns 1 only if a>0, otherwise is 0
             sgn = jnp.sign(a)
             return jnp.floor(0.5 * sgn + 0.75)
+
         mask_p = sign_p_fn(phi_points)
         return mask_p
-
 
     @partial(jit, static_argnums=(0))
     def loss(self, params, points, dx, dy, dz):
         """
-            Loss function of the neural network
+        Loss function of the neural network
         """
-        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)
+        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(
+            params, points, dx, dy, dz
+        )
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
-        
+
         # du_xmax = (self.evaluate_solution_fn(params, self.gstate.R_xmax_boundary) - self.dir_bc_fn(self.gstate.R_xmax_boundary)[...,jnp.newaxis])
         # du_xmin = (self.evaluate_solution_fn(params, self.gstate.R_xmin_boundary) - self.dir_bc_fn(self.gstate.R_xmin_boundary)[...,jnp.newaxis])
-        
+
         # du_ymax = (self.evaluate_solution_fn(params, self.gstate.R_ymax_boundary) - self.dir_bc_fn(self.gstate.R_ymax_boundary)[...,jnp.newaxis])
         # du_ymin = (self.evaluate_solution_fn(params, self.gstate.R_ymin_boundary) - self.dir_bc_fn(self.gstate.R_ymin_boundary)[...,jnp.newaxis])
-        
+
         # du_zmax = (self.evaluate_solution_fn(params, self.gstate.R_zmax_boundary) - self.dir_bc_fn(self.gstate.R_zmax_boundary)[...,jnp.newaxis])
         # du_zmin = (self.evaluate_solution_fn(params, self.gstate.R_zmin_boundary) - self.dir_bc_fn(self.gstate.R_zmin_boundary)[...,jnp.newaxis])
-        
-        # tot_loss += 0.01 * (jnp.mean(jnp.square(du_xmax)) + jnp.mean(jnp.square(du_xmin)) + jnp.mean(jnp.square(du_ymax)) + jnp.mean(jnp.square(du_ymin)) + jnp.mean(jnp.square(du_zmax)) + jnp.mean(jnp.square(du_zmin))) 
+
+        # tot_loss += 0.01 * (jnp.mean(jnp.square(du_xmax)) + jnp.mean(jnp.square(du_xmin)) + jnp.mean(jnp.square(du_ymax)) + jnp.mean(jnp.square(du_ymin)) + jnp.mean(jnp.square(du_zmax)) + jnp.mean(jnp.square(du_zmin)))
         return tot_loss
-
-
-
-
 
     @partial(jit, static_argnums=(0))
     def update(self, opt_state, params, points, dx, dy, dz):
@@ -403,21 +447,16 @@ class PDETrainer:
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
 
-
-
     @partial(jit, static_argnums=(0))
     def update_multi_gpu(self, opt_state, params, points, dx, dy, dz):
         loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
         """ Muli-GPU """
-        grads = jax.lax.pmean(grads, axis_name='num_devices')
-        loss = jax.lax.pmean(loss, axis_name='num_devices')
+        grads = jax.lax.pmean(grads, axis_name="num_devices")
+        loss = jax.lax.pmean(loss, axis_name="num_devices")
 
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
         return opt_state, params, loss
-
-
-
 
     @partial(jit, static_argnums=(0))
     def compute_Ax_and_b_preconditioned_fn(self, params, point, dx, dy, dz):
@@ -438,7 +477,6 @@ class PDETrainer:
 
         """
 
-
         u_mp_at_point = partial(self.u_mp_fn, params, dx, dy, dz)
 
         def is_box_boundary_point(point):
@@ -446,23 +484,28 @@ class PDETrainer:
             Check if current node is on the boundary of box
             """
             x, y, z = point
-            boundary  = jnp.where(abs(x-self.xmin)<1e-6*dx, 0, 1) * jnp.where(abs(x-self.xmax)<1e-6*dx, 0, 1)
-            boundary *= jnp.where(abs(y-self.ymin)<1e-6*dy, 0, 1) * jnp.where(abs(y-self.ymax)<1e-6*dy, 0, 1)
-            boundary *= jnp.where(abs(z-self.zmin)<1e-6*dz, 0, 1) * jnp.where(abs(z-self.zmax)<1e-6*dz, 0, 1)
-            return jnp.where(boundary==0, True, False)
-
-
+            boundary = jnp.where(abs(x - self.xmin) < 1e-6 * dx, 0, 1) * jnp.where(
+                abs(x - self.xmax) < 1e-6 * dx, 0, 1
+            )
+            boundary *= jnp.where(abs(y - self.ymin) < 1e-6 * dy, 0, 1) * jnp.where(
+                abs(y - self.ymax) < 1e-6 * dy, 0, 1
+            )
+            boundary *= jnp.where(abs(z - self.zmin) < 1e-6 * dz, 0, 1) * jnp.where(
+                abs(z - self.zmax) < 1e-6 * dz, 0, 1
+            )
+            return jnp.where(boundary == 0, True, False)
 
         def evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz):
-            #--- LHS
-            coeffs_ = self.compute_face_centroids_values_plus_minus_at_point(point, dx, dy, dz)
+            # --- LHS
+            coeffs_ = self.compute_face_centroids_values_plus_minus_at_point(
+                point, dx, dy, dz
+            )
             coeffs = coeffs_[:12]
 
             vols = coeffs_[12:14]
             V_m_ijk = vols[0]
             V_p_ijk = vols[1]
             Vol_cell_nominal = dx * dy * dz
-
 
             def get_lhs_at_interior_point(point):
                 point_ijk = point
@@ -476,7 +519,7 @@ class PDETrainer:
                 k_m_ijk = self.k_m_interp_fn(point[jnp.newaxis])
                 k_p_ijk = self.k_p_interp_fn(point[jnp.newaxis])
 
-                u_m_ijk , u_p_ijk  = u_mp_at_point(point_ijk)
+                u_m_ijk, u_p_ijk = u_mp_at_point(point_ijk)
                 u_m_imjk, u_p_imjk = u_mp_at_point(point_imjk)
                 u_m_ipjk, u_p_ipjk = u_mp_at_point(point_ipjk)
                 u_m_ijmk, u_p_ijmk = u_mp_at_point(point_ijmk)
@@ -484,20 +527,51 @@ class PDETrainer:
                 u_m_ijkm, u_p_ijkm = u_mp_at_point(point_ijkm)
                 u_m_ijkp, u_p_ijkp = u_mp_at_point(point_ijkp)
 
-                lhs  = k_m_ijk * V_m_ijk * u_m_ijk
+                lhs = k_m_ijk * V_m_ijk * u_m_ijk
                 lhs += k_p_ijk * V_p_ijk * u_p_ijk
-                lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) * u_m_ijk + \
-                       (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]) * u_p_ijk
-                lhs += -1.0 * coeffs[0 ] * u_m_imjk - coeffs[1 ] * u_p_imjk
-                lhs += -1.0 * coeffs[2 ] * u_m_ipjk - coeffs[3 ] * u_p_ipjk
-                lhs += -1.0 * coeffs[4 ] * u_m_ijmk - coeffs[5 ] * u_p_ijmk
-                lhs += -1.0 * coeffs[6 ] * u_m_ijpk - coeffs[7 ] * u_p_ijpk
-                lhs += -1.0 * coeffs[8 ] * u_m_ijkm - coeffs[9 ] * u_p_ijkm
+                lhs += (
+                    coeffs[0]
+                    + coeffs[2]
+                    + coeffs[4]
+                    + coeffs[6]
+                    + coeffs[8]
+                    + coeffs[10]
+                ) * u_m_ijk + (
+                    coeffs[1]
+                    + coeffs[3]
+                    + coeffs[5]
+                    + coeffs[7]
+                    + coeffs[9]
+                    + coeffs[11]
+                ) * u_p_ijk
+                lhs += -1.0 * coeffs[0] * u_m_imjk - coeffs[1] * u_p_imjk
+                lhs += -1.0 * coeffs[2] * u_m_ipjk - coeffs[3] * u_p_ipjk
+                lhs += -1.0 * coeffs[4] * u_m_ijmk - coeffs[5] * u_p_ijmk
+                lhs += -1.0 * coeffs[6] * u_m_ijpk - coeffs[7] * u_p_ijpk
+                lhs += -1.0 * coeffs[8] * u_m_ijkm - coeffs[9] * u_p_ijkm
                 lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
 
-                diag_coeff = k_p_ijk * V_p_ijk + k_m_ijk * V_m_ijk + (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) + (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11])
+                diag_coeff = (
+                    k_p_ijk * V_p_ijk
+                    + k_m_ijk * V_m_ijk
+                    + (
+                        coeffs[0]
+                        + coeffs[2]
+                        + coeffs[4]
+                        + coeffs[6]
+                        + coeffs[8]
+                        + coeffs[10]
+                    )
+                    + (
+                        coeffs[1]
+                        + coeffs[3]
+                        + coeffs[5]
+                        + coeffs[7]
+                        + coeffs[9]
+                        + coeffs[11]
+                    )
+                )
                 return jnp.array([lhs.reshape(), diag_coeff.reshape()])
-
 
             def get_lhs_on_box_boundary(point):
                 phi_boundary = self.phi_interp_fn(point[jnp.newaxis])
@@ -505,33 +579,36 @@ class PDETrainer:
                 lhs = u_boundary * Vol_cell_nominal
                 return jnp.array([lhs, Vol_cell_nominal])
 
-
-
-            lhs_diagcoeff = jnp.where(is_box_boundary_point(point), get_lhs_on_box_boundary(point), get_lhs_at_interior_point(point))
+            lhs_diagcoeff = jnp.where(
+                is_box_boundary_point(point),
+                get_lhs_on_box_boundary(point),
+                get_lhs_at_interior_point(point),
+            )
             lhs, diagcoeff = jnp.split(lhs_diagcoeff, [1], 0)
 
-            #--- RHS
+            # --- RHS
             def get_rhs_at_interior_point(point):
-                rhs = self.f_m_interp_fn(point[jnp.newaxis]) * V_m_ijk  + self.f_p_interp_fn(point[jnp.newaxis]) * V_p_ijk
+                rhs = (
+                    self.f_m_interp_fn(point[jnp.newaxis]) * V_m_ijk
+                    + self.f_p_interp_fn(point[jnp.newaxis]) * V_p_ijk
+                )
                 rhs += self.beta_integrate_over_interface_at_point(point, dx, dy, dz)
                 return rhs
 
             def get_rhs_on_box_boundary(point):
                 return self.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
 
-            rhs = jnp.where(is_box_boundary_point(point), get_rhs_on_box_boundary(point), get_rhs_at_interior_point(point))
+            rhs = jnp.where(
+                is_box_boundary_point(point),
+                get_rhs_on_box_boundary(point),
+                get_rhs_at_interior_point(point),
+            )
             lhs_over_diag = jnp.nan_to_num(lhs / diagcoeff)
             rhs_over_diag = jnp.nan_to_num(rhs / diagcoeff)
             return jnp.array([lhs_over_diag, rhs_over_diag])
 
         lhs_rhs = evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz)
         return lhs_rhs
-
-
-
-
-
-
 
     @partial(jit, static_argnums=(0))
     def get_u_mp_by_regression_at_point_fn(self, params, dx, dy, dz, point):
@@ -552,11 +629,25 @@ class PDETrainer:
         curr_vertices = jnp.add(point, Xijk)
         u_cube_ijk = self.evaluate_solution_fn(params, curr_vertices)
 
-        normal_ijk, gamma_m_ijk, gamma_m_ijk_pqm, gamma_p_ijk, gamma_p_ijk_pqm, zeta_m_ijk , zeta_m_ijk_pqm , zeta_p_ijk , zeta_p_ijk_pqm = self.get_regression_coeffs_at_point(point, dx, dy, dz)
-
+        (
+            normal_ijk,
+            gamma_m_ijk,
+            gamma_m_ijk_pqm,
+            gamma_p_ijk,
+            gamma_p_ijk_pqm,
+            zeta_m_ijk,
+            zeta_m_ijk_pqm,
+            zeta_p_ijk,
+            zeta_p_ijk_pqm,
+        ) = self.get_regression_coeffs_at_point(point, dx, dy, dz)
 
         def bulk_point(is_interface_, u_ijk_):
-            return jnp.array([jnp.where(is_interface_ == -1, u_ijk_, 0.0), jnp.where(is_interface_ == 1, u_ijk_, 0.0)])
+            return jnp.array(
+                [
+                    jnp.where(is_interface_ == -1, u_ijk_, 0.0),
+                    jnp.where(is_interface_ == 1, u_ijk_, 0.0),
+                ]
+            )
 
         def interface_point(point):
             def mu_minus_bigger_fn(point):
@@ -564,18 +655,31 @@ class PDETrainer:
                     r_m_proj = r_ijk[jnp.newaxis] - delta_ijk * normal_ijk
                     u_m = -1.0 * jnp.dot(gamma_m_ijk_pqm, u_cube_ijk)
                     u_m += (1.0 - gamma_m_ijk + gamma_m_ijk_pqm[:, 13]) * u_ijk
-                    u_m += -1.0 * (1.0 - gamma_m_ijk) * (self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_over_mu_p_interp_fn(r_m_proj))
+                    u_m += (
+                        -1.0
+                        * (1.0 - gamma_m_ijk)
+                        * (
+                            self.alpha_interp_fn(r_m_proj)
+                            + delta_ijk * self.beta_over_mu_p_interp_fn(r_m_proj)
+                        )
+                    )
                     return u_m.reshape()
 
                 def extrapolate_u_p_from_positive_domain(r_ijk):
                     r_p_proj = r_ijk[jnp.newaxis] - delta_ijk * normal_ijk[0]
                     u_p = -1.0 * jnp.dot(zeta_m_ijk_pqm, u_cube_ijk)
                     u_p += (1.0 - zeta_m_ijk + zeta_m_ijk_pqm[:, 13]) * u_ijk
-                    u_p += self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_over_mu_p_interp_fn(r_p_proj)
+                    u_p += self.alpha_interp_fn(
+                        r_p_proj
+                    ) + delta_ijk * self.beta_over_mu_p_interp_fn(r_p_proj)
                     return u_p.reshape()
 
-                u_m = jnp.where(delta_ijk > 0, extrapolate_u_m_from_negative_domain(point), u_ijk)[0]
-                u_p = jnp.where(delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain(point))[0]
+                u_m = jnp.where(
+                    delta_ijk > 0, extrapolate_u_m_from_negative_domain(point), u_ijk
+                )[0]
+                u_p = jnp.where(
+                    delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain(point)
+                )[0]
                 return jnp.array([u_m, u_p])
 
             def mu_plus_bigger_fn(point):
@@ -583,32 +687,43 @@ class PDETrainer:
                     r_m_proj = r_ijk[jnp.newaxis] - delta_ijk * normal_ijk
                     u_m = -1.0 * jnp.dot(zeta_p_ijk_pqm, u_cube_ijk)
                     u_m += (1.0 - zeta_p_ijk + zeta_p_ijk_pqm[:, 13]) * u_ijk
-                    u_m += (-1.0)*(self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_over_mu_m_interp_fn(r_m_proj) )
+                    u_m += (-1.0) * (
+                        self.alpha_interp_fn(r_m_proj)
+                        + delta_ijk * self.beta_over_mu_m_interp_fn(r_m_proj)
+                    )
                     return u_m.reshape()
 
                 def extrapolate_u_p_from_positive_domain_(r_ijk):
                     r_p_proj = r_ijk[jnp.newaxis] - delta_ijk * normal_ijk
                     u_p = -1.0 * jnp.dot(gamma_p_ijk_pqm, u_cube_ijk)
                     u_p += (1.0 - gamma_p_ijk + gamma_p_ijk_pqm[:, 13]) * u_ijk
-                    u_p += (1.0 - gamma_p_ijk) * (self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_over_mu_m_interp_fn(r_p_proj))
+                    u_p += (1.0 - gamma_p_ijk) * (
+                        self.alpha_interp_fn(r_p_proj)
+                        + delta_ijk * self.beta_over_mu_m_interp_fn(r_p_proj)
+                    )
                     return u_p.reshape()
 
-                u_m = jnp.where(delta_ijk > 0, extrapolate_u_m_from_negative_domain_(point), u_ijk)[0]
-                u_p = jnp.where(delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain_(point))[0]
+                u_m = jnp.where(
+                    delta_ijk > 0, extrapolate_u_m_from_negative_domain_(point), u_ijk
+                )[0]
+                u_p = jnp.where(
+                    delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain_(point)
+                )[0]
                 return jnp.array([u_m, u_p])
 
             mu_m_ijk = self.mu_m_interp_fn(point[jnp.newaxis])
             mu_p_ijk = self.mu_p_interp_fn(point[jnp.newaxis])
-            return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(point), mu_plus_bigger_fn(point))
-
+            return jnp.where(
+                mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(point), mu_plus_bigger_fn(point)
+            )
 
         # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
         is_interface = self.is_cell_crossed_by_interface(point, dx, dy, dz)
         # is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
-        u_mp = jnp.where(is_interface == 0, interface_point(point), bulk_point(is_interface, u_ijk))
+        u_mp = jnp.where(
+            is_interface == 0, interface_point(point), bulk_point(is_interface, u_ijk)
+        )
         return u_mp
-
-
 
     """
     @partial(jit, static_argnums=(0))
@@ -690,75 +805,92 @@ class PDETrainer:
         return u_mp
     """
 
-    def compute_normal_gradient_solution_mp_on_interface_neural_network(self, params, points, dx, dy, dz):
+    def compute_normal_gradient_solution_mp_on_interface_neural_network(
+        self, params, points, dx, dy, dz
+    ):
         _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
-        grad_u_p = vmap(grad_u_at_point_fn, (0, None))(points,  1)
+        grad_u_p = vmap(grad_u_at_point_fn, (0, None))(points, 1)
         grad_u_m = vmap(grad_u_at_point_fn, (0, None))(points, -1)
-        normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(points, dx, dy, dz)
-        grad_n_u_m = vmap(jnp.dot, (0,0))(jnp.squeeze(normal_vecs), grad_u_m)
-        grad_n_u_p = vmap(jnp.dot, (0,0))(jnp.squeeze(normal_vecs), grad_u_p)
+        normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(
+            points, dx, dy, dz
+        )
+        grad_n_u_m = vmap(jnp.dot, (0, 0))(jnp.squeeze(normal_vecs), grad_u_m)
+        grad_n_u_p = vmap(jnp.dot, (0, 0))(jnp.squeeze(normal_vecs), grad_u_p)
         return grad_n_u_m, grad_n_u_p
 
     def compute_gradient_solution_mp_neural_network(self, params, points):
         _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
-        grad_u_p = vmap(grad_u_at_point_fn, (0, None))(points,  1)
+        grad_u_p = vmap(grad_u_at_point_fn, (0, None))(points, 1)
         grad_u_m = vmap(grad_u_at_point_fn, (0, None))(points, -1)
         return grad_u_m, grad_u_p
-    
-    
-    def compute_normal_gradient_solution_on_interface_neural_network(self, params, points, dx, dy, dz):
+
+    def compute_normal_gradient_solution_on_interface_neural_network(
+        self, params, points, dx, dy, dz
+    ):
         phi_flat = self.phi_interp_fn(points)
         _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
-        grad_u = vmap(grad_u_at_point_fn, (0, 0))(points,  phi_flat)
-        normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(points, dx, dy, dz)
-        grad_n_u = vmap(jnp.dot, (0,0))(jnp.squeeze(normal_vecs), grad_u)
+        grad_u = vmap(grad_u_at_point_fn, (0, 0))(points, phi_flat)
+        normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(
+            points, dx, dy, dz
+        )
+        grad_n_u = vmap(jnp.dot, (0, 0))(jnp.squeeze(normal_vecs), grad_u)
         return grad_n_u
 
     def compute_gradient_solution_neural_network(self, params, points):
         phi_flat = self.phi_interp_fn(points)
         _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
-        grad_u = vmap(grad_u_at_point_fn, (0, 0))(points,  phi_flat)
+        grad_u = vmap(grad_u_at_point_fn, (0, 0))(points, phi_flat)
         return grad_u
 
 
-
-def poisson_solver(gstate,
-                   eval_gstate,
-                   sim_state,
-                   sim_state_fn,
-                   algorithm=0,
-                   switching_interval=3,
-                   Nx_tr=32,
-                   Ny_tr=32,
-                   Nz_tr=32,
-                   num_epochs=1000,
-                   multi_gpu=False,
-                   batch_size=131072,
-                   checkpoint_dir="./checkpoints",
-                   checkpoint_interval=2, 
-                   currDir="./"):
+def poisson_solver(
+    gstate,
+    eval_gstate,
+    sim_state,
+    sim_state_fn,
+    algorithm=0,
+    switching_interval=3,
+    Nx_tr=32,
+    Ny_tr=32,
+    Nz_tr=32,
+    num_epochs=1000,
+    multi_gpu=False,
+    batch_size=131072,
+    checkpoint_dir="./checkpoints",
+    checkpoint_interval=2,
+    currDir="./",
+):
     global stop_training
-    #--- Defining Optimizer
+    # --- Defining Optimizer
     learning_rate = 1e-2
     decay_rate_ = 0.975
     scheduler = optax.exponential_decay(
-        init_value=learning_rate,
-        transition_steps=100,
-        decay_rate=decay_rate_)
-    optimizer = optax.chain(
-                            optax.clip_by_global_norm(1.0),
-                            optax.scale_by_adam(),
-                            optax.scale_by_schedule(scheduler),
-                            optax.scale(-1.0)
+        init_value=learning_rate, transition_steps=100, decay_rate=decay_rate_
     )
-    #--------
+    optimizer = optax.chain(
+        optax.clip_by_global_norm(1.0),
+        optax.scale_by_adam(),
+        optax.scale_by_schedule(scheduler),
+        optax.scale(-1.0),
+    )
+    # --------
     # optimizer = optax.adam(learning_rate)
-    #--------
+    # --------
     # optimizer = optax.rmsprop(learning_rate)
-    #---------------------
+    # ---------------------
     """ Training Parameters """
 
-    TD = data_management.TrainData(gstate.xmin(), gstate.xmax(), gstate.ymin(), gstate.ymax(), gstate.zmin(), gstate.zmax(), Nx_tr, Ny_tr, Nz_tr)
+    TD = data_management.TrainData(
+        gstate.xmin(),
+        gstate.xmax(),
+        gstate.ymin(),
+        gstate.ymax(),
+        gstate.zmin(),
+        gstate.zmax(),
+        Nx_tr,
+        Ny_tr,
+        Nz_tr,
+    )
     train_points = TD.gstate.R
     train_dx = TD.gstate.dx
     train_dy = TD.gstate.dy
@@ -768,31 +900,40 @@ def poisson_solver(gstate,
     state = trainer.fetch_checkpoint(checkpoint_dir)
     epoch_start = 0
     if state is None:
-        opt_state, params = trainer.init(); print_architecture(params)
+        opt_state, params = trainer.init()
+        print_architecture(params)
     else:
-        opt_state = state['opt_state']
-        params = state['params']
-        epoch_start = state['epoch']
-        batch_size = state['batch_size']
-        resolution = state['resolution']
-        print(f'Resuming training from epoch {epoch_start} with batch_size {batch_size}, resolution {resolution}.')
+        opt_state = state["opt_state"]
+        params = state["params"]
+        epoch_start = state["epoch"]
+        batch_size = state["batch_size"]
+        resolution = state["resolution"]
+        print(
+            f"Resuming training from epoch {epoch_start} with batch_size {batch_size}, resolution {resolution}."
+        )
 
     loss_epochs = []
     epoch_store = []
 
     if multi_gpu:
-        """ Multi-GPU Training """
+        """Multi-GPU Training"""
         n_devices = jax.local_device_count()
         train_dx = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dx)
         train_dy = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dy)
         train_dz = jax.tree_map(lambda x: jnp.array([x] * n_devices), train_dz)
         params = jax.tree_map(lambda x: jnp.array([x] * n_devices), params)
         opt_state = jax.tree_map(lambda x: jnp.array([x] * n_devices), opt_state)
-        DD = data_management.DatasetDict(batch_size=n_devices*batch_size, x_data=train_points, num_gpus=n_devices)
+        DD = data_management.DatasetDict(
+            batch_size=n_devices * batch_size, x_data=train_points, num_gpus=n_devices
+        )
         batched_training_data = DD.get_batched_data()
-        update_fn = pmap(trainer.update_multi_gpu, in_axes=(0, 0, 0, 0, 0, 0), axis_name='num_devices')
+        update_fn = pmap(
+            trainer.update_multi_gpu,
+            in_axes=(0, 0, 0, 0, 0, 0),
+            axis_name="num_devices",
+        )
     else:
-        """ Single GPU """
+        """Single GPU"""
         DD = data_management.DatasetDict(batch_size=batch_size, x_data=train_points)
         batched_training_data = DD.get_batched_data()
         update_fn = trainer.update
@@ -802,7 +943,9 @@ def poisson_solver(gstate,
 
     def learn_one_batch(carry, data_batch):
         opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
-        opt_state, params, loss_epoch_ = update_fn(opt_state, params, data_batch, train_dx, train_dy, train_dz)
+        opt_state, params, loss_epoch_ = update_fn(
+            opt_state, params, data_batch, train_dx, train_dy, train_dz
+        )
         loss_epoch += loss_epoch_
         return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
 
@@ -812,54 +955,74 @@ def poisson_solver(gstate,
             break
 
         if multi_gpu:
-            loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0 )
+            loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0)
             batched_training_data = random.shuffle(key, batched_training_data, axis=2)
             for i in range(num_batches):
-                opt_state, params, loss_epoch_ = update_fn(opt_state, params, batched_training_data[:,i,...], train_dx, train_dy, train_dz)
+                opt_state, params, loss_epoch_ = update_fn(
+                    opt_state,
+                    params,
+                    batched_training_data[:, i, ...],
+                    train_dx,
+                    train_dy,
+                    train_dz,
+                )
                 loss_epoch += loss_epoch_
         else:
             loss_epoch = 0.0
-            train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+            train_dx, train_dy, train_dz = TD.alternate_res(
+                epoch, train_dx, train_dy, train_dz
+            )
             batched_training_data = random.shuffle(key, batched_training_data, axis=1)
-            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), _ = jax.lax.scan(learn_one_batch, (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data)
+            (
+                opt_state,
+                params,
+                loss_epoch,
+                train_dx,
+                train_dy,
+                train_dz,
+            ), _ = jax.lax.scan(
+                learn_one_batch,
+                (opt_state, params, loss_epoch, train_dx, train_dy, train_dz),
+                batched_training_data,
+            )
 
         loss_epoch /= num_batches
-        print(f"Epoch # {epoch} loss is {jnp.mean(loss_epoch)}. Exit training: {stop_training}")  # mean is to support multi-gpu as well.
+        print(
+            f"Epoch # {epoch} loss is {jnp.mean(loss_epoch)}. Exit training: {stop_training}"
+        )  # mean is to support multi-gpu as well.
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
 
         if (epoch + 1) % checkpoint_interval == 0:
             state = {
-                'opt_state': opt_state,
-                'params': params,
-                'epoch': epoch + 1,
-                'batch_size': batch_size,
-                'resolution': f'{Nx_tr}, {Ny_tr}, {Nz_tr}'
+                "opt_state": opt_state,
+                "params": params,
+                "epoch": epoch + 1,
+                "batch_size": batch_size,
+                "resolution": f"{Nx_tr}, {Ny_tr}, {Nz_tr}",
             }
             trainer.save_checkpoint(checkpoint_dir, state)
 
     if multi_gpu:
         params = jax.device_get(jax.tree_map(lambda x: x[0], params))
 
-    #for epoch in range(num_epochs):
-        # #train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-        # #train_points = TD.move_train_points(train_points, train_dx, train_dy, train_dz)
-        # ds_iter = DD(train_points)
+    # for epoch in range(num_epochs):
+    # #train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+    # #train_points = TD.move_train_points(train_points, train_dx, train_dy, train_dz)
+    # ds_iter = DD(train_points)
 
-        # for x in ds_iter:
-        #    if multi_gpu: x = jax.tree_map(split, x)
-        #    opt_state, params, loss_epoch = update_fn(opt_state, params, x, train_dx, train_dy, train_dz)
+    # for x in ds_iter:
+    #    if multi_gpu: x = jax.tree_map(split, x)
+    #    opt_state, params, loss_epoch = update_fn(opt_state, params, x, train_dx, train_dy, train_dz)
 
-        # print(f"epoch # {epoch} loss is {loss_epoch}")
-        # loss_epochs.append(loss_epoch)
-        # epoch_store.append(epoch)
+    # print(f"epoch # {epoch} loss is {loss_epoch}")
+    # loss_epochs.append(loss_epoch)
+    # epoch_store.append(epoch)
 
     epoch_store = onp.array(epoch_store)
     loss_epochs = onp.array(loss_epochs)
 
-
-
-    #----- HALF JITTED
+    # ----- HALF JITTED
     # BATCH_SIZE_A6000 = 100000
     # NUMDATA = len(eval_gstate.R)
     # num_batches = jnp.ceil(NUMDATA // BATCH_SIZE_A6000)
@@ -878,8 +1041,6 @@ def poisson_solver(gstate,
     #     epoch_store.append(epoch)
     #     print(f"epoch # {epoch} loss is {loss_epoch}")
 
-
-
     # def learn_whole(carry, epoch):
     #     opt_state, params, loss_epochs = carry
     #     opt_state, params, loss_epoch = trainer.update(opt_state, params, eval_gstate)
@@ -889,13 +1050,10 @@ def poisson_solver(gstate,
     # epoch_store = jnp.arange(num_epochs)
     # (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
 
-
     end_time = time.time()
     print(f"solve took {end_time - start_time} (sec)")
 
-
-
-    fig, ax = plt.subplots(figsize=(8,8))
+    fig, ax = plt.subplots(figsize=(8, 8))
 
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 ==0], loss_epochs[epoch_store%switching_interval - 1 ==0], color='k', label='whole domain')
     # plt.plot(epoch_store[epoch_store%switching_interval - 1 <0], loss_epochs[epoch_store%switching_interval - 1 <0], color='b', label='negative domain')
@@ -905,33 +1063,58 @@ def poisson_solver(gstate,
     # plt.plot(epoch_store[-1*( epoch_store%switching_interval) <0], loss_epochs[-1*(epoch_store%switching_interval) <0], color='b', label='negative domain')
 
     if TD.alt_res:
-        ax.plot(epoch_store[epoch_store%4==0], loss_epochs[epoch_store%4==0], color='k', label=r'$\rm level=\ $'+str(TD.base_level    ))
-        ax.plot(epoch_store[epoch_store%4==1], loss_epochs[epoch_store%4==1], color='b', label=r'$\rm level=\ $'+str(TD.base_level + 1))
-        ax.plot(epoch_store[epoch_store%4==2], loss_epochs[epoch_store%4==2], color='r', label=r'$\rm level=\ $'+str(TD.base_level + 2))
-        ax.plot(epoch_store[epoch_store%4==3], loss_epochs[epoch_store%4==3], color='g', label=r'$\rm level=\ $'+str(TD.base_level + 3))
+        ax.plot(
+            epoch_store[epoch_store % 4 == 0],
+            loss_epochs[epoch_store % 4 == 0],
+            color="k",
+            label=r"$\rm level=\ $" + str(TD.base_level),
+        )
+        ax.plot(
+            epoch_store[epoch_store % 4 == 1],
+            loss_epochs[epoch_store % 4 == 1],
+            color="b",
+            label=r"$\rm level=\ $" + str(TD.base_level + 1),
+        )
+        ax.plot(
+            epoch_store[epoch_store % 4 == 2],
+            loss_epochs[epoch_store % 4 == 2],
+            color="r",
+            label=r"$\rm level=\ $" + str(TD.base_level + 2),
+        )
+        ax.plot(
+            epoch_store[epoch_store % 4 == 3],
+            loss_epochs[epoch_store % 4 == 3],
+            color="g",
+            label=r"$\rm level=\ $" + str(TD.base_level + 3),
+        )
 
     else:
-        ax.plot(epoch_store, loss_epochs, color='k', label=r'$\rm level\ =\ $'+str(TD.base_level    ))
+        ax.plot(
+            epoch_store,
+            loss_epochs,
+            color="k",
+            label=r"$\rm level\ =\ $" + str(TD.base_level),
+        )
 
-    ax.set_yscale('log')
-    ax.set_xlabel(r'$\rm epoch$', fontsize=20)
-    ax.set_ylabel(r'$\rm loss$', fontsize=20)
+    ax.set_yscale("log")
+    ax.set_xlabel(r"$\rm epoch$", fontsize=20)
+    ax.set_ylabel(r"$\rm loss$", fontsize=20)
     plt.legend(fontsize=20)
-    ax.tick_params(axis='both', which='major', labelsize=20)
-    ax.tick_params(axis='both', which='minor', labelsize=20)
+    ax.tick_params(axis="both", which="major", labelsize=20)
+    ax.tick_params(axis="both", which="minor", labelsize=20)
     plt.tight_layout()
-    filename = os.path.join(currDir , 'solver_loss.png')
+    filename = os.path.join(currDir, "solver_loss.png")
     plt.savefig(filename)
     plt.close()
 
     final_solution = trainer.evaluate_solution_fn(params, eval_gstate.R).reshape(-1)
 
-    #------------- Gradients of discovered solutions are below:
+    # ------------- Gradients of discovered solutions are below:
     grad_u_mp_normal_to_interface = None
     grad_u_mp = None
     grad_u_normal_to_interface = None
     grad_u = None
-        
+
     # if algorithm==0:
     #     grad_u_mp_normal_to_interface = trainer.compute_normal_gradient_solution_mp_on_interface(params, eval_gstate.R, eval_gstate.dx, eval_gstate.dy, eval_gstate.dz)
     #     grad_u_mp = trainer.compute_gradient_solution_mp(params, eval_gstate.R)
@@ -943,5 +1126,5 @@ def poisson_solver(gstate,
     #     grad_u_normal_to_interface = None
     #     grad_u = None
 
-    return final_solution, grad_u, grad_u_normal_to_interface, epoch_store, loss_epochs 
+    return final_solution, grad_u, grad_u_normal_to_interface, epoch_store, loss_epochs
     # return final_solution, grad_u_mp, grad_u_mp_normal_to_interface, epoch_store, loss_epochs

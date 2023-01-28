@@ -20,7 +20,7 @@
 from jax.config import config
 from src import io, poisson_solver, mesh, level_set
 from src.jaxmd_modules.util import f32, i32
-from jax import (jit, numpy as jnp, vmap, grad)
+from jax import jit, numpy as jnp, vmap, grad
 import jax
 import jax.profiler
 import time
@@ -28,7 +28,7 @@ import os
 import sys
 
 currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, '..'))
+rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
@@ -36,7 +36,7 @@ config.update("jax_enable_x64", True)
 
 
 # os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
-os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
+os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 
@@ -67,14 +67,14 @@ def test_poisson_solver_without_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sin(y)*jnp.cos(x)
+        return jnp.sin(y) * jnp.cos(x)
 
     @jit
     def exact_sol_p_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sin(y)*jnp.cos(x)
+        return jnp.sin(y) * jnp.cos(x)
 
     @jit
     def dirichlet_bc_fn(r):
@@ -89,6 +89,7 @@ def test_poisson_solver_without_jump():
         y = r[1]
         z = r[2]
         return jnp.sqrt(x**2 + y**2 + z**2) + 0.5
+
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
     @jit
@@ -131,8 +132,8 @@ def test_poisson_solver_without_jump():
         grad_u_p_fn = grad(exact_sol_p_fn)
         grad_u_m_fn = grad(exact_sol_m_fn)
 
-        vec_1 = mu_p_fn(r)*grad_u_p_fn(r)
-        vec_2 = mu_m_fn(r)*grad_u_m_fn(r)
+        vec_1 = mu_p_fn(r) * grad_u_p_fn(r)
+        vec_2 = mu_m_fn(r) * grad_u_m_fn(r)
         n_vec = normal_fn(r)
         return jnp.dot(vec_1 - vec_2, n_vec)
 
@@ -166,7 +167,7 @@ def test_poisson_solver_without_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 0.0 #2.0 * jnp.sin(y) * jnp.cos(x)
+        return 0.0  # 2.0 * jnp.sin(y) * jnp.cos(x)
 
     @jit
     def f_p_fn(r):
@@ -180,7 +181,19 @@ def test_poisson_solver_without_jump():
 
     exact_sol = vmap(evaluate_exact_solution_fn)(R)
 
-    init_fn, solve_fn = poisson_solver.setup(initial_value_fn, dirichlet_bc_fn, phi_fn, mu_m_fn, mu_p_fn, k_m_fn, k_p_fn, f_m_fn, f_p_fn, alpha_fn, beta_fn)
+    init_fn, solve_fn = poisson_solver.setup(
+        initial_value_fn,
+        dirichlet_bc_fn,
+        phi_fn,
+        mu_m_fn,
+        mu_p_fn,
+        k_m_fn,
+        k_p_fn,
+        f_m_fn,
+        f_p_fn,
+        alpha_fn,
+        beta_fn,
+    )
     sim_state = init_fn(R)
 
     t1 = time.time()
@@ -192,26 +205,25 @@ def test_poisson_solver_without_jump():
 
     print(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver.prof")
- 
-    
+
     log = {
-        'phi': sim_state.phi,
-        'U': sim_state.solution,
-        'U_exact': exact_sol,
-        'U-U_exact': sim_state.solution - exact_sol,
-        'alpha': sim_state.alpha,
-        'beta': sim_state.beta,
-        'mu_m': sim_state.mu_m,
-        'mu_p': sim_state.mu_p,
-        'f_m': sim_state.f_m,
-        'f_p': sim_state.f_p
+        "phi": sim_state.phi,
+        "U": sim_state.solution,
+        "U_exact": exact_sol,
+        "U-U_exact": sim_state.solution - exact_sol,
+        "alpha": sim_state.alpha,
+        "beta": sim_state.beta,
+        "mu_m": sim_state.mu_m,
+        "mu_p": sim_state.mu_p,
+        "f_m": sim_state.f_m,
+        "f_p": sim_state.f_p,
     }
-    io.write_vtk_manual(gstate, log, filename='results/test_without_jump')
+    io.write_vtk_manual(gstate, log, filename="results/test_without_jump")
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     print(f"L_inf error = {L_inf_err}")
 
-    assert L_inf_err<0.003
+    assert L_inf_err < 0.003
 
 
 if __name__ == "__main__":
