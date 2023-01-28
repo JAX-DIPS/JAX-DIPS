@@ -26,3 +26,7 @@ opencv-python
 plyfile
 polyscope
 mesh2sdf
+
+black
+flake8
+pre-commit
