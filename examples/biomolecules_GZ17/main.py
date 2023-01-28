@@ -21,12 +21,10 @@ This example is based on https://www.sciencedirect.com/science/article/pii/S0021
 
 """
 
-
-
-
-
 from jax.config import config
 config.update("jax_enable_x64", False)
+config.update("jax_debug_nans", True)
+
 import os
 os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 import sys
@@ -60,9 +58,9 @@ def biomolecule_solvation_energy(file_name = 'pdb:1ajj.pqr', molecule_pqr_addres
     
     ###########################################################
     
-    num_epochs = 1000
+    num_epochs = 500
     
-    Nx_tr = Ny_tr = Nz_tr = 64                  # grid for training
+    Nx_tr = Ny_tr = Nz_tr = 64                   # grid for training
     Nx = Ny = Nz = 256                           # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256            # grid for visualization
     

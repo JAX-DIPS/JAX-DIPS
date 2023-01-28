@@ -24,6 +24,8 @@ from src.utils import print_architecture
 import jax
 import optax
 from jax import (pmap, vmap, numpy as jnp, random, jit)
+from jax.config import config
+config.update("jax_debug_nans", True)
 
 from src.jaxmd_modules import dataclasses, util
 from src.simulation_states import PoissonSimState, PoissonSimStateFn
@@ -118,7 +120,7 @@ class PoissonSolve:
         # extra_points = self.TD.refine(lvl_set_fn, max_iters=15)
         # self.train_points = jnp.concatenate((train_points, extra_points))
         
-        surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=4)
+        surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=3)
         self.train_points = jnp.concatenate((train_points, surface_points))
 
         # self.train_points = train_points
