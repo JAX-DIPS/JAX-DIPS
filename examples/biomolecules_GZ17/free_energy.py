@@ -1,5 +1,5 @@
 from jax import vmap, numpy as jnp
-from src import interpolate, geometric_integrations_per_point
+from jax_dips import interpolate, geometric_integrations_per_point
 from examples.biomolecules_GZ17.units import *
 import pdb
 from examples.biomolecules_GZ17.coefficients import get_rho_fn
@@ -22,29 +22,22 @@ def get_free_energy(
     epsilon_grad_psi_star_sq,
     epsilon_grad_psi_hat_sq,
 ):
-
     # ---- First term in the equation
     xyz, rad_chg = jnp.split(atom_xyz_rad_chg, [3], axis=1)
     sigma, chg = jnp.split(rad_chg, [1], axis=1)
 
-    psi_hat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-        psi_hat, gstate
-    )
+    psi_hat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(psi_hat, gstate)
 
     core = 0.5 * jnp.sum(psi_hat_interp_fn(xyz) * jnp.squeeze(chg))
     sfe = core * e2_per_Angs_to_kcal_per_mol
 
     ionic_term = psi_hat * jnp.sinh(psi_hat) - 2 * (jnp.cosh(psi_hat) - 1)
-    integral_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-        ionic_term, gstate
-    )
+    integral_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(ionic_term, gstate)
     phi_p_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(-phi, gstate)
     (
         get_vertices_of_cell_intersection_with_interface_at_point,
         is_cell_crossed_by_interface,
-    ) = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(
-        phi_p_interp_fn
-    )
+    ) = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(phi_p_interp_fn)
     (
         _,
         integrate_in_positive_domain_at_point,
@@ -53,15 +46,11 @@ def get_free_energy(
         is_cell_crossed_by_interface,
         integral_interp_fn,
     )
-    partial_integrals_positive = vmap(
-        integrate_in_positive_domain_at_point, (0, None, None, None)
-    )(gstate.R, gstate.dx, gstate.dy, gstate.dz)
-
-    sfe_z = (
-        partial_integrals_positive.sum()
-        * KbT_in_kcal_per_mol
-        * (ionic_strength * 1e-24 * N_A)
+    partial_integrals_positive = vmap(integrate_in_positive_domain_at_point, (0, None, None, None))(
+        gstate.R, gstate.dx, gstate.dy, gstate.dz
     )
+
+    sfe_z = partial_integrals_positive.sum() * KbT_in_kcal_per_mol * (ionic_strength * 1e-24 * N_A)
 
     # # method 2:
     # epsilon_E_sq = 0.5 * epsilon_grad_psi_sq - 0.5 * epsilon_grad_psi_star_sq

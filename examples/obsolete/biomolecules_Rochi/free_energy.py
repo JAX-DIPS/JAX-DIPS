@@ -1,5 +1,5 @@
 from jax import vmap, numpy as jnp
-from src import interpolate, geometric_integrations_per_point
+from jax_dips import interpolate, geometric_integrations_per_point
 from examples.obsolete.biomolecules_Rochi.units import *
 import pdb
 import numpy as onp
@@ -13,19 +13,14 @@ import numpy as onp
 
 
 def get_free_energy(gstate, phi, psi, psi_hat, atom_xyz_rad_chg):
-
     # ---- First term in the equation
     KbTper2z = K_B * T / 2.0 / z_solvent
 
     xyz, rad_chg = jnp.split(atom_xyz_rad_chg, [3], axis=1)
     sigma, chg = jnp.split(rad_chg, [1], axis=1)
-    psi_hat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-        psi_hat, gstate
-    )
+    psi_hat_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(psi_hat, gstate)
     sfe_component_1 = (
-        jnp.sum(psi_hat_interp_fn(xyz) * jnp.squeeze(chg) * KbTper2z)
-        * N_avogadro
-        / (kcal_in_kJ * 1000)
+        jnp.sum(psi_hat_interp_fn(xyz) * jnp.squeeze(chg) * KbTper2z) * N_avogadro / (kcal_in_kJ * 1000)
     )  # from Joules to kcal/mol
 
     sfe_3 = sfe_component_1 * 2.0
@@ -36,20 +31,14 @@ def get_free_energy(gstate, phi, psi, psi_hat, atom_xyz_rad_chg):
     diag = 0.0  # jnp.sqrt(gstate.dx**2 + gstate.dy**2 + gstate.dz**2)
     mask_p = 0.5 * (jnp.sign(phi - diag) + 1)
     psi_clipped = mask_p * psi_hat
-    integrand = psi_clipped * KbTnl3 * onp.sinh(psi_clipped) - 2 * KbTnl3 * (
-        onp.cosh(psi_clipped) - 1.0
-    )
+    integrand = psi_clipped * KbTnl3 * onp.sinh(psi_clipped) - 2 * KbTnl3 * (onp.cosh(psi_clipped) - 1.0)
 
     phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(-phi, gstate)
-    integral_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(
-        integrand, gstate
-    )
+    integral_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(integrand, gstate)
     (
         get_vertices_of_cell_intersection_with_interface_at_point,
         is_cell_crossed_by_interface,
-    ) = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(
-        phi_interp_fn
-    )
+    ) = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(phi_interp_fn)
     (
         _,
         integrate_in_negative_domain_at_point,
@@ -58,9 +47,9 @@ def get_free_energy(gstate, phi, psi, psi_hat, atom_xyz_rad_chg):
         is_cell_crossed_by_interface,
         integral_interp_fn,
     )
-    partial_integrals = vmap(
-        integrate_in_negative_domain_at_point, (0, None, None, None)
-    )(gstate.R, gstate.dx, gstate.dy, gstate.dz)
+    partial_integrals = vmap(integrate_in_negative_domain_at_point, (0, None, None, None))(
+        gstate.R, gstate.dx, gstate.dy, gstate.dz
+    )
     sfe_component_2 = (
         jnp.sum(partial_integrals * mask_p) * N_avogadro / (kcal_in_kJ * 1000)
     )  # convert from Joules to kcal/mol

@@ -18,8 +18,8 @@
 
 """
 from jax.config import config
-from src import io, poisson_solver, mesh, level_set
-from src.jaxmd_modules.util import f32, i32
+from jax_dips import io, poisson_solver, mesh, level_set
+from jax_dips.jaxmd_modules.util import f32, i32
 from jax import jit, numpy as jnp, vmap, grad, lax
 import jax
 import jax.profiler
@@ -46,7 +46,6 @@ os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
 
 def test_poisson_solver_with_jump():
-
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)

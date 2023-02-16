@@ -18,11 +18,11 @@
 
 """
 from jax.config import config
-from src.dips.utils.data import StateData
-from src import mesh, level_set, solver_advection
-from src import io
-from src import interpolate
-from src.jaxmd_modules.util import f32, i32
+from jax_dips.data import StateData
+from jax_dips import mesh, level_set, solver_advection
+from jax_dips import io
+from jax_dips import interpolate
+from jax_dips.jaxmd_modules.util import f32, i32
 from jax.experimental import host_callback
 from jax import jit, lax, numpy as jnp, vmap
 import jax.profiler
@@ -90,9 +90,7 @@ def test_reinitialization():
         y = r[1]
         z = r[2]
         # return lax.cond(r[0]*r[0] + r[1]*r[1] + r[2]*r[2] > 0.25, lambda p: f32(1.0), lambda p: f32(-1.0), r)
-        return jnp.where(
-            r[0] * r[0] + r[1] * r[1] + r[2] * r[2] > 0.25, f32(1.0), f32(-1.0)
-        )
+        return jnp.where(r[0] * r[0] + r[1] * r[1] + r[2] * r[2] > 0.25, f32(1.0), f32(-1.0))
 
     (
         init_fn,
@@ -140,34 +138,24 @@ def test_reinitialization():
     sim_state = init_fn(velocity_fn, R)
 
     q = queue.Queue()
-    state_data = StateData(
-        q, content_dir="./database_tmp", cols=["t", "U", "kappaM", "nx", "ny", "nz"]
-    )
+    state_data = StateData(q, content_dir="./database_tmp", cols=["t", "U", "kappaM", "nx", "ny", "nz"])
     state_data.start()
 
     partial_step_func = partial(step_func, state_data.queue_state)
 
     t1 = time.time()
-    sim_state, gstate, dt = lax.fori_loop(
-        i32(0), i32(simulation_steps), partial_step_func, (sim_state, gstate, dt)
-    )
+    sim_state, gstate, dt = lax.fori_loop(i32(0), i32(simulation_steps), partial_step_func, (sim_state, gstate, dt))
     sim_state.phi.block_until_ready()
     t2 = time.time()
-    print(
-        f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}"
-    )
+    print(f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}")
 
     state_data.stop()
 
     jax.profiler.save_device_memory_profile("memory.prof")
     jax.profiler.stop_trace()
 
-    print(
-        f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5"
-    )
-    print(
-        f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0"
-    )
+    print(f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5")
+    print(f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0")
     assert jnp.isclose(sim_state.phi.min(), -0.5, atol=2 * dx)
     assert jnp.isclose(sim_state.phi.max(), 3.0, atol=2 * dx)
 

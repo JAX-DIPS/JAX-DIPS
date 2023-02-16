@@ -1,7 +1,5 @@
 # Simulation Parameters
-LINEAR_PB = (
-    True  # if True solves linear Poisson-Boltzmann, otherwise solves nonlinear PB.
-)
+LINEAR_PB = True  # if True solves linear Poisson-Boltzmann, otherwise solves nonlinear PB.
 l_tilde = 1.0e-10
 
 
@@ -26,17 +24,13 @@ kcal_in_kJ = 4.184  # conversion factor from kcal to kJ
 liter_in_nm_cubed = 1e24
 liter_in_m_cubed = 1e-3
 nm_in_m = 1e-9
-joule_in_kcal_per_mol = N_avogadro / (
-    kcal_in_kJ * 1000
-)  # from Joule of 1 molecule to kcal/mole
+joule_in_kcal_per_mol = N_avogadro / (kcal_in_kJ * 1000)  # from Joule of 1 molecule to kcal/mole
 
 
 # Solvent parameters
 T = 298.15  # Kelvin
 molar_density = 1e-3  # molar density of solvent mole/liter
-n_tilde = molar_density * (
-    N_avogadro / liter_in_m_cubed
-)  # number density = number/m^3.
+n_tilde = molar_density * (N_avogadro / liter_in_m_cubed)  # number density = number/m^3.
 n_inf = l_tilde**3 * n_tilde
 
 z_solvent = 1.0  # charge of ions in 1:1 solvent in electron units

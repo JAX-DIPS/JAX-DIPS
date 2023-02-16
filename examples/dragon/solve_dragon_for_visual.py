@@ -19,8 +19,8 @@
 """
 
 from jax.config import config
-from src import io, poisson_solver_scalable, mesh, level_set, interpolate
-from src.jaxmd_modules.util import f32, i32
+from jax_dips import io, poisson_solver_scalable, mesh, level_set, interpolate
+from jax_dips.jaxmd_modules.util import f32, i32
 from jax import jit, numpy as jnp, vmap, grad, lax, random
 import jax
 import jax.profiler
@@ -47,9 +47,7 @@ os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
 
 def poisson_solver_with_jump_complex():
-    ALGORITHM = (
-        0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    )
+    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     checkpoint_interval = 100
     Nx_tr = Ny_tr = Nz_tr = 64  # 1024
@@ -62,9 +60,7 @@ def poisson_solver_with_jump_complex():
 
     # --------- Grid nodes for level set
     """ load the dragon """
-    dragon_host = onp.loadtxt(
-        currDir + "/dragonian_full.csv", delimiter=",", skiprows=1
-    )
+    dragon_host = onp.loadtxt(currDir + "/dragonian_full.csv", delimiter=",", skiprows=1)
     # file_x = onp.array(xmin + dragon_host[:,0] * gstate.dx)
     # file_y = onp.array(ymin + dragon_host[:,1] * gstate.dy)
     # file_z = onp.array(zmin + dragon_host[:,2] * gstate.dz)
@@ -96,9 +92,7 @@ def poisson_solver_with_jump_complex():
     K = jnp.arange(Nz)
     II, JJ, KK = jnp.meshgrid(I, J, K, indexing="ij")
     IJK = onp.array(
-        jnp.concatenate(
-            (II.reshape(-1, 1), JJ.reshape(-1, 1), KK.reshape(-1, 1)), axis=1
-        ),
+        jnp.concatenate((II.reshape(-1, 1), JJ.reshape(-1, 1), KK.reshape(-1, 1)), axis=1),
         dtype=str,
     )
     dragon_phi = []
@@ -124,9 +118,7 @@ def poisson_solver_with_jump_complex():
     R = gstate.R
 
     """ Create interpolant on gstate """
-    phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(
-        dragon, gstate
-    )
+    phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(dragon, gstate)
 
     """ Evaluation Mesh for Visualization  """
     Nx_eval = 2 * Nx
@@ -152,11 +144,7 @@ def poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         yx3 = (y - x) / 3.0
-        return (
-            (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3)
-            * jnp.log(x + y + 3)
-            * jnp.cos(z)
-        )
+        return (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
 
     @custom_jit
     def dirichlet_bc_fn(r):
@@ -174,13 +162,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 10.0 * (
-            1
-            + 0.2
-            * jnp.cos(2 * jnp.pi * (x + y))
-            * jnp.sin(2 * jnp.pi * (x - y))
-            * jnp.cos(z)
-        )
+        return 10.0 * (1 + 0.2 * jnp.cos(2 * jnp.pi * (x + y)) * jnp.sin(2 * jnp.pi * (x - y)) * jnp.cos(z))
 
     @custom_jit
     def mu_p_fn(r):
@@ -240,25 +222,9 @@ def poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         fm = (
-            -1.0
-            * mu_m_fn(r)
-            * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
-            + -4
-            * jnp.pi
-            * jnp.cos(z)
-            * jnp.cos(4 * jnp.pi * x)
-            * 2
-            * jnp.cos(2 * x)
-            * jnp.cos(2 * y)
-            * jnp.exp(z)
-            + -4
-            * jnp.pi
-            * jnp.cos(z)
-            * jnp.cos(4 * jnp.pi * y)
-            * (-2)
-            * jnp.sin(2 * x)
-            * jnp.sin(2 * y)
-            * jnp.exp(z)
+            -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
+            + -4 * jnp.pi * jnp.cos(z) * jnp.cos(4 * jnp.pi * x) * 2 * jnp.cos(2 * x) * jnp.cos(2 * y) * jnp.exp(z)
+            + -4 * jnp.pi * jnp.cos(z) * jnp.cos(4 * jnp.pi * y) * (-2) * jnp.sin(2 * x) * jnp.sin(2 * y) * jnp.exp(z)
             + 2
             * jnp.cos(2 * jnp.pi * (x + y))
             * jnp.sin(2 * jnp.pi * (x - y))
@@ -281,10 +247,7 @@ def poisson_solver_with_jump_complex():
             * jnp.cos(z)
             / (x + y + 3) ** 2
             + 2
-            * (
-                16 * 5 * 4 * (1.0 / 9.0) * ((y - x) / 3) ** 3
-                - 20 * 3 * 2 * (1.0 / 9.0) * ((y - x) / 3)
-            )
+            * (16 * 5 * 4 * (1.0 / 9.0) * ((y - x) / 3) ** 3 - 20 * 3 * 2 * (1.0 / 9.0) * ((y - x) / 3))
             * jnp.log(x + y + 3)
             * jnp.cos(z)
             + -1
@@ -330,9 +293,7 @@ def poisson_solver_with_jump_complex():
     t2 = time.time()
 
     print(f"solve took {(t2 - t1)} seconds")
-    jax.profiler.save_device_memory_profile(
-        "memory_dragon_poisson_solver_scalable.prof"
-    )
+    jax.profiler.save_device_memory_profile("memory_dragon_poisson_solver_scalable.prof")
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     exact_sol = vmap(evaluate_exact_solution_fn)(eval_gstate.R)
@@ -343,9 +304,7 @@ def poisson_solver_with_jump_complex():
         "U_exact": exact_sol.reshape((Nx_eval, Ny_eval, Nz_eval)),
         "U-U_exact": error.reshape((Nx_eval, Ny_eval, Nz_eval)),
     }
-    io.write_vtk_manual(
-        eval_gstate, log, filename=currDir + f"/results/dragon_visual{Nx_tr}"
-    )
+    io.write_vtk_manual(eval_gstate, log, filename=currDir + f"/results/dragon_visual{Nx_tr}")
 
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     rms_err = jnp.square(sim_state.solution - exact_sol).mean() ** 0.5

@@ -18,14 +18,14 @@
 
 """
 from jax.config import config
-from src import io
+from jax_dips import io
 from jax import jit, vmap, numpy as jnp
 import jax
 import os
 import sys
 import pdb
 
-from src import data_management
+from jax_dips import data_management
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, ".."))

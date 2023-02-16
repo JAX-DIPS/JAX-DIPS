@@ -19,8 +19,8 @@
 """
 
 from jax.config import config
-from src import io, poisson_solver_scalable, mesh, level_set
-from src.jaxmd_modules.util import f32, i32
+from jax_dips import io, poisson_solver_scalable, mesh, level_set
+from jax_dips.jaxmd_modules.util import f32, i32
 from jax import jit, numpy as jnp, vmap, grad, lax, random
 import jax
 import jax.profiler
@@ -46,9 +46,7 @@ os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
 
 def poisson_solver_with_jump_complex():
-    ALGORITHM = (
-        0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    )
+    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     Nx_tr = Ny_tr = Nz_tr = 128
     multi_gpu = False
@@ -95,9 +93,7 @@ def poisson_solver_with_jump_complex():
     key = random.PRNGKey(0)
     cov = jnp.eye(3)
     mean = jnp.zeros(3)
-    angles = random.multivariate_normal(
-        key, mean, cov, shape=(num_stars_x * num_stars_y * num_stars_z,)
-    )
+    angles = random.multivariate_normal(key, mean, cov, shape=(num_stars_x * num_stars_y * num_stars_z,))
     xc = jnp.linspace(-1 + 1.15 * re, 1 - 1.15 * re, num_stars_x, dtype=f32)
     yc = jnp.linspace(-1 + 1.15 * re, 1 - 1.15 * re, num_stars_y, dtype=f32)
     zc = jnp.linspace(-1 + 1.15 * re, 1 - 1.15 * re, num_stars_z, dtype=f32)
@@ -134,11 +130,7 @@ def poisson_solver_with_jump_complex():
                         * r0
                         * (
                             1.0
-                            + (
-                                ((x - xc) ** 2 + (y - yc) ** 2)
-                                / ((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-                            )
-                            ** 2
+                            + (((x - xc) ** 2 + (y - yc) ** 2) / ((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)) ** 2
                             * core
                         ),
                     ]
@@ -219,25 +211,9 @@ def poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         fm = (
-            -1.0
-            * mu_m_fn(r)
-            * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
-            + -4
-            * jnp.pi
-            * jnp.cos(z)
-            * jnp.cos(4 * jnp.pi * x)
-            * 2
-            * jnp.cos(2 * x)
-            * jnp.cos(2 * y)
-            * jnp.exp(z)
-            + -4
-            * jnp.pi
-            * jnp.cos(z)
-            * jnp.cos(4 * jnp.pi * y)
-            * (-2)
-            * jnp.sin(2 * x)
-            * jnp.sin(2 * y)
-            * jnp.exp(z)
+            -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
+            + -4 * jnp.pi * jnp.cos(z) * jnp.cos(4 * jnp.pi * x) * 2 * jnp.cos(2 * x) * jnp.cos(2 * y) * jnp.exp(z)
+            + -4 * jnp.pi * jnp.cos(z) * jnp.cos(4 * jnp.pi * y) * (-2) * jnp.sin(2 * x) * jnp.sin(2 * y) * jnp.exp(z)
             + 2
             * jnp.cos(2 * jnp.pi * (x + y))
             * jnp.sin(2 * jnp.pi * (x - y))
@@ -260,10 +236,7 @@ def poisson_solver_with_jump_complex():
             * jnp.cos(z)
             / (x + y + 3) ** 2
             + 2
-            * (
-                16 * 5 * 4 * (1.0 / 9.0) * ((y - x) / 3) ** 3
-                - 20 * 3 * 2 * (1.0 / 9.0) * ((y - x) / 3)
-            )
+            * (16 * 5 * 4 * (1.0 / 9.0) * ((y - x) / 3) ** 3 - 20 * 3 * 2 * (1.0 / 9.0) * ((y - x) / 3))
             * jnp.log(x + y + 3)
             * jnp.cos(z)
             + -1

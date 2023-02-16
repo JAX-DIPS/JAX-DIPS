@@ -19,8 +19,8 @@
 """
 from jax.config import config
 from optax import lamb
-from src import io, poisson_solver, mesh, level_set
-from src.jaxmd_modules.util import f32, i32
+from jax_dips import io, poisson_solver, mesh, level_set
+from jax_dips.jaxmd_modules.util import f32, i32
 from jax import jit, numpy as jnp, vmap, grad, lax
 import jax
 import jax.profiler
@@ -42,7 +42,6 @@ os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
 
 def test_poisson_solver_with_jump_complex():
-
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
@@ -76,11 +75,7 @@ def test_poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         yx3 = (y - x) / 3.0
-        return (
-            (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3)
-            * jnp.log(x + y + 3)
-            * jnp.cos(z)
-        )
+        return (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
 
     @jit
     def dirichlet_bc_fn(r):
@@ -113,11 +108,7 @@ def test_poisson_solver_with_jump_complex():
         core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y, x) - theta_3))
 
         phi_ = jnp.sqrt(x**2 + y**2 + z**2)
-        phi_ += (
-            -1.0
-            * r0
-            * (1.0 + ((x**2 + y**2) / (x**2 + y**2 + z**2)) ** 2 * core)
-        )
+        phi_ += -1.0 * r0 * (1.0 + ((x**2 + y**2) / (x**2 + y**2 + z**2)) ** 2 * core)
 
         return phi_
 
@@ -135,13 +126,7 @@ def test_poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 10.0 * (
-            1
-            + 0.2
-            * jnp.cos(2 * jnp.pi * (x + y))
-            * jnp.sin(2 * jnp.pi * (x - y))
-            * jnp.cos(z)
-        )
+        return 10.0 * (1 + 0.2 * jnp.cos(2 * jnp.pi * (x + y)) * jnp.sin(2 * jnp.pi * (x - y)) * jnp.cos(z))
 
     @jit
     def mu_p_fn(r):
@@ -239,25 +224,9 @@ def test_poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         fm = (
-            -1.0
-            * mu_m_fn(r)
-            * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
-            + -4
-            * jnp.pi
-            * jnp.cos(z)
-            * jnp.cos(4 * jnp.pi * x)
-            * 2
-            * jnp.cos(2 * x)
-            * jnp.cos(2 * y)
-            * jnp.exp(z)
-            + -4
-            * jnp.pi
-            * jnp.cos(z)
-            * jnp.cos(4 * jnp.pi * y)
-            * (-2)
-            * jnp.sin(2 * x)
-            * jnp.sin(2 * y)
-            * jnp.exp(z)
+            -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
+            + -4 * jnp.pi * jnp.cos(z) * jnp.cos(4 * jnp.pi * x) * 2 * jnp.cos(2 * x) * jnp.cos(2 * y) * jnp.exp(z)
+            + -4 * jnp.pi * jnp.cos(z) * jnp.cos(4 * jnp.pi * y) * (-2) * jnp.sin(2 * x) * jnp.sin(2 * y) * jnp.exp(z)
             + 2
             * jnp.cos(2 * jnp.pi * (x + y))
             * jnp.sin(2 * jnp.pi * (x - y))
@@ -280,10 +249,7 @@ def test_poisson_solver_with_jump_complex():
             * jnp.cos(z)
             / (x + y + 3) ** 2
             + 2
-            * (
-                16 * 5 * 4 * (1.0 / 9.0) * ((y - x) / 3) ** 3
-                - 20 * 3 * 2 * (1.0 / 9.0) * ((y - x) / 3)
-            )
+            * (16 * 5 * 4 * (1.0 / 9.0) * ((y - x) / 3) ** 3 - 20 * 3 * 2 * (1.0 / 9.0) * ((y - x) / 3))
             * jnp.log(x + y + 3)
             * jnp.cos(z)
             + -1
@@ -312,9 +278,7 @@ def test_poisson_solver_with_jump_complex():
 
     t1 = time.time()
 
-    sim_state, epoch_store, loss_epochs = solve_fn(
-        gstate, sim_state, algorithm=0, switching_interval=3
-    )
+    sim_state, epoch_store, loss_epochs = solve_fn(gstate, sim_state, algorithm=0, switching_interval=3)
     # sim_state.solution.block_until_ready()
 
     t2 = time.time()

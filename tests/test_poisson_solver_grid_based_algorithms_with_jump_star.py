@@ -18,8 +18,8 @@
 
 """
 from jax.config import config
-from src import io, poisson_solver, mesh, level_set
-from src.jaxmd_modules.util import f32, i32
+from jax_dips import io, poisson_solver, mesh, level_set
+from jax_dips.jaxmd_modules.util import f32, i32
 from jax import jit, numpy as jnp, vmap, grad, lax
 import jax
 import jax.profiler
@@ -45,7 +45,6 @@ os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
 
 def test_poisson_solver_with_jump_complex():
-
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
@@ -53,9 +52,7 @@ def test_poisson_solver_with_jump_complex():
     Ny = i32(70)
     Nz = i32(70)
 
-    ALGORITHM = (
-        0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    )
+    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
 
     # --------- Grid nodes
@@ -84,11 +81,7 @@ def test_poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         yx3 = (y - x) / 3.0
-        return (
-            (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3)
-            * jnp.log(x + y + 3)
-            * jnp.cos(z)
-        )
+        return (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
 
     @custom_jit
     def dirichlet_bc_fn(r):
@@ -121,11 +114,7 @@ def test_poisson_solver_with_jump_complex():
         core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y, x) - theta_3))
 
         phi_ = jnp.sqrt(x**2 + y**2 + z**2)
-        phi_ += (
-            -1.0
-            * r0
-            * (1.0 + ((x**2 + y**2) / (x**2 + y**2 + z**2)) ** 2 * core)
-        )
+        phi_ += -1.0 * r0 * (1.0 + ((x**2 + y**2) / (x**2 + y**2 + z**2)) ** 2 * core)
 
         return phi_
 
@@ -143,13 +132,7 @@ def test_poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 10.0 * (
-            1
-            + 0.2
-            * jnp.cos(2 * jnp.pi * (x + y))
-            * jnp.sin(2 * jnp.pi * (x - y))
-            * jnp.cos(z)
-        )
+        return 10.0 * (1 + 0.2 * jnp.cos(2 * jnp.pi * (x + y)) * jnp.sin(2 * jnp.pi * (x - y)) * jnp.cos(z))
 
     @custom_jit
     def mu_p_fn(r):
@@ -247,25 +230,9 @@ def test_poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         fm = (
-            -1.0
-            * mu_m_fn(r)
-            * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
-            + -4
-            * jnp.pi
-            * jnp.cos(z)
-            * jnp.cos(4 * jnp.pi * x)
-            * 2
-            * jnp.cos(2 * x)
-            * jnp.cos(2 * y)
-            * jnp.exp(z)
-            + -4
-            * jnp.pi
-            * jnp.cos(z)
-            * jnp.cos(4 * jnp.pi * y)
-            * (-2)
-            * jnp.sin(2 * x)
-            * jnp.sin(2 * y)
-            * jnp.exp(z)
+            -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
+            + -4 * jnp.pi * jnp.cos(z) * jnp.cos(4 * jnp.pi * x) * 2 * jnp.cos(2 * x) * jnp.cos(2 * y) * jnp.exp(z)
+            + -4 * jnp.pi * jnp.cos(z) * jnp.cos(4 * jnp.pi * y) * (-2) * jnp.sin(2 * x) * jnp.sin(2 * y) * jnp.exp(z)
             + 2
             * jnp.cos(2 * jnp.pi * (x + y))
             * jnp.sin(2 * jnp.pi * (x - y))
@@ -288,10 +255,7 @@ def test_poisson_solver_with_jump_complex():
             * jnp.cos(z)
             / (x + y + 3) ** 2
             + 2
-            * (
-                16 * 5 * 4 * (1.0 / 9.0) * ((y - x) / 3) ** 3
-                - 20 * 3 * 2 * (1.0 / 9.0) * ((y - x) / 3)
-            )
+            * (16 * 5 * 4 * (1.0 / 9.0) * ((y - x) / 3) ** 3 - 20 * 3 * 2 * (1.0 / 9.0) * ((y - x) / 3))
             * jnp.log(x + y + 3)
             * jnp.cos(z)
             + -1
@@ -369,12 +333,8 @@ def test_poisson_solver_with_jump_complex():
     grad_um = sim_state.grad_solution[0].reshape((Nx, Ny, Nz, 3))[1:-1, 1:-1, 1:-1]
     grad_up = sim_state.grad_solution[1].reshape((Nx, Ny, Nz, 3))[1:-1, 1:-1, 1:-1]
 
-    grad_um_exact = vmap(grad(exact_sol_m_fn))(gstate.R).reshape((Nx, Ny, Nz, 3))[
-        1:-1, 1:-1, 1:-1
-    ]
-    grad_up_exact = vmap(grad(exact_sol_p_fn))(gstate.R).reshape((Nx, Ny, Nz, 3))[
-        1:-1, 1:-1, 1:-1
-    ]
+    grad_um_exact = vmap(grad(exact_sol_m_fn))(gstate.R).reshape((Nx, Ny, Nz, 3))[1:-1, 1:-1, 1:-1]
+    grad_up_exact = vmap(grad(exact_sol_p_fn))(gstate.R).reshape((Nx, Ny, Nz, 3))[1:-1, 1:-1, 1:-1]
 
     mask_m = sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1] < 0.0  # -0.5*dx
     err_x_m = abs(grad_um[mask_m][:, 0] - grad_um_exact[mask_m][:, 0]).max()
@@ -386,44 +346,34 @@ def test_poisson_solver_with_jump_complex():
     err_y_p = abs(grad_up[mask_p][:, 1] - grad_up_exact[mask_p][:, 1]).max()
     err_z_p = abs(grad_up[mask_p][:, 2] - grad_up_exact[mask_p][:, 2]).max()
 
-    print(
-        f"L_inf errors in grad u in Omega_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}"
-    )
-    print(
-        f"L_inf errors in grad u in Omega_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}"
-    )
+    print(f"L_inf errors in grad u in Omega_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
+    print(f"L_inf errors in grad u in Omega_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
 
     # --- normal gradients over interface
     normal_fn = grad(phi_fn)
     normal_vec = vmap(normal_fn)(gstate.R).reshape((Nx, Ny, Nz, 3))[1:-1, 1:-1, 1:-1]
 
-    grad_um_n = sim_state.grad_normal_solution[0].reshape((Nx, Ny, Nz))[
-        1:-1, 1:-1, 1:-1
-    ]
-    grad_up_n = sim_state.grad_normal_solution[1].reshape((Nx, Ny, Nz))[
-        1:-1, 1:-1, 1:-1
-    ]
+    grad_um_n = sim_state.grad_normal_solution[0].reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1]
+    grad_up_n = sim_state.grad_normal_solution[1].reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1]
 
-    mask_i_m = (
-        abs(sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1]) < 0.5 * dx
-    ) * (sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1] < 0.0)
-    mask_i_p = (
-        abs(sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1]) < 0.5 * dx
-    ) * (sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1] > 0.0)
+    mask_i_m = (abs(sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1]) < 0.5 * dx) * (
+        sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1] < 0.0
+    )
+    mask_i_p = (abs(sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1]) < 0.5 * dx) * (
+        sim_state.phi.reshape((Nx, Ny, Nz))[1:-1, 1:-1, 1:-1] > 0.0
+    )
 
-    grad_um_n_exact = vmap(jnp.dot, (0, 0))(
-        normal_vec.reshape(-1, 3), grad_um_exact.reshape(-1, 3)
-    ).reshape((Nx - 2, Ny - 2, Nz - 2))
-    grad_up_n_exact = vmap(jnp.dot, (0, 0))(
-        normal_vec.reshape(-1, 3), grad_up_exact.reshape(-1, 3)
-    ).reshape((Nx - 2, Ny - 2, Nz - 2))
+    grad_um_n_exact = vmap(jnp.dot, (0, 0))(normal_vec.reshape(-1, 3), grad_um_exact.reshape(-1, 3)).reshape(
+        (Nx - 2, Ny - 2, Nz - 2)
+    )
+    grad_up_n_exact = vmap(jnp.dot, (0, 0))(normal_vec.reshape(-1, 3), grad_up_exact.reshape(-1, 3)).reshape(
+        (Nx - 2, Ny - 2, Nz - 2)
+    )
 
     err_um_n = abs(grad_um_n - grad_um_n_exact)[mask_i_m].max()
     err_up_n = abs(grad_up_n - grad_up_n_exact)[mask_i_p].max()
 
-    print(
-        f"L_inf error in normal grad u on interface minus: {err_um_n} \t plus: {err_up_n}"
-    )
+    print(f"L_inf error in normal grad u on interface minus: {err_um_n} \t plus: {err_up_n}")
 
     # ----
     assert L_inf_err < 0.2

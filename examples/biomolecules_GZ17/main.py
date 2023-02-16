@@ -43,18 +43,15 @@ import pdb
 import numpy as onp
 import time
 
-from src import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
-from src.jaxmd_modules.util import f32
+from jax_dips import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
+from jax_dips.jaxmd_modules.util import f32
 from examples.biomolecules_GZ17.coefficients import *
 from examples.biomolecules_GZ17.geometry import get_initial_level_set_fn
 from examples.biomolecules_GZ17.load_pqr import base
 from examples.biomolecules_GZ17.free_energy import get_free_energy
 
 
-def biomolecule_solvation_energy(
-    file_name="pdb:1ajj.pqr", molecule_pqr_address="pqr_input_mols", gpu_id=None
-):
-
+def biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address="pqr_input_mols", gpu_id=None):
     if gpu_id == None:
         pass
     else:
@@ -68,9 +65,7 @@ def biomolecule_solvation_energy(
     Nx = Ny = Nz = 256  # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256  # grid for visualization
 
-    ALGORITHM = (
-        0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    )
+    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     multi_gpu = False
     checkpoint_interval = 500
@@ -97,9 +92,7 @@ def biomolecule_solvation_energy(
     sigma_s = 0.0
     atom_sigmas = sigma_i + sigma_s
 
-    atom_charges = jnp.array(
-        mol_base.atoms["q"]
-    )  # partial charges, in units of electron charge e
+    atom_charges = jnp.array(mol_base.atoms["q"])  # partial charges, in units of electron charge e
     atom_xyz_rad_chg = jnp.concatenate(
         (atom_locations, atom_sigmas[..., jnp.newaxis], atom_charges[..., jnp.newaxis]),
         axis=1,
@@ -107,9 +100,7 @@ def biomolecule_solvation_energy(
 
     ###########################################################
 
-    xmin = ymin = zmin = (
-        min((atom_locations.min(), (-atom_sigmas).min())) * 3
-    )  # length unit is l_tilde units
+    xmin = ymin = zmin = min((atom_locations.min(), (-atom_sigmas).min())) * 3  # length unit is l_tilde units
     xmax = ymax = zmax = max((atom_locations.max(), atom_sigmas.max())) * 3
     init_mesh_fn, coord_at = mesh.construct(3)
 
@@ -131,13 +122,9 @@ def biomolecule_solvation_energy(
     unperturbed_phi_fn = get_initial_level_set_fn(atom_xyz_rad_chg)
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
-    psi_star_fn, psi_star_vec_fn, grad_psi_star_fn, grad_psi_star_vec_fn = get_psi_star(
-        atom_xyz_rad_chg
-    )
+    psi_star_fn, psi_star_vec_fn, grad_psi_star_fn, grad_psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
 
-    alpha_fn, beta_fn = get_jump_conditions(
-        atom_xyz_rad_chg, psi_star_fn, phi_fn, gstate.dx, gstate.dy, gstate.dz
-    )
+    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, gstate.dx, gstate.dy, gstate.dz)
 
     ###########################################################
     if False:
@@ -146,9 +133,7 @@ def biomolecule_solvation_energy(
         eval_phi = vmap(phi_fn)(eval_gstate.R)
         chg_density = vmap(f_m_fn)(eval_gstate.R)
         log = {"phi": eval_phi, "Ustar": psi_star, "rho": chg_density}
-        io.write_vtk_manual(
-            eval_gstate, log, filename=currDir + "/results/biomolecules"
-        )
+        io.write_vtk_manual(eval_gstate, log, filename=currDir + "/results/biomolecules")
         pdb.set_trace()
 
     t0 = t1 = 0.0
@@ -265,9 +250,7 @@ def biomolecule_solvation_energy(
             mu_m_fn(r) * jnp.dot(g_hat_r + g_star_r, g_hat_r + g_star_r),
         )
 
-    epsilon_grad_psi_sq = vmap(get_epsilon_E_sq_field, (0, 0, 0))(
-        eval_gstate.R, grad_psi_hat, grad_psi_star
-    )
+    epsilon_grad_psi_sq = vmap(get_epsilon_E_sq_field, (0, 0, 0))(eval_gstate.R, grad_psi_hat, grad_psi_star)
 
     def get_epsilon_E_coul_sq_field(r, g_star_r):
         phi_at_r = phi_fn(r)
@@ -277,12 +260,8 @@ def biomolecule_solvation_energy(
             mu_m_fn(r) * jnp.dot(g_star_r, g_star_r),
         )
 
-    epsilon_grad_psi_star_sq = vmap(get_epsilon_E_coul_sq_field, (0, 0))(
-        eval_gstate.R, grad_psi_star
-    )
-    epsilon_grad_psi_hat_sq = vmap(get_epsilon_E_coul_sq_field, (0, 0))(
-        eval_gstate.R, grad_psi_hat
-    )
+    epsilon_grad_psi_star_sq = vmap(get_epsilon_E_coul_sq_field, (0, 0))(eval_gstate.R, grad_psi_star)
+    epsilon_grad_psi_hat_sq = vmap(get_epsilon_E_coul_sq_field, (0, 0))(eval_gstate.R, grad_psi_hat)
 
     SFE, SFE_z = get_free_energy(
         eval_gstate,
@@ -306,21 +285,15 @@ def biomolecule_solvation_energy(
 
 
 if __name__ == "__main__":
-
     Kirkwood_test = False
 
     if Kirkwood_test:
-        biomolecule_solvation_energy(
-            file_name="case_0.pqr", molecule_pqr_address="kirkwood_test"
-        )
+        biomolecule_solvation_energy(file_name="case_0.pqr", molecule_pqr_address="kirkwood_test")
 
     else:
-
         if True:
             """For testing only run 1 molecule"""
-            biomolecule_solvation_energy(
-                file_name="pdb:1ajj.pqr", molecule_pqr_address="pqr_input_mols"
-            )
+            biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address="pqr_input_mols")
 
         else:
             """For final evaluation, run over all molecules in parallel"""

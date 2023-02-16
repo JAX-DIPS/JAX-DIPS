@@ -10,11 +10,11 @@ from functools import partial
 import jax
 import jax.profiler
 from jax import jit, random, lax, numpy as jnp, vmap
-from src.jaxmd_modules.util import f32, i32
-from src.jaxmd_modules import space
-from src import interpolate, solver_advection
-from src import io
-from src import mesh, level_set, compositions
+from jax_dips.jaxmd_modules.util import f32, i32
+from jax_dips.jaxmd_modules import space
+from jax_dips import interpolate, solver_advection
+from jax_dips import io
+from jax_dips import mesh, level_set, compositions
 from jax.config import config
 
 config.update("jax_enable_x64", True)
@@ -53,6 +53,7 @@ sample_pnt = coord_at(gstate, [1, 1, 1])
 
 displacement_fn, shift_fn = space.periodic(box_size)
 
+
 # -- define velocity field as gradient of a scalar field
 @jit
 def velocity_fn(r, time_=0.0):
@@ -88,6 +89,7 @@ def phi_fn(r):
 ) = solver_advection.level_set(phi_fn, shift_fn, dt)
 sim_state = init_fn(velocity_fn, R)
 
+
 # This section is autodiff for the spatial gradients rather than discretizations
 # --------------------------------------
 def add_null_argument(func):
@@ -104,9 +106,7 @@ def get_velocity_fn_AD(phi_fn, gstate):
     curvature_phi_n = curve_phi_fn(gstate.R)
     normal_phi_n = normal_phi_fn(gstate.R)
     vel_AD = f32(0.01) * curvature_phi_n.reshape(-1, 1) * normal_phi_n
-    velocity_fn_AD = add_null_argument(
-        interpolate.vec_nonoscillatory_quadratic_interpolation(vel_AD, gstate)
-    )
+    velocity_fn_AD = add_null_argument(interpolate.vec_nonoscillatory_quadratic_interpolation(vel_AD, gstate))
 
     def velocity_at_point(x):
         return velocity_fn_AD(x[jnp.newaxis]).reshape(3)
@@ -119,9 +119,7 @@ def get_velocity_fn_DS(sim_state, gstate):
     normal_curve_fn = jit(level_set.get_normal_vec_mean_curvature)
     normal, curve = normal_curve_fn(sim_state.solution, gstate)
     vel = f32(0.01) * curve.reshape(-1, 1) * normal
-    velocity_fn_DS = add_null_argument(
-        interpolate.vec_nonoscillatory_quadratic_interpolation(vel, gstate)
-    )
+    velocity_fn_DS = add_null_argument(interpolate.vec_nonoscillatory_quadratic_interpolation(vel, gstate))
 
     def velocity_fn_node(x):
         return velocity_fn_DS(x[jnp.newaxis])
@@ -167,9 +165,7 @@ io.write_vtk_manual(
 def updater(gstate, dt):
     def update_node_fn(phi_fn):
         velocity_fn_AD = get_velocity_fn_AD(phi_fn, gstate)
-        return partial(
-            compositions.node_advect_one_step_autodiff(phi_fn, velocity_fn_AD), dt
-        )
+        return partial(compositions.node_advect_one_step_autodiff(phi_fn, velocity_fn_AD), dt)
 
     return update_node_fn
 
@@ -251,9 +247,7 @@ def step_func(i, state_and_nbrs):
 
     normal, curve = normal_curve_fn(state.solution, gstate)
     vel = f32(0.01) * curve.reshape(-1, 1) * normal
-    velocity_fn = add_null_argument(
-        interpolate.vec_nonoscillatory_quadratic_interpolation(vel, gstate)
-    )
+    velocity_fn = add_null_argument(interpolate.vec_nonoscillatory_quadratic_interpolation(vel, gstate))
 
     log["t"] = log["t"].at[i].set(time_)
     log["U"] = log["U"].at[i].set(state.solution)
@@ -268,9 +262,7 @@ def step_func(i, state_and_nbrs):
 
 
 t1 = time.time()
-sim_state, log, dt = lax.fori_loop(
-    i32(0), i32(simulation_steps), step_func, (sim_state, log, dt)
-)
+sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log, dt))
 sim_state.solution.block_until_ready()
 t2 = time.time()
 print(f"time per timestep is {(t2 - t1)/simulation_steps}")

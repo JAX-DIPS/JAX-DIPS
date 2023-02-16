@@ -4,18 +4,18 @@ from jax._src.api import vmap
 import jax.numpy as jnp
 import numpy as onp
 from jax.config import config
-from src.jaxmd_modules import quantity, util
-from src.jaxmd_modules import energy, partition
-from src.jaxmd_modules.quantity import EnergyFn
+from jax_dips.jaxmd_modules import quantity, util
+from jax_dips.jaxmd_modules import energy, partition
+from jax_dips.jaxmd_modules.quantity import EnergyFn
 
 config.update("jax_enable_x64", True)
-from src.jaxmd_modules.util import f32, i32
-from src.jaxmd_modules import space
-from src import solver_advection
-from src import simulate_particles
-from src import visualization
-from src import mesh
-from src import interpolate
+from jax_dips.jaxmd_modules.util import f32, i32
+from jax_dips.jaxmd_modules import space
+from jax_dips import solver_advection
+from jax_dips import simulate_particles
+from jax_dips import visualization
+from jax_dips import mesh
+from jax_dips import interpolate
 
 
 # Use JAX's random number generator to generate random initial positions.
@@ -50,6 +50,7 @@ sample_pnt = coord_at(gstate, [1, 1, 1])
 
 displacement_fn, shift_fn = space.periodic(box_size)
 
+
 # -- define velocity field as gradient of a scalar field
 # def energy_fn(r):
 #     x = r[0]; y = r[1]; z = r[2]
@@ -79,9 +80,7 @@ def phi_fn(r):
     return x**2 + (y) ** 2 + z**2 - 0.05**2
 
 
-init_fn, apply_fn, reinitialize_fn = solver_advection.level_set(
-    velocity_fn, phi_fn, shift_fn, dt
-)
+init_fn, apply_fn, reinitialize_fn = solver_advection.level_set(velocity_fn, phi_fn, shift_fn, dt)
 
 sim_state = init_fn(R)
 
@@ -114,9 +113,7 @@ log = {
 import time
 
 t1 = time.time()
-sim_state, log = lax.fori_loop(
-    i32(0), i32(simulation_steps), step_func, (sim_state, log)
-)
+sim_state, log = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log))
 t2 = time.time()
 
 print(f"time per timestepis {(t2 - t1)/simulation_steps}")

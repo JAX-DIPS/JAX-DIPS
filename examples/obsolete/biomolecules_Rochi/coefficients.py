@@ -114,11 +114,7 @@ def get_psi_star(atom_xyz_rad_chg, EPS=1e-6):
     Returns:
         psi_fn: a function that outputs psi at given coordinates.
     """
-    psi_star_coeff = (
-        e_tilde
-        * solvent_chg_tilde
-        / (4 * 3.141592653589793 * eps_m * K_B * T * l_tilde)
-    )
+    psi_star_coeff = e_tilde * solvent_chg_tilde / (4 * 3.141592653589793 * eps_m * K_B * T * l_tilde)
 
     def psi_at_r(r):
         x = r[0]
@@ -171,11 +167,7 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
         norm = jnp.sqrt(phi_x * phi_x + phi_y * phi_y + phi_z * phi_z)
         return jnp.array([phi_x / norm, phi_y / norm, phi_z / norm])
 
-    psi_star_coeff = (
-        e_tilde
-        * solvent_chg_tilde
-        / (4 * 3.141592653589793 * eps_m * K_B * T * l_tilde)
-    )
+    psi_star_coeff = e_tilde * solvent_chg_tilde / (4 * 3.141592653589793 * eps_m * K_B * T * l_tilde)
 
     @custom_jit
     def grad_psi_fn(r):
@@ -193,9 +185,7 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
             return (grad_psi,), None
 
         grad_psi = jnp.array([0.0, 0.0, 0.0])
-        (grad_psi,), _ = lax.scan(
-            grad_psi_pairwise_kernel, (grad_psi,), atom_xyz_rad_chg
-        )
+        (grad_psi,), _ = lax.scan(grad_psi_pairwise_kernel, (grad_psi,), atom_xyz_rad_chg)
         return psi_star_coeff * grad_psi
 
     @custom_jit
@@ -237,10 +227,7 @@ def get_rho_fn(atom_xyz_rad_chg):
             xc, yc, zc, sigma, chg = xyzsc
             rho += (
                 chg
-                * jnp.exp(
-                    -((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-                    / (2 * sigma * sigma)
-                )
+                * jnp.exp(-((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2) / (2 * sigma * sigma))
                 / ((2 * jnp.pi) ** 1.5 * sigma * sigma * sigma)
             )
             rho = jnp.nan_to_num(rho)

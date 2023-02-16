@@ -10,11 +10,11 @@ from functools import partial
 import jax
 import jax.profiler
 from jax import jit, random, lax, numpy as jnp, vmap
-from src.jaxmd_modules.util import f32, i32
-from src.jaxmd_modules import space
-from src import interpolate, solver_advection
-from src import io
-from src import mesh, level_set
+from jax_dips.jaxmd_modules.util import f32, i32
+from jax_dips.jaxmd_modules import space
+from jax_dips import interpolate, solver_advection
+from jax_dips import io
+from jax_dips import mesh, level_set
 from jax.config import config
 
 config.update("jax_enable_x64", True)
@@ -52,6 +52,7 @@ R = gstate.R
 sample_pnt = coord_at(gstate, [1, 1, 1])
 
 displacement_fn, shift_fn = space.periodic(box_size)
+
 
 # -- define velocity field as gradient of a scalar field
 @jit
@@ -129,9 +130,7 @@ def step_func(i, state_and_nbrs):
 
     normal, curve = normal_curve_fn(state.solution, gstate)
     vel = f32(0.01) * curve.reshape(-1, 1) * normal
-    velocity_fn = add_null_argument(
-        interpolate.vec_nonoscillatory_quadratic_interpolation(vel, gstate)
-    )
+    velocity_fn = add_null_argument(interpolate.vec_nonoscillatory_quadratic_interpolation(vel, gstate))
 
     log["t"] = log["t"].at[i].set(time_)
     log["U"] = log["U"].at[i].set(state.solution)
@@ -146,9 +145,7 @@ def step_func(i, state_and_nbrs):
 
 
 t1 = time.time()
-sim_state, log, dt = lax.fori_loop(
-    i32(0), i32(simulation_steps), step_func, (sim_state, log, dt)
-)
+sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log, dt))
 sim_state.solution.block_until_ready()
 t2 = time.time()
 print(f"time per timestep is {(t2 - t1)/simulation_steps}")

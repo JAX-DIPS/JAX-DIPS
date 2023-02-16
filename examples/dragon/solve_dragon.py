@@ -19,8 +19,8 @@
 """
 
 from jax.config import config
-from src import io, poisson_solver_scalable, mesh, level_set, interpolate
-from src.jaxmd_modules.util import f32, i32
+from jax_dips import io, poisson_solver_scalable, mesh, level_set, interpolate
+from jax_dips.jaxmd_modules.util import f32, i32
 from jax import jit, numpy as jnp, vmap, grad, lax, random
 import jax
 import jax.profiler
@@ -57,9 +57,7 @@ def poisson_solver_with_jump_complex():
     else:
         multi_gpu = True
 
-    ALGORITHM = (
-        0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    )
+    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     Nx_tr = Ny_tr = Nz_tr = 64
     num_epochs = 20
@@ -68,18 +66,14 @@ def poisson_solver_with_jump_complex():
 
     checkpoint_dir = f"./checkpoints_{Nx_tr}_{gpu_cnt}"
 
-    print(
-        f"Starting dragon example with resolution {Nx_tr} # of GPU(s) {gpu_cnt} and batchSize {batch_size}"
-    )
+    print(f"Starting dragon example with resolution {Nx_tr} # of GPU(s) {gpu_cnt} and batchSize {batch_size}")
 
     dim = i32(3)
     init_mesh_fn, coord_at = mesh.construct(dim)
 
     # --------- Grid nodes for level set
     """ load the dragon """
-    dragon_host = onp.loadtxt(
-        currDir + "/dragonian_full.csv", delimiter=",", skiprows=1
-    )
+    dragon_host = onp.loadtxt(currDir + "/dragonian_full.csv", delimiter=",", skiprows=1)
     # file_x = onp.array(xmin + dragon_host[:,0] * gstate.dx)
     # file_y = onp.array(ymin + dragon_host[:,1] * gstate.dy)
     # file_z = onp.array(zmin + dragon_host[:,2] * gstate.dz)
@@ -112,9 +106,7 @@ def poisson_solver_with_jump_complex():
     K = jnp.arange(Nz)
     II, JJ, KK = jnp.meshgrid(I, J, K, indexing="ij")
     IJK = onp.array(
-        jnp.concatenate(
-            (II.reshape(-1, 1), JJ.reshape(-1, 1), KK.reshape(-1, 1)), axis=1
-        ),
+        jnp.concatenate((II.reshape(-1, 1), JJ.reshape(-1, 1), KK.reshape(-1, 1)), axis=1),
         dtype=str,
     )
     dragon_phi = []
@@ -140,9 +132,7 @@ def poisson_solver_with_jump_complex():
     R = gstate.R
 
     """ Create interpolant on gstate """
-    phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(
-        dragon, gstate
-    )
+    phi_fn = interpolate.nonoscillatory_quadratic_interpolation_per_point(dragon, gstate)
 
     """ Evaluation Mesh for Visualization  """
     Nx_eval = Nx
@@ -219,11 +209,7 @@ def poisson_solver_with_jump_complex():
         x = r[0]
         y = r[1]
         z = r[2]
-        return (
-            jnp.sin(40 * jnp.pi * x)
-            * jnp.cos(40 * jnp.pi * y)
-            * jnp.sin(40 * jnp.pi * z)
-        )
+        return jnp.sin(40 * jnp.pi * x) * jnp.cos(40 * jnp.pi * y) * jnp.sin(40 * jnp.pi * z)
 
     @custom_jit
     def f_p_fn(r):
@@ -277,9 +263,7 @@ def poisson_solver_with_jump_complex():
         "phi": eval_phi.reshape((Nx_eval, Ny_eval, Nz_eval)),
         "U": sim_state.solution.reshape((Nx_eval, Ny_eval, Nz_eval)),
     }
-    io.write_vtk_manual(
-        eval_gstate, log, filename=currDir + f"/results/dragon_final{Nx_tr}_{gpu_cnt}"
-    )
+    io.write_vtk_manual(eval_gstate, log, filename=currDir + f"/results/dragon_final{Nx_tr}_{gpu_cnt}")
 
 
 if __name__ == "__main__":

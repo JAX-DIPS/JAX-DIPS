@@ -9,9 +9,7 @@ custom_jit = partial(jit, backend=COMPILE_BACKEND)
 
 C = 1.0  # rhs_per_Angs2  # e2_per_Angs_to_kcal_per_mol / KbT_in_kcal_per_mol = 560.745
 psi_star_coeff = C / eps_m_r  # eC2_per_KbT_per_eps_m_in_Angstroms
-psi_bc_coeff = (
-    C / eps_p_r
-)  # so unit of phi be eC/Angstroms #eC2_per_KbT_per_eps_p_in_Angstroms
+psi_bc_coeff = C / eps_p_r  # so unit of phi be eC/Angstroms #eC2_per_KbT_per_eps_p_in_Angstroms
 
 
 ##-------------------------------------------------------
@@ -25,7 +23,6 @@ def initial_value_fn(r):
 
 
 def get_dirichlet_bc_fn(atom_xyz_rad_chg):
-
     kappa = (kappa_sq_in_angs2) ** 0.5
 
     def dirichlet_bc_fn(r):
@@ -178,9 +175,7 @@ def get_psi_star(atom_xyz_rad_chg, EPS=1e-6):
             return (grad_psi,), None
 
         grad_psi = jnp.array([0.0, 0.0, 0.0])
-        (grad_psi,), _ = lax.scan(
-            grad_psi_pairwise_kernel, (grad_psi,), atom_xyz_rad_chg
-        )
+        (grad_psi,), _ = lax.scan(grad_psi_pairwise_kernel, (grad_psi,), atom_xyz_rad_chg)
         return psi_star_coeff * grad_psi
 
     grad_vec_psi_fn = vmap(grad_psi_fn)
@@ -232,9 +227,7 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
             return (grad_psi,), None
 
         grad_psi = jnp.array([0.0, 0.0, 0.0])
-        (grad_psi,), _ = lax.scan(
-            grad_psi_pairwise_kernel, (grad_psi,), atom_xyz_rad_chg
-        )
+        (grad_psi,), _ = lax.scan(grad_psi_pairwise_kernel, (grad_psi,), atom_xyz_rad_chg)
         return psi_star_coeff * grad_psi
 
     @custom_jit
@@ -277,10 +270,7 @@ def get_rho_fn(atom_xyz_rad_chg):
             ch_sigma = 0.1 * sigma
             rho += (
                 chg
-                * jnp.exp(
-                    -((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-                    / (2 * ch_sigma * ch_sigma)
-                )
+                * jnp.exp(-((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2) / (2 * ch_sigma * ch_sigma))
                 / ((2 * jnp.pi) ** 1.5 * ch_sigma * ch_sigma * ch_sigma)
             )
             rho = jnp.nan_to_num(rho)

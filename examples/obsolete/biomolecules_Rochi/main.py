@@ -37,8 +37,8 @@ import jax.profiler
 import pdb
 import numpy as onp
 
-from src import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
-from src.jaxmd_modules.util import f32
+from jax_dips import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
+from jax_dips.jaxmd_modules.util import f32
 from examples.obsolete.biomolecules_Rochi.coefficients import *
 from examples.obsolete.biomolecules_Rochi.geometry import get_initial_level_set_fn
 from examples.obsolete.biomolecules_Rochi.load_pqr import base
@@ -46,7 +46,6 @@ from examples.obsolete.biomolecules_Rochi.free_energy import get_free_energy
 
 
 def biomolecule_solvation_energy():
-
     ###########################################################
 
     num_epochs = 100
@@ -55,9 +54,7 @@ def biomolecule_solvation_energy():
     Nx = Ny = Nz = 256  # grid for level-set
     Nx_eval = Ny_eval = Nz_eval = 256  # grid for visualization
 
-    ALGORITHM = (
-        0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    )
+    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     multi_gpu = False
     checkpoint_interval = 500
@@ -84,15 +81,11 @@ def biomolecule_solvation_energy():
         / l_tilde
     )  # was in Angstroms, scaled to l_tilde units
     atom_locations -= atom_locations.mean(axis=0)  # recenter in the box
-    sigma_i = (
-        onp.array(mol_base.atoms["R"]) * Angstrom_in_m / l_tilde
-    )  # was Angstroms, scaled to l_tilde
+    sigma_i = onp.array(mol_base.atoms["R"]) * Angstrom_in_m / l_tilde  # was Angstroms, scaled to l_tilde
     sigma_s = 1.4 * Angstrom_in_m / l_tilde  # was Angstroms, converted to l_tilde
     atom_sigmas = sigma_i + sigma_s  # is in l_tilde
 
-    atom_charges = jnp.array(
-        mol_base.atoms["q"]
-    )  # partial charges, in units of electron charge e
+    atom_charges = jnp.array(mol_base.atoms["q"])  # partial charges, in units of electron charge e
     atom_xyz_rad_chg = jnp.concatenate(
         (atom_locations, atom_sigmas[..., jnp.newaxis], atom_charges[..., jnp.newaxis]),
         axis=1,
@@ -140,9 +133,7 @@ def biomolecule_solvation_energy():
         eval_phi = vmap(phi_fn)(eval_gstate.R)
         chg_density = vmap(f_m_fn)(eval_gstate.R)
         log = {"phi": eval_phi, "Ustar": psi_star, "rho": chg_density}
-        io.write_vtk_manual(
-            eval_gstate, log, filename=currDir + "/results/biomolecules"
-        )
+        io.write_vtk_manual(eval_gstate, log, filename=currDir + "/results/biomolecules")
         pdb.set_trace()
 
     if True:
@@ -241,9 +232,7 @@ def biomolecule_solvation_energy():
     }
     io.write_vtk_manual(eval_gstate, log, filename=currDir + "/results/biomolecules")
 
-    SFE1, SFE2, SFE3 = get_free_energy(
-        eval_gstate, eval_phi, psi_solution, psi_hat, atom_xyz_rad_chg
-    )
+    SFE1, SFE2, SFE3 = get_free_energy(eval_gstate, eval_phi, psi_solution, psi_hat, atom_xyz_rad_chg)
     print(f"Solvaion Free Energy : {SFE1} (kcal/mol) and {SFE2} (kcal/mol) ")
     print(f"with new definition it is {SFE3}")
     pdb.set_trace()

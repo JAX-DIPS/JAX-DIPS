@@ -38,7 +38,7 @@ from functools import partial
 import pdb
 import time
 
-from src import (
+from jax_dips import (
     io,
     solver_advection,
     trainer_poisson_advection,
@@ -46,14 +46,13 @@ from src import (
     level_set,
     interpolate,
 )
-from src.jaxmd_modules.util import f32, i32
-from src.jaxmd_modules import dataclasses
+from jax_dips.jaxmd_modules.util import f32, i32
+from jax_dips.jaxmd_modules import dataclasses
 from examples.colloids.coefficients import *
 from examples.colloids.geometry import get_initial_level_set_fn
 
 
 def poisson_advection_simulation():
-
     ###########################################################
 
     num_epochs = 50
@@ -63,9 +62,7 @@ def poisson_advection_simulation():
     Nx_eval = Ny_eval = Nz_eval = 128  # grid for visualization
     Nx = Ny = Nz = 128  # grid for level-set
 
-    ALGORITHM = (
-        0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    )
+    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = 3
     multi_gpu = False
     checkpoint_interval = 1000

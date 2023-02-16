@@ -5,18 +5,18 @@ from jax._src.api import vmap
 import jax.numpy as jnp
 import numpy as onp
 from jax.config import config
-from src.jaxmd_modules import quantity, space, util
-from src.jaxmd_modules import energy, partition
-from src.jaxmd_modules.quantity import EnergyFn
+from jax_dips.jaxmd_modules import quantity, space, util
+from jax_dips.jaxmd_modules import energy, partition
+from jax_dips.jaxmd_modules.quantity import EnergyFn
 
 config.update("jax_enable_x64", True)
-from src.jaxmd_modules.util import f32, i32
-from src import compositions
-from src import solver_advection
-from src import simulate_particles
-from src import io
-from src import mesh
-from src import interpolate
+from jax_dips.jaxmd_modules.util import f32, i32
+from jax_dips import compositions
+from jax_dips import solver_advection
+from jax_dips import simulate_particles
+from jax_dips import io
+from jax_dips import mesh
+from jax_dips import interpolate
 import os
 import numpy as onp
 from functools import partial
@@ -62,6 +62,7 @@ R = gstate.R
 sample_pnt = coord_at(gstate, [1, 1, 1])
 
 displacement_fn, shift_fn = space.periodic(box_size)
+
 
 # -- define velocity field as gradient of a scalar field
 # def energy_fn(r):
@@ -205,9 +206,7 @@ def step_func(i, state_and_nbrs):
 import time
 
 t1 = time.time()
-sim_state, log, dt = lax.fori_loop(
-    i32(0), i32(simulation_steps), step_func, (sim_state, log, dt)
-)
+sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (sim_state, log, dt))
 sim_state.solution.block_until_ready()
 t2 = time.time()
 print(f"time per timestep is {(t2 - t1)/simulation_steps}")

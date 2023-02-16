@@ -1,6 +1,6 @@
 from jax import random, numpy as jnp, jit
 import jax
-from src.jaxmd_modules.util import f32
+from jax_dips.jaxmd_modules.util import f32
 
 
 def get_initial_level_set_fn():
@@ -24,9 +24,7 @@ def get_initial_level_set_fn():
     key = random.PRNGKey(0)
     cov = jnp.eye(3)
     mean = jnp.zeros(3)
-    angles = random.multivariate_normal(
-        key, mean, cov, shape=(num_stars_x * num_stars_y * num_stars_z,)
-    )
+    angles = random.multivariate_normal(key, mean, cov, shape=(num_stars_x * num_stars_y * num_stars_z,))
     xc = jnp.linspace(-1 + 1.15 * re, 1 - 1.15 * re, num_stars_x, dtype=f32)
     yc = jnp.linspace(-1 + 1.15 * re, 1 - 1.15 * re, num_stars_y, dtype=f32)
     zc = jnp.linspace(-1 + 1.15 * re, 1 - 1.15 * re, num_stars_z, dtype=f32)
@@ -63,11 +61,7 @@ def get_initial_level_set_fn():
                         * r0
                         * (
                             1.0
-                            + (
-                                ((x - xc) ** 2 + (y - yc) ** 2)
-                                / ((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-                            )
-                            ** 2
+                            + (((x - xc) ** 2 + (y - yc) ** 2) / ((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)) ** 2
                             * core
                         ),
                     ]

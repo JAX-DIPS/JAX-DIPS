@@ -3,15 +3,15 @@ from jax import jit, random, lax, ops
 import jax.numpy as jnp
 import numpy as onp
 from jax.config import config
-from src.jaxmd_modules import energy, partition
-from src.jaxmd_modules.quantity import EnergyFn
+from jax_dips.jaxmd_modules import energy, partition
+from jax_dips.jaxmd_modules.quantity import EnergyFn
 
 config.update("jax_enable_x64", True)
-from src.jaxmd_modules.util import f32, i32
-from src.jaxmd_modules import space
-from src import solver_advection
-from src import simulate_particles
-from src import visualization
+from jax_dips.jaxmd_modules.util import f32, i32
+from jax_dips.jaxmd_modules import space
+from jax_dips import solver_advection
+from jax_dips import simulate_particles
+from jax_dips import visualization
 
 
 # Use JAX's random number generator to generate random initial positions.
@@ -66,9 +66,7 @@ log = {
     "V": jnp.zeros((simulation_steps,) + R.shape),
     "t": jnp.zeros((simulation_steps,)),
 }
-opt_state, opt_nbrs, log = lax.fori_loop(
-    i32(0), i32(simulation_steps), step_func, (opt_state, opt_nbrs, log)
-)
+opt_state, opt_nbrs, log = lax.fori_loop(i32(0), i32(simulation_steps), step_func, (opt_state, opt_nbrs, log))
 
 opt_state.position.block_until_ready()
 

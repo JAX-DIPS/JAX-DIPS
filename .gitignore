@@ -45,3 +45,4 @@ tstex_modules
 .vimrc
 .wget-hsts
 third_party/
+.notebook
