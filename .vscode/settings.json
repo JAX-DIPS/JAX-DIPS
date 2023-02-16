@@ -1,0 +1,16 @@
+{
+    "git.ignoreLimitWarning": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length",
+        "119"
+    ],
+    "python.linting.flake8Args": [
+        "--max-line-length=119",
+        "--ignore=E402,F841,F401,E302,E305",
+    ],
+    "cmake.configureOnOpen": false,
+}

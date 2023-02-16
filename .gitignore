@@ -33,7 +33,7 @@ workspace.code-workspace
 .gnupg
 .local
 checkpoints/
-.vscode/
+
 .keras
 examples/dragon/results/*.pvsm
 examples/lucy/lucy.ply
