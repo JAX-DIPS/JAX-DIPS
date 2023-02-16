@@ -2,9 +2,9 @@ from jax import jit, numpy as jnp
 from functools import partial
 
 
-
-COMPILE_BACKEND = 'gpu'
+COMPILE_BACKEND = "gpu"
 custom_jit = partial(jit, backend=COMPILE_BACKEND)
+
 
 @custom_jit
 def dirichlet_bc_fn(r):
@@ -65,7 +65,6 @@ def k_p_fn(r):
     return 0.0
 
 
-
 @custom_jit
 def initial_value_fn(r):
     x = r[0]
@@ -79,12 +78,35 @@ def f_m_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    fm   = -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0*x) * jnp.cos(2.0*y) * jnp.exp(z)) +\
-            -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*x) * 2*jnp.cos(2*x)*jnp.cos(2*y)*jnp.exp(z)   +\
-            -4*jnp.pi*jnp.cos(z)*jnp.cos(4*jnp.pi*y) * (-2)*jnp.sin(2*x)*jnp.sin(2*y)*jnp.exp(z) +\
-            2*jnp.cos(2*jnp.pi*(x+y))*jnp.sin(2*jnp.pi*(x-y))*jnp.sin(z) * jnp.sin(2*x)*jnp.cos(2*y)*jnp.exp(z)
+    fm = (
+        -1.0 * mu_m_fn(r) * (-7.0 * jnp.sin(2.0 * x) * jnp.cos(2.0 * y) * jnp.exp(z))
+        + -4
+        * jnp.pi
+        * jnp.cos(z)
+        * jnp.cos(4 * jnp.pi * x)
+        * 2
+        * jnp.cos(2 * x)
+        * jnp.cos(2 * y)
+        * jnp.exp(z)
+        + -4
+        * jnp.pi
+        * jnp.cos(z)
+        * jnp.cos(4 * jnp.pi * y)
+        * (-2)
+        * jnp.sin(2 * x)
+        * jnp.sin(2 * y)
+        * jnp.exp(z)
+        + 2
+        * jnp.cos(2 * jnp.pi * (x + y))
+        * jnp.sin(2 * jnp.pi * (x - y))
+        * jnp.sin(z)
+        * jnp.sin(2 * x)
+        * jnp.cos(2 * y)
+        * jnp.exp(z)
+    )
 
     return fm
+
 
 @custom_jit
 def f_p_fn(r):

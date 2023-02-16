@@ -1,4 +1,3 @@
-
 from functools import wraps, partial
 
 from typing import Callable, Tuple, TextIO, Dict, Any, Optional
@@ -29,12 +28,10 @@ NeighborFn = partition.NeighborFn
 NeighborList = partition.NeighborList
 
 
-def gravity(dr: Array,
-            a: Array = 0,
-            b: Array = 1,
-            c: Array = 0,
-            **unused_kwargs) -> Array:
-    """ Expanding wave motion with conservative potential for velocity
+def gravity(
+    dr: Array, a: Array = 0, b: Array = 1, c: Array = 0, **unused_kwargs
+) -> Array:
+    """Expanding wave motion with conservative potential for velocity
     Args:
       dr: An ndarray of shape [n, m] of pairwise distances between grid points and a reference (e.g., center of grid).
       a: Should either be a floating point scalar or an ndarray whose shape is [n, m].
@@ -44,16 +41,14 @@ def gravity(dr: Array,
     Returns:
       Matrix of energies of shape [n, m].
     """
-    dr_inv = 1. / (dr + 1.0e-7)
-    return np.nan_to_num(- b * dr_inv)
+    dr_inv = 1.0 / (dr + 1.0e-7)
+    return np.nan_to_num(-b * dr_inv)
 
 
-def oscillate(dr: Array,
-              a: Array = 0,
-              b: Array = 1,
-              c: Array = 0,
-              **unused_kwargs) -> Array:
-    """ Expanding wave motion with conservative potential for velocity
+def oscillate(
+    dr: Array, a: Array = 0, b: Array = 1, c: Array = 0, **unused_kwargs
+) -> Array:
+    """Expanding wave motion with conservative potential for velocity
     Args:
       dr: An ndarray of shape [n, m] of pairwise distances between grid points and a reference (e.g., center of grid).
       a: Should either be a floating point scalar or an ndarray whose shape is [n, m].
@@ -69,23 +64,23 @@ def oscillate(dr: Array,
     return np.nan_to_num(f32(0.5) * a * dr4 + f32(0.5) * b * dr2 - c * dr)
 
 
-def energy(displacement_or_metric: DisplacementOrMetricFn,
-           box_size: Box,
-           r_onset: float = 2.0,
-           r_cutoff: float = 2.5,
-           dr_threshold: float = 0.5,
-           per_particle: bool = False,
-           fractional_coordinates: bool = False
-           ) -> Tuple[NeighborFn,
-                      Callable[[Array, NeighborList],
-                               Array]]:
+def energy(
+    displacement_or_metric: DisplacementOrMetricFn,
+    box_size: Box,
+    r_onset: float = 2.0,
+    r_cutoff: float = 2.5,
+    dr_threshold: float = 0.5,
+    per_particle: bool = False,
+    fractional_coordinates: bool = False,
+) -> Tuple[NeighborFn, Callable[[Array, NeighborList], Array]]:
 
     neighbor_fn = partition.neighbor_list(
         displacement_or_metric,
         box_size,
         r_cutoff,
         dr_threshold,
-        fractional_coordinates=fractional_coordinates)
+        fractional_coordinates=fractional_coordinates,
+    )
     energy_fn = smap.pair_neighbor_list(
         multiplicative_isotropic_cutoff(oscillate, r_onset, r_cutoff),
         space.canonicalize_displacement_or_metric(displacement_or_metric),
@@ -93,14 +88,15 @@ def energy(displacement_or_metric: DisplacementOrMetricFn,
         a=0,
         b=1,
         c=0,
-        reduce_axis=(1,) if per_particle else None)
+        reduce_axis=(1,) if per_particle else None,
+    )
 
     return neighbor_fn, energy_fn
 
 
-def multiplicative_isotropic_cutoff(fn: Callable[..., Array],
-                                    r_onset: float,
-                                    r_cutoff: float) -> Callable[..., Array]:
+def multiplicative_isotropic_cutoff(
+    fn: Callable[..., Array], r_onset: float, r_cutoff: float
+) -> Callable[..., Array]:
     """Takes an isotropic function and constructs a truncated function.
     Given a function f:R -> R, we construct a new function f':R -> R such that
     f'(r) = f(r) for r < r_onset, f'(r) = 0 for r > r_cutoff, and f(r) is C^1
@@ -126,9 +122,11 @@ def multiplicative_isotropic_cutoff(fn: Callable[..., Array],
     def smooth_fn(dr):
         r = dr ** f32(2)
 
-        inner = np.where(dr < r_cutoff,
-                         (r_c - r)**2 * (r_c + 2 * r - 3 * r_o) / (r_c - r_o)**3,
-                         0)
+        inner = np.where(
+            dr < r_cutoff,
+            (r_c - r) ** 2 * (r_c + 2 * r - 3 * r_o) / (r_c - r_o) ** 3,
+            0,
+        )
 
         return np.where(dr < r_onset, 1, inner)
 

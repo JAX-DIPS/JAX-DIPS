@@ -19,13 +19,23 @@
 """
 
 import haiku as hk
-from jax import (numpy as jnp, nn as jnn)
+from jax import numpy as jnp, random
 from jax import config
+
 config.update("jax_debug_nans", False)
+
+import pdb
+
+
+from typing import Optional
+
+
+def layer_norm(x: jnp.ndarray, name: Optional[str] = None) -> jnp.ndarray:
+    """Apply a unique LayerNorm to x with default settings."""
+    return hk.LayerNorm(axis=-1, create_scale=True, create_offset=True, name=name)(x)
 
 
 class DoubleMLP(hk.Module):
-
     def __init__(self, name=None):
         super().__init__(name=name)
 
@@ -34,107 +44,87 @@ class DoubleMLP(hk.Module):
         self.activation_fn = jnp.sin
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
-        self.L = 3
-        self.args = 2**jnp.arange(self.L) * jnp.pi
-        self.encoding_m = jnp.zeros(6*self.L)
-        self.encoding_p = jnp.zeros(6*self.L)
+        d1 = 3  # dimension of input space; e.g., 3D space
+        self.d2 = 16  # dimension of lifted space
+        key = random.PRNGKey(0)
+        cov = jnp.eye(d1)
+        mean = jnp.zeros(d1)
 
+        self.Bmat = random.multivariate_normal(key, mean, cov, shape=(self.d2,))
+        self.twoPi = 2.0 * jnp.pi
 
-
+        self.encoding_m = jnp.zeros(2 * self.d2)
+        self.encoding_p = jnp.zeros(2 * self.d2)
 
     def __call__(self, r, phi_r):
-        '''
+        """
         Driver function for evaluating neural networks in appropriate regions
         based on the value of the level set function at the point.
-        '''
-        return jnp.where(phi_r >=0, self.nn_up_fn(r), self.nn_um_fn(r))
-
+        """
+        return jnp.where(phi_r >= 0, self.nn_up_fn(r), self.nn_um_fn(r))
 
     def nn_up_fn(self, h):
-        '''
+        """
         neural network function for solution in Omega plus
         input:
             h: vector of coordinates for one point (x,y,z)
         output:
             one scalar value representing the solution u_p
-        '''
+        """
         # h = self.positional_encoding_p(h)
         for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
+            h = hk.Linear(
+                output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init
+            )(h)
+            h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h
 
     def nn_um_fn(self, h):
-        '''
+        """
         neural network function for solution in Omega minus
         input:
             h: vector of coordinates for one point (x,y,z)
         output:
             one scalar value representing the solution u_m
-        '''
+        """
         # h = self.positional_encoding_m(h)
         for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
+            h = hk.Linear(
+                output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init
+            )(h)
+            h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h
 
-
     def positional_encoding_p(self, h):
-        '''
+        """
         positional encoding function
         input:
             h: vector of coordinates for one point (x,y,z)
         output:
-            L dimensional encoding
-        '''
-        x_sin = jnp.sin(self.args * h[0]); x_cos = jnp.cos(self.args * h[0])
-        y_sin = jnp.sin(self.args * h[1]); y_cos = jnp.cos(self.args * h[1])
-        z_sin = jnp.sin(self.args * h[2]); z_cos = jnp.cos(self.args * h[2])
-
-        self.encoding_p = self.encoding_p.at[:self.L].set(x_sin)
-        self.encoding_p = self.encoding_p.at[self.L:2*self.L].set(x_cos)
-
-        self.encoding_p = self.encoding_p.at[2*self.L:3*self.L].set(y_sin)
-        self.encoding_p = self.encoding_p.at[3*self.L:4*self.L].set(y_cos)
-
-        self.encoding_p = self.encoding_p.at[4*self.L:5*self.L].set(z_sin)
-        self.encoding_p = self.encoding_p.at[5*self.L:        ].set(z_cos)
+            2*d2 dimensional encoding
+        """
+        arg = self.twoPi * (self.Bmat @ h)
+        self.encoding_p = self.encoding_p.at[: self.d2].set(jnp.sin(arg))
+        self.encoding_p = self.encoding_p.at[self.d2 :].set(jnp.cos(arg))
         return self.encoding_p
 
     def positional_encoding_m(self, h):
-        '''
+        """
         positional encoding function
         input:
             h: vector of coordinates for one point (x,y,z)
         output:
-            L dimensional encoding
-        '''
-        x_sin = jnp.sin(self.args * h[0]); x_cos = jnp.cos(self.args * h[0])
-        y_sin = jnp.sin(self.args * h[1]); y_cos = jnp.cos(self.args * h[1])
-        z_sin = jnp.sin(self.args * h[2]); z_cos = jnp.cos(self.args * h[2])
-
-        self.encoding_m = self.encoding_m.at[:self.L].set(x_sin)
-        self.encoding_m = self.encoding_m.at[self.L:2*self.L].set(x_cos)
-
-        self.encoding_m = self.encoding_m.at[2*self.L:3*self.L].set(y_sin)
-        self.encoding_m = self.encoding_m.at[3*self.L:4*self.L].set(y_cos)
-
-        self.encoding_m = self.encoding_m.at[4*self.L:5*self.L].set(z_sin)
-        self.encoding_m = self.encoding_m.at[5*self.L:        ].set(z_cos)
+            2*d2 dimensional encoding
+        """
+        arg = self.twoPi * (self.Bmat @ h)
+        self.encoding_m = self.encoding_m.at[: self.d2].set(jnp.sin(arg))
+        self.encoding_m = self.encoding_m.at[self.d2 :].set(jnp.cos(arg))
         return self.encoding_m
-
-
 
     @staticmethod
     def __version__():
-        return '0.0.1'
-
-
-
-
-
-
-
-
+        return "0.0.1"

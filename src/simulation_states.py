@@ -1,7 +1,7 @@
 from typing import Callable, TypeVar
 from src.jaxmd_modules import dataclasses, util
 
-T = TypeVar('T')
+T = TypeVar("T")
 Array = util.Array
 i32 = util.i32
 f32 = util.f32
@@ -10,37 +10,37 @@ f64 = util.f64
 
 @dataclasses.dataclass
 class PoissonSimStateFn:
-    u_0_fn           :  Callable[..., Array]
-    dir_bc_fn        :  Callable[..., Array]
-    phi_fn           :  Callable[..., Array]
-    mu_m_fn          :  Callable[..., Array]
-    mu_p_fn          :  Callable[..., Array]
-    k_m_fn           :  Callable[..., Array]
-    k_p_fn           :  Callable[..., Array]
-    f_m_fn           :  Callable[..., Array]
-    f_p_fn           :  Callable[..., Array]
-    alpha_fn         :  Callable[..., Array]
-    beta_fn          :  Callable[..., Array]
-    nonlinear_op_m   :  Callable[..., T]
-    nonlinear_op_p   :  Callable[..., T]
+    u_0_fn: Callable[..., Array]
+    dir_bc_fn: Callable[..., Array]
+    phi_fn: Callable[..., Array]
+    mu_m_fn: Callable[..., Array]
+    mu_p_fn: Callable[..., Array]
+    k_m_fn: Callable[..., Array]
+    k_p_fn: Callable[..., Array]
+    f_m_fn: Callable[..., Array]
+    f_p_fn: Callable[..., Array]
+    alpha_fn: Callable[..., Array]
+    beta_fn: Callable[..., Array]
+    nonlinear_op_m: Callable[..., T]
+    nonlinear_op_p: Callable[..., T]
 
-    
+
 @dataclasses.dataclass
 class PoissonAdvectionSimStateFn:
-    u_0_fn           :  Callable[..., Array]
-    dir_bc_fn        :  Callable[..., Array]
-    phi_fn           :  Callable[..., Array]
-    mu_m_fn          :  Callable[..., Array]
-    mu_p_fn          :  Callable[..., Array]
-    k_m_fn           :  Callable[..., Array]
-    k_p_fn           :  Callable[..., Array]
-    f_m_fn           :  Callable[..., Array]
-    f_p_fn           :  Callable[..., Array]
-    alpha_fn         :  Callable[..., Array]
-    beta_fn          :  Callable[..., Array]
-    vel_fn           :  Callable[..., Array]
-    
-    
+    u_0_fn: Callable[..., Array]
+    dir_bc_fn: Callable[..., Array]
+    phi_fn: Callable[..., Array]
+    mu_m_fn: Callable[..., Array]
+    mu_p_fn: Callable[..., Array]
+    k_m_fn: Callable[..., Array]
+    k_p_fn: Callable[..., Array]
+    f_m_fn: Callable[..., Array]
+    f_p_fn: Callable[..., Array]
+    alpha_fn: Callable[..., Array]
+    beta_fn: Callable[..., Array]
+    vel_fn: Callable[..., Array]
+
+
 @dataclasses.dataclass
 class AdvectionSimState:
     """A struct containing the state of the semi-lagrangian advection simulation.
@@ -50,10 +50,10 @@ class AdvectionSimState:
     Attributes:
     u: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
     """
+
     phi: Array
     velocity_nm1: Array
-    
-    
+
 
 @dataclasses.dataclass
 class PoissonSimState:
@@ -64,6 +64,7 @@ class PoissonSimState:
     Attributes:
     u: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
     """
+
     phi: Array
     solution: Array
     dirichlet_bc: Array
@@ -78,8 +79,6 @@ class PoissonSimState:
     grad_solution: Array
     grad_normal_solution: Array
 
-    
-    
 
 @dataclasses.dataclass
 class PoissonAdvectionSimState:
@@ -90,6 +89,7 @@ class PoissonAdvectionSimState:
     Attributes:
     u: An ndarray of shape [n, spatial_dimension] storing the solution value at grid points.
     """
+
     phi: Array
     solution: Array
     dirichlet_bc: Array

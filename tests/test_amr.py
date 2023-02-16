@@ -19,7 +19,7 @@
 """
 from jax.config import config
 from src import io
-from jax import (jit, vmap, numpy as jnp)
+from jax import jit, vmap, numpy as jnp
 import jax
 import os
 import sys
@@ -28,34 +28,31 @@ import pdb
 from src import data_management
 
 currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, '..'))
-if rootDir not in sys.path:  
+rootDir = os.path.abspath(os.path.join(currDir, ".."))
+if rootDir not in sys.path:
     sys.path.append(rootDir)
 
 config.update("jax_enable_x64", False)
-os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
-
+os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
 
 def phi_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    return jnp.sqrt(x*x + y*y + z*z) - 0.25
+    return jnp.sqrt(x * x + y * y + z * z) - 0.25
+
 
 def test_amr():
-    xmin=ymin=zmin=-1
-    xmax=ymax=zmax=1
-    Nx=Ny=Nz=32
-    
+    xmin = ymin = zmin = -1
+    xmax = ymax = zmax = 1
+    Nx = Ny = Nz = 32
+
     TD = data_management.TrainData(xmin, xmax, ymin, ymax, zmin, zmax, Nx, Ny, Nz)
     points = TD.gstate.R
     refined_points = TD.refine(phi_fn)
     pdb.set_trace()
-    
 
 
-
-
-if __name__=="__main__":
+if __name__ == "__main__":
     test_amr()
