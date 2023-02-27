@@ -46,3 +46,4 @@ tstex_modules
 .wget-hsts
 third_party/
 .notebook
+.dotnet

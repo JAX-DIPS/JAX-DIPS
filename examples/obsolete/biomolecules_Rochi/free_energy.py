@@ -1,8 +1,10 @@
 from jax import vmap, numpy as jnp
-from jax_dips import interpolate, geometric_integrations_per_point
+from jax_dips.geometry import interpolate
 from examples.obsolete.biomolecules_Rochi.units import *
 import pdb
 import numpy as onp
+
+from jax_dips.geometry.level_set import geometric_integrations_per_point
 
 """
     * Based on equation 9 in `Eﬃcient calculation of fully resolved electrostatics around large biomolecules`

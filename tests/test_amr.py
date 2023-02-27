@@ -17,15 +17,13 @@
   Primary Author: mistani
 
 """
-from jax.config import config
-from jax_dips import io
-from jax import jit, vmap, numpy as jnp
-import jax
 import os
 import sys
-import pdb
 
-from jax_dips import data_management
+from jax import numpy as jnp
+from jax.config import config
+
+from jax_dips.data import data_management
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, ".."))
@@ -51,7 +49,6 @@ def test_amr():
     TD = data_management.TrainData(xmin, xmax, ymin, ymax, zmin, zmax, Nx, Ny, Nz)
     points = TD.gstate.R
     refined_points = TD.refine(phi_fn)
-    pdb.set_trace()
 
 
 if __name__ == "__main__":

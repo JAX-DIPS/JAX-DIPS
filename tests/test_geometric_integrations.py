@@ -17,14 +17,18 @@
   Primary Author: mistani
 
 """
-from jax.config import config
-from jax_dips import io, mesh, interpolate, geometric_integrations
-from jax_dips.jaxmd_modules import dataclasses, util
-from jax_dips.jaxmd_modules.util import f32, i32
-from jax import random, numpy as jnp, vmap
-
 import os
 import sys
+
+from jax import random, numpy as jnp, vmap
+from jax.config import config
+
+from jax_dips.domain import mesh
+from jax_dips._jaxmd_modules import dataclasses, util
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.domain import interpolate
+from jax_dips.geometry import geometric_integrations
+from jax_dips.utils import io
 
 Array = util.Array
 

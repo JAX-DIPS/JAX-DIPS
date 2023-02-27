@@ -19,8 +19,8 @@
 """
 
 from jax.config import config
-from jax_dips import io, poisson_solver_scalable, mesh, level_set
-from jax_dips.jaxmd_modules.util import f32, i32
+from jax_dips.elliptic import poisson_solver_scalable
+from jax_dips._jaxmd_modules.util import f32, i32
 from jax import jit, numpy as jnp, vmap, grad, lax
 import jax
 import jax.profiler
@@ -28,6 +28,9 @@ import time
 import os
 import sys
 from functools import partial
+from jax_dips.geometry import level_set, mesh
+
+from jax_dips.utils import io
 
 COMPILE_BACKEND = "gpu"
 custom_jit = partial(jit, backend=COMPILE_BACKEND)

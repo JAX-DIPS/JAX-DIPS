@@ -1,5 +1,7 @@
 import os, sys
 
+from jax_dips.geometry import interpolate, level_set, mesh
+
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:  # add parent dir to paths
@@ -10,11 +12,11 @@ from functools import partial
 import jax
 import jax.profiler
 from jax import jit, random, lax, numpy as jnp, vmap
-from jax_dips.jaxmd_modules.util import f32, i32
-from jax_dips.jaxmd_modules import space
-from jax_dips import interpolate, solver_advection
-from jax_dips import io
-from jax_dips import mesh, level_set, compositions
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips._jaxmd_modules import space
+from jax_dips.advection import solver_advection
+from jax_dips.utils import io
+from jax_dips._experimental import compositions
 from jax.config import config
 
 config.update("jax_enable_x64", True)

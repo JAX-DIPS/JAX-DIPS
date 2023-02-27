@@ -19,6 +19,9 @@
 """
 
 from jax.config import config
+from jax_dips.advection import solver_advection
+from jax_dips.geometry import interpolate, level_set, mesh
+from jax_dips.utils import io
 
 config.update("jax_enable_x64", False)
 import os
@@ -38,16 +41,11 @@ from functools import partial
 import pdb
 import time
 
-from jax_dips import (
-    io,
-    solver_advection,
+from jax_dips.solvers.free_boundary import (
     trainer_poisson_advection,
-    mesh,
-    level_set,
-    interpolate,
 )
-from jax_dips.jaxmd_modules.util import f32, i32
-from jax_dips.jaxmd_modules import dataclasses
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips._jaxmd_modules import dataclasses
 from examples.colloids.coefficients import *
 from examples.colloids.geometry import get_initial_level_set_fn
 

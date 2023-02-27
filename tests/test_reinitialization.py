@@ -17,21 +17,27 @@
   Primary Author: mistani
 
 """
-from jax.config import config
-from jax_dips.data import StateData
-from jax_dips import mesh, level_set, solver_advection
-from jax_dips import io
-from jax_dips import interpolate
-from jax_dips.jaxmd_modules.util import f32, i32
-from jax.experimental import host_callback
-from jax import jit, lax, numpy as jnp, vmap
-import jax.profiler
-import jax
+import logging
+logging.basicConfig(level=logging.INFO)
 from functools import partial
 import time
 import os
 import sys
 import queue
+
+import jax
+import jax.profiler
+from jax.config import config
+from jax.experimental import host_callback
+from jax import jit, lax, numpy as jnp, vmap
+
+from jax_dips.data.data_stream import StateData
+from jax_dips.solvers.advection import solver_advection
+from jax_dips.geometry import level_set
+from jax_dips.utils import io
+from jax_dips.domain import interpolate, mesh
+from jax_dips._jaxmd_modules.util import f32, i32
+
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, ".."))
@@ -147,20 +153,20 @@ def test_reinitialization():
     sim_state, gstate, dt = lax.fori_loop(i32(0), i32(simulation_steps), partial_step_func, (sim_state, gstate, dt))
     sim_state.phi.block_until_ready()
     t2 = time.time()
-    print(f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}")
+    logging.info(f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}")
 
     state_data.stop()
 
     jax.profiler.save_device_memory_profile("memory.prof")
     jax.profiler.stop_trace()
 
-    print(f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5")
-    print(f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0")
+    logging.info(f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5")
+    logging.info(f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0")
     assert jnp.isclose(sim_state.phi.min(), -0.5, atol=2 * dx)
     assert jnp.isclose(sim_state.phi.max(), 3.0, atol=2 * dx)
 
     # --- if you want to visualize simulation uncomment below line
-    # io.write_vtk_log(gstate, state_data)
+    io.write_vtk_log(gstate, state_data)
 
 
 if __name__ == "__main__":

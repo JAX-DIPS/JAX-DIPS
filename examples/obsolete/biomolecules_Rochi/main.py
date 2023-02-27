@@ -19,6 +19,9 @@
 """
 
 from jax.config import config
+from jax_dips.elliptic import poisson_solver_scalable
+from jax_dips.geometry import level_set, mesh
+from jax_dips.utils import io
 
 config.update("jax_enable_x64", False)
 import os
@@ -37,8 +40,8 @@ import jax.profiler
 import pdb
 import numpy as onp
 
-from jax_dips import io, trainer_poisson, mesh, level_set, poisson_solver_scalable
-from jax_dips.jaxmd_modules.util import f32
+from jax_dips.elliptic import trainer_poisson
+from jax_dips._jaxmd_modules.util import f32
 from examples.obsolete.biomolecules_Rochi.coefficients import *
 from examples.obsolete.biomolecules_Rochi.geometry import get_initial_level_set_fn
 from examples.obsolete.biomolecules_Rochi.load_pqr import base

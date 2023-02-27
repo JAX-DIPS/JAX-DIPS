@@ -14,20 +14,22 @@
   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THE PRODUCT, EVEN
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ======================== END OF LICENSE NOTICE ========================
-  Primary Author: mistani
-
 """
-from jax.config import config
-from jax_dips import mesh, geometric_integrations
-from jax_dips import io
-from jax_dips import solver_advection
-from jax_dips.jaxmd_modules.util import f32, i32
-from jax import jit, lax, numpy as jnp
-import jax.profiler
-import jax
 import time
 import os
 import sys
+import logging
+logging.basicConfig(level=logging.INFO)
+
+import jax
+from jax import jit, lax, numpy as jnp
+import jax.profiler as profiler
+from jax.config import config
+
+from jax_dips.domain import mesh
+from jax_dips.geometry import geometric_integrations
+from jax_dips.solvers.advection import solver_advection
+from jax_dips._jaxmd_modules.util import f32, i32
 
 
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -116,7 +118,7 @@ def test_spinning_sphere():
     sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps - 1), step_func, (sim_state, log, dt))
     sim_state.phi.block_until_ready()
     t2 = time.time()
-    print(f"time per timestep is {(t2 - t1)/simulation_steps}")
+    logging.info(f"time per timestep is {(t2 - t1)/simulation_steps}")
 
     dt_last = tf - (simulation_steps - 1) * dt
     sim_state, log, dt = step_func(i32(simulation_steps), (sim_state, log, dt_last))
@@ -125,9 +127,11 @@ def test_spinning_sphere():
 
     difference_l2 = jnp.mean(jnp.square(log["U"][-1] - log["U"][0]))
 
-    # jax.profiler.save_device_memory_profile("memory_advecting_sphere.prof")
+    # profiler.save_device_memory_profile("memory_advecting_sphere.prof")
 
-    print(f"L2 error in 2\pi advected sphere of radius 0.5 is equal to {difference_l2} \t should ideally be \t 0.0")
+    logging.info(
+        f"L2 error in 2*pi advected sphere of radius 0.5 is equal to {difference_l2} \t should ideally be \t 0.0"
+    )
     assert jnp.isclose(difference_l2, 0.0, atol=1e-4)
 
     def one_fn(r):
@@ -153,8 +157,8 @@ def test_spinning_sphere():
     )
     sphere_volume = jax.vmap(integrate_in_negative_domain)(nodes).sum()
     sphere_area = jax.vmap(integrate_over_interface_at_node)(nodes).sum()
-    print(f"Final volume of the sphere is {sphere_volume}; it should be {4.0*3.141592653589793*0.5**3 / 3.0}")
-    print(f"Final surface area of the sphere is {sphere_area}; it should be {4.0*3.141592653589793*0.5**2}")
+    logging.info(f"Final volume of the sphere is {sphere_volume}; it should be {4.0*3.141592653589793*0.5**3 / 3.0}")
+    logging.info(f"Final surface area of the sphere is {sphere_area}; it should be {4.0*3.141592653589793*0.5**2}")
 
     # --- to save snapshots uncomment below line
     # io.write_vtk_solution(gstate, log, 'results/')

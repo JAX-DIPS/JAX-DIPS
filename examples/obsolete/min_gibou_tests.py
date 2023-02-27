@@ -5,18 +5,18 @@ from jax._src.api import vmap
 import jax.numpy as jnp
 import numpy as onp
 from jax.config import config
-from jax_dips.jaxmd_modules import quantity, space, util
-from jax_dips.jaxmd_modules import energy, partition
-from jax_dips.jaxmd_modules.quantity import EnergyFn
+from jax_dips._jaxmd_modules import quantity, space, util
+from jax_dips._jaxmd_modules import energy, partition
+from jax_dips._jaxmd_modules.quantity import EnergyFn
 
 config.update("jax_enable_x64", True)
-from jax_dips.jaxmd_modules.util import f32, i32
-from jax_dips import compositions
-from jax_dips import solver_advection
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips._experimental import compositions
+from jax_dips.advection import solver_advection
 from jax_dips import simulate_particles
-from jax_dips import io
-from jax_dips import mesh
-from jax_dips import interpolate
+from jax_dips.utils import io
+from jax_dips.geometry import mesh
+from jax_dips.geometry import interpolate
 import os
 import numpy as onp
 from functools import partial

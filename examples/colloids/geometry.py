@@ -1,6 +1,6 @@
 from jax import random, numpy as jnp, jit
 import jax
-from jax_dips.jaxmd_modules.util import f32
+from jax_dips._jaxmd_modules.util import f32
 
 
 def get_initial_level_set_fn():
