@@ -312,7 +312,7 @@ def biomolecule_solvation_energy(cfg: DictConfig,
         f.write(result)
 
 
-@hydra.main(config_path="../../jax_dips/conf", config_name="biomolecule", version_base="1.1")
+@hydra.main(config_path="conf", config_name="biomolecule", version_base="1.1")
 def main(cfg: DictConfig):
     logger.info("Starting the biomolecule training")
     logger.info(OmegaConf.to_yaml(cfg))
