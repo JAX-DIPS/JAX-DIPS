@@ -21,6 +21,8 @@
 import os
 import pickle
 import signal
+from tqdm.auto import tqdm
+
 import jax
 from jax import numpy as jnp, vmap, pmap, jit, grad, random, value_and_grad, config
 from jax_dips.data import data_management
@@ -858,13 +860,13 @@ def poisson_solver(
         return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
 
     key = random.PRNGKey(758493)
-    for epoch in range(epoch_start, num_epochs):
+    for epoch in tqdm(range(epoch_start, num_epochs)):
         if stop_training:
             break
 
         if multi_gpu:
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0)
-            batched_training_data = random.shuffle(key, batched_training_data, axis=2)
+            batched_training_data = random.permutation(key, batched_training_data, axis=2)
             for i in range(num_batches):
                 opt_state, params, loss_epoch_ = update_fn(
                     opt_state,
@@ -878,7 +880,7 @@ def poisson_solver(
         else:
             loss_epoch = 0.0
             train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-            batched_training_data = random.shuffle(key, batched_training_data, axis=1)
+            batched_training_data = random.permutation(key, batched_training_data, axis=1)
             (
                 opt_state,
                 params,

@@ -232,7 +232,7 @@ class PoissonAdvectionSolve:
                 batched_training_data,
             ) = carry
             train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-            batched_training_data = random.shuffle(key, batched_training_data, axis=1)
+            batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
             (
                 opt_state,
@@ -312,7 +312,7 @@ class PoissonAdvectionSolve:
             if stop_training:
                 break
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0)
-            batched_training_data = random.shuffle(self.key, batched_training_data, axis=2)
+            batched_training_data = random.permutation(self.key, batched_training_data, axis=2)
             for i in range(num_batches):
                 opt_state, params, loss_epoch_ = update_fn(
                     opt_state,
@@ -437,7 +437,7 @@ def poisson_advection_solve(
                 batched_training_data,
             ) = carry
             train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
-            batched_training_data = random.shuffle(key, batched_training_data, axis=1)
+            batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
             (
                 opt_state,
@@ -515,7 +515,7 @@ def poisson_advection_solve(
             if stop_training:
                 break
             loss_epoch = jax.tree_map(lambda x: jnp.array([x] * n_devices), 0.0)
-            batched_training_data = random.shuffle(key, batched_training_data, axis=2)
+            batched_training_data = random.permutation(key, batched_training_data, axis=2)
             for i in range(num_batches):
                 opt_state, params, loss_epoch_ = update_fn(
                     opt_state,

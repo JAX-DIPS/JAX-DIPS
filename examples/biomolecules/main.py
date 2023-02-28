@@ -31,14 +31,16 @@ if rootDir not in sys.path:
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import logging
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 import pdb
 import numpy as onp
 import time
+import multiprocessing as mp
+import glob
 
 from jax.config import config
 config.update("jax_enable_x64", False)
-config.update("jax_debug_nans", True)
+config.update("jax_debug_nans", False)
 from jax import numpy as jnp, vmap, profiler
 
 from jax_dips.solvers.elliptic import trainer_poisson
@@ -66,24 +68,33 @@ from examples.biomolecules.load_pqr import base
 from examples.biomolecules.free_energy import get_free_energy
 
 
-def biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address="pqr_input_mols", gpu_id=None):
-    if gpu_id is None:
+def biomolecule_solvation_energy(cfg: DictConfig,
+                                 file_name: str = "pdb:1ajj.pqr",
+                                 molecule_pqr_address: str = "pqr_input_mols",
+                                 gpu_id: str = "") -> None:
+    if gpu_id == "":
         pass
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
 
     ###########################################################
 
-    num_epochs = 100
+    num_epochs = cfg.solver.num_epochs
 
-    Nx_tr = Ny_tr = Nz_tr = 64  # grid for training
-    Nx = Ny = Nz = 256  # grid for level-set
-    Nx_eval = Ny_eval = Nz_eval = 256  # grid for visualization
+    Nx_tr = cfg.solver.Nx_tr  # grid for training
+    Ny_tr = cfg.solver.Ny_tr  # grid for training
+    Nz_tr = cfg.solver.Nz_tr  # grid for training
+    Nx = cfg.solver.Nx  # grid for level-set
+    Ny = cfg.solver.Ny  # grid for level-set
+    Nz = cfg.solver.Nz  # grid for level-set
+    Nx_eval = cfg.solver.Nx_eval  # grid for evaluation/visualization
+    Ny_eval = cfg.solver.Ny_eval  # grid for evaluation/visualization
+    Nz_eval = cfg.solver.Nz_eval  # grid for evaluation/visualization
 
-    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    SWITCHING_INTERVAL = 3
-    multi_gpu = False
-    checkpoint_interval = 500
+    ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
+    SWITCHING_INTERVAL = cfg.solver.switching_interval  # 0: no switching, 1: 10
+    multi_gpu = cfg.solver.multi_gpu
+    checkpoint_interval = cfg.experiment.logging.checkpoint_interval
 
     molecule_name = file_name.split(".pqr")[0]
 
@@ -92,7 +103,7 @@ def biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address=
     address = os.path.join(currDir, molecule_pqr_address)
     mol_base = base(address, file_name)
     num_atoms = len(mol_base.atoms["x"])
-    print(f"\n number of atoms = {num_atoms} \n ")
+    logger.info(f"number of atoms = {num_atoms}")
 
     atom_locations = onp.stack(
         [
@@ -152,7 +163,7 @@ def biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address=
         pdb.set_trace()
 
     t0 = t1 = 0.0
-    if False:
+    if cfg.solver.verbose:
         # -- v1 old code
         init_fn, solve_fn = poisson_solver_scalable.setup(
             initial_value_fn,
@@ -289,8 +300,10 @@ def biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address=
         epsilon_grad_psi_hat_sq,
     )
     train_grid_size = (xmax - xmin) / Nx_tr
-    print(
-        f"Molecule = {file_name} \t training grid spacing (h_g) = {train_grid_size} (Angstrom) \t Solvation Free Energy = {SFE} (kcal/mol) \t SFE ionic = {SFE_z} (kcal/mol) \t total SFE = {SFE + SFE_z} (kcal/mol) \t elapsed time = {elapsed_time} (sec)"
+    logger.info(
+        f"Molecule = {file_name} \t training grid spacing (h_g) = {train_grid_size} (Angstrom) \
+        \t Solvation Free Energy = {SFE} (kcal/mol) \t SFE ionic = {SFE_z} (kcal/mol) \
+        \t total SFE = {SFE + SFE_z} (kcal/mol) \t elapsed time = {elapsed_time} (sec)"
     )
 
     data_file = currDir + "/results/data_logs.txt"
@@ -299,41 +312,40 @@ def biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address=
         f.write(result)
 
 
-@hydra.main(config_path="../../jax_dips/conf", config_name="biomolecule")
+@hydra.main(config_path="../../jax_dips/conf", config_name="biomolecule", version_base="1.1")
 def main(cfg: DictConfig):
-    log.info("Starting the biomolecule training")
-    log.info(OmegaConf.to_yaml(cfg))
+    logger.info("Starting the biomolecule training")
+    logger.info(OmegaConf.to_yaml(cfg))
 
-    pdb.set_trace()
-
-    Kirkwood_test = False
-
-    if Kirkwood_test:
-        biomolecule_solvation_energy(file_name="case_0.pqr", molecule_pqr_address="kirkwood_test")
+    if cfg.experiment.kirkwood.enable:
+        logger.info("Kirkwood experiment enabled")
+        biomolecule_solvation_energy(cfg=cfg,
+                                     file_name=cfg.experiment.kirkwood.protein_name,
+                                     molecule_pqr_address=cfg.experiment.kirkwood.protein_path)
 
     else:
-        if True:
-            """For testing only run 1 molecule"""
-            biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address="pqr_input_mols")
+        if cfg.experiment.single_protein.enable:
+            logger.info("Single protein experiment enabled")
+            biomolecule_solvation_energy(cfg=cfg,
+                                         file_name=cfg.experiment.single_protein.protein_name,
+                                         molecule_pqr_address=cfg.experiment.single_protein.protein_path)
 
-        else:
-            """For final evaluation, run over all molecules in parallel"""
-            import multiprocessing as mp
-            import glob
+        elif cfg.experiment.multi_proteins.enable:
+            logger.info("Multi protein experiment enabled")
 
-            molecule_pqr_address = "pqr_input_mols"
+            molecule_pqr_address = cfg.experiment.multi_proteins.proteins_dir
             tmp = glob.glob(currDir + "/" + molecule_pqr_address + "/*.pqr")
             molecules = [mol.split("/")[-1] for mol in tmp]
 
-            gpu_count = 3
+            gpu_count = cfg.experiment.multi_proteins.num_gpus_batching
 
-            print(f"Using {gpu_count} devices!")
+            logger.info(f"Using {gpu_count} devices")
             gpu_ids = [str(i) for i in range(gpu_count)]
 
             process_pool = [
                 mp.Process(
                     target=biomolecule_solvation_energy,
-                    args=(molecules[i], molecule_pqr_address, gpu_ids[i % gpu_count]),
+                    args=(cfg, molecules[i], molecule_pqr_address, gpu_ids[i % gpu_count]),
                 )
                 for i in range(len(molecules))
             ]
@@ -343,13 +355,13 @@ def main(cfg: DictConfig):
                 for i, gpu in enumerate(gpu_ids):
                     try:
                         process_pool[i + mol_count].start()
-                    except:
+                    except IndexError:
                         pass
 
                 for i, gpu in enumerate(gpu_ids):
                     try:
                         process_pool[i + mol_count].join()
-                    except:
+                    except IndexError:
                         pass
                 mol_count += gpu_count
 
