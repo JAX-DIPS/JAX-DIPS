@@ -133,10 +133,11 @@ class PoissonSolve:
         # extra_points = self.TD.refine(lvl_set_fn, max_iters=15)
         # self.train_points = jnp.concatenate((train_points, extra_points))
 
-        surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=3)
-        self.train_points = jnp.concatenate((train_points, surface_points))
+        # surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=3)
+        # self.train_points = jnp.concatenate((train_points, surface_points))
 
-        # self.train_points = train_points
+        self.train_points = train_points
+
         self.train_dx = self.TD.gstate.dx
         self.train_dy = self.TD.gstate.dy
         self.train_dz = self.TD.gstate.dz

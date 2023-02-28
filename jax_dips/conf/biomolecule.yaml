@@ -1,0 +1,11 @@
+expname: biomolecule-app
+
+defaults:
+  - base_hydra_config
+  - solver: poisson
+  - _self_
+
+# customization follows
+solver:
+  Nx_tr: 16
+

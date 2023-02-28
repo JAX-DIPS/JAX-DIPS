@@ -28,7 +28,10 @@ rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:
     sys.path.append(rootDir)
 
-
+import hydra
+from omegaconf import DictConfig, OmegaConf
+import logging
+log = logging.getLogger(__name__)
 import pdb
 import numpy as onp
 import time
@@ -296,7 +299,13 @@ def biomolecule_solvation_energy(file_name="pdb:1ajj.pqr", molecule_pqr_address=
         f.write(result)
 
 
-if __name__ == "__main__":
+@hydra.main(config_path="../../jax_dips/conf", config_name="biomolecule")
+def main(cfg: DictConfig):
+    log.info("Starting the biomolecule training")
+    log.info(OmegaConf.to_yaml(cfg))
+
+    pdb.set_trace()
+
     Kirkwood_test = False
 
     if Kirkwood_test:
@@ -343,3 +352,7 @@ if __name__ == "__main__":
                     except:
                         pass
                 mol_count += gpu_count
+
+
+if __name__ == "__main__":
+    main()

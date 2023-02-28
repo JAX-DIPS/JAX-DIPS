@@ -1,0 +1,12 @@
+defaults:
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+hydra:
+  run:
+    dir: results/${expname}-${now:%Y-%m-%d-%H-%M-%S}
+
+  job_logging:
+    formatters:
+      colorlog:
+        format: '[%(blue)s%(name)s%(reset)s][%(log_color)s%(levelname)s%(reset)s] - %(message)s'

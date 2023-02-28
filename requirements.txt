@@ -24,6 +24,9 @@ plyfile
 polyscope
 mesh2sdf
 
+hydra-core
+hydra_colorlog
+
 black
 flake8
 pre-commit
