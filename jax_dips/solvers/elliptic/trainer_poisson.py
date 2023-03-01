@@ -36,20 +36,21 @@ from jax_dips.solvers.elliptic import solver_poisson
 from jax_dips.data import data_management
 from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips.solvers.simulation_states import (PoissonSimState, PoissonSimStateFn,)
+from jax_dips.domain.mesh import GridState
 from jax_dips.utils.visualization import plot_loss_epochs
 from jax_dips.utils.inspect import print_architecture
 
 
 Array = util.Array
-T = TypeVar("T")
-InitFn = Callable[..., T]
-SolveFn = Callable[[T, T], T]
-Simulator = Tuple[InitFn, SolveFn]
-
-
 i32 = util.i32
 f32 = util.f32
 f64 = util.f64
+
+T = TypeVar("T")
+SolveFn = Callable[[PoissonSimState], PoissonSimState]
+InitFn = Callable[[GridState, GridState, int, int, int, int, int, int, int, bool, int, str, str, str],
+                  Tuple[PoissonSimState, SolveFn]]
+Simulator = Tuple[InitFn, SolveFn]
 
 
 stop_training = False
@@ -68,23 +69,23 @@ signal.signal(signal.SIGINT, signalHandler)
 class PoissonSolve:
     def __init__(
         self,
-        gstate,
-        eval_gstate,
-        sim_state,
-        sim_state_fn,
-        algorithm=0,
-        switching_interval=3,
-        Nx_tr=32,
-        Ny_tr=32,
-        Nz_tr=32,
-        lvl_set_fn=None,
-        num_epochs=1000,
-        multi_gpu=False,
-        batch_size=131072,
-        checkpoint_dir="./checkpoints",
-        checkpoint_interval=2,
-        currDir="./",
-        loss_plot_name="solver_loss",
+        gstate: GridState,
+        eval_gstate: GridState,
+        sim_state: PoissonSimState,
+        sim_state_fn: PoissonSimStateFn,
+        algorithm: int = 0,
+        switching_interval: int = 3,
+        Nx_tr: int = 32,
+        Ny_tr: int = 32,
+        Nz_tr: int = 32,
+        lvl_set_fn: Callable[..., Array] = None,
+        num_epochs: int = 1000,
+        multi_gpu: bool = False,
+        batch_size: int = 131072,
+        checkpoint_dir: str = "./checkpoints",
+        checkpoint_interval: int = 2,
+        currDir: str = "./",
+        loss_plot_name: str = "solver_loss",
     ) -> None:
         #########################################################################
         global stop_training
@@ -605,7 +606,7 @@ def setup(
     beta_fn_: Callable[..., Array],
     nonlinear_op_m=None,
     nonlinear_op_p=None,
-) -> Simulator:
+) -> InitFn:
     u_0_fn = vmap(initial_value_fn)
     dir_bc_fn = vmap(dirichlet_bc_fn)
     phi_fn = vmap(lvl_set_fn)
@@ -647,21 +648,21 @@ def setup(
     )
 
     def init_fn(
-        gstate,
-        eval_gstate,
-        Nx_tr=32,
-        Ny_tr=32,
-        Nz_tr=32,
-        num_epochs=1000,
-        batch_size=131072,
-        algorithm=0,
-        switching_interval=3,
-        multi_gpu=False,
-        checkpoint_interval=1000,
-        checkpoint_dir="./checkpoints",
-        currDir="./",
-        loss_plot_name="solver_loss",
-    ):
+        gstate: GridState,
+        eval_gstate: GridState,
+        Nx_tr: int = 32,
+        Ny_tr: int = 32,
+        Nz_tr: int = 32,
+        num_epochs: int = 1000,
+        batch_size: int = 131072,
+        algorithm: int = 0,
+        switching_interval: int = 3,
+        multi_gpu: bool = False,
+        checkpoint_interval: int = 1000,
+        checkpoint_dir: str = "./checkpoints",
+        currDir: str = "./",
+        loss_plot_name: str = "solver_loss",
+    ) -> Tuple[PoissonSimState, SolveFn]:
         R = eval_gstate.R
         PHI = phi_fn(R)
         DIRBC = dir_bc_fn(R)
@@ -675,7 +676,7 @@ def setup(
         ALPHA = alpha_fn(R)
         BETA = beta_fn(R)
 
-        def solve_fn(sim_state):
+        def solve_fn(sim_state: PoissonSimState) -> PoissonSimState:
             PAS = PoissonSolve(
                 gstate,
                 eval_gstate,
