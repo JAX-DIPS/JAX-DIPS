@@ -23,6 +23,8 @@ from functools import partial
 import numpy as onp
 import time
 import signal
+import logging
+logger = logging.getLogger(__name__)
 
 import optax
 import jax
@@ -35,7 +37,7 @@ from jax_dips.data import data_management
 from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips.solvers.simulation_states import (PoissonSimState, PoissonSimStateFn,)
 from jax_dips.utils.visualization import plot_loss_epochs
-from jax_dips.utils.utils import print_architecture
+from jax_dips.utils.inspect import print_architecture
 
 
 Array = util.Array
@@ -56,8 +58,8 @@ stop_training = False
 def signalHandler(signal_num, frame):
     global stop_training
     stop_training = True
-    print("Signal:", signal_num, " Frame: ", frame)
-    print("Training will stop after the completion of current epoch")
+    logger.warning("Signal:", signal_num, " Frame: ", frame)
+    logger.warning("Training will stop after the completion of current epoch")
 
 
 signal.signal(signal.SIGINT, signalHandler)
@@ -158,8 +160,9 @@ class PoissonSolve:
             self.epoch_start = state["epoch"]
             self.batch_size = state["batch_size"]
             self.resolution = state["resolution"]
-            print(
-                f"Resuming training from epoch {self.epoch_start} with batch_size {self.batch_size}, resolution {self.resolution}."
+            logger.info(
+                f"Resuming training from epoch {self.epoch_start} with \
+                batch_size {self.batch_size}, resolution {self.resolution}."
             )
 
         self.loss_epochs = jnp.zeros(self.num_epochs - self.epoch_start)
@@ -167,14 +170,14 @@ class PoissonSolve:
 
         #########################################################################
 
-    #############################-----------------------
+    # -----------------------
     def solve(self):
         if self.multi_gpu:
             return self.multi_GPU_train(self.opt_state, self.params)
         else:
             return self.single_GPU_solve()
 
-    #############################-----------------------
+    # -----------------------
     def single_GPU_solve(self):
         self.DD = data_management.DatasetDict(batch_size=self.batch_size, x_data=self.train_points)
         start_time = time.time()
@@ -185,7 +188,7 @@ class PoissonSolve:
             self.loss_epochs,
         ) = self.single_GPU_train(self.opt_state, self.params)
         end_time = time.time()
-        print(f"solve took {end_time - start_time} (sec)")
+        logger.info(f"solve took {end_time - start_time} (sec)")
         # state = {
         #     'opt_state': self.opt_state,
         #     'params': self.params,
@@ -215,7 +218,7 @@ class PoissonSolve:
             self.loss_epochs,
         )
 
-    #############################-----------------------
+    # -----------------------
     @partial(jit, static_argnums=(0))
     def evaluate_solution_and_gradients(self, params, eval_gstate):
         final_solution = self.trainer.evaluate_solution_fn(params, eval_gstate.R).reshape(-1)
@@ -225,7 +228,7 @@ class PoissonSolve:
         grad_u = self.trainer.compute_gradient_solution(params, eval_gstate.R)
         return final_solution, grad_u, grad_u_normal_to_interface
 
-    #############################-----------------------
+    # -----------------------
     @partial(jit, static_argnums=(0))
     def single_GPU_train(self, opt_state, params):
         batched_training_data = self.DD.get_batched_data()
@@ -308,9 +311,14 @@ class PoissonSolve:
     # def single_GPU_train(self, opt_state, params):
     #     batched_training_data = self.DD.get_batched_data()
     #     import pdb; pdb.set_trace()
-    #     opt_state, params = self.trainer.update_lbfgs(params, batched_training_data[0], self.train_dx, self.train_dy, self.train_dz, maxiter=10)
+    #     opt_state, params = self.trainer.update_lbfgs(params,
+    #                                                   batched_training_data[0],
+    #                                                   self.train_dx,
+    #                                                   self.train_dy,
+    #                                                   self.train_dz,
+    #                                                   maxiter=10)
 
-    #############################-----------------------
+    # -----------------------
     def multi_GPU_train(self, opt_state, params):
         loss_epochs = []
         epoch_store = []
@@ -349,7 +357,7 @@ class PoissonSolve:
                     self.train_dz,
                 )
                 loss_epoch += loss_epoch_
-            print(
+            logger.info(
                 f"Epoch # {epoch} loss is {jnp.mean(loss_epoch) / num_batches}. Exit training: {stop_training}"
             )  # mean is to support multi-gpu as well.
             loss_epochs.append(loss_epoch / num_batches)
@@ -431,7 +439,7 @@ def poisson_solve(
         epoch_start = state["epoch"]
         batch_size = state["batch_size"]
         resolution = state["resolution"]
-        print(f"Resuming training from epoch {epoch_start} with batch_size {batch_size}, resolution {resolution}.")
+        logger.info(f"Resume training from epoch {epoch_start} with batch_size {batch_size}, resolution {resolution}")
 
     start_time = time.time()
 
@@ -552,7 +560,7 @@ def poisson_solve(
                     train_dz,
                 )
                 loss_epoch += loss_epoch_
-            print(
+            logger.info(
                 f"Epoch # {epoch} loss is {jnp.mean(loss_epoch) / num_batches}. Exit training: {stop_training}"
             )  # mean is to support multi-gpu as well.
             loss_epochs.append(loss_epoch / num_batches)
@@ -569,7 +577,7 @@ def poisson_solve(
         params = jax.device_get(jax.tree_map(lambda x: x[0], params))
 
     end_time = time.time()
-    print(f"solve took {end_time - start_time} (sec)")
+    logger.info(f"solve took {end_time - start_time} (sec)")
     plot_loss_epochs(epoch_store, loss_epochs, currDir, TD.base_level, TD.alt_res)
 
     final_solution = trainer.evaluate_solution_fn(params, eval_gstate.R).reshape(-1)
@@ -610,12 +618,17 @@ def setup(
     alpha_fn = vmap(alpha_fn_)
     beta_fn = vmap(beta_fn_)
 
-    if nonlinear_op_m == None:
-        print("nonlinear_op_m(u) is not defined. Setting it to zero.")
-        nonlinear_op_m = lambda x: 0.0
-    if nonlinear_op_p == None:
-        print("nonlinear_op_m(u) is not defined. Setting it to zero.")
-        nonlinear_op_p = lambda x: 0.0
+    if nonlinear_op_m is None:
+        logger.warning("nonlinear_op_m(u) is not defined. Setting it to zero.")
+
+        def nonlinear_op_m(x):
+            return 0.0
+
+    if nonlinear_op_p is None:
+        logger.warning("nonlinear_op_m(u) is not defined. Setting it to zero.")
+
+        def nonlinear_op_p(x):
+            return 0.0
 
     sim_state_fn = PoissonSimStateFn(
         u_0_fn,

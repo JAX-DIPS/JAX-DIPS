@@ -32,7 +32,7 @@ import numpy as onp
 from jax_dips.domain import interpolate
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.nn.nn_solution_model import DoubleMLP
-from jax_dips.utils.utils import print_architecture
+from jax_dips.utils.inspect import print_architecture
 
 import matplotlib
 

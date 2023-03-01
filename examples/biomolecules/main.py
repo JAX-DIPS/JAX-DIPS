@@ -95,6 +95,7 @@ def biomolecule_solvation_energy(cfg: DictConfig,
     SWITCHING_INTERVAL = cfg.solver.switching_interval  # 0: no switching, 1: 10
     multi_gpu = cfg.solver.multi_gpu
     checkpoint_interval = cfg.experiment.logging.checkpoint_interval
+    log_dir = cfg.experiment.logging.log_dir
 
     molecule_name = file_name.split(".pqr")[0]
 
@@ -159,7 +160,7 @@ def biomolecule_solvation_energy(cfg: DictConfig,
         eval_phi = vmap(phi_fn)(eval_gstate.R)
         chg_density = vmap(f_m_fn)(eval_gstate.R)
         log = {"phi": eval_phi, "Ustar": psi_star, "rho": chg_density}
-        io.write_vtk_manual(eval_gstate, log, filename=currDir + "/results/biomolecules")
+        io.write_vtk_manual(eval_gstate, log, filename=log_dir + "/biomolecules")
         pdb.set_trace()
 
     t0 = t1 = 0.0
@@ -179,7 +180,7 @@ def biomolecule_solvation_energy(cfg: DictConfig,
             beta_fn,
         )
         sim_state = init_fn(gstate.R)
-        checkpoint_dir = os.path.join(currDir, "checkpoints")
+        checkpoint_dir = os.path.join(log_dir, "checkpoints")
         t0 = time.time()
         sim_state, epoch_store, loss_epochs = solve_fn(
             gstate,
@@ -226,7 +227,7 @@ def biomolecule_solvation_energy(cfg: DictConfig,
             num_epochs=num_epochs,
             multi_gpu=multi_gpu,
             checkpoint_interval=checkpoint_interval,
-            currDir=currDir + "/results/",
+            currDir=log_dir,
             loss_plot_name=molecule_name,
         )
         t0 = time.time()
@@ -262,7 +263,7 @@ def biomolecule_solvation_energy(cfg: DictConfig,
         "jump": u_jump,
         "grad_jump": grad_u_jump,
     }
-    save_name = currDir + "/results/" + molecule_name
+    save_name = log_dir + "/" + molecule_name
     io.write_vtk_manual(eval_gstate, log, filename=save_name)
 
     grad_psi_hat = sim_state.grad_solution
@@ -300,13 +301,11 @@ def biomolecule_solvation_energy(cfg: DictConfig,
         epsilon_grad_psi_hat_sq,
     )
     train_grid_size = (xmax - xmin) / Nx_tr
-    logger.info(
-        f"Molecule = {file_name} \t training grid spacing (h_g) = {train_grid_size} (Angstrom) \
-        \t Solvation Free Energy = {SFE} (kcal/mol) \t SFE ionic = {SFE_z} (kcal/mol) \
-        \t total SFE = {SFE + SFE_z} (kcal/mol) \t elapsed time = {elapsed_time} (sec)"
-    )
+    logger.info(f"Molecule = {file_name} \t training grid spacing (h_g) = {train_grid_size} (Angstrom)")
+    logger.info(f"SFE_polar = {SFE} (kcal/mol) \t SFE_ionic = {SFE_z} (kcal/mol) \t => SFE = {SFE + SFE_z} (kcal/mol)")
+    logger.info(f"Solver init() + solve() elapsed time = {elapsed_time} (sec)")
 
-    data_file = currDir + "/results/data_logs.txt"
+    data_file = log_dir + "/data_logs.txt"
     with open(data_file, "a") as f:
         result = f"{molecule_name} \t {train_grid_size} \t {SFE} \t {SFE_z} \t {SFE + SFE_z} \t {elapsed_time} \n"
         f.write(result)
