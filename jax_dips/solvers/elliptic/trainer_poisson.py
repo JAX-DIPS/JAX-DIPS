@@ -27,6 +27,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 import optax
+from optax._src.base import GradientTransformation
+
 import jax
 from jax import (pmap, vmap, numpy as jnp, random, jit,)
 from jax.config import config
@@ -86,6 +88,7 @@ class PoissonSolve:
         checkpoint_interval: int = 2,
         currDir: str = "./",
         loss_plot_name: str = "solver_loss",
+        optimizer: GradientTransformation = optax.adam(1e-2),
     ) -> None:
         #########################################################################
         global stop_training
@@ -101,24 +104,6 @@ class PoissonSolve:
         self.Nx_tr = Nx_tr
         self.Ny_tr = Ny_tr
         self.Nz_tr = Nz_tr
-
-        #########################################################################
-        OPTZ = "custom"
-        optimizer = None
-        if OPTZ == "custom":
-            learning_rate = 1e-2
-            decay_rate_ = 0.96  # 0.975
-            scheduler = optax.exponential_decay(init_value=learning_rate, transition_steps=100, decay_rate=decay_rate_)
-            optimizer = optax.chain(
-                optax.clip_by_global_norm(1.0),
-                optax.scale_by_adam(),
-                optax.scale_by_schedule(scheduler),
-                optax.scale(-1.0),
-            )
-        elif OPTZ == "adam":
-            optimizer = optax.adam(learning_rate)
-        elif OPTZ == "rmsprop":
-            optimizer = optax.rmsprop(learning_rate)
 
         #########################################################################
         self.TD = data_management.TrainData(
@@ -662,6 +647,7 @@ def setup(
         checkpoint_dir: str = "./checkpoints",
         currDir: str = "./",
         loss_plot_name: str = "solver_loss",
+        optimizer: GradientTransformation = optax.adam(1e-2),
     ) -> Tuple[PoissonSimState, SolveFn]:
         R = eval_gstate.R
         PHI = phi_fn(R)
@@ -695,6 +681,7 @@ def setup(
                 checkpoint_interval=checkpoint_interval,
                 currDir=currDir,
                 loss_plot_name=loss_plot_name,
+                optimizer=optimizer,
             )
             (
                 final_solution,

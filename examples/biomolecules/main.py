@@ -45,6 +45,7 @@ from jax import numpy as jnp, vmap, profiler
 
 from jax_dips.solvers.elliptic import trainer_poisson
 from jax_dips.solvers.elliptic import poisson_solver_scalable
+from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips._jaxmd_modules.util import f32
 from jax_dips.geometry import level_set
 from jax_dips.domain import mesh
@@ -84,12 +85,12 @@ def biomolecule_solvation_energy(cfg: DictConfig,
     Nx_tr = cfg.solver.Nx_tr  # grid for training
     Ny_tr = cfg.solver.Ny_tr  # grid for training
     Nz_tr = cfg.solver.Nz_tr  # grid for training
-    Nx = cfg.solver.Nx  # grid for level-set
-    Ny = cfg.solver.Ny  # grid for level-set
-    Nz = cfg.solver.Nz  # grid for level-set
-    Nx_eval = cfg.solver.Nx_eval  # grid for evaluation/visualization
-    Ny_eval = cfg.solver.Ny_eval  # grid for evaluation/visualization
-    Nz_eval = cfg.solver.Nz_eval  # grid for evaluation/visualization
+    Nx = cfg.gridstates.Nx  # grid for level-set
+    Ny = cfg.gridstates.Ny  # grid for level-set
+    Nz = cfg.gridstates.Nz  # grid for level-set
+    Nx_eval = cfg.gridstates.Nx_eval  # grid for evaluation/visualization
+    Ny_eval = cfg.gridstates.Ny_eval  # grid for evaluation/visualization
+    Nz_eval = cfg.gridstates.Nz_eval  # grid for evaluation/visualization
 
     ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = cfg.solver.switching_interval  # 0: no switching, 1: 10
@@ -216,6 +217,11 @@ def biomolecule_solvation_energy(cfg: DictConfig,
             nonlinear_operator_p,
         )
 
+        optimizer = get_optimizer(optimizer_name="custom",
+                                  scheduler_name="exponential",
+                                  learning_rate=1e-2,
+                                  decay_rate=0.96,
+                                  )
         sim_state, solve_fn = init_fn(
             gstate=gstate,
             eval_gstate=eval_gstate,
@@ -229,6 +235,7 @@ def biomolecule_solvation_energy(cfg: DictConfig,
             checkpoint_interval=checkpoint_interval,
             currDir=log_dir,
             loss_plot_name=molecule_name,
+            optimizer=optimizer,
         )
         t0 = time.time()
         sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
