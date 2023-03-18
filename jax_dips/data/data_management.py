@@ -261,7 +261,7 @@ class TrainData:
         plt.savefig(filename)
         plt.close()
 
-    def refine(self, phi_fn_uns, max_iters=20):
+    def refine_normals(self, phi_fn_uns, max_iters=20):
         from jax import vmap, jit
 
         def phi_fn(r):

@@ -90,7 +90,9 @@ class PoissonSolve:
         loss_plot_name: str = "solver_loss",
         optimizer: GradientTransformation = optax.adam(1e-2),
     ) -> None:
+
         #########################################################################
+
         global stop_training
         self.key = random.PRNGKey(758493)
         self.eval_gstate = eval_gstate
@@ -118,7 +120,7 @@ class PoissonSolve:
             Nz_tr,
         )
         train_points = self.TD.gstate.R
-        # extra_points = self.TD.refine(lvl_set_fn, max_iters=15)
+        # extra_points = self.TD.refine_normals(lvl_set_fn, max_iters=15)
         # self.train_points = jnp.concatenate((train_points, extra_points))
 
         # surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=3)

@@ -31,7 +31,7 @@ def chained_adam(scheduler_name: str = "exponential",
                  transition_steps: int = 1000,
                  max_norm: float = 1.0,
                  **kwargs,
-                 ):
+                 ) -> GradientTransformation:
     scheduler = get_scheduler(scheduler_name=scheduler_name,
                               learning_rate=learning_rate,
                               decay_rate=decay_rate,
@@ -49,8 +49,9 @@ def chained_adam(scheduler_name: str = "exponential",
 
 def get_optimizer(optimizer_name: str = "custom",
                   scheduler_name: str = "exponential",
-                  learning_rate=1e-2,
-                  decay_rate=0.96,
+                  learning_rate: float = 1e-2,
+                  decay_rate: float = 0.96,
+                  max_norm: float = 1.0,
                   **kwargs,
                   ) -> GradientTransformation:
     if optimizer_name == "custom":
@@ -58,6 +59,7 @@ def get_optimizer(optimizer_name: str = "custom",
         return chained_adam(scheduler_name=scheduler_name,
                             learning_rate=learning_rate,
                             decay_rate=decay_rate,
+                            max_norm=max_norm,
                             **kwargs,
                             )
 

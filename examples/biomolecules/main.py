@@ -92,6 +92,12 @@ def biomolecule_solvation_energy(cfg: DictConfig,
     Ny_eval = cfg.gridstates.Ny_eval  # grid for evaluation/visualization
     Nz_eval = cfg.gridstates.Nz_eval  # grid for evaluation/visualization
 
+    optimizer = get_optimizer(optimizer_name=cfg.solver.optim.optimizer_name,
+                              scheduler_name=cfg.solver.sched.scheduler_name,
+                              learning_rate=cfg.solver.optim.learning_rate,
+                              decay_rate=cfg.solver.sched.decay_rate,
+                              )
+
     ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = cfg.solver.switching_interval  # 0: no switching, 1: 10
     multi_gpu = cfg.solver.multi_gpu
@@ -216,12 +222,6 @@ def biomolecule_solvation_energy(cfg: DictConfig,
             nonlinear_operator_m,
             nonlinear_operator_p,
         )
-
-        optimizer = get_optimizer(optimizer_name="custom",
-                                  scheduler_name="exponential",
-                                  learning_rate=1e-2,
-                                  decay_rate=0.96,
-                                  )
         sim_state, solve_fn = init_fn(
             gstate=gstate,
             eval_gstate=eval_gstate,

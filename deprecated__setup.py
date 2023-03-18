@@ -1,6 +1,4 @@
 import pathlib
-import re
-
 import setuptools
 
 
@@ -8,21 +6,13 @@ _here = pathlib.Path(__file__).resolve().parent
 
 name = "jax-dips"
 
-# for simplicity we actually store the version in the __version__ attribute in the
-# source
-with open(_here / "src" / "__init__.py") as f:
-    meta_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", f.read(), re.M)
-    if meta_match:
-        version = meta_match.group(1)
-    else:
-        raise RuntimeError("Unable to find __version__ string.")
+version = '0.0.1'
 
 author = "Pouria Mistani & Samira Pakravan"
 
 author_email = "p.a.mistani@gmail.com"
 
-description = "Differentiable 3D interfacial PDE solvers written in JAX using\
-    the Neural Bootstrapping Method."
+description = "Differentiable 3D interfacial PDE solvers written in JAX using the Neural Bootstrapping Method."
 
 with open(_here / "README.md", "r") as f:
     readme = f.read()

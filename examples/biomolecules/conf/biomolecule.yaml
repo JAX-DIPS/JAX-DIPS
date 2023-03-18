@@ -15,6 +15,7 @@ gridstates:
   Ny_eval: 256  # grid for evaluation/visualization
   Nz_eval: 256  # grid for evaluation/visualization
 
+
 solver:
   Nx_tr: 64  # grid for training
   Ny_tr: 64  # grid for training
@@ -25,7 +26,16 @@ solver:
   verbose: 0  # 0: silent, 1: verbose during training
   multi_gpu: False
   num_gpus_ddp: 1
-
+  optim:
+    optimizer_name: "custom" # options are "custom", "adam", "rmsprop"
+    learning_rate: 1e-2
+  sched:
+    scheduler_name: "exponential" # options are "exponential", "polynomial"
+    decay_rate: 0.96
+  data_manager:
+    refine: false
+      refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function
+      refine_lod: false # if true will add extra points by Octree using Kaolin
 
 experiment:
   kirkwood:
