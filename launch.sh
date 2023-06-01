@@ -66,7 +66,12 @@ IMAGE_NAME=${IMAGE_NAME:=docker.io/pourion/jax_dips:latest}
 REGISTRY_USER=${REGISTRY_USER:='$oauthtoken'}
 REGISTRY=${REGISTRY:=NotSpecified}
 REGISTRY_ACCESS_TOKEN=${REGISTRY_ACCESS_TOKEN:=NotSpecified}
-
+WANDB_API_KEY=${WANDB_API_KEY:=NotSpecified}
+JUPYTER_PORT=${JUPYTER_PORT:=8888}
+DATA_PATH=${DATA_PATH:=/tmp}
+DATA_MOUNT_PATH=${DATA_MOUNT_PATH:=/data}
+RESULT_MOUNT_PATH=${RESULT_MOUNT_PATH:=/tmp}
+RESULT_PATH=${RESULT_PATH:=/results/}
 ###############################################################################
 #
 # if $LOCAL_ENV file exists, source it to specify my environment

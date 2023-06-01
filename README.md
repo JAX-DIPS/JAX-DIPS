@@ -48,10 +48,17 @@ apt-get install nvidia-docker2
 ## Build development container
 
 ```
-./launch build
+./launch.sh build
 ```
 
 For a full list of the supported software and specific versions that come packaged with this framework based on the container image, see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
+
+## Pull development container
+Currently the latest docker image available on Docker Hub is available at `docker.io/pourion/jax_dips`. Instead of building the container, you can only pull the latest docker image by running 
+
+```
+./launch.sh pull
+```
 
 ## Start developement container
 This will create a container and places the user in the container with source code mounted.
@@ -59,19 +66,19 @@ This will create a container and places the user in the container with source co
 Once the container is created, user can attach to this container from VS code.
 
 ```
-./launch dev
+./launch.sh dev
 ```
 
 You can also run the container in background, by passing the `-d` flag for daemon:
 
 ```
-./launch dev -d
+./launch.sh dev -d
 ```
 
 You can attach to the running `jax_dips` container by
 
 ```
-./launch attach
+./launch.sh attach
 ```
 
 
