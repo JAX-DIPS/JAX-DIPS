@@ -51,6 +51,8 @@ apt-get install nvidia-docker2
 ./launch build
 ```
 
+For a full list of the supported software and specific versions that come packaged with this framework based on the container image, see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
+
 ## Start developement container
 This will create a container and places the user in the container with source code mounted.
 
