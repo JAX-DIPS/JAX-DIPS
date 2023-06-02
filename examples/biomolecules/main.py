@@ -21,8 +21,10 @@ This example is based on https://www.sciencedirect.com/science/article/pii/S0021
 
 """
 import os
+
 os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 import sys
+
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:
@@ -31,6 +33,7 @@ if rootDir not in sys.path:
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import logging
+
 logger = logging.getLogger(__name__)
 import pdb
 import numpy as onp
@@ -39,40 +42,42 @@ import multiprocessing as mp
 import glob
 
 from jax.config import config
+
 config.update("jax_enable_x64", False)
 config.update("jax_debug_nans", False)
 from jax import numpy as jnp, vmap, profiler
 
-from jax_dips.solvers.elliptic import trainer_poisson
-from jax_dips.solvers.elliptic import poisson_solver_scalable
+from jax_dips.solvers.poisson import trainer_poisson
+from jax_dips.solvers.poisson import poisson_solver_scalable
 from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips._jaxmd_modules.util import f32
 from jax_dips.geometry import level_set
 from jax_dips.domain import mesh
 from jax_dips.utils import io
 
-from examples.biomolecules.coefficients import (initial_value_fn,
-                                                get_dirichlet_bc_fn,
-                                                mu_m_fn,
-                                                mu_p_fn,
-                                                k_m_fn,
-                                                k_p_fn,
-                                                f_m_fn,
-                                                f_p_fn,
-                                                nonlinear_operator_m,
-                                                nonlinear_operator_p,
-                                                get_psi_star,
-                                                get_jump_conditions,
-                                                get_rho_fn,)
+from examples.biomolecules.coefficients import (
+    initial_value_fn,
+    get_dirichlet_bc_fn,
+    mu_m_fn,
+    mu_p_fn,
+    k_m_fn,
+    k_p_fn,
+    f_m_fn,
+    f_p_fn,
+    nonlinear_operator_m,
+    nonlinear_operator_p,
+    get_psi_star,
+    get_jump_conditions,
+    get_rho_fn,
+)
 from examples.biomolecules.geometry import get_initial_level_set_fn
 from examples.biomolecules.load_pqr import base
 from examples.biomolecules.free_energy import get_free_energy
 
 
-def biomolecule_solvation_energy(cfg: DictConfig,
-                                 file_name: str = "pdb:1ajj.pqr",
-                                 molecule_pqr_address: str = "pqr_input_mols",
-                                 gpu_id: str = "") -> None:
+def biomolecule_solvation_energy(
+    cfg: DictConfig, file_name: str = "pdb:1ajj.pqr", molecule_pqr_address: str = "pqr_input_mols", gpu_id: str = ""
+) -> None:
     if gpu_id == "":
         pass
     else:
@@ -92,11 +97,12 @@ def biomolecule_solvation_energy(cfg: DictConfig,
     Ny_eval = cfg.gridstates.Ny_eval  # grid for evaluation/visualization
     Nz_eval = cfg.gridstates.Nz_eval  # grid for evaluation/visualization
 
-    optimizer = get_optimizer(optimizer_name=cfg.solver.optim.optimizer_name,
-                              scheduler_name=cfg.solver.sched.scheduler_name,
-                              learning_rate=cfg.solver.optim.learning_rate,
-                              decay_rate=cfg.solver.sched.decay_rate,
-                              )
+    optimizer = get_optimizer(
+        optimizer_name=cfg.solver.optim.optimizer_name,
+        scheduler_name=cfg.solver.sched.scheduler_name,
+        learning_rate=cfg.solver.optim.learning_rate,
+        decay_rate=cfg.solver.sched.decay_rate,
+    )
 
     ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = cfg.solver.switching_interval  # 0: no switching, 1: 10
@@ -325,16 +331,20 @@ def main(cfg: DictConfig):
 
     if cfg.experiment.kirkwood.enable:
         logger.info("Kirkwood experiment enabled")
-        biomolecule_solvation_energy(cfg=cfg,
-                                     file_name=cfg.experiment.kirkwood.protein_name,
-                                     molecule_pqr_address=cfg.experiment.kirkwood.protein_path)
+        biomolecule_solvation_energy(
+            cfg=cfg,
+            file_name=cfg.experiment.kirkwood.protein_name,
+            molecule_pqr_address=cfg.experiment.kirkwood.protein_path,
+        )
 
     else:
         if cfg.experiment.single_protein.enable:
             logger.info("Single protein experiment enabled")
-            biomolecule_solvation_energy(cfg=cfg,
-                                         file_name=cfg.experiment.single_protein.protein_name,
-                                         molecule_pqr_address=cfg.experiment.single_protein.protein_path)
+            biomolecule_solvation_energy(
+                cfg=cfg,
+                file_name=cfg.experiment.single_protein.protein_name,
+                molecule_pqr_address=cfg.experiment.single_protein.protein_path,
+            )
 
         elif cfg.experiment.multi_proteins.enable:
             logger.info("Multi protein experiment enabled")

@@ -19,7 +19,9 @@
 """
 import jax
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def print_architecture(params):
     logger.info("Architecture Summary (trainable parameters):\n")

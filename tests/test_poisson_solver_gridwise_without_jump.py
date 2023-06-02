@@ -21,13 +21,14 @@ import time
 import os
 import sys
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 from jax import jit, numpy as jnp, vmap, grad
 import jax.profiler as profiler
 from jax.config import config
 
-from jax_dips.solvers.elliptic import poisson_solver
+from jax_dips.solvers.poisson import poisson_solver
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.geometry import level_set
 from jax_dips.domain import mesh

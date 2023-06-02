@@ -20,6 +20,9 @@
 import time
 import os
 import sys
+import logging
+
+logging.basicConfig(level=logging.INFO)
 from functools import partial
 
 from jax.config import config
@@ -29,7 +32,7 @@ import jax.profiler
 
 from jax_dips.geometry import level_set
 from jax_dips.domain import mesh
-from jax_dips.solvers.elliptic import poisson_solver_scalable
+from jax_dips.solvers.poisson import poisson_solver_scalable
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.utils import io
 
@@ -314,7 +317,7 @@ def test_poisson_solver_with_jump_complex():
 
     t2 = time.time()
 
-    print(f"solve took {(t2 - t1)} seconds")
+    logging.info(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
@@ -353,9 +356,9 @@ def test_poisson_solver_with_jump_complex():
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     rms_err = jnp.square(sim_state.solution - exact_sol).mean() ** 0.5
 
-    print("\n SOLUTION ERROR\n")
+    logging.info("\n\t  Solution Accuracy: \n")
 
-    print(
+    logging.info(
         f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared error = {rms_err} "
     )
 
@@ -363,7 +366,7 @@ def test_poisson_solver_with_jump_complex():
     MASK the solution over sphere only
     """
     """
-    print("\n GRADIENT ERROR\n")
+    logging.info("\n GRADIENT ERROR\n")
 
     grad_um = sim_state.grad_solution[0].reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
     grad_up = sim_state.grad_solution[1].reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
@@ -381,8 +384,8 @@ def test_poisson_solver_with_jump_complex():
     err_y_p = abs(grad_up[mask_p][:,1] - grad_up_exact[mask_p][:,1]).max()
     err_z_p = abs(grad_up[mask_p][:,2] - grad_up_exact[mask_p][:,2]).max()
 
-    print(f"L_inf errors in grad u in Omega_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
-    print(f"L_inf errors in grad u in Omega_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
+    logging.info(f"L_inf errors in grad u in Omega_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
+    logging.info(f"L_inf errors in grad u in Omega_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
 
 
 
@@ -403,7 +406,7 @@ def test_poisson_solver_with_jump_complex():
     err_up_n = abs(grad_up_n - grad_up_n_exact)[mask_i_p].max()
 
 
-    print(f"L_inf error in normal grad u on interface minus: {err_um_n} \t plus: {err_up_n}")
+    logging.info(f"L_inf error in normal grad u on interface minus: {err_um_n} \t plus: {err_up_n}")
 
     #----
     assert L_inf_err<0.2

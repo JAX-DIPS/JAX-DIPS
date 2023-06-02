@@ -37,7 +37,7 @@ def pair_neighbor_list(
     reduce_axis: Optional[Tuple[int, ...]] = None,
     keepdims: bool = False,
     ignore_unused_parameters: bool = False,
-    **kwargs
+    **kwargs,
 ) -> Callable[..., Array]:
     """Promotes a function acting on pairs of particles to use neighbor lists.
     Args:

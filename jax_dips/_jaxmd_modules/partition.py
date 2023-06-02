@@ -363,7 +363,7 @@ def neighbor_list(
     disable_cell_list: bool = False,
     mask_self: bool = True,
     fractional_coordinates: bool = False,
-    **static_kwargs
+    **static_kwargs,
 ) -> NeighborFn:
     """Returns a function that builds a list neighbors for collections of points.
     Neighbor lists must balance the need to be jit compatable with the fact that

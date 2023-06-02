@@ -9,12 +9,20 @@ repos:
     -   id: check-yaml
     -   id: check-added-large-files
 -   repo: https://github.com/psf/black
-    rev: 22.12.0
+    rev: 23.3.0
     hooks:
     -   id: black
+        args: ["--skip-string-normalization", "--line-length=119"]
+        additional_dependencies: ['click==8.0.4']
 -   repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
     - id: flake8
+-   repo: https://github.com/pycqa/isort
+    rev: 6.0.0
+    hooks:
+      - id: isort
+        name: isort (python)
+        args: ["--multi-line=3", "--trailing-comma", "--force-grid-wrap=0", "--use-parenthese", "--line-width=119", "--ws", "--skip=external"]
 default_language_version:
-    python: python3.8.13
+    python: python3.8.10

@@ -3,10 +3,12 @@ from jax import vmap, numpy as jnp
 from jax_dips.domain import interpolate
 from jax_dips.geometry import geometric_integrations_per_point
 
-from examples.biomolecules.units import (e2_per_Angs_to_kcal_per_mol,
-                                         KbT_in_kcal_per_mol,
-                                         ionic_strength,
-                                         N_A,)
+from examples.biomolecules.units import (
+    e2_per_Angs_to_kcal_per_mol,
+    KbT_in_kcal_per_mol,
+    ionic_strength,
+    N_A,
+)
 from examples.biomolecules.coefficients import get_rho_fn
 
 

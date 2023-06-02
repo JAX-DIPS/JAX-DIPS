@@ -31,14 +31,14 @@ from jax import (
     jvp,
 )
 
-from jax_dips.solvers.elliptic import poisson_solver
+from jax_dips.solvers.poisson import poisson_solver
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.geometry import level_set
 from jax_dips.domain import mesh
 from jax_dips.utils import io
 
 COMPILE_BACKEND = "gpu"
-custom_jit = partial(jit, backend=COMPILE_BACKEND)
+custom_jit = jit  # partial(jit, backend=COMPILE_BACKEND)
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, ".."))

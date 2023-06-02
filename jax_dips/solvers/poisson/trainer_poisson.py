@@ -24,20 +24,31 @@ import numpy as onp
 import time
 import signal
 import logging
+
 logger = logging.getLogger(__name__)
 
 import optax
 from optax._src.base import GradientTransformation
 
 import jax
-from jax import (pmap, vmap, numpy as jnp, random, jit,)
+from jax import (
+    pmap,
+    vmap,
+    numpy as jnp,
+    random,
+    jit,
+)
 from jax.config import config
+
 config.update("jax_debug_nans", False)
 
-from jax_dips.solvers.elliptic import solver_poisson
+from jax_dips.solvers.poisson import solver_poisson
 from jax_dips.data import data_management
 from jax_dips._jaxmd_modules import dataclasses, util
-from jax_dips.solvers.simulation_states import (PoissonSimState, PoissonSimStateFn,)
+from jax_dips.solvers.simulation_states import (
+    PoissonSimState,
+    PoissonSimStateFn,
+)
 from jax_dips.domain.mesh import GridState
 from jax_dips.utils.visualization import plot_loss_epochs
 from jax_dips.utils.inspect import print_architecture
@@ -50,8 +61,10 @@ f64 = util.f64
 
 T = TypeVar("T")
 SolveFn = Callable[[PoissonSimState], PoissonSimState]
-InitFn = Callable[[GridState, GridState, int, int, int, int, int, int, int, bool, int, str, str, str],
-                  Tuple[PoissonSimState, SolveFn]]
+InitFn = Callable[
+    [GridState, GridState, int, int, int, int, int, int, int, bool, int, str, str, str],
+    Tuple[PoissonSimState, SolveFn],
+]
 Simulator = Tuple[InitFn, SolveFn]
 
 
@@ -90,7 +103,6 @@ class PoissonSolve:
         loss_plot_name: str = "solver_loss",
         optimizer: GradientTransformation = optax.adam(1e-2),
     ) -> None:
-
         #########################################################################
 
         global stop_training

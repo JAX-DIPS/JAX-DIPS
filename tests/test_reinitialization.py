@@ -18,6 +18,7 @@
 
 """
 import logging
+
 logging.basicConfig(level=logging.INFO)
 from functools import partial
 import time
@@ -47,7 +48,7 @@ if rootDir not in sys.path:  # add parent dir to paths
 
 config.update("jax_enable_x64", False)
 
-jax.profiler.start_trace("./tensorboard")
+# jax.profiler.start_trace("./tensorboard")
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # specify which GPU(s) to be used
 
@@ -115,7 +116,7 @@ def test_reinitialization():
         return func_
 
     @partial(jit, static_argnums=0)
-    def step_func(state_cb_fn, i, state_and_nbrs):
+    def step_func_w_callback(state_cb_fn, i, state_and_nbrs):
         state, gstate, dt = state_and_nbrs
         time_ = i * dt
 
@@ -137,28 +138,39 @@ def test_reinitialization():
         state = reinitialize_fn(state, gstate)
         return state, gstate, dt
 
+    @jit
+    def step_func(i, state_and_nbrs):
+        state, gstate, dt = state_and_nbrs
+        time_ = i * dt
+        normal, curve = normal_curve_fn(state.phi, gstate)
+        state = reinitialize_fn(state, gstate)
+        return state, gstate, dt
+
     # --- Actual simulation
 
     gstate = init_mesh_fn(xc, yc, zc)
     R = gstate.R
     sim_state = init_fn(velocity_fn, R)
 
-    q = queue.Queue()
-    state_data = StateData(q, content_dir="./database_tmp", cols=["t", "U", "kappaM", "nx", "ny", "nz"])
-    state_data.start()
-
-    partial_step_func = partial(step_func, state_data.queue_state)
+    if False:
+        q = queue.Queue()
+        state_data = StateData(q, content_dir="./database_tmp", cols=["t", "U", "kappaM", "nx", "ny", "nz"])
+        state_data.start()
+        _step_func = partial(step_func_w_callback, state_data.queue_state)
+    else:
+        _step_func = step_func
 
     t1 = time.time()
-    sim_state, gstate, dt = lax.fori_loop(i32(0), i32(simulation_steps), partial_step_func, (sim_state, gstate, dt))
+    sim_state, gstate, dt = lax.fori_loop(i32(0), i32(simulation_steps), _step_func, (sim_state, gstate, dt))
     sim_state.phi.block_until_ready()
     t2 = time.time()
     logging.info(f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}")
 
-    state_data.stop()
+    if False:
+        state_data.stop()
 
-    jax.profiler.save_device_memory_profile("memory.prof")
-    jax.profiler.stop_trace()
+    # jax.profiler.save_device_memory_profile("memory.prof")
+    # jax.profiler.stop_trace()
 
     logging.info(f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5")
     logging.info(f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0")
@@ -166,7 +178,8 @@ def test_reinitialization():
     assert jnp.isclose(sim_state.phi.max(), 3.0, atol=2 * dx)
 
     # --- if you want to visualize simulation uncomment below line
-    io.write_vtk_log(gstate, state_data)
+    if False:
+        io.write_vtk_log(gstate, state_data)
 
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ import optax
 
 import jax
 from jax import numpy as jnp, vmap, jit, grad, random, value_and_grad, config
+
 config.update("jax_debug_nans", False)
 
 from jax_dips.domain import interpolate
@@ -35,22 +36,28 @@ from jax_dips.nn.nn_solution_model import DoubleMLP
 from jax_dips.geometry import geometric_integrations_per_point
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.domain.mesh import GridState
-from jax_dips.solvers.simulation_states import (PoissonSimState, PoissonSimStateFn,)
+from jax_dips.solvers.simulation_states import (
+    PoissonSimState,
+    PoissonSimStateFn,
+)
 
 from typing import Callable
+
 
 class PoissonTrainer:
     """
     This is a completely local point-based Poisson solver.
     """
 
-    def __init__(self,
-                 gstate: GridState,
-                 sim_state: PoissonSimState,
-                 sim_state_fn: PoissonSimStateFn,
-                 optimizer: Callable,
-                 algorithm: int = 0,
-                 precondition: int = 1) -> None:
+    def __init__(
+        self,
+        gstate: GridState,
+        sim_state: PoissonSimState,
+        sim_state_fn: PoissonSimStateFn,
+        optimizer: Callable,
+        algorithm: int = 0,
+        precondition: int = 1,
+    ) -> None:
         r"""
         algorithm = 0: use regression to evaluate u^\pm
         algorithm = 1: use neural network to evaluate u^\pm
