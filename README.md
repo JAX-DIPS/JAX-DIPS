@@ -26,7 +26,7 @@ Do `pytest tests/test_*.py` of each of the available tests from the parent direc
 - `test_geometric_integrations`: integrating surface area of a sphere along with its volume. Small differences with associated theoretical values are expected to pass.
 - `test_geometric_integrations_per_point`: this is the pointwise version of the intergation methods on random point clouds.
 - `test_poisson_solver_{pointwise/grid_based}_{with/without}_jump_{sphere/star}`: tests for both the pointwise and the grid-based Poisson solvers over a star and a sphere interfaces. Note that in the current implementation the grid-based solver does not support batching and is therefore faster. Fixing this issue will be done in the future versions.
-# Pre-req
+# Pre-requisites
 
 ## Nvidia Driver
 
@@ -45,13 +45,24 @@ Please refer https://nvidia.github.io/nvidia-docker/ to setup apt repo
 apt-get install nvidia-docker2
 
 
-## Build development container
+# Development & Usage Environment
 
-```
-./launch.sh build
-```
+Docker images provide an isolated and consistent runtime environment, ensuring that the application behaves the same regardless of the host system. We recommend using the docker image provided here as it is fully loaded with libraries for datacenter scale simulatiopns and optimized for NVIDIA GPUs. For a full list of the supported software and specific versions that come packaged with this container image see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
 
-For a full list of the supported software and specific versions that come packaged with this framework based on the container image, see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
+
+To personalize your development environment you need to set up a `.env` file that contains
+```
+IMAGE_NAME=docker.io/pourion/jax_dips:latest       # default docker image available for download! Change this if you want to build new docker images and push to your preferred docker registry
+DATA_PATH=/data/                                   # default data path inside your docker container, will mirror your DATA_MOUNT_PATH directory
+DATA_MOUNT_PATH=/data                              # default data mount path inside your machine, will mirror into your docker container's DATA_PATH directory
+RESULT_PATH=/results/                              # default result path inside your docker container
+RESULT_MOUNT_PATH=/results/                        # default result mount path inside your machine
+REGISTRY=<your-preferred-registry-name>            # (optional) choices are docker.io (default), nvcr.io, ghcr.io, etc.
+REGISTRY_USER=<your-registry-username>             # (optional) your username to connect to docker registry
+REGISTRY_ACCESS_TOKEN=<your-registry-access-token> # (optional) your access token to connect to docker registry
+WANDB_API_KEY=NotSpecified                         # (optional) your API key to connect to Weights and Biases service
+JUPYTER_PORT=8888                                  # (optional) port to connect to jupyter server
+```
 
 ## Pull development container
 Currently the latest docker image available on Docker Hub is available at `docker.io/pourion/jax_dips`. Instead of building the container, you can only pull the latest docker image by running 
@@ -60,29 +71,33 @@ Currently the latest docker image available on Docker Hub is available at `docke
 ./launch.sh pull
 ```
 
-## Start developement container
-This will create a container and places the user in the container with source code mounted.
+## Build development container
+Alternatively you can build the container by running the following command
+```
+./launch.sh build
+```
+In case you want to add additional libraries to your container this is the recommended way.
 
-Once the container is created, user can attach to this container from VS code.
+
+## Start developement container
+This will create a container and places the user in the container with source code mounted. 
 
 ```
 ./launch.sh dev
 ```
-
-You can also run the container in background, by passing the `-d` flag for daemon:
-
+Additionally, you can run the container in background without having your terminal jump into the container. This can be done by passing the `-d` flag for daemon:
 ```
 ./launch.sh dev -d
 ```
 
-You can attach to the running `jax_dips` container by
+You can always attach your teminal to the running `jax_dips` container by
 
 ```
 ./launch.sh attach
 ```
 
-
-
+### Development in VS Code 
+Once the container is created and is running on your machine, user can attach to this container from VS code; i.e., you need to install Microsoft's `Dev Containers` extension in your VS Code, then `Ctrl+Shift+P` and choose `Dev Containers: Attach to Running Container...`, then choose the `jax_dips` container from the list of running containers on your machine.
 
 ## Cite JAX-DIPS
 If you use JAX-DIPS in your research please use the following citations:
