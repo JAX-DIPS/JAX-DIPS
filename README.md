@@ -70,7 +70,7 @@ Currently the latest docker image available on Docker Hub is available at `docke
 ```
 ./launch.sh pull
 ```
-
+which pulls from docker hub; i.e., equivalent to ```$ docker pull pourion/jax_dips:latest```.
 ## Build development container
 Alternatively you can build the container by running the following command
 ```

@@ -34,8 +34,8 @@ solver:
     decay_rate: 0.96
   data_manager:
     refine: false
-      refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function
-      refine_lod: false # if true will add extra points by Octree using Kaolin
+    refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function
+    refine_lod: false # if true will add extra points by Octree using Kaolin
 
 experiment:
   kirkwood:
