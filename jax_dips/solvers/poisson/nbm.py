@@ -44,7 +44,7 @@ from jax_dips.solvers.simulation_states import (
 from typing import Callable
 
 
-class PoissonTrainer:
+class InterfacialPDE:
     """
     This is a completely local point-based Poisson solver.
     """
@@ -173,33 +173,6 @@ class PoissonTrainer:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_preconditioned_fn
         elif precondition == 0:
             self.compute_Ax_and_b_fn = self.compute_Ax_and_b_vanilla_fn
-
-    def fetch_checkpoint(self, checkpoint_dir):
-        if checkpoint_dir is None or not os.path.exists(checkpoint_dir):
-            return None
-        else:
-            checkpoints = [p for p in os.listdir(checkpoint_dir) if "checkpoint_" in p]
-            if checkpoints == []:
-                return None
-            checkpoint = os.path.join(checkpoint_dir, max(checkpoints))
-            print(f"Loading checkpoint {checkpoint}")
-            with open(checkpoint, "rb") as f:
-                state = pickle.load(f)
-            return state
-
-    def save_checkpoint(self, checkpoint_dir, state):
-        if checkpoint_dir is None:
-            print("No checkpoint dir. specified. Skipping checkpoint.")
-            return
-
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-
-        checkpoint = os.path.join(checkpoint_dir, "checkpoint_" + str(state["epoch"]))
-        print(f"Saving checkpoint {checkpoint}")
-        with open(checkpoint, "wb") as f:
-            pickle.dump(state, f)
-        return checkpoint
 
     def get_Xijk(self, cell_dx, cell_dy, cell_dz):
         Xijk = jnp.array(

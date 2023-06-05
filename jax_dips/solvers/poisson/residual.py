@@ -44,7 +44,7 @@ from jax_dips.solvers.simulation_states import (
 from typing import Callable
 
 
-class PoissonTrainer:
+class FiniteResidual:
     """
     This is a completely local point-based Poisson solver.
     """

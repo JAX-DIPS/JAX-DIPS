@@ -11,6 +11,7 @@ from examples.biomolecules.units import (
 )
 from examples.biomolecules.coefficients import get_rho_fn
 
+from jax_dips.utils.chunking import chunked_vmap
 
 """
     * Based on equation 9 in `Eﬃcient calculation of fully resolved electrostatics around large biomolecules`
@@ -54,8 +55,15 @@ def get_free_energy(
         is_cell_crossed_by_interface,
         integral_interp_fn,
     )
-    partial_integrals_positive = vmap(integrate_in_positive_domain_at_point, (0, None, None, None))(
-        gstate.R, gstate.dx, gstate.dy, gstate.dz
+    partial_integrals_positive = chunked_vmap(
+        integrate_in_positive_domain_at_point,
+        num_chunks=2,
+        in_axes=(0, None, None, None),
+    )(
+        gstate.R,
+        gstate.dx,
+        gstate.dy,
+        gstate.dz,
     )
 
     sfe_z = partial_integrals_positive.sum() * KbT_in_kcal_per_mol * (ionic_strength * 1e-24 * N_A)

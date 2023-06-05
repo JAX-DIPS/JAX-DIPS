@@ -19,6 +19,7 @@
 """
 import jax
 import logging
+from jax.experimental import host_callback
 
 logger = logging.getLogger(__name__)
 
@@ -38,3 +39,24 @@ def print_architecture(params):
                 res *= elem
             num_params += res
     logger.info(f"Total number of trainable parameters = {num_params} ...\n")
+
+
+# ----------------------------------------------------------------
+
+
+def _print_callback(arg, transforms):
+    i, n_iter, message = arg
+    print(f"iteration {i}/{n_iter} - loss: {message}")
+
+
+@jax.jit
+def progress_bar(arg, result):
+    "Print progress of loop only if iteration number is a multiple of the print_rate"
+    i, n_iter, print_rate, message = arg
+    result = jax.lax.cond(
+        i % print_rate == 0,
+        lambda _: host_callback.id_tap(_print_callback, (i, n_iter, message), result=result),
+        lambda _: result,
+        operand=None,
+    )
+    return result

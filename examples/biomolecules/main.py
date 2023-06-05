@@ -47,6 +47,7 @@ config.update("jax_enable_x64", False)
 config.update("jax_debug_nans", False)
 from jax import numpy as jnp, vmap, profiler
 
+from jax_dips.solvers.poisson import trainer
 from jax_dips.solvers.poisson import trainer_poisson
 from jax_dips.solvers.poisson import poisson_solver_scalable
 from jax_dips.solvers.optimizers import get_optimizer
@@ -177,7 +178,7 @@ def biomolecule_solvation_energy(
         pdb.set_trace()
 
     t0 = t1 = 0.0
-    if cfg.solver.verbose:
+    if cfg.solver.version == 0:
         # -- v1 old code
         init_fn, solve_fn = poisson_solver_scalable.setup(
             initial_value_fn,
@@ -211,7 +212,7 @@ def biomolecule_solvation_energy(
         )
         t1 = time.time()
 
-    else:
+    elif cfg.solver.version == 1:
         # -- v2 new code
         init_fn = trainer_poisson.setup(
             initial_value_fn,
@@ -242,6 +243,43 @@ def biomolecule_solvation_energy(
             currDir=log_dir,
             loss_plot_name=molecule_name,
             optimizer=optimizer,
+        )
+        t0 = time.time()
+        sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+        t1 = time.time()
+
+    elif cfg.solver.version == 2:
+        init_fn = trainer.setup(
+            initial_value_fn,
+            dirichlet_bc_fn,
+            phi_fn,
+            mu_m_fn,
+            mu_p_fn,
+            k_m_fn,
+            k_p_fn,
+            f_m_fn,
+            f_p_fn,
+            alpha_fn,
+            beta_fn,
+            nonlinear_operator_m,
+            nonlinear_operator_p,
+        )
+        sim_state, solve_fn = init_fn(
+            gstate=gstate,
+            eval_gstate=eval_gstate,
+            algorithm=ALGORITHM,
+            switching_interval=SWITCHING_INTERVAL,
+            Nx_tr=Nx_tr,
+            Ny_tr=Ny_tr,
+            Nz_tr=Nz_tr,
+            num_epochs=num_epochs,
+            multi_gpu=multi_gpu,
+            checkpoint_interval=checkpoint_interval,
+            currDir=log_dir,
+            loss_plot_name=molecule_name,
+            optimizer=optimizer,
+            restart=cfg.solver.restart_from_checkpoint,
+            print_rate=cfg.solver.print_rate,
         )
         t0 = time.time()
         sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
