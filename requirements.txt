@@ -14,7 +14,7 @@ matplotlib
 meshio[all]
 gdown
 usd-core
-warp-lang
+warp-lang==0.9.0
 
 pyexr
 trimesh>=3.0

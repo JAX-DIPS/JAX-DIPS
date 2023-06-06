@@ -21,7 +21,6 @@ import pickle
 import os
 from typing import Callable, TypeVar, Tuple
 from functools import partial
-import numpy as onp
 import time
 import signal
 import logging
@@ -39,17 +38,15 @@ from jax import (
     random,
     jit,
 )
-from jax.config import config
 
-config.update("jax_debug_nans", False)
 
-from jax_dips.solvers.poisson import nbm
 from jax_dips.data import data_management
 from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips.solvers.simulation_states import (
     PoissonSimState,
     PoissonSimStateFn,
 )
+from jax_dips.solvers.poisson import nbm
 from jax_dips.domain.mesh import GridState
 from jax_dips.utils.visualization import plot_loss_epochs
 from jax_dips.utils.inspect import (
@@ -156,7 +153,7 @@ class Trainer:
         self.train_dz = self.TD.gstate.dz
         #########################################################################
 
-        self.model = nbm.InterfacialPDE(
+        self.model = nbm.Bootstrap(
             gstate,
             sim_state,
             sim_state_fn,
@@ -352,6 +349,7 @@ class Trainer:
 
     # -----------------------
     def multi_GPU_train(self, opt_state, params):
+        # TODO: implement multi-GPU training
         loss_epochs = []
         epoch_store = []
         n_devices = jax.local_device_count()

@@ -45,7 +45,11 @@ from jax.config import config
 
 config.update("jax_enable_x64", False)
 config.update("jax_debug_nans", False)
-from jax import numpy as jnp, vmap, profiler
+from jax import (
+    numpy as jnp,
+    vmap,
+    profiler,
+)
 
 from jax_dips.solvers.poisson import trainer
 from jax_dips.solvers.poisson import trainer_poisson
