@@ -1,4 +1,4 @@
-expname: biomolecule-app
+expname: star-app
 
 defaults:
   - base_hydra_config
@@ -15,15 +15,14 @@ gridstates:
   Nz_eval: 256  # grid for evaluation/visualization
 
 solver:
-  Nx_tr: 16  # grid for training
-  Ny_tr: 16  # grid for training
-  Nz_tr: 16  # grid for training
-  num_epochs: 100 # number of epochs to train
+  Nx_tr: 32  # grid for training
+  Ny_tr: 32  # grid for training
+  Nz_tr: 32  # grid for training
+  num_epochs: 1000 # number of epochs to train
   print_rate: 10 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
   switching_interval: 3  # domain switching interval
-  version: 2  # 0: verbose/slow, 1: silent/fast, 2: refactored
   multi_gpu: False
   num_gpus_ddp: 1
   optim:
@@ -38,6 +37,7 @@ solver:
     refine_lod: false # if true will add extra points by Octree using Kaolin
 
 experiment:
+  results_path: results/tests
   kirkwood:
     enable: True
     protein_name: case_0.pqr

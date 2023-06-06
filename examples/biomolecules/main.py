@@ -52,8 +52,10 @@ from jax import (
 )
 
 from jax_dips.solvers.poisson import trainer
-from jax_dips.solvers.poisson import trainer_poisson
-from jax_dips.solvers.poisson import poisson_solver_scalable
+from jax_dips.solvers.poisson.deprecated import (
+    poisson_solver_scalable,
+    trainer_poisson,
+)
 from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips._jaxmd_modules.util import f32
 from jax_dips.geometry import level_set
@@ -279,7 +281,7 @@ def biomolecule_solvation_energy(
             num_epochs=num_epochs,
             multi_gpu=multi_gpu,
             checkpoint_interval=checkpoint_interval,
-            currDir=log_dir,
+            results_dir=log_dir,
             loss_plot_name=molecule_name,
             optimizer=optimizer,
             restart=cfg.solver.restart_from_checkpoint,

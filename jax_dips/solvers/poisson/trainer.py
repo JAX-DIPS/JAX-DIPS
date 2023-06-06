@@ -106,7 +106,7 @@ class Trainer:
         batch_size: int = 131072,
         checkpoint_dir: str = "./checkpoints",
         checkpoint_interval: int = 2,
-        currDir: str = "./",
+        results_dir: str = "./",
         loss_plot_name: str = "solver_loss",
         optimizer: GradientTransformation = optax.adam(1e-2),
         restart: bool = False,
@@ -121,7 +121,7 @@ class Trainer:
         self.multi_gpu = multi_gpu
         self.checkpoint_dir = checkpoint_dir
         self.checkpoint_interval = checkpoint_interval
-        self.currDir = currDir
+        self.results_dir = results_dir
         self.loss_plot_name = loss_plot_name
         self.Nx_tr = Nx_tr
         self.Ny_tr = Ny_tr
@@ -246,7 +246,7 @@ class Trainer:
         plot_loss_epochs(
             self.epoch_store,
             self.loss_epochs,
-            self.currDir,
+            self.results_dir,
             self.TD.base_level,
             self.TD.alt_res,
             self.loss_plot_name,
@@ -289,7 +289,7 @@ class Trainer:
                 train_dz,
                 batched_training_data,
             ) = carry
-            # train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz)
+            # train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz) #TODO: automate this
             train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(
                 self.num_epochs, epoch, train_dx, train_dy, train_dz
             )
@@ -493,7 +493,7 @@ def setup(
         multi_gpu: bool = False,
         checkpoint_interval: int = 1000,
         checkpoint_dir: str = "./checkpoints",
-        currDir: str = "./",
+        results_dir: str = "./",
         loss_plot_name: str = "solver_loss",
         optimizer: GradientTransformation = optax.adam(1e-2),
         restart: bool = False,
@@ -529,7 +529,7 @@ def setup(
                 batch_size=batch_size,
                 checkpoint_dir=checkpoint_dir,
                 checkpoint_interval=checkpoint_interval,
-                currDir=currDir,
+                results_dir=results_dir,
                 loss_plot_name=loss_plot_name,
                 optimizer=optimizer,
                 restart=restart,

@@ -42,7 +42,7 @@ from jax.config import config
 
 config.update("jax_debug_nans", False)
 
-from jax_dips.solvers.poisson import solver_poisson
+from jax_dips.solvers.poisson.deprecated import solver_poisson
 from jax_dips.data import data_management
 from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips.solvers.simulation_states import (

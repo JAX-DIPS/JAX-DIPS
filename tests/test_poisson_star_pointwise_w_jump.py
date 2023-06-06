@@ -20,9 +20,12 @@
 import time
 import os
 import sys
+import hydra
+from omegaconf import DictConfig, OmegaConf
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 from functools import partial
 
 from jax.config import config
@@ -32,7 +35,8 @@ import jax.profiler
 
 from jax_dips.geometry import level_set
 from jax_dips.domain import mesh
-from jax_dips.solvers.poisson import poisson_solver_scalable
+from jax_dips.solvers.poisson import trainer  # poisson_solver_scalable
+from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.utils import io
 
@@ -52,14 +56,26 @@ os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 
-def test_poisson_solver_with_jump_complex():
-    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    SWITCHING_INTERVAL = 3
-    Nx_tr = Ny_tr = Nz_tr = 16
-    checkpoint_dir = "./checkpoints"
-    checkpoint_interval = 10000
-    multi_gpu = False
-    num_epochs = 1000
+@hydra.main(config_path="conf", config_name="star", version_base="1.1")
+def test_poisson_star_pointwise_w_jump(cfg: DictConfig):
+    logger.info(f"Starting {__file__}")
+    logger.info(OmegaConf.to_yaml(cfg))
+
+    algorithm = cfg.solver.algorithm
+    switching_interval = cfg.solver.switching_interval
+    Nx_tr = cfg.solver.Nx_tr
+    Ny_tr = cfg.solver.Nx_tr
+    Nz_tr = cfg.solver.Nx_tr
+
+    results_path = cfg.experiment.results_path  # "results/tests/"
+    os.path.exists(results_path) or os.makedirs(results_path)
+
+    test_name = __file__.split("/")[-1].split(".")[0]
+    checkpoint_dir = os.path.join(results_path, "checkpoints")
+    checkpoint_interval = cfg.experiment.logging.checkpoint_interval
+
+    multi_gpu = cfg.solver.multi_gpu
+    num_epochs = cfg.solver.num_epochs
     batch_size = min(64 * 64 * 32, Nx_tr * Ny_tr * Nz_tr)
 
     dim = i32(3)
@@ -281,7 +297,42 @@ def test_poisson_solver_with_jump_complex():
         )
         return f_p
 
-    init_fn, solve_fn = poisson_solver_scalable.setup(
+    # init_fn, solve_fn = poisson_solver_scalable.setup(
+    #     initial_value_fn,
+    #     dirichlet_bc_fn,
+    #     phi_fn,
+    #     mu_m_fn,
+    #     mu_p_fn,
+    #     k_m_fn,
+    #     k_p_fn,
+    #     f_m_fn,
+    #     f_p_fn,
+    #     alpha_fn,
+    #     beta_fn,
+    # )
+    # sim_state = init_fn(R)
+
+    # t1 = time.time()
+
+    # sim_state, epoch_store, loss_epochs = solve_fn(
+    #     gstate,
+    #     eval_gstate,
+    #     sim_state,
+    #     algorithm=algorithm,
+    #     switching_interval=switching_interval,
+    #     Nx_tr=Nx_tr,
+    #     Ny_tr=Ny_tr,
+    #     Nz_tr=Nz_tr,
+    #     num_epochs=num_epochs,
+    #     multi_gpu=multi_gpu,
+    #     batch_size=batch_size,
+    #     checkpoint_dir=checkpoint_dir,
+    #     checkpoint_interval=checkpoint_interval,
+    # )
+    # # sim_state.solution.block_until_ready()
+
+    # t2 = time.time()
+    init_fn = trainer.setup(
         initial_value_fn,
         dirichlet_bc_fn,
         phi_fn,
@@ -294,30 +345,30 @@ def test_poisson_solver_with_jump_complex():
         alpha_fn,
         beta_fn,
     )
-    sim_state = init_fn(R)
-
-    t1 = time.time()
-
-    sim_state, epoch_store, loss_epochs = solve_fn(
-        gstate,
-        eval_gstate,
-        sim_state,
-        algorithm=ALGORITHM,
-        switching_interval=SWITCHING_INTERVAL,
+    sim_state, solve_fn = init_fn(
+        gstate=gstate,
+        eval_gstate=eval_gstate,
+        algorithm=algorithm,
+        switching_interval=switching_interval,
         Nx_tr=Nx_tr,
         Ny_tr=Ny_tr,
         Nz_tr=Nz_tr,
         num_epochs=num_epochs,
         multi_gpu=multi_gpu,
         batch_size=batch_size,
-        checkpoint_dir=checkpoint_dir,
         checkpoint_interval=checkpoint_interval,
+        checkpoint_dir=checkpoint_dir,
+        results_dir=results_path,
+        loss_plot_name=test_name,
+        optimizer=get_optimizer(),
+        restart=cfg.solver.restart_from_checkpoint,
+        print_rate=cfg.solver.print_rate,
     )
-    # sim_state.solution.block_until_ready()
-
+    t1 = time.time()
+    sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
     t2 = time.time()
 
-    logging.info(f"solve took {(t2 - t1)} seconds")
+    logger.info(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
@@ -329,7 +380,11 @@ def test_poisson_solver_with_jump_complex():
         "U_exact": exact_sol,
         "U-U_exact": error,
     }
-    io.write_vtk_manual(eval_gstate, log)
+    io.write_vtk_manual(
+        eval_gstate,
+        log,
+        filename=os.path.join(results_path, test_name),
+    )
 
     # log = {
     #     'phi': sim_state.phi,
@@ -356,9 +411,9 @@ def test_poisson_solver_with_jump_complex():
     L_inf_err = abs(sim_state.solution - exact_sol).max()
     rms_err = jnp.square(sim_state.solution - exact_sol).mean() ** 0.5
 
-    logging.info("\n\t  Solution Accuracy: \n")
+    logger.info("\n\t  Solution Accuracy:")
 
-    logging.info(
+    logger.info(
         f"L_inf error on solution everywhere in the domain is = {L_inf_err} and root-mean-squared error = {rms_err} "
     )
 
@@ -366,7 +421,7 @@ def test_poisson_solver_with_jump_complex():
     MASK the solution over sphere only
     """
     """
-    logging.info("\n GRADIENT ERROR\n")
+    logger.info("\n GRADIENT ERROR\n")
 
     grad_um = sim_state.grad_solution[0].reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
     grad_up = sim_state.grad_solution[1].reshape((Nx,Ny,Nz,3))[1:-1,1:-1,1:-1]
@@ -384,8 +439,8 @@ def test_poisson_solver_with_jump_complex():
     err_y_p = abs(grad_up[mask_p][:,1] - grad_up_exact[mask_p][:,1]).max()
     err_z_p = abs(grad_up[mask_p][:,2] - grad_up_exact[mask_p][:,2]).max()
 
-    logging.info(f"L_inf errors in grad u in Omega_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
-    logging.info(f"L_inf errors in grad u in Omega_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
+    logger.info(f"L_inf errors in grad u in Omega_minus x: {err_x_m}, \t y: {err_y_m}, \t z: {err_z_m}")
+    logger.info(f"L_inf errors in grad u in Omega_plus  x: {err_x_p}, \t y: {err_y_p}, \t z: {err_z_p}")
 
 
 
@@ -406,7 +461,7 @@ def test_poisson_solver_with_jump_complex():
     err_up_n = abs(grad_up_n - grad_up_n_exact)[mask_i_p].max()
 
 
-    logging.info(f"L_inf error in normal grad u on interface minus: {err_um_n} \t plus: {err_up_n}")
+    logger.info(f"L_inf error in normal grad u on interface minus: {err_um_n} \t plus: {err_up_n}")
 
     #----
     assert L_inf_err<0.2
@@ -415,4 +470,4 @@ def test_poisson_solver_with_jump_complex():
 
 
 if __name__ == "__main__":
-    test_poisson_solver_with_jump_complex()
+    test_poisson_star_pointwise_w_jump()
