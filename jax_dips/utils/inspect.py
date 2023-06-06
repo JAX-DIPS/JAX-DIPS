@@ -46,7 +46,7 @@ def print_architecture(params):
 
 def _print_callback(arg, transforms):
     i, n_iter, message = arg
-    print(f"iteration {i}/{n_iter} - loss: {message}")
+    logger.info(f"iteration {i}/{n_iter} - loss: {message}")
 
 
 @jax.jit
