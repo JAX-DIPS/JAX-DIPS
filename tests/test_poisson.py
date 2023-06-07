@@ -69,21 +69,21 @@ def test_poisson(cfg: DictConfig):
     logger.info(OmegaConf.to_yaml(cfg))
 
     if cfg.experiment.star:
-        logger.info("performing sphere experiment...\n")
+        logger.info("Performing sphere experiment...\n")
         poisson_solve(
             cfg,
             test_name="sphere",
             exp_fn=sphere,
         )
     if cfg.experiment.star:
-        logger.info("performing star experiment...\n")
+        logger.info("Performing star experiment...\n")
         poisson_solve(
             cfg,
             test_name="star",
             exp_fn=star,
         )
     if cfg.experiment.no_jump:
-        logger.info("performing bulk/no jump experiment...\n")
+        logger.info("Performing bulk/no jump experiment...\n")
         poisson_solve(
             cfg,
             test_name="no_jump",
@@ -111,21 +111,23 @@ def poisson_solve(
 
     algorithm = cfg.solver.algorithm
     switching_interval = cfg.solver.switching_interval
-    Nx_tr = cfg.solver.Nx_tr
-    Ny_tr = cfg.solver.Nx_tr
-    Nz_tr = cfg.solver.Nx_tr
-
     multi_gpu = cfg.solver.multi_gpu
     num_epochs = cfg.solver.num_epochs
-    batch_size = min(64 * 64 * 32, Nx_tr * Ny_tr * Nz_tr)
 
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
     init_mesh_fn, coord_at = mesh.construct(dim)
 
+    Nx_tr = cfg.solver.Nx_tr
+    Ny_tr = cfg.solver.Nx_tr
+    Nz_tr = cfg.solver.Nx_tr
+    batch_size = min(64 * 64 * 32, Nx_tr * Ny_tr * Nz_tr)
+
     # --------- Grid nodes for level set
-    Nx = Ny = Nz = i32(128)
+    Nx = cfg.gridstates.Nx
+    Ny = cfg.gridstates.Ny
+    Nz = cfg.gridstates.Nz
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
@@ -134,7 +136,9 @@ def poisson_solve(
     R = gstate.R
 
     # ----------  Evaluation Mesh for Visualization
-    Nx_eval = Ny_eval = Nz_eval = Nx_tr  # i32(256)       # use same grid that used for training
+    Nx_eval = cfg.gridstates.Nx_eval
+    Ny_eval = cfg.gridstates.Ny_eval
+    Nz_eval = cfg.gridstates.Nz_eval
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
     eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)

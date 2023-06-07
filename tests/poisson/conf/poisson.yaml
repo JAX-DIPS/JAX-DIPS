@@ -7,12 +7,12 @@ defaults:
 
 # customization follows
 gridstates:
-  Nx: 256  # grid for level-set
-  Ny: 256  # grid for level-set
-  Nz: 256  # grid for level-set
-  Nx_eval: 256  # grid for evaluation/visualization
-  Ny_eval: 256  # grid for evaluation/visualization
-  Nz_eval: 256  # grid for evaluation/visualization
+  Nx: 128  # grid for level-set
+  Ny: 128  # grid for level-set
+  Nz: 128  # grid for level-set
+  Nx_eval: 32  # grid for evaluation/visualization
+  Ny_eval: 32  # grid for evaluation/visualization
+  Nz_eval: 32  # grid for evaluation/visualization
 
 solver:
   Nx_tr: 32  # grid for training
