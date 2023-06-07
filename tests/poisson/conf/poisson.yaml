@@ -38,6 +38,7 @@ solver:
 
 experiment:
   results_path: "" # name of folder inside ${hydra:run.dir}
+  sphere: true # sphere interface with jump conditions
   star: true # star interface with jump conditions
   no_jump: true # no interface and no jump conditions
 

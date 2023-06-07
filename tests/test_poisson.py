@@ -17,30 +17,39 @@
   Primary Author: mistani
 
 """
-import time
 import os
 import sys
+import time
+from functools import partial
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import logging
 
 logger = logging.getLogger(__name__)
 
-from functools import partial
-
-from jax.config import config
-from jax import jit, numpy as jnp, vmap, grad, lax
 import jax
+from jax.config import config
+from jax import (
+    jit,
+    numpy as jnp,
+    vmap,
+    grad,
+    lax,
+)
 import jax.profiler
 
+from jax_dips.utils import io
 from jax_dips.geometry import level_set
 from jax_dips.domain import mesh
 from jax_dips.solvers.poisson import trainer
 from jax_dips.solvers.optimizers import get_optimizer
-from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips.utils import io
+from jax_dips._jaxmd_modules.util import (
+    f32,
+    i32,
+)
 
 from tests.poisson.experiment_configs import (
+    sphere,
     star,
     no_jump,
 )
@@ -51,24 +60,54 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
 config.update("jax_enable_x64", False)
-
-
-# os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
-# os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 
 @hydra.main(config_path="poisson/conf", config_name="poisson", version_base="1.1")
 def test_poisson(cfg: DictConfig):
-    if cfg.experiment.star:
-        poisson_solve(cfg)
-    if cfg.experiment.no_jump:
-        poisson_solve(cfg)
-
-
-def poisson_solve(cfg: DictConfig):
     logger.info(f"Starting {__file__}")
     logger.info(OmegaConf.to_yaml(cfg))
+
+    if cfg.experiment.star:
+        logger.info("performing sphere experiment...\n")
+        poisson_solve(
+            cfg,
+            test_name="sphere",
+            exp_fn=sphere,
+        )
+    if cfg.experiment.star:
+        logger.info("performing star experiment...\n")
+        poisson_solve(
+            cfg,
+            test_name="star",
+            exp_fn=star,
+        )
+    if cfg.experiment.no_jump:
+        logger.info("performing bulk/no jump experiment...\n")
+        poisson_solve(
+            cfg,
+            test_name="no_jump",
+            exp_fn=no_jump,
+        )
+
+
+def create_dirs(
+    results_path: str,
+    test_name: str,
+):
+    results_path = os.path.join(results_path, test_name)
+    os.path.exists(results_path) or os.makedirs(results_path)
+    return results_path
+
+
+def poisson_solve(
+    cfg: DictConfig,
+    test_name: str,
+    exp_fn: object,
+):
+    results_path = create_dirs(results_path=cfg.experiment.results_path, test_name=test_name)
+    checkpoint_dir = os.path.join(results_path, "checkpoints")
+    checkpoint_interval = cfg.experiment.logging.checkpoint_interval
 
     algorithm = cfg.solver.algorithm
     switching_interval = cfg.solver.switching_interval
@@ -84,25 +123,6 @@ def poisson_solve(cfg: DictConfig):
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
     init_mesh_fn, coord_at = mesh.construct(dim)
-
-    # ----------  Get current experiment
-    results_path = cfg.experiment.results_path
-    if cfg.experiment.star:
-        exp_fn = star
-        test_name = "star"
-        results_path = os.path.join(results_path, test_name)
-        logger.info("performing star experiment...\n")
-    elif cfg.experiment.no_jump:
-        exp_fn = no_jump
-        test_name = "no_jump"
-        results_path = os.path.join(results_path, test_name)
-        logger.info("performing bulk/no jump experiment...\n")
-    else:
-        raise NotImplementedError
-    os.path.exists(results_path) or os.makedirs(results_path)
-
-    checkpoint_dir = os.path.join(results_path, "checkpoints")
-    checkpoint_interval = cfg.experiment.logging.checkpoint_interval
 
     # --------- Grid nodes for level set
     Nx = Ny = Nz = i32(128)
