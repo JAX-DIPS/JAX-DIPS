@@ -1,4 +1,4 @@
-expname: star-app
+expname: poisson-tests-app
 
 defaults:
   - base_hydra_config
@@ -37,21 +37,9 @@ solver:
     refine_lod: false # if true will add extra points by Octree using Kaolin
 
 experiment:
-  results_path: results/tests
-  kirkwood:
-    enable: True
-    protein_name: case_0.pqr
-    protein_path: inputs/kirkwood_test
-
-  single_protein:
-    enable: False
-    protein_name: pdb:1ajj.pqr
-    protein_path: inputs/pqr_input_mols
-  
-  multi_proteins:
-    enable: False
-    proteins_dir: inputs/pqr_input_mols
-    num_gpus_batching: 3
+  results_path: "" # name of folder inside ${hydra:run.dir}
+  star: true # star interface with jump conditions
+  no_jump: true # no interface and no jump conditions
 
   logging:
     checkpoint_interval: 500

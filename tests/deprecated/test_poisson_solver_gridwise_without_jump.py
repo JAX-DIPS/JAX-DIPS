@@ -20,6 +20,8 @@
 import time
 import os
 import sys
+import hydra
+from omegaconf import DictConfig, OmegaConf
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +30,8 @@ from jax import jit, numpy as jnp, vmap, grad
 import jax.profiler as profiler
 from jax.config import config
 
-from jax_dips.solvers.poisson import poisson_solver
+from jax_dips.solvers.poisson import trainer  # poisson_solver
+from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.geometry import level_set
 from jax_dips.domain import mesh
@@ -48,8 +51,9 @@ os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
 
-def test_poisson_solver_without_jump():
-    logging.info("test_poisson_solver_without_jump")
+@hydra.main(config_path="conf", config_name="star", version_base="1.1")
+def test_poisson_wo_jump():
+    logging.info("test_poisson_wo_jump")
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
@@ -233,4 +237,4 @@ def test_poisson_solver_without_jump():
 
 
 if __name__ == "__main__":
-    test_poisson_solver_without_jump()
+    test_poisson_wo_jump()
