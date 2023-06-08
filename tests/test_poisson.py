@@ -48,7 +48,7 @@ from jax_dips._jaxmd_modules.util import (
     i32,
 )
 
-from tests.poisson.experiment_configs import (
+from tests.confs.experiment_configs import (
     sphere,
     star,
     no_jump,
@@ -63,7 +63,7 @@ config.update("jax_enable_x64", False)
 os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
 
-@hydra.main(config_path="poisson/conf", config_name="poisson", version_base="1.1")
+@hydra.main(config_path="confs", config_name="poisson", version_base="1.1")
 def test_poisson(cfg: DictConfig):
     logger.info(f"Starting {__file__}")
     logger.info(OmegaConf.to_yaml(cfg))

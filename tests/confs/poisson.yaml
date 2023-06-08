@@ -2,8 +2,8 @@ expname: poisson-tests-app
 
 defaults:
   - base_hydra_config
-  - solver: poisson
   - _self_
+
 
 # customization follows
 gridstates:
@@ -45,4 +45,6 @@ experiment:
   logging:
     checkpoint_interval: 500
     log_dir: ${hydra:runtime.output_dir}
+    currDir: ${hydra:runtime.cwd}
+    checkpoint_dir: ${hydra:runtime.cwd}/checkpoints
 

@@ -1,16 +1,11 @@
 from functools import partial
 
-from jax import (
-    jit,
-    numpy as jnp,
-    vmap,
-    grad,
-    lax,
-    jvp,
-)
+from jax import grad, jit, jvp, lax
+from jax import numpy as jnp
+from jax import vmap
 
-from jax_dips.geometry import level_set
 from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.geometry import level_set
 
 COMPILE_BACKEND = "gpu"
 custom_jit = partial(jit, backend=COMPILE_BACKEND)
