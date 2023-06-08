@@ -1,7 +1,13 @@
 # https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.3.14+cuda11.cudnn82-cp38-none-manylinux2014_x86_64.whl
 # jax[cuda11_cudnn82] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-https://storage.googleapis.com/jax-releases/cuda12/jaxlib-0.4.7+cuda12.cudnn88-cp38-cp38-manylinux2014_x86_64.whl
+
+# For alpa we need jax 0.3.22 modified at alpa git repository; i.e., jaxlib==0.3.22+cuda111.cudnn805 -f https://alpa-projects.github.io/wheels.html
+https://github.com/alpa-projects/alpa/releases/download/v0.2.3/jaxlib-0.3.22%2Bcuda113.cudnn820-cp38-cp38-manylinux2014_x86_64.whl
+
+# https://storage.googleapis.com/jax-releases/cuda12/jaxlib-0.4.7+cuda12.cudnn88-cp38-cp38-manylinux2014_x86_64.whl
 jax[cuda12_local] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+
+alpa
 
 dm-haiku==0.0.9
 optax==0.1.5
@@ -13,7 +19,7 @@ pytest
 matplotlib
 meshio[all]
 gdown
-usd-core
+# usd-core
 warp-lang==0.9.0
 
 pyexr
