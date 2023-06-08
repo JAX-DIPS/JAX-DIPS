@@ -27,7 +27,7 @@ from jax_dips.domain import mesh
 from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.domain import interpolate
-from jax_dips.geometry import geometric_integrations_per_point
+from jax_dips.geometry import geometric_integrations
 from jax_dips.utils import io
 
 Array = util.Array
@@ -143,27 +143,28 @@ jump_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(test_state.j
 
 # --- Get functions
 (
-    get_vertices_of_cell_intersection_with_interface_at_point,
+    get_vertices_of_cell_intersection_with_interface_at_node,
     is_cell_crossed_by_interface,
-) = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(phi_interp_fn)
+) = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, test_state)
 (
-    integrate_over_interface_at_point,
-    integrate_in_negative_domain_at_point,
-) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
-    get_vertices_of_cell_intersection_with_interface_at_point,
+    integrate_over_interface_at_node,
+    integrate_in_negative_domain_at_node,
+) = geometric_integrations.integrate_over_gamma_and_omega_m(
+    get_vertices_of_cell_intersection_with_interface_at_node,
     is_cell_crossed_by_interface,
     u_interp_fn,
 )
 (
-    alpha_integrate_over_interface_at_point,
+    alpha_integrate_over_interface_at_node,
     _,
-) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
-    get_vertices_of_cell_intersection_with_interface_at_point,
+) = geometric_integrations.integrate_over_gamma_and_omega_m(
+    get_vertices_of_cell_intersection_with_interface_at_node,
     is_cell_crossed_by_interface,
     jump_interp_fn,
 )
-compute_face_centroids_values_plus_minus_at_point = geometric_integrations_per_point.compute_cell_faces_areas_values(
-    get_vertices_of_cell_intersection_with_interface_at_point,
+compute_face_centroids_values_plus_minus_at_node = geometric_integrations.compute_cell_faces_areas_values(
+    gstate,
+    get_vertices_of_cell_intersection_with_interface_at_node,
     is_cell_crossed_by_interface,
     mu_m_interp_fn,
     mu_p_interp_fn,
@@ -172,16 +173,15 @@ compute_face_centroids_values_plus_minus_at_point = geometric_integrations_per_p
 
 # --- Measurements: PyTest will pick this up
 def test_surface_area_and_volume():
-    u_dGammas = vmap(integrate_over_interface_at_point, (0, None, None, None))(
-        gstate.R, gstate.dx, gstate.dy, gstate.dz
-    )
+    # poisson_scheme_coeffs = compute_face_centroids_values_plus_minus_at_node(
+    #     nodes[794302])
+
+    u_dGammas = vmap(integrate_over_interface_at_node)(nodes)
     print("\n\n\n")
     print(f"Surface area is computed to be {u_dGammas.sum()} ~~ must be ~~ {jnp.pi}")
     print("\n\n\n")
 
-    u_dOmegas = vmap(integrate_in_negative_domain_at_point, (0, None, None, None))(
-        gstate.R, gstate.dx, gstate.dy, gstate.dz
-    )
+    u_dOmegas = vmap(integrate_in_negative_domain_at_node)(nodes)
     print(f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
     print("\n\n\n")
 

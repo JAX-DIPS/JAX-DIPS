@@ -199,7 +199,7 @@ def poisson_solve(
     t2 = time.time()
 
     logger.info(f"solve took {(t2 - t1)} seconds")
-    jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
+    jax.profiler.save_device_memory_profile(f"{results_path}/memory_poisson_test_{test_name}.prof")
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     exact_sol = vmap(evaluate_exact_solution_fn)(eval_gstate.R)

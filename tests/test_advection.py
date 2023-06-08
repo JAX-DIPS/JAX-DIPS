@@ -17,15 +17,28 @@
 """
 import time
 import os
+
+os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
+
 import sys
+
+currDir = os.path.dirname(os.path.realpath(__file__))
+rootDir = os.path.abspath(os.path.join(currDir, ".."))
+if rootDir not in sys.path:  # add parent dir to paths
+    sys.path.append(rootDir)
+
+import hydra
+from omegaconf import DictConfig, OmegaConf
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 import jax
 from jax import jit, lax, numpy as jnp
 import jax.profiler as profiler
 from jax.config import config
+
+config.update("jax_enable_x64", False)
 
 from jax_dips.domain import mesh
 from jax_dips.geometry import geometric_integrations
@@ -33,35 +46,26 @@ from jax_dips.solvers.advection import solver_advection
 from jax_dips._jaxmd_modules.util import f32, i32
 
 
-currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, ".."))
-if rootDir not in sys.path:  # add parent dir to paths
-    sys.path.append(rootDir)
+@hydra.main(config_path="confs", config_name="advection", version_base="1.1")
+def test_spinning_sphere(cfg: DictConfig):
+    logger.info(f"Starting {__file__}")
+    logger.info(OmegaConf.to_yaml(cfg))
 
-config.update("jax_enable_x64", False)
-
-
-# os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
-os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
-# os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
-
-
-def test_spinning_sphere():
     dim = i32(3)
-    xmin = ymin = zmin = f32(-2.0)
-    xmax = ymax = zmax = f32(2.0)
+    xmin = ymin = zmin = f32(cfg.gridstates.Lmin)
+    xmax = ymax = zmax = f32(cfg.gridstates.Lmax)
     box_size = xmax - xmin
-    Nx = i32(128)
-    Ny = i32(128)
-    Nz = i32(128)
-    tf = f32(2 * jnp.pi)
+    Nx = i32(cfg.gridstates.Nx)
+    Ny = i32(cfg.gridstates.Ny)
+    Nz = i32(cfg.gridstates.Nz)
+    tf = f32(cfg.advect.tf)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
     dx = xc[1] - xc[0]
-    dt = dx * f32(0.9)
+    dt = dx * f32(cfg.advect.cfl)
     simulation_steps = i32(tf / dt) + 1
 
     # ---------------
@@ -119,7 +123,7 @@ def test_spinning_sphere():
     sim_state, log, dt = lax.fori_loop(i32(0), i32(simulation_steps - 1), step_func, (sim_state, log, dt))
     sim_state.phi.block_until_ready()
     t2 = time.time()
-    logging.info(f"time per timestep is {(t2 - t1)/simulation_steps}")
+    logger.info(f"time per timestep is {(t2 - t1)/simulation_steps}")
 
     dt_last = tf - (simulation_steps - 1) * dt
     sim_state, log, dt = step_func(i32(simulation_steps), (sim_state, log, dt_last))
@@ -128,9 +132,10 @@ def test_spinning_sphere():
 
     difference_l2 = jnp.mean(jnp.square(log["U"][-1] - log["U"][0]))
 
-    # profiler.save_device_memory_profile("memory_advecting_sphere.prof")
+    if cfg.io.jax_profiler:
+        profiler.save_device_memory_profile("memory_advecting_sphere.prof")
 
-    logging.info(
+    logger.info(
         f"L2 error in 2*pi advected sphere of radius 0.5 is equal to {difference_l2} \t should ideally be \t 0.0"
     )
     assert jnp.isclose(difference_l2, 0.0, atol=1e-4)
@@ -158,12 +163,14 @@ def test_spinning_sphere():
     )
     sphere_volume = jax.vmap(integrate_in_negative_domain)(nodes).sum()
     sphere_area = jax.vmap(integrate_over_interface_at_node)(nodes).sum()
-    logging.info(f"Final volume of the sphere is {sphere_volume}; it should be {4.0*3.141592653589793*0.5**3 / 3.0}")
-    logging.info(f"Final surface area of the sphere is {sphere_area}; it should be {4.0*3.141592653589793*0.5**2}")
+    logger.info(f"Final volume of the sphere is {sphere_volume}; it should be {4.0*3.141592653589793*0.5**3 / 3.0}")
+    logger.info(f"Final surface area of the sphere is {sphere_area}; it should be {4.0*3.141592653589793*0.5**2}")
 
     # --- to save snapshots uncomment below line
-    # io.write_vtk_solution(gstate, log, 'results/')
-    # pdb.set_trace()
+    if cfg.io.save_vtk:
+        io.write_vtk_solution(gstate, log, address=cfg.io.save_vtk_path)
+
+    logger.info("done.")
 
 
 if __name__ == "__main__":

@@ -17,18 +17,29 @@
   Primary Author: mistani
 
 """
+import hydra
+from omegaconf import DictConfig, OmegaConf
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # specify which GPU(s) to be used
+os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
+
+import sys
+
+currDir = os.path.dirname(os.path.realpath(__file__))
+rootDir = os.path.abspath(os.path.join(currDir, ".."))
+if rootDir not in sys.path:  # add parent dir to paths
+    sys.path.append(rootDir)
+
+import queue
 from functools import partial
 import time
-import os
-import sys
-import queue
 
 import jax
-import jax.profiler
-from jax.config import config
 from jax.experimental import host_callback
 from jax import jit, lax, numpy as jnp, vmap
 
@@ -38,34 +49,25 @@ from jax_dips.geometry import level_set
 from jax_dips.utils import io
 from jax_dips.domain import interpolate, mesh
 from jax_dips._jaxmd_modules.util import f32, i32
-
-
-currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, ".."))
-if rootDir not in sys.path:  # add parent dir to paths
-    sys.path.append(rootDir)
-
+from jax.config import config
 
 config.update("jax_enable_x64", False)
 
-# jax.profiler.start_trace("./tensorboard")
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # specify which GPU(s) to be used
+@hydra.main(config_path="confs", config_name="reinitialization", version_base="1.1")
+def test_reinitialization(cfg: DictConfig):
+    logger.info(f"Starting {__file__}")
+    logger.info(OmegaConf.to_yaml(cfg))
+    if cfg.io.jax_profiler:
+        jax.profiler.start_trace("./tensorboard")
 
-# os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
-os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
-# os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
-
-
-def test_reinitialization():
     dim = i32(3)
-    xmin = ymin = zmin = f32(-2.0)
-    xmax = ymax = zmax = f32(2.0)
+    xmin = ymin = zmin = f32(cfg.gridstates.Lmin)
+    xmax = ymax = zmax = f32(cfg.gridstates.Lmax)
     box_size = xmax - xmin
-    Nx = i32(128)
-    Ny = i32(128)
-    Nz = i32(128)
-    tf = f32(2 * jnp.pi)
+    Nx = i32(cfg.gridstates.Nx)
+    Ny = i32(cfg.gridstates.Ny)
+    Nz = i32(cfg.gridstates.Nz)
 
     # --------- Grid nodes
     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
@@ -75,7 +77,8 @@ def test_reinitialization():
     dy = yc[1] - yc[0]
     dz = zc[1] - zc[0]
 
-    dt = dx * f32(0.95)
+    tf = f32(cfg.advect.tf)
+    dt = dx * f32(cfg.advect.cfl)
     simulation_steps = i32(tf / dt)
 
     # ---------------
@@ -152,9 +155,13 @@ def test_reinitialization():
     R = gstate.R
     sim_state = init_fn(velocity_fn, R)
 
-    if False:
+    if cfg.io.listen:
         q = queue.Queue()
-        state_data = StateData(q, content_dir="./database_tmp", cols=["t", "U", "kappaM", "nx", "ny", "nz"])
+        state_data = StateData(
+            q,
+            content_dir=cfg.io.listen_db_path,
+            cols=["t", "U", "kappaM", "nx", "ny", "nz"],
+        )
         state_data.start()
         _step_func = partial(step_func_w_callback, state_data.queue_state)
     else:
@@ -164,22 +171,29 @@ def test_reinitialization():
     sim_state, gstate, dt = lax.fori_loop(i32(0), i32(simulation_steps), _step_func, (sim_state, gstate, dt))
     sim_state.phi.block_until_ready()
     t2 = time.time()
-    logging.info(f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}")
+    logger.info(f"time per timestep is {(t2 - t1)/simulation_steps}, Total steps  {simulation_steps}")
 
-    if False:
+    if cfg.io.listen:
         state_data.stop()
 
-    # jax.profiler.save_device_memory_profile("memory.prof")
-    # jax.profiler.stop_trace()
+    if cfg.io.jax_profiler:
+        jax.profiler.save_device_memory_profile(f"memory_{__name__}.prof")
+        jax.profiler.stop_trace()
 
-    logging.info(f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5")
-    logging.info(f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0")
+    logger.info(f"minimum distance to the sphere is {sim_state.phi.min()} \t should be \t -0.5")
+    logger.info(f"maximum distance to the sphere is {sim_state.phi.max()} \t should be \t 3.0")
     assert jnp.isclose(sim_state.phi.min(), -0.5, atol=2 * dx)
     assert jnp.isclose(sim_state.phi.max(), 3.0, atol=2 * dx)
 
     # --- if you want to visualize simulation uncomment below line
-    if False:
-        io.write_vtk_log(gstate, state_data)
+    if cfg.io.save_vtk:
+        io.write_vtk_log(
+            gstate,
+            state_data,
+            address=cfg.io.save_vtk_path,
+        )
+
+    logger.info("test passed successfully.")
 
 
 if __name__ == "__main__":
