@@ -26,25 +26,22 @@ rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
+import logging
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
-import logging
 
 logger = logging.getLogger(__name__)
 
-from jax import random, numpy as jnp, vmap
+from jax import numpy as jnp
+from jax import random, vmap
 from jax.config import config
 
 config.update("jax_enable_x64", True)
 from jax_dips._jaxmd_modules import dataclasses, util
-from jax_dips.domain import mesh
-from jax_dips.domain import interpolate
+from jax_dips.domain import interpolate, mesh
+from jax_dips.geometry import geometric_integrations, geometric_integrations_per_point
 from jax_dips.utils import io
-from jax_dips.geometry import (
-    geometric_integrations_per_point,
-    geometric_integrations,
-)
-
 
 Array = util.Array
 f32 = util.f32

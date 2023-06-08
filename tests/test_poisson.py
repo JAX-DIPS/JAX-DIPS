@@ -17,42 +17,31 @@
   Primary Author: mistani
 
 """
+import logging
 import os
 import sys
 import time
 from functools import partial
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
-import logging
 
 logger = logging.getLogger(__name__)
 
 import jax
-from jax.config import config
-from jax import (
-    jit,
-    numpy as jnp,
-    vmap,
-    grad,
-    lax,
-)
 import jax.profiler
+from jax import grad, jit, lax
+from jax import numpy as jnp
+from jax import vmap
+from jax.config import config
 
-from jax_dips.utils import io
-from jax_dips.geometry import level_set
+from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.domain import mesh
-from jax_dips.solvers.poisson import trainer
+from jax_dips.geometry import level_set
 from jax_dips.solvers.optimizers import get_optimizer
-from jax_dips._jaxmd_modules.util import (
-    f32,
-    i32,
-)
-
-from tests.confs.experiment_configs import (
-    sphere,
-    star,
-    no_jump,
-)
+from jax_dips.solvers.poisson import trainer
+from jax_dips.utils import io
+from tests.confs.experiment_configs import no_jump, sphere, star
 
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, ".."))

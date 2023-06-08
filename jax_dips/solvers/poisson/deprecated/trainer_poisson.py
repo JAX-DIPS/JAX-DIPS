@@ -18,41 +18,33 @@
 
 """
 
-from typing import Callable, TypeVar, Tuple
-from functools import partial
-import numpy as onp
-import time
-import signal
 import logging
+import signal
+import time
+from functools import partial
+from typing import Callable, Tuple, TypeVar
+
+import numpy as onp
 
 logger = logging.getLogger(__name__)
 
-import optax
-from optax._src.base import GradientTransformation
-
 import jax
-from jax import (
-    pmap,
-    vmap,
-    numpy as jnp,
-    random,
-    jit,
-)
+import optax
+from jax import jit
+from jax import numpy as jnp
+from jax import pmap, random, vmap
 from jax.config import config
+from optax._src.base import GradientTransformation
 
 config.update("jax_debug_nans", False)
 
-from jax_dips.solvers.poisson.deprecated import solver_poisson
-from jax_dips.data import data_management
 from jax_dips._jaxmd_modules import dataclasses, util
-from jax_dips.solvers.simulation_states import (
-    PoissonSimState,
-    PoissonSimStateFn,
-)
+from jax_dips.data import data_management
 from jax_dips.domain.mesh import GridState
-from jax_dips.utils.visualization import plot_loss_epochs
+from jax_dips.solvers.poisson.deprecated import solver_poisson
+from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
 from jax_dips.utils.inspect import print_architecture
-
+from jax_dips.utils.visualization import plot_loss_epochs
 
 Array = util.Array
 i32 = util.i32

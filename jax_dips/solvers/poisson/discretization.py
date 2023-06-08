@@ -22,25 +22,15 @@ from functools import partial
 from typing import Callable
 
 import jax
-from jax import (
-    numpy as jnp,
-    vmap,
-    jit,
-    grad,
-    config,
-)
+from jax import config, grad, jit
+from jax import numpy as jnp
+from jax import vmap
 
+from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.domain import interpolate
-from jax_dips.geometry import geometric_integrations_per_point
-from jax_dips._jaxmd_modules.util import (
-    f32,
-    i32,
-)
 from jax_dips.domain.mesh import GridState
-from jax_dips.solvers.simulation_states import (
-    PoissonSimState,
-    PoissonSimStateFn,
-)
+from jax_dips.geometry import geometric_integrations_per_point
+from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
 
 
 class Discretization:

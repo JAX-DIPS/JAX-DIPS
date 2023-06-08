@@ -1,17 +1,13 @@
 """Describes different physical quantities."""
 
 
-from typing import TypeVar, Callable, Union, Tuple
-
-from jax import grad, vmap, eval_shape
-import jax.numpy as jnp
-
-from jax_dips._jaxmd_modules import util
-
 from functools import partial
+from typing import Callable, Tuple, TypeVar, Union
 
-from jax_dips._jaxmd_modules import dataclasses, partition, space
+import jax.numpy as jnp
+from jax import eval_shape, grad, vmap
 
+from jax_dips._jaxmd_modules import dataclasses, partition, space, util
 
 # Types
 

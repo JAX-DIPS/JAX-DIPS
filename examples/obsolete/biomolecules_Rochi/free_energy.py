@@ -1,9 +1,11 @@
-from jax import vmap, numpy as jnp
-from jax_dips.geometry import interpolate
-from examples.obsolete.biomolecules_Rochi.units import *
 import pdb
-import numpy as onp
 
+import numpy as onp
+from jax import numpy as jnp
+from jax import vmap
+
+from examples.obsolete.biomolecules_Rochi.units import *
+from jax_dips.geometry import interpolate
 from jax_dips.geometry.level_set import geometric_integrations_per_point
 
 """

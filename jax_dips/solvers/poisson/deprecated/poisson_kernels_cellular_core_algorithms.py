@@ -20,27 +20,29 @@
 
 
 import jax
-from jax import numpy as jnp, vmap, jit, grad, random, nn as jnn, value_and_grad, config
+from jax import config, grad, jit
+from jax import nn as jnn
+from jax import numpy as jnp
+from jax import random, value_and_grad, vmap
+
 from jax_dips.geometry import geometric_integrations
 
 config.update("jax_debug_nans", False)
-import optax
 import haiku as hk
-
+import matplotlib
 import numpy as onp
+import optax
 
-from jax_dips.domain import interpolate
 from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.domain import interpolate
 from jax_dips.nn.nn_solution_model import DoubleMLP
 from jax_dips.utils.inspect import print_architecture
 
-import matplotlib
-
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
-from functools import partial
 import time
+from functools import partial
+
+import matplotlib.pyplot as plt
 
 
 class PDETrainer:

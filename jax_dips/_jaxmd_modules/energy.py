@@ -1,14 +1,13 @@
-from functools import wraps, partial
-
-from typing import Callable, Tuple, TextIO, Dict, Any, Optional
+from functools import partial, wraps
+from typing import Any, Callable, Dict, Optional, TextIO, Tuple
 
 import jax
 import jax.numpy as np
-from jax.tree_util import tree_map
 from jax import vmap
 from jax.scipy.special import erfc  # error function
-from jax_dips._jaxmd_modules import util
-from jax_dips._jaxmd_modules import partition, quantity, smap, space
+from jax.tree_util import tree_map
+
+from jax_dips._jaxmd_modules import partition, quantity, smap, space, util
 
 maybe_downcast = util.maybe_downcast
 

@@ -1,16 +1,14 @@
 # This file is copied from
 # https://github.com/google/jax-md/blob/main/jax_md/util.py
 
-from typing import Iterable, Union, Optional, Any
-
-from jax.tree_util import register_pytree_node
-from jax.lib import xla_bridge
-import jax.numpy as jnp
-from jax import jit
-
 from functools import partial
+from typing import Any, Iterable, Optional, Union
 
+import jax.numpy as jnp
 import numpy as onp
+from jax import jit
+from jax.lib import xla_bridge
+from jax.tree_util import register_pytree_node
 
 Array = jnp.ndarray
 

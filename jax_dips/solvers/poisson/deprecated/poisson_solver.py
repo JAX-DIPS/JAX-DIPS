@@ -18,7 +18,7 @@
 
 """
 
-from typing import Callable, TypeVar, Union, Tuple, Dict, Optional
+from typing import Callable, Dict, Optional, Tuple, TypeVar, Union
 
 from jax import vmap
 

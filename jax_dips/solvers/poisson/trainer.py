@@ -17,43 +17,30 @@
   Primary Author: mistani
 
 """
-import pickle
-import os
-from typing import Callable, TypeVar, Tuple
-from functools import partial
-import time
-import signal
 import logging
+import os
+import pickle
+import signal
+import time
+from functools import partial
+from typing import Callable, Tuple, TypeVar
 
 logger = logging.getLogger(__name__)
 
+import jax
 import optax
+from jax import jit
+from jax import numpy as jnp
+from jax import pmap, random, vmap
 from optax._src.base import GradientTransformation
 
-import jax
-from jax import (
-    pmap,
-    vmap,
-    numpy as jnp,
-    random,
-    jit,
-)
-
-
-from jax_dips.data import data_management
 from jax_dips._jaxmd_modules import dataclasses, util
-from jax_dips.solvers.simulation_states import (
-    PoissonSimState,
-    PoissonSimStateFn,
-)
-from jax_dips.solvers.poisson import nbm
+from jax_dips.data import data_management
 from jax_dips.domain.mesh import GridState
+from jax_dips.solvers.poisson import nbm
+from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
+from jax_dips.utils.inspect import print_architecture, progress_bar
 from jax_dips.utils.visualization import plot_loss_epochs
-from jax_dips.utils.inspect import (
-    print_architecture,
-    progress_bar,
-)
-
 
 Array = util.Array
 i32 = util.i32

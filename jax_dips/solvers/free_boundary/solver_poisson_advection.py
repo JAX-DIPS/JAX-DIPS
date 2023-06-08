@@ -20,20 +20,23 @@
 
 import os
 import pickle
+
 import jax
-from jax import numpy as jnp, vmap, jit, grad, random, value_and_grad, config
+from jax import config, grad, jit
+from jax import numpy as jnp
+from jax import random, value_and_grad, vmap
+
 from jax_dips.geometry.level_set import geometric_integrations_per_point
 
 config.update("jax_debug_nans", False)
-import optax
-import haiku as hk
-
-from jax_dips.geometry import interpolate
-from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips.nn.nn_solution_model import DoubleMLP
-
-
 from functools import partial
+
+import haiku as hk
+import optax
+
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.geometry import interpolate
+from jax_dips.nn.nn_solution_model import DoubleMLP
 
 
 class PoissonAdvectionTrainer:

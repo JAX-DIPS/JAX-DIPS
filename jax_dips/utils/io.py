@@ -24,8 +24,9 @@ See https://vtk.org/Wiki/VTK/Writing_VTK_files_using_python
 
 import os
 from dataclasses import field
-from evtk.hl import rectilinearToVTK, imageToVTK, structuredToVTK
+
 import numpy as onp
+from evtk.hl import imageToVTK, rectilinearToVTK, structuredToVTK
 
 
 def write_vtk(gstate, log, maxsteps=None):

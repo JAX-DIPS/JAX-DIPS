@@ -21,11 +21,11 @@
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import numpy as onp
-
 import os
+
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import numpy as onp
 
 
 def plot_loss_epochs(epoch_store, loss_epochs, address, base_level, alt_res=True, name="solver_loss"):

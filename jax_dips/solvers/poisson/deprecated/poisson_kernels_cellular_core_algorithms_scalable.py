@@ -21,31 +21,32 @@
 import os
 import pickle
 import signal
-from tqdm.auto import tqdm
 
 import jax
-from jax import numpy as jnp, vmap, pmap, jit, grad, random, value_and_grad, config
+from jax import config, grad, jit
+from jax import numpy as jnp
+from jax import pmap, random, value_and_grad, vmap
+from tqdm.auto import tqdm
+
 from jax_dips.data import data_management
 from jax_dips.geometry import geometric_integrations_per_point
 
 config.update("jax_debug_nans", False)
-import optax
 import haiku as hk
+import matplotlib
+import optax
 
-from jax_dips.domain import interpolate
 from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.domain import interpolate
 from jax_dips.nn.nn_solution_model import DoubleMLP
 from jax_dips.utils.inspect import print_architecture
 
-import matplotlib
-
 matplotlib.use("Agg")
+import time
+from functools import partial
+
 import matplotlib.pyplot as plt
 import numpy as onp
-
-from functools import partial
-import time
-
 
 stop_training = False
 

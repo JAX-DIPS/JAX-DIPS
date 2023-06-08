@@ -23,25 +23,23 @@ import pickle
 from functools import partial
 
 import haiku as hk
+import jax
 import jaxopt
 import optax
-
-import jax
-from jax import numpy as jnp, vmap, jit, grad, random, value_and_grad, config
+from jax import config, grad, jit
+from jax import numpy as jnp
+from jax import random, value_and_grad, vmap
 
 config.update("jax_debug_nans", False)
 
-from jax_dips.domain import interpolate
-from jax_dips.nn.nn_solution_model import DoubleMLP
-from jax_dips.geometry import geometric_integrations_per_point
-from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips.domain.mesh import GridState
-from jax_dips.solvers.simulation_states import (
-    PoissonSimState,
-    PoissonSimStateFn,
-)
-
 from typing import Callable
+
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.domain import interpolate
+from jax_dips.domain.mesh import GridState
+from jax_dips.geometry import geometric_integrations_per_point
+from jax_dips.nn.nn_solution_model import DoubleMLP
+from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
 
 
 class PoissonTrainer:

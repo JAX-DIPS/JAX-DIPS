@@ -1,13 +1,17 @@
-from jax import jit, numpy as jnp, lax, vmap
 from functools import partial
+
+from jax import jit, lax
+from jax import numpy as jnp
+from jax import vmap
+
 from examples.biomolecules.units import (
     LINEAR_PB,
+    PI,
     eps_m_r,
     eps_p_r,
-    PI,
-    kappa_sq_in_angs2,
-    kappa_bar_sq_p,
     kappa_bar_sq_m,
+    kappa_bar_sq_p,
+    kappa_sq_in_angs2,
 )
 
 COMPILE_BACKEND = "gpu"

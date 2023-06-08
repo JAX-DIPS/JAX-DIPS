@@ -1,11 +1,11 @@
+import itertools
 import os
-import time
-import uuid
 import pickle
 import queue
 import sqlite3
-import itertools
 import threading
+import time
+import uuid
 
 
 class StateData:

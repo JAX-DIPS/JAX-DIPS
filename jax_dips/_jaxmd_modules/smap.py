@@ -1,20 +1,16 @@
-from functools import reduce, partial
-
-from typing import Dict, Callable, List, Tuple, Union, Optional
-
-from collections import namedtuple
 import math
+from collections import namedtuple
+from functools import partial, reduce
 from operator import mul
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
+import jax.numpy as jnp
 import numpy as onp
-
-from jax import lax, ops, vmap, eval_shape
+from jax import eval_shape, lax, ops, vmap
 from jax.abstract_arrays import ShapedArray
 from jax.interpreters import partial_eval as pe
-import jax.numpy as jnp
 
-from jax_dips._jaxmd_modules import util
-from jax_dips._jaxmd_modules import quantity, space
+from jax_dips._jaxmd_modules import quantity, space, util
 
 high_precision_sum = util.high_precision_sum
 

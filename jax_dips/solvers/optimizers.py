@@ -1,6 +1,7 @@
+import logging
+
 import optax
 from optax._src.base import GradientTransformation
-import logging
 
 logger = logging.getLogger(__name__)
 

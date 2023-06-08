@@ -17,9 +17,10 @@
   Primary Author: mistani
 
 """
+import logging
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -36,20 +37,22 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
 import queue
-from functools import partial
 import time
+from functools import partial
 
 import jax
-from jax.experimental import host_callback
-from jax import jit, lax, numpy as jnp, vmap
-
-from jax_dips.data.data_stream import StateData
-from jax_dips.solvers.advection import solver_advection
-from jax_dips.geometry import level_set
-from jax_dips.utils import io
-from jax_dips.domain import interpolate, mesh
-from jax_dips._jaxmd_modules.util import f32, i32
+from jax import jit, lax
+from jax import numpy as jnp
+from jax import vmap
 from jax.config import config
+from jax.experimental import host_callback
+
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.data.data_stream import StateData
+from jax_dips.domain import interpolate, mesh
+from jax_dips.geometry import level_set
+from jax_dips.solvers.advection import solver_advection
+from jax_dips.utils import io
 
 config.update("jax_enable_x64", False)
 

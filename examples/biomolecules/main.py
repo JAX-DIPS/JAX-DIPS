@@ -30,56 +30,50 @@ rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:
     sys.path.append(rootDir)
 
-import hydra
-from omegaconf import DictConfig, OmegaConf
 import logging
 
-logger = logging.getLogger(__name__)
-import pdb
-import numpy as onp
-import time
-import multiprocessing as mp
-import glob
+import hydra
+from omegaconf import DictConfig, OmegaConf
 
+logger = logging.getLogger(__name__)
+import glob
+import multiprocessing as mp
+import pdb
+import time
+
+import numpy as onp
 from jax.config import config
 
 config.update("jax_enable_x64", False)
 config.update("jax_debug_nans", False)
-from jax import (
-    numpy as jnp,
-    vmap,
-    profiler,
-)
-
-from jax_dips.solvers.poisson import trainer
-from jax_dips.solvers.poisson.deprecated import (
-    poisson_solver_scalable,
-    trainer_poisson,
-)
-from jax_dips.solvers.optimizers import get_optimizer
-from jax_dips._jaxmd_modules.util import f32
-from jax_dips.geometry import level_set
-from jax_dips.domain import mesh
-from jax_dips.utils import io
+from jax import numpy as jnp
+from jax import profiler, vmap
 
 from examples.biomolecules.coefficients import (
-    initial_value_fn,
-    get_dirichlet_bc_fn,
-    mu_m_fn,
-    mu_p_fn,
-    k_m_fn,
-    k_p_fn,
     f_m_fn,
     f_p_fn,
+    get_dirichlet_bc_fn,
+    get_jump_conditions,
+    get_psi_star,
+    get_rho_fn,
+    initial_value_fn,
+    k_m_fn,
+    k_p_fn,
+    mu_m_fn,
+    mu_p_fn,
     nonlinear_operator_m,
     nonlinear_operator_p,
-    get_psi_star,
-    get_jump_conditions,
-    get_rho_fn,
 )
+from examples.biomolecules.free_energy import get_free_energy
 from examples.biomolecules.geometry import get_initial_level_set_fn
 from examples.biomolecules.load_pqr import base
-from examples.biomolecules.free_energy import get_free_energy
+from jax_dips._jaxmd_modules.util import f32
+from jax_dips.domain import mesh
+from jax_dips.geometry import level_set
+from jax_dips.solvers.optimizers import get_optimizer
+from jax_dips.solvers.poisson import trainer
+from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable, trainer_poisson
+from jax_dips.utils import io
 
 
 def biomolecule_solvation_energy(

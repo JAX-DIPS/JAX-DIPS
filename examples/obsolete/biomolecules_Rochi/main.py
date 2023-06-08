@@ -19,6 +19,7 @@
 """
 
 from jax.config import config
+
 from jax_dips.elliptic import poisson_solver_scalable
 from jax_dips.geometry import level_set, mesh
 from jax_dips.utils import io
@@ -34,18 +35,20 @@ rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:
     sys.path.append(rootDir)
 
-from jax import numpy as jnp, vmap
+import pdb
+
 import jax
 import jax.profiler
-import pdb
 import numpy as onp
+from jax import numpy as jnp
+from jax import vmap
 
-from jax_dips.elliptic import trainer_poisson
-from jax_dips._jaxmd_modules.util import f32
 from examples.obsolete.biomolecules_Rochi.coefficients import *
+from examples.obsolete.biomolecules_Rochi.free_energy import get_free_energy
 from examples.obsolete.biomolecules_Rochi.geometry import get_initial_level_set_fn
 from examples.obsolete.biomolecules_Rochi.load_pqr import base
-from examples.obsolete.biomolecules_Rochi.free_energy import get_free_energy
+from jax_dips._jaxmd_modules.util import f32
+from jax_dips.elliptic import trainer_poisson
 
 
 def biomolecule_solvation_energy():

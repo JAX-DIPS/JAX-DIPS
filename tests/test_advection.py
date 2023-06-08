@@ -15,8 +15,8 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ======================== END OF LICENSE NOTICE ========================
 """
-import time
 import os
+import time
 
 os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
 
@@ -27,23 +27,25 @@ rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
+import logging
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
-import logging
 
 logger = logging.getLogger(__name__)
 
 import jax
-from jax import jit, lax, numpy as jnp
 import jax.profiler as profiler
+from jax import jit, lax
+from jax import numpy as jnp
 from jax.config import config
 
 config.update("jax_enable_x64", False)
 
+from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.domain import mesh
 from jax_dips.geometry import geometric_integrations
 from jax_dips.solvers.advection import solver_advection
-from jax_dips._jaxmd_modules.util import f32, i32
 
 
 @hydra.main(config_path="confs", config_name="advection", version_base="1.1")

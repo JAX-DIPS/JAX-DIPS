@@ -17,8 +17,9 @@
   Primary Author: mistani
 
 """
-import jax
 import logging
+
+import jax
 from jax.experimental import host_callback
 
 logger = logging.getLogger(__name__)

@@ -22,27 +22,17 @@ from functools import partial
 from typing import Callable
 
 import haiku as hk
+import jax
 import jaxopt
 import optax
+from jax import grad, jit
+from jax import numpy as jnp
+from jax import random, value_and_grad, vmap
 
-import jax
-from jax import (
-    numpy as jnp,
-    vmap,
-    jit,
-    grad,
-    random,
-    value_and_grad,
-)
-
-
-from jax_dips.nn.nn_solution_model import DoubleMLP
 from jax_dips.domain.mesh import GridState
-from jax_dips.solvers.simulation_states import (
-    PoissonSimState,
-    PoissonSimStateFn,
-)
+from jax_dips.nn.nn_solution_model import DoubleMLP
 from jax_dips.solvers.poisson.discretization import Discretization
+from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
 
 
 class Bootstrap(Discretization):

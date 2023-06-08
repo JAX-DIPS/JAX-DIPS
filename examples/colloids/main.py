@@ -19,6 +19,7 @@
 """
 
 from jax.config import config
+
 from jax_dips.advection import solver_advection
 from jax_dips.geometry import interpolate, level_set, mesh
 from jax_dips.utils import io
@@ -34,20 +35,21 @@ rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:
     sys.path.append(rootDir)
 
-from jax import jit, numpy as jnp, vmap
-import jax
-import jax.profiler
-from functools import partial
 import pdb
 import time
+from functools import partial
 
-from jax_dips.solvers.free_boundary import (
-    trainer_poisson_advection,
-)
-from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips._jaxmd_modules import dataclasses
+import jax
+import jax.profiler
+from jax import jit
+from jax import numpy as jnp
+from jax import vmap
+
 from examples.colloids.coefficients import *
 from examples.colloids.geometry import get_initial_level_set_fn
+from jax_dips._jaxmd_modules import dataclasses
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.solvers.free_boundary import trainer_poisson_advection
 
 
 def poisson_advection_simulation():

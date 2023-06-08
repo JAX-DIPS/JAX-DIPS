@@ -18,19 +18,22 @@
 
 """
 
-from jax.config import config
-from jax_dips.elliptic import poisson_solver_scalable
-from jax_dips._jaxmd_modules.util import f32, i32
-from jax import jit, numpy as jnp, vmap, grad, lax, random
-import jax
-import jax.profiler
-import time
 import os
 import sys
-import numpy as onp
+import time
 from functools import partial
-from jax_dips.geometry import interpolate, level_set, mesh
 
+import jax
+import jax.profiler
+import numpy as onp
+from jax import grad, jit, lax
+from jax import numpy as jnp
+from jax import random, vmap
+from jax.config import config
+
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.elliptic import poisson_solver_scalable
+from jax_dips.geometry import interpolate, level_set, mesh
 from jax_dips.utils import io
 
 COMPILE_BACKEND = "gpu"

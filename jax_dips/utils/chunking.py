@@ -2,9 +2,7 @@
 from functools import partial
 
 import jax
-from jax import (
-    numpy as jnp,
-)
+from jax import numpy as jnp
 
 
 def get_device_memory_in_GB(device_id: int) -> float:
