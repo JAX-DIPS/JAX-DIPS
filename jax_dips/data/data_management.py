@@ -1,12 +1,15 @@
-from jax import numpy as jnp, random, jit, vmap
 from functools import partial
+
+import kaolin
 import numpy as onp
+import torch
+from jax import jit
+from jax import numpy as jnp
+from jax import random, vmap
 
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.domain import mesh
-import kaolin
 from jax_dips.utils.conversions import jax_to_torch, torch_to_jax
-import torch
 
 
 class DatasetDictMGPU:
@@ -244,8 +247,9 @@ class TrainData:
         import matplotlib
 
         matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
         import os
+
+        import matplotlib.pyplot as plt
 
         points = base_points.reshape((self.Nx, self.Ny, self.Nz, 3))
         currDir = os.path.dirname(os.path.realpath(__file__))
@@ -262,7 +266,7 @@ class TrainData:
         plt.close()
 
     def refine_normals(self, phi_fn_uns, max_iters=20):
-        from jax import vmap, jit
+        from jax import jit, vmap
 
         def phi_fn(r):
             return phi_fn_uns(jnp.squeeze(r))

@@ -18,13 +18,13 @@
 
 """
 
-from typing import Callable, TypeVar, Tuple
+from typing import Callable, Tuple, TypeVar
 
 from jax import vmap
 
 from jax_dips._jaxmd_modules import dataclasses, util
-from jax_dips.solvers.elliptic import poisson_kernels_cellular_core_algorithms_scalable
-from jax_dips.solvers.simulation_states import PoissonSimStateFn, PoissonSimState
+from jax_dips.solvers.poisson.deprecated import poisson_kernels_cellular_core_algorithms_scalable
+from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
 
 Array = util.Array
 

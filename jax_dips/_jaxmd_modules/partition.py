@@ -3,25 +3,17 @@ Developers: Pouria Akbari Mistani & Samira Pakravan
 Date:       October 18th, 2021
 Email:  p.a.mistani@gmail.com [PAM], pakravans90@gmail.com [SP]
 """
-from functools import reduce, partial
-from operator import mul
-
 import dataclasses
-from typing import Any, Callable, Optional, Dict, Tuple, Generator, Union
+from functools import partial, reduce
+from operator import mul
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from jax.abstract_arrays import ShapedArray
-from jax import eval_shape
-from jax import vmap
-from jax import lax
-from jax import ops
-from jax import jit
-from jax import custom_jvp
 import jax.numpy as np
 import numpy as onp
+from jax import custom_jvp, eval_shape, jit, lax, ops, vmap
+from jax.abstract_arrays import ShapedArray
 
-from jax_dips._jaxmd_modules import util
-from jax_dips._jaxmd_modules import dataclasses, space
-
+from jax_dips._jaxmd_modules import dataclasses, space, util
 
 # Types
 Array = util.Array
@@ -363,7 +355,7 @@ def neighbor_list(
     disable_cell_list: bool = False,
     mask_self: bool = True,
     fractional_coordinates: bool = False,
-    **static_kwargs
+    **static_kwargs,
 ) -> NeighborFn:
     """Returns a function that builds a list neighbors for collections of points.
     Neighbor lists must balance the need to be jit compatable with the fact that

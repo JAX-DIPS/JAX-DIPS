@@ -18,22 +18,24 @@
 
 """
 
-from typing import Callable, TypeVar, Tuple
-from jax_dips.solvers.free_boundary import solver_poisson_advection
-from jax_dips.advection import solver_advection
-from jax_dips.data import data_management
-from jax_dips.utils import print_architecture
-from jax_dips.utils.visualization import plot_loss_epochs
+import signal
+import time
+from functools import partial
+from typing import Callable, Tuple, TypeVar
+
 import jax
 import optax
-from jax import pmap, vmap, numpy as jnp, random, jit
+from jax import jit
+from jax import numpy as jnp
+from jax import pmap, random, vmap
 
 from jax_dips._jaxmd_modules import dataclasses, util
+from jax_dips.advection import solver_advection
+from jax_dips.data import data_management
+from jax_dips.solvers.free_boundary import solver_poisson_advection
 from jax_dips.solvers.simulation_states import PoissonAdvectionSimState, PoissonAdvectionSimStateFn
-
-import time
-import signal
-from functools import partial
+from jax_dips.utils import print_architecture
+from jax_dips.utils.visualization import plot_loss_epochs
 
 Array = util.Array
 

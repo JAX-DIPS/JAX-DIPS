@@ -1,0 +1,21 @@
+expname: advection-tests-app
+
+defaults:
+  - base_hydra_config
+  - _self_
+
+gridstates:
+  Nx: 128  # grid for level-set
+  Ny: 128  # grid for level-set
+  Nz: 128  # grid for level-set
+  Lmin: -2.0
+  Lmax: 2.0
+
+advect:
+  cfl: 0.95
+  tf: 6.283185307179586 # 2\Pi
+
+io:
+  save_vtk: false
+  save_vtk_path: "results"
+  jax_profiler: false

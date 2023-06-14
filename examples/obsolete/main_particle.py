@@ -1,18 +1,18 @@
 import jax
-from jax import jit, random, lax, ops
 import jax.numpy as jnp
 import numpy as onp
+from jax import jit, lax, ops, random
 from jax.config import config
+
 from jax_dips._jaxmd_modules import energy, partition
 from jax_dips._jaxmd_modules.quantity import EnergyFn
 
 config.update("jax_enable_x64", True)
-from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips._jaxmd_modules import space
-from jax_dips.advection import solver_advection
 from jax_dips import simulate_particles
+from jax_dips._jaxmd_modules import space
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.advection import solver_advection
 from jax_dips.utils import visualization
-
 
 # Use JAX's random number generator to generate random initial positions.
 key = random.PRNGKey(0)

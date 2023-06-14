@@ -19,9 +19,13 @@
 """
 
 
-from jax import numpy as jnp, jit, vmap, lax, config
-from jax_dips.domain import interpolate
 import functools
+
+from jax import config, jit, lax
+from jax import numpy as jnp
+from jax import vmap
+
+from jax_dips.domain import interpolate
 
 config.update("jax_debug_nans", True)
 from jax_dips._jaxmd_modules import util

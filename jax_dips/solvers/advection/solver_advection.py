@@ -19,17 +19,15 @@
 """
 
 
-from typing import Callable, TypeVar, Union, Tuple, Dict, Optional
+from typing import Callable, Dict, Optional, Tuple, TypeVar, Union
 
-from jax import grad, vmap, jit
 import jax.numpy as jnp
-from jax import lax, vmap
+from jax import grad, jit, lax, vmap
 
+from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips.domain import interpolate
 from jax_dips.geometry import level_set as ls
 from jax_dips.solvers.simulation_states import AdvectionSimState
-from jax_dips._jaxmd_modules import dataclasses, util
-
 
 static_cast = util.static_cast
 

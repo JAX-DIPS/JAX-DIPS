@@ -1,20 +1,11 @@
-from typing import Callable, Union, Tuple, Any
-
-from jax.abstract_arrays import ShapedArray
-
-from jax import eval_shape
-from jax import vmap
-from jax import custom_jvp
+from typing import Any, Callable, Tuple, Union
 
 import jax
-
 import jax.numpy as jnp
+from jax import custom_jvp, eval_shape, vmap
+from jax.abstract_arrays import ShapedArray
 
-from jax_dips._jaxmd_modules.util import Array
-from jax_dips._jaxmd_modules.util import f32
-from jax_dips._jaxmd_modules.util import f64
-from jax_dips._jaxmd_modules.util import safe_mask
-
+from jax_dips._jaxmd_modules.util import Array, f32, f64, safe_mask
 
 # Types
 

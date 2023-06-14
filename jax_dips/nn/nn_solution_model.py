@@ -19,14 +19,13 @@
 """
 
 import haiku as hk
-from jax import numpy as jnp, random
 from jax import config
+from jax import numpy as jnp
+from jax import random
 
 config.update("jax_debug_nans", False)
 
 import pdb
-
-
 from typing import Optional
 
 

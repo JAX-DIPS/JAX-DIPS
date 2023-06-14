@@ -1,0 +1,13 @@
+expname: geometric-integrations-tests-app
+
+defaults:
+  - base_hydra_config
+  - _self_
+
+gridstates:
+  Nx: 128  # grid for level-set
+  Ny: 128  # grid for level-set
+  Nz: 128  # grid for level-set
+  Lmin: -2.0
+  Lmax: 2.0
+

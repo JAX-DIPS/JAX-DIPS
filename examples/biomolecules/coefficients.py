@@ -1,13 +1,18 @@
-from jax import jit, numpy as jnp, lax, vmap
 from functools import partial
-from examples.biomolecules.units import (LINEAR_PB,
-                                         eps_m_r,
-                                         eps_p_r,
-                                         PI,
-                                         kappa_sq_in_angs2,
-                                         kappa_bar_sq_p,
-                                         kappa_bar_sq_m,
-                                         )
+
+from jax import jit, lax
+from jax import numpy as jnp
+from jax import vmap
+
+from examples.biomolecules.units import (
+    LINEAR_PB,
+    PI,
+    eps_m_r,
+    eps_p_r,
+    kappa_bar_sq_m,
+    kappa_bar_sq_p,
+    kappa_sq_in_angs2,
+)
 
 COMPILE_BACKEND = "gpu"
 custom_jit = partial(jit, backend=COMPILE_BACKEND)
@@ -275,7 +280,9 @@ def get_rho_fn(atom_xyz_rad_chg):
             xc, yc, zc, sigma, chg = xyzsc
             ch_sigma = 0.1 * sigma
             rho += (
-                chg * jnp.exp(-((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2) / (2 * ch_sigma * ch_sigma)) / ((2 * PI) ** 1.5 * ch_sigma * ch_sigma * ch_sigma)
+                chg
+                * jnp.exp(-((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2) / (2 * ch_sigma * ch_sigma))
+                / ((2 * PI) ** 1.5 * ch_sigma * ch_sigma * ch_sigma)
             )
             rho = jnp.nan_to_num(rho)
             return (rho,), None

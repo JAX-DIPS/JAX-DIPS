@@ -18,7 +18,9 @@
 
 """
 
-from jax import numpy as jnp, jit, lax, config
+from jax import config, jit, lax
+from jax import numpy as jnp
+
 config.update("jax_debug_nans", False)
 
 from jax_dips._jaxmd_modules import util

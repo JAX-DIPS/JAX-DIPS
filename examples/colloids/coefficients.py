@@ -1,6 +1,7 @@
-from jax import jit, numpy as jnp
 from functools import partial
 
+from jax import jit
+from jax import numpy as jnp
 
 COMPILE_BACKEND = "gpu"
 custom_jit = partial(jit, backend=COMPILE_BACKEND)

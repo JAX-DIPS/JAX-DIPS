@@ -18,17 +18,19 @@
 
 """
 
+import time
+from functools import partial
+
 import haiku as hk
 import jax
-from jax import numpy as jnp, vmap, jit, random, value_and_grad
-from functools import partial
-import optax
-import time
 import matplotlib
+import optax
+from jax import jit
+from jax import numpy as jnp
+from jax import random, value_and_grad, vmap
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
 from jax import config
 
 config.update("jax_debug_nans", False)

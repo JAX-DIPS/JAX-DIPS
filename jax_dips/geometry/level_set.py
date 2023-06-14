@@ -18,9 +18,12 @@
 
 """
 
-from jax import lax, jit, vmap, numpy as jnp
-from jax_dips.domain.interpolate import add_ghost_layer_3d
+from jax import jit, lax
+from jax import numpy as jnp
+from jax import vmap
+
 from jax_dips._jaxmd_modules import util
+from jax_dips.domain.interpolate import add_ghost_layer_3d
 
 # Typing
 

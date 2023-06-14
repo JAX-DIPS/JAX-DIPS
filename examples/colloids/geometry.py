@@ -1,5 +1,8 @@
-from jax import random, numpy as jnp, jit
 import jax
+from jax import jit
+from jax import numpy as jnp
+from jax import random
+
 from jax_dips._jaxmd_modules.util import f32
 
 

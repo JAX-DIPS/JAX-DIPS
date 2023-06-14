@@ -1,8 +1,10 @@
 import os
+
 currDir = os.path.dirname(os.path.realpath(__file__))
 
 import jax
-from jax import numpy as jnp, jit
+from jax import jit
+from jax import numpy as jnp
 
 
 def get_initial_level_set_fn(atom_xyz_rad_chg):

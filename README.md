@@ -2,22 +2,22 @@
 JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D.
 
 JAX-DIPS implements the neural bootstrapping method (NBM):
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/JAX-DIPS.png)
-![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jax_dips_design.png)
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/JAX-DIPS.png)
+![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/jax_dips_design.png)
 
 Streamlines of solution gradients (left), and jump in solution (right) calculated by the `dragon` example.
 <p float="center">
-  <img src="docs/dragon.png" width="518" />
-  <img src="docs/jump_dragon.png" width="300" />
+  <img src="assets/dragon.png" width="518" />
+  <img src="assets/jump_dragon.png" width="300" />
 </p>
 
-<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/dragon.png)![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/jump_dragon.png) -->
+<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/dragon.png)![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/jump_dragon.png) -->
 
 
 <!-- Advection of the level-set function by a semi-Lagrangian scheme with Sussman reinitialization on a uniform mesh with `128*128*128` grid points is demonstrated below. Note the minimal mass-loss in the level-set function after a full rotation. -->
-<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/animated_spinning.gif) -->
+<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/animated_spinning.gif) -->
 
-<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/docs/gradient_U.png) -->
+<!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/gradient_U.png) -->
 
 # Testing
 Do `pytest tests/test_*.py` of each of the available tests from the parent directory:
@@ -70,7 +70,7 @@ Currently the latest docker image available on Docker Hub is available at `docke
 ```
 ./launch.sh pull
 ```
-
+which pulls from docker hub; i.e., equivalent to ```$ docker pull pourion/jax_dips:latest```.
 ## Build development container
 Alternatively you can build the container by running the following command
 ```

@@ -48,7 +48,7 @@ def test_amr():
 
     TD = data_management.TrainData(xmin, xmax, ymin, ymax, zmin, zmax, Nx, Ny, Nz)
     points = TD.gstate.R
-    refined_points = TD.refine(phi_fn)
+    refined_points = TD.refine_LOD(phi_fn)
 
 
 if __name__ == "__main__":

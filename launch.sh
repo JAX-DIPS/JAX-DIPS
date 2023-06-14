@@ -127,7 +127,7 @@ DOCKER_CMD="docker run \
 build() {
     set -x
     local IMG_BASENAME=($(echo ${IMAGE_NAME} | tr ":" "\n"))
-    DOCKER_FILE="docker/Dockerfile"
+    DOCKER_FILE="Dockerfile"
 
     echo -e "Building ${DOCKER_FILE}..."
     docker build --network host --ssh default \

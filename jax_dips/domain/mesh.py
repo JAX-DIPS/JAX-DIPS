@@ -18,14 +18,15 @@
 
 """
 
-from typing import Callable, TypeVar, Union, Tuple, Dict, Optional
+from typing import Callable, Dict, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 
+from jax_dips._jaxmd_modules import dataclasses
+from jax_dips._jaxmd_modules.util import Array
+
 # import jax.numpy as np
 
-from jax_dips._jaxmd_modules.util import Array
-from jax_dips._jaxmd_modules import dataclasses
 
 # Types
 T = TypeVar("T")

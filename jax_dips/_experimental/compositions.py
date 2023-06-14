@@ -17,10 +17,14 @@
   Primary Author: mistani
 
 """
-import jax
-from jax import jit, random, lax, ops, vmap, grad, numpy as jnp
-from jax_dips._jaxmd_modules.util import f32, i32
 from functools import partial
+
+import jax
+from jax import grad, jit, lax
+from jax import numpy as jnp
+from jax import ops, random, vmap
+
+from jax_dips._jaxmd_modules.util import f32, i32
 
 
 def node_normal_fn(f):

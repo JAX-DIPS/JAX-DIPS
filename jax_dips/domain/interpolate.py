@@ -17,13 +17,12 @@
   Primary Author: mistani
 
 """
-from jax._src.api import vmap
-
-
-import numpy as onp
 import jax.numpy as np
-from jax import lax, jit
-from scipy.interpolate import splrep, PPoly
+import numpy as onp
+from jax import jit, lax
+from jax._src.api import vmap
+from scipy.interpolate import PPoly, splrep
+
 from jax_dips._jaxmd_modules import util
 
 # Typing

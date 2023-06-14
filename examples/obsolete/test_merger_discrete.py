@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 
 from jax_dips.geometry import interpolate, level_set
 
@@ -11,13 +12,16 @@ from functools import partial
 
 import jax
 import jax.profiler
-from jax import jit, random, lax, numpy as jnp, vmap
-from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips._jaxmd_modules import space
-from jax_dips.advection import solver_advection
-from jax_dips.utils import io
-from jax_dips.geometry import mesh
+from jax import jit, lax
+from jax import numpy as jnp
+from jax import random, vmap
 from jax.config import config
+
+from jax_dips._jaxmd_modules import space
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.advection import solver_advection
+from jax_dips.geometry import mesh
+from jax_dips.utils import io
 
 config.update("jax_enable_x64", True)
 
