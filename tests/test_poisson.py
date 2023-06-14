@@ -57,7 +57,7 @@ def test_poisson(cfg: DictConfig):
     logger.info(f"Starting {__file__}")
     logger.info(OmegaConf.to_yaml(cfg))
 
-    if cfg.experiment.star:
+    if cfg.experiment.sphere:
         logger.info("Performing sphere experiment...\n")
         poisson_solve(
             cfg,
