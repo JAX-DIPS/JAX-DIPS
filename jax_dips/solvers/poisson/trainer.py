@@ -167,7 +167,7 @@ class Trainer:
 
         self.epoch_start = 0
 
-        self.loss_epochs = onp.zeros(self.num_epochs - self.epoch_start)
+        self.loss_epochs = jnp.zeros(self.num_epochs - self.epoch_start)
         self.epoch_store = onp.arange(self.epoch_start, self.num_epochs)
         #########################################################################
 
@@ -288,7 +288,14 @@ class Trainer:
             )
             batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
-            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz,), _ = jax.lax.scan(
+            (
+                opt_state,
+                params,
+                loss_epoch,
+                train_dx,
+                train_dy,
+                train_dz,
+            ), _ = jax.lax.scan(
                 learn_one_batch,
                 (opt_state, params, loss_epoch, train_dx, train_dy, train_dz),
                 batched_training_data,
@@ -390,12 +397,18 @@ class Trainer:
             # TODO: circular shift to the left: lhs = jax.lax.ppermute(lhs, axis_name='i', perm=[(j, (j - 1) % axis_size) for j in range(axis_size)])
             loss_epoch = 0.0
             for batch in range(num_batches):
-                (opt_state, params, loss_epoch, train_dx, train_dy, train_dz,), _ = learn_one_batch(
+                (
+                    opt_state,
+                    params,
+                    loss_epoch,
+                    train_dx,
+                    train_dy,
+                    train_dz,
+                ), _ = learn_one_batch(
                     (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data[batch]
                 )
             loss_epoch = loss_epoch / num_batches
-            loss_epochs[epoch] = loss_epoch
-            loss_epoch = progress_bar((epoch, self.num_epochs, self.print_rate, loss_epoch), loss_epoch)
+            loss_epochs = loss_epochs.at[epoch].set(loss_epoch)
             return (
                 opt_state,
                 params,
@@ -427,13 +440,18 @@ class Trainer:
                     self.train_dz,
                     batched_training_data,
                 )
+                loss_epoch = self.loss_epochs[epoch]
+                # loss_epoch = progress_bar((epoch, self.num_epochs, self.print_rate, loss_epoch), loss_epoch)
             return opt_state, params, self.epoch_store, self.loss_epochs
 
-        mgpu_train = shard_map(
-            per_device_update,
-            mesh=mesh,
-            in_specs=(P(), P(), P("devices", None, None, None), P(), P(), P()),
-            out_specs=(P(), P(), P()),
+        mgpu_train = jit(
+            shard_map(
+                per_device_update,
+                mesh=mesh,
+                in_specs=(P(), P(), P("devices", None, None, None), P(), P(), P()),
+                out_specs=(P(), P(), P(), P()),
+                check_rep=False,
+            )
         )
         opt_state, params, self.epoch_store, self.loss_epochs = mgpu_train(
             opt_state, params, batched_training_data, self.train_dx, self.train_dy, self.train_dz
