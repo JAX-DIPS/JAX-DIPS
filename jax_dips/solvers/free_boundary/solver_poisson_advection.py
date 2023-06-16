@@ -404,8 +404,8 @@ class PoissonAdvectionTrainer:
     def update_multi_gpu(self, opt_state, params, points, dx, dy, dz):
         loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
         """ Muli-GPU """
-        grads = jax.lax.pmean(grads, axis_name="num_devices")
-        loss = jax.lax.pmean(loss, axis_name="num_devices")
+        grads = jax.lax.pmean(grads, axis_name="devices")
+        loss = jax.lax.pmean(loss, axis_name="devices")
 
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)

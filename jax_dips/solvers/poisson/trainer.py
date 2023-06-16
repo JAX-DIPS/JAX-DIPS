@@ -24,6 +24,7 @@ import signal
 import time
 from functools import partial
 from typing import Callable, Tuple, TypeVar
+import numpy as onp
 
 logger = logging.getLogger(__name__)
 
@@ -166,8 +167,8 @@ class Trainer:
 
         self.epoch_start = 0
 
-        self.loss_epochs = jnp.zeros(self.num_epochs - self.epoch_start)
-        self.epoch_store = jnp.arange(self.epoch_start, self.num_epochs)
+        self.loss_epochs = onp.zeros(self.num_epochs - self.epoch_start)
+        self.epoch_store = onp.arange(self.epoch_start, self.num_epochs)
         #########################################################################
 
     def fetch_checkpoint(self, checkpoint_dir):
@@ -197,13 +198,14 @@ class Trainer:
 
     # -----------------------
     def solve(self):
-        self.DD = data_management.DatasetDict(
-            batch_size=self.batch_size,
-            x_data=self.train_points,
-        )
         start_time = time.time()
-
         if self.multi_gpu:
+            n_devices = jax.local_device_count()
+            self.DD = data_management.DatasetDict(
+                batch_size=self.batch_size,
+                x_data=self.train_points,
+                num_gpus=n_devices,
+            )
             (
                 self.opt_state,
                 self.params,
@@ -211,12 +213,17 @@ class Trainer:
                 self.loss_epochs,
             ) = self.multi_GPU_train(self.opt_state, self.params)
         else:
+            self.DD = data_management.DatasetDict(
+                batch_size=self.batch_size,
+                x_data=self.train_points,
+            )
+            batched_training_data = self.DD.get_batched_data()
             (
                 self.opt_state,
                 self.params,
                 self.epoch_store,
                 self.loss_epochs,
-            ) = self.single_GPU_train(self.opt_state, self.params)
+            ) = self.single_GPU_train(self.opt_state, self.params, batched_training_data)
 
         end_time = time.time()
         logger.info(f"solve took {end_time - start_time} (sec)")
@@ -253,11 +260,10 @@ class Trainer:
 
     # -----------------------
     @partial(jit, static_argnums=(0))
-    def single_GPU_train(self, opt_state, params):
-        batched_training_data = self.DD.get_batched_data()
+    def single_GPU_train(self, opt_state, params, batched_training_data):
+        # batched_training_data = self.DD.get_batched_data()
         update_fn = self.model.update
-        # update_fn = self.model.update_lbfgs
-        num_batches = batched_training_data.shape[1]
+        num_batches = batched_training_data.shape[0]
 
         def learn_one_batch(carry, data_batch):
             opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
@@ -334,9 +340,132 @@ class Trainer:
         # self.loss_epochs /= num_batches
         return opt_state, params, self.epoch_store, self.loss_epochs
 
+    # ----------------------------------------------------------------
+
+    def _multi_GPU_train(self, opt_state, params):
+        """TODO: This is under development.
+
+        Tensor Model Parallel Training using Positional Sharding
+
+        Args:
+            opt_state (_type_): _description_
+            params (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+
+        from jax.sharding import PositionalSharding, Mesh, PartitionSpec as P
+        from jax.experimental import mesh_utils
+        from jax.experimental.maps import xmap
+        from jax.experimental.shard_map import shard_map
+
+        n_devices = jax.local_device_count()
+        devices = mesh_utils.create_device_mesh((n_devices,))
+        mesh = Mesh(devices, axis_names=("devices",))
+
+        sharding = PositionalSharding(devices)
+
+        batched_training_data = self.DD.get_batched_data()
+        batched_training_data = jax.device_put(batched_training_data, sharding.reshape(n_devices, 1, 1, 1))
+        num_batches = batched_training_data.shape[1]
+
+        # -----
+        update_fn = self.model.update_multi_gpu
+
+        def learn_one_batch(carry, data_batch):
+            opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
+            opt_state, params, loss_epoch_ = update_fn(opt_state, params, data_batch, train_dx, train_dy, train_dz)
+            loss_epoch += loss_epoch_
+            return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
+
+        def learn_one_epoch(
+            epoch,
+            opt_state,
+            params,
+            loss_epochs,
+            train_dx,
+            train_dy,
+            train_dz,
+            batched_training_data,
+        ):
+            # train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz) #TODO: automate this
+            train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(
+                self.num_epochs, epoch, train_dx, train_dy, train_dz
+            )
+            # batched_training_data = random.permutation(key, batched_training_data, axis=1)
+            # TODO: circular shift to the left: lhs = jax.lax.ppermute(lhs, axis_name='i', perm=[(j, (j - 1) % axis_size) for j in range(axis_size)])
+            loss_epoch = 0.0
+            for batch in range(num_batches):
+                (
+                    opt_state,
+                    params,
+                    loss_epoch,
+                    train_dx,
+                    train_dy,
+                    train_dz,
+                ), _ = learn_one_batch(
+                    (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data[batch]
+                )
+            loss_epoch = loss_epoch / num_batches
+            loss_epochs[epoch] = loss_epoch
+            loss_epoch = progress_bar((epoch, self.num_epochs, self.print_rate, loss_epoch), loss_epoch)
+            return (
+                opt_state,
+                params,
+                loss_epochs,
+                train_dx,
+                train_dy,
+                train_dz,
+                batched_training_data,
+            ), None
+
+        def per_device_update(opt_state, params, per_device_data, train_dx, train_dy, train_dz):
+            batched_training_data = per_device_data.squeeze(0)
+            for epoch in self.epoch_store:
+                (
+                    opt_state,
+                    params,
+                    self.loss_epochs,
+                    self.train_dx,
+                    self.train_dy,
+                    self.train_dz,
+                    batched_training_data,
+                ), _ = learn_one_epoch(
+                    epoch,
+                    opt_state,
+                    params,
+                    self.loss_epochs,
+                    self.train_dx,
+                    self.train_dy,
+                    self.train_dz,
+                    batched_training_data,
+                )
+            return opt_state, params, self.epoch_store, self.loss_epochs
+
+        mgpu_train = shard_map(
+            per_device_update,
+            mesh=mesh,
+            in_specs=(P(), P(), P("devices", None, None, None), P(), P(), P()),
+            out_specs=(P(), P(), P()),
+        )
+        opt_state, params, self.epoch_store, self.loss_epochs = mgpu_train(
+            opt_state, params, batched_training_data, self.train_dx, self.train_dy, self.train_dz
+        )
+        return opt_state, params, self.epoch_store, self.loss_epochs
+
     # -----------------------
+
     def multi_GPU_train(self, opt_state, params):
-        # TODO: implement multi-GPU training
+        """Data Parallel Training using pmap
+
+        Args:
+            opt_state (_type_): state of optimizer
+            params (_type_): parameters of model
+
+        Returns:
+            _type_: optimized state, epochs, losses
+        """
         loss_epochs = []
         epoch_store = []
         n_devices = jax.local_device_count()
@@ -354,11 +483,10 @@ class Trainer:
         update_fn = pmap(
             self.model.update_multi_gpu,
             in_axes=(0, 0, 0, 0, 0, 0),
-            axis_name="num_devices",
+            axis_name="devices",
         )
-
         num_batches = batched_training_data.shape[1]
-
+        t0 = time.time()
         for epoch in range(self.epoch_start, self.num_epochs):
             if stop_training:
                 break
@@ -374,9 +502,12 @@ class Trainer:
                     self.train_dz,
                 )
                 loss_epoch += loss_epoch_
-            logger.info(
-                f"Epoch # {epoch} loss is {jnp.mean(loss_epoch) / num_batches}. Exit training: {stop_training}"
-            )  # mean is to support multi-gpu as well.
+            if epoch % self.print_rate == 0:
+                dt_avg = (time.time() - t0) / self.print_rate
+                t0 = time.time()
+                logger.info(
+                    f"Epoch # {epoch} loss is {jnp.mean(loss_epoch) / num_batches} \t avg epoch time is {dt_avg} (sec)"
+                )
             loss_epochs.append(loss_epoch / num_batches)
             epoch_store.append(epoch)
             if (epoch + 1) % self.checkpoint_interval == 0:
