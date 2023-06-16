@@ -75,7 +75,7 @@ def phi_fn(r):
     x = r[0]
     y = r[1]
     z = r[2]
-    return x**2 + (y) ** 2 + z**2 - 0.05**2
+    return x ** 2 + (y) ** 2 + z ** 2 - 0.05 ** 2
 
 
 init_fn, apply_fn, reinitialize_fn = solver_advection.level_set(velocity_fn, phi_fn, shift_fn, dt)

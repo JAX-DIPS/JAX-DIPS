@@ -31,14 +31,14 @@ joule_in_kcal_per_mol = N_avogadro / (kcal_in_kJ * 1000)  # from Joule of 1 mole
 T = 298.15  # Kelvin
 molar_density = 1e-3  # molar density of solvent mole/liter
 n_tilde = molar_density * (N_avogadro / liter_in_m_cubed)  # number density = number/m^3.
-n_inf = l_tilde**3 * n_tilde
+n_inf = l_tilde ** 3 * n_tilde
 
 z_solvent = 1.0  # charge of ions in 1:1 solvent in electron units
 solvent_chg_tilde = z_solvent * e_tilde
 
 # lambda_tilde             = ( epsilon_0_tilde * K_B * T / (2 * z_solvent**2 * e_tilde**2 * n_tilde) )**0.5   # should be 1.08575 * Angstrom_in_m for an ionic strength of 0.1 molar
 # kappa_p_sq               = (l_tilde / lambda_tilde)**2                                                    # Square of nondimensionalized coeff in nonlinear PB term in \Omega^+
-kappa_p_sq = 2.0 * z_solvent**2 * e_tilde**2 * n_inf / (K_B * T * epsilon_0)
+kappa_p_sq = 2.0 * z_solvent ** 2 * e_tilde ** 2 * n_inf / (K_B * T * epsilon_0)
 kappa_m_sq = 0.0  # Square of nondimensionalized coeff in nonlinear PB term in \Omega^-
 
 C = (

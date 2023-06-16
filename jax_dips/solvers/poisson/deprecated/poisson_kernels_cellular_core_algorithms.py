@@ -122,10 +122,7 @@ class PDETrainer:
             get_vertices_of_cell_intersection_with_interface_at_node,
             self.is_cell_crossed_by_interface,
         ) = geometric_integrations.get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state)
-        (
-            self.beta_integrate_over_interface_at_node,
-            _,
-        ) = geometric_integrations.integrate_over_gamma_and_omega_m(
+        (self.beta_integrate_over_interface_at_node, _,) = geometric_integrations.integrate_over_gamma_and_omega_m(
             get_vertices_of_cell_intersection_with_interface_at_node,
             self.is_cell_crossed_by_interface,
             self.beta_interp_fn,
@@ -184,8 +181,8 @@ class PDETrainer:
         self.mask_region_m = sign_m_fn(self.phi_flat)
         self.mask_region_p = sign_p_fn(self.phi_flat)
 
-        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat**2 - self.bandwidth_squared)
-        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat**2 - self.bandwidth_squared)
+        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat ** 2 - self.bandwidth_squared)
+        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat ** 2 - self.bandwidth_squared)
 
     def initialize_regression_based_algorithm(self):
         dx = self.dx
@@ -276,8 +273,8 @@ class PDETrainer:
         self.mask_region_m = sign_m_fn(self.phi_flat)
         self.mask_region_p = sign_p_fn(self.phi_flat)
 
-        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat**2 - self.bandwidth_squared)
-        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat**2 - self.bandwidth_squared)
+        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat ** 2 - self.bandwidth_squared)
+        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat ** 2 - self.bandwidth_squared)
         # plt.imshow(self.mask_interface_bandwidth.reshape((16, 16, 16))[8]);  plt.colorbar(); plt.savefig('test__.png')
         # plt.imshow((self.mask_region_m + self.mask_region_p).reshape((16,16,16))[8]); plt.colorbar(); plt.savefig('test__.png')
 

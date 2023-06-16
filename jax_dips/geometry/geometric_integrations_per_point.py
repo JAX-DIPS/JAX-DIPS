@@ -211,19 +211,22 @@ def get_vertices_of_cell_intersection_with_interface(phi_interp_fn):
         """
         x, y, z = point
         # Get corners of the control volume
-        dXcorners = jnp.array(
-            [
-                [-dx, -dy, -dz],
-                [dx, -dy, -dz],
-                [dx, -dy, dz],
-                [-dx, -dy, dz],
-                [-dx, dy, -dz],
-                [dx, dy, -dz],
-                [-dx, dy, dz],
-                [dx, dy, dz],
-            ],
-            dtype=f32,
-        ) * (0.5)
+        dXcorners = (
+            jnp.array(
+                [
+                    [-dx, -dy, -dz],
+                    [dx, -dy, -dz],
+                    [dx, -dy, dz],
+                    [-dx, -dy, dz],
+                    [-dx, dy, -dz],
+                    [dx, dy, -dz],
+                    [-dx, dy, dz],
+                    [dx, dy, dz],
+                ],
+                dtype=f32,
+            )
+            * (0.5)
+        )
 
         R_cell_corners = dXcorners + jnp.array([x, y, z])
         phi_cell_corners = phi_interp_fn(R_cell_corners)

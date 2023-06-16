@@ -41,10 +41,7 @@ def get_free_energy(
         get_vertices_of_cell_intersection_with_interface_at_point,
         is_cell_crossed_by_interface,
     ) = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(phi_p_interp_fn)
-    (
-        _,
-        integrate_in_positive_domain_at_point,
-    ) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
+    (_, integrate_in_positive_domain_at_point,) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
         get_vertices_of_cell_intersection_with_interface_at_point,
         is_cell_crossed_by_interface,
         integral_interp_fn,

@@ -236,14 +236,7 @@ class PoissonAdvectionSolve:
             train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz)
             batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
-            (
-                opt_state,
-                params,
-                loss_epoch,
-                train_dx,
-                train_dy,
-                train_dz,
-            ), _ = jax.lax.scan(
+            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz,), _ = jax.lax.scan(
                 learn_one_batch,
                 (opt_state, params, loss_epoch, train_dx, train_dy, train_dz),
                 batched_training_data,
@@ -441,14 +434,7 @@ def poisson_advection_solve(
             train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
             batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
-            (
-                opt_state,
-                params,
-                loss_epoch,
-                train_dx,
-                train_dy,
-                train_dz,
-            ), _ = jax.lax.scan(
+            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz,), _ = jax.lax.scan(
                 learn_one_batch,
                 (opt_state, params, loss_epoch, train_dx, train_dy, train_dz),
                 batched_training_data,
@@ -467,16 +453,7 @@ def poisson_advection_solve(
 
         loss_epochs = jnp.zeros(num_epochs - epoch_start)
         epoch_store = jnp.arange(epoch_start, num_epochs)
-        (
-            key,
-            opt_state,
-            params,
-            loss_epochs,
-            train_dx,
-            train_dy,
-            train_dz,
-            batched_training_data,
-        ), _ = jax.lax.scan(
+        (key, opt_state, params, loss_epochs, train_dx, train_dy, train_dz, batched_training_data,), _ = jax.lax.scan(
             learn_one_epoch,
             (
                 key,

@@ -278,8 +278,8 @@ class PDETrainer:
         self.mask_region_m = sign_m_fn(self.phi_flat)
         self.mask_region_p = sign_p_fn(self.phi_flat)
 
-        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat**2 - self.bandwidth_squared)
-        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat**2 - self.bandwidth_squared)
+        self.mask_interface_bandwidth = sign_m_fn(self.phi_flat ** 2 - self.bandwidth_squared)
+        self.mask_non_interface_bandwidth = sign_p_fn(self.phi_flat ** 2 - self.bandwidth_squared)
 
     def get_regression_coeffs_at_point(self, point, dx, dy, dz):
         def sign_p_fn(a):
@@ -882,14 +882,7 @@ def poisson_solver(
             loss_epoch = 0.0
             train_dx, train_dy, train_dz = TD.alternate_res(epoch, train_dx, train_dy, train_dz)
             batched_training_data = random.permutation(key, batched_training_data, axis=1)
-            (
-                opt_state,
-                params,
-                loss_epoch,
-                train_dx,
-                train_dy,
-                train_dz,
-            ), _ = jax.lax.scan(
+            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz,), _ = jax.lax.scan(
                 learn_one_batch,
                 (opt_state, params, loss_epoch, train_dx, train_dy, train_dz),
                 batched_training_data,

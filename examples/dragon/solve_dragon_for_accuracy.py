@@ -149,7 +149,7 @@ def poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         yx3 = (y - x) / 3.0
-        return (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
+        return (16.0 * yx3 ** 5 - 20.0 * yx3 ** 3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
 
     @custom_jit
     def dirichlet_bc_fn(r):

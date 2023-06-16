@@ -46,7 +46,7 @@ def sphere():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sqrt(x**2 + y**2 + z**2) - 0.5
+        return jnp.sqrt(x ** 2 + y ** 2 + z ** 2) - 0.5
 
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
@@ -210,7 +210,7 @@ def star():
         y = r[1]
         z = r[2]
         yx3 = (y - x) / 3.0
-        return (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
+        return (16.0 * yx3 ** 5 - 20.0 * yx3 ** 3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
 
     @custom_jit
     def dirichlet_bc_fn(r):
@@ -242,8 +242,8 @@ def star():
         core += beta_2 * jnp.cos(n_2 * (jnp.arctan2(y, x) - theta_2))
         core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y, x) - theta_3))
 
-        phi_ = jnp.sqrt(x**2 + y**2 + z**2)
-        phi_ += -1.0 * r0 * (1.0 + ((x**2 + y**2) / (x**2 + y**2 + z**2)) ** 2 * core)
+        phi_ = jnp.sqrt(x ** 2 + y ** 2 + z ** 2)
+        phi_ += -1.0 * r0 * (1.0 + ((x ** 2 + y ** 2) / (x ** 2 + y ** 2 + z ** 2)) ** 2 * core)
 
         return jnp.nan_to_num(phi_, -r0 * core)
 
@@ -446,7 +446,7 @@ def no_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sqrt(x**2 + y**2 + z**2) + 0.5
+        return jnp.sqrt(x ** 2 + y ** 2 + z ** 2) + 0.5
 
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 

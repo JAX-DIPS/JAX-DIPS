@@ -288,14 +288,7 @@ class Trainer:
             )
             batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
-            (
-                opt_state,
-                params,
-                loss_epoch,
-                train_dx,
-                train_dy,
-                train_dz,
-            ), _ = jax.lax.scan(
+            (opt_state, params, loss_epoch, train_dx, train_dy, train_dz,), _ = jax.lax.scan(
                 learn_one_batch,
                 (opt_state, params, loss_epoch, train_dx, train_dy, train_dz),
                 batched_training_data,
@@ -397,14 +390,7 @@ class Trainer:
             # TODO: circular shift to the left: lhs = jax.lax.ppermute(lhs, axis_name='i', perm=[(j, (j - 1) % axis_size) for j in range(axis_size)])
             loss_epoch = 0.0
             for batch in range(num_batches):
-                (
-                    opt_state,
-                    params,
-                    loss_epoch,
-                    train_dx,
-                    train_dy,
-                    train_dz,
-                ), _ = learn_one_batch(
+                (opt_state, params, loss_epoch, train_dx, train_dy, train_dz,), _ = learn_one_batch(
                     (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), batched_training_data[batch]
                 )
             loss_epoch = loss_epoch / num_batches

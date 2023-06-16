@@ -80,8 +80,8 @@ def phi_fn(r):
     return jnp.min(
         jnp.array(
             [
-                jnp.sqrt(x**2 + (y - 0.55) ** 2 + z**2) - 0.5,
-                jnp.sqrt(x**2 + (y + 0.55) ** 2 + z**2) - 0.5,
+                jnp.sqrt(x ** 2 + (y - 0.55) ** 2 + z ** 2) - 0.5,
+                jnp.sqrt(x ** 2 + (y + 0.55) ** 2 + z ** 2) - 0.5,
             ]
         )
     )

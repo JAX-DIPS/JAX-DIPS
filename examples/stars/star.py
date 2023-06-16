@@ -107,8 +107,8 @@ def poisson_solver_with_jump_complex():
         core += beta_2 * jnp.cos(n_2 * (jnp.arctan2(y, x) - theta_2))
         core += beta_3 * jnp.cos(n_3 * (jnp.arctan2(y, x) - theta_3))
 
-        phi_ = jnp.sqrt(x**2 + y**2 + z**2)
-        phi_ += -1.0 * r0 * (1.0 + ((x**2 + y**2) / (x**2 + y**2 + z**2)) ** 2 * core)
+        phi_ = jnp.sqrt(x ** 2 + y ** 2 + z ** 2)
+        phi_ += -1.0 * r0 * (1.0 + ((x ** 2 + y ** 2) / (x ** 2 + y ** 2 + z ** 2)) ** 2 * core)
 
         return jnp.nan_to_num(phi_, -r0 * core)
 
