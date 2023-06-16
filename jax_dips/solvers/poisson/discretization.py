@@ -295,7 +295,7 @@ class Discretization:
             zeta_p_ijk_pqm,
         )
 
-    @partial(jit, static_argnums=(0))
+    # @partial(jit, static_argnums=(0))
     def compute_Ax_and_b_preconditioned_fn(self, params, point, dx, dy, dz):
         """
         This function calculates  A @ u for a given vector of unknowns u.
@@ -421,7 +421,7 @@ class Discretization:
         lhs_rhs = evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz)
         return lhs_rhs
 
-    @partial(jit, static_argnums=(0))
+    # @partial(jit, static_argnums=(0))
     def get_u_mp_by_regression_at_point_fn(self, params, dx, dy, dz, point):
         """
         This function evaluates pairs of u^+ and u^- at each grid point

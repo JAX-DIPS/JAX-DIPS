@@ -305,7 +305,7 @@ class PoissonAdvectionSolve:
         update_fn = pmap(
             self.trainer.update_multi_gpu,
             in_axes=(0, 0, 0, 0, 0, 0),
-            axis_name="num_devices",
+            axis_name="devices",
         )
 
         num_batches = batched_training_data.shape[1]
@@ -508,7 +508,7 @@ def poisson_advection_solve(
         update_fn = pmap(
             trainer.update_multi_gpu,
             in_axes=(0, 0, 0, 0, 0, 0),
-            axis_name="num_devices",
+            axis_name="devices",
         )
 
         num_batches = batched_training_data.shape[1]

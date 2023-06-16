@@ -156,13 +156,14 @@ class Bootstrap(Discretization):
     #     params, opt_state = solver.run(params, points=points, dx=dx, dy=dy, dz=dz)
     #     return opt_state, params
 
-    @partial(jit, static_argnums=(0))
+    # @partial(jit, static_argnums=(0))
     def update_multi_gpu(self, opt_state, params, points, dx, dy, dz):
-        r"""One step of mulyi-GPU optimization on the neural network model."""
+        r"""One step of multi-GPU optimization on the neural network model."""
         loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
+
         """ Muli-GPU """
-        grads = jax.lax.pmean(grads, axis_name="num_devices")
-        loss = jax.lax.pmean(loss, axis_name="num_devices")
+        grads = jax.lax.psum(grads, axis_name="devices")
+        loss = jax.lax.psum(loss, axis_name="devices")
 
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
