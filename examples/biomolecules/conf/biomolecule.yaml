@@ -18,7 +18,7 @@ solver:
   Nx_tr: 16  # grid for training
   Ny_tr: 16  # grid for training
   Nz_tr: 16  # grid for training
-  num_epochs: 100 # number of epochs to train
+  num_epochs: 1000 # number of epochs to train
   print_rate: 10 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
