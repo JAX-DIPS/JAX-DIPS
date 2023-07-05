@@ -143,7 +143,7 @@ def get_normal_vec_mean_curvature(phi_n, gstate):
             - f32(2.0) * phi_x * phi_z * phi_xz
             - f32(2.0) * phi_y * phi_z * phi_yz
         )
-        kappa_Mean = kappa_Mean / norm_squared ** 1.5
+        kappa_Mean = kappa_Mean / norm_squared**1.5
 
         return kappa_Mean
 
@@ -265,7 +265,7 @@ def get_normal_vec_mean_curvature_4th_order(phi_n, gstate):
             - f32(2.0) * phi_x * phi_z * phi_xz
             - f32(2.0) * phi_y * phi_z * phi_yz
         )
-        kappa_Mean = kappa_Mean / norm_squared ** 1.5
+        kappa_Mean = kappa_Mean / norm_squared**1.5
 
         return kappa_Mean
 

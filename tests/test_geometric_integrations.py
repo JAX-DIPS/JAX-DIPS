@@ -152,7 +152,10 @@ def test_geometric_integrations(cfg: DictConfig):
         is_cell_crossed_by_interface_pointwise,
         u_interp_fn,
     )
-    (alpha_integrate_over_interface_at_point, _,) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
+    (
+        alpha_integrate_over_interface_at_point,
+        _,
+    ) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
         get_vertices_of_cell_intersection_with_interface_at_point,
         is_cell_crossed_by_interface_pointwise,
         jump_interp_fn,
@@ -176,7 +179,7 @@ def test_geometric_integrations(cfg: DictConfig):
         )
         logger.info(f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
         assert jnp.isclose(u_dGammas.sum(), jnp.pi, atol=0.02)
-        assert jnp.isclose(u_dOmegas.sum(), 4.0 * jnp.pi * 0.5 ** 3 / 3.0, atol=0.02)
+        assert jnp.isclose(u_dOmegas.sum(), 4.0 * jnp.pi * 0.5**3 / 3.0, atol=0.02)
 
     ########################################################################
     # --- Get functions for gridwise integration
@@ -193,7 +196,10 @@ def test_geometric_integrations(cfg: DictConfig):
         is_cell_crossed_by_interface,
         u_interp_fn,
     )
-    (alpha_integrate_over_interface_at_node, _,) = geometric_integrations.integrate_over_gamma_and_omega_m(
+    (
+        alpha_integrate_over_interface_at_node,
+        _,
+    ) = geometric_integrations.integrate_over_gamma_and_omega_m(
         get_vertices_of_cell_intersection_with_interface_at_node,
         is_cell_crossed_by_interface,
         jump_interp_fn,
@@ -212,7 +218,7 @@ def test_geometric_integrations(cfg: DictConfig):
         u_dOmegas = vmap(integrate_in_negative_domain_at_node)(nodes)
         logger.info(f"Volume is computed to be {u_dOmegas.sum()} ~~ must be ~~ {4.0 * jnp.pi * 0.5**3 / 3.0}")
         assert jnp.isclose(u_dGammas.sum(), jnp.pi, atol=0.02)
-        assert jnp.isclose(u_dOmegas.sum(), 4.0 * jnp.pi * 0.5 ** 3 / 3.0, atol=0.02)
+        assert jnp.isclose(u_dOmegas.sum(), 4.0 * jnp.pi * 0.5**3 / 3.0, atol=0.02)
 
     logger.info("performing pointwise integration...")
     test_surface_area_and_volume_pointwise()

@@ -230,22 +230,19 @@ def get_vertices_of_cell_intersection_with_interface_at_node(gstate, sim_state):
         """
         i, j, k = node
         # Get corners of the control volume
-        dXcorners = (
-            jnp.array(
-                [
-                    [-dx, -dy, -dz],
-                    [dx, -dy, -dz],
-                    [dx, -dy, dz],
-                    [-dx, -dy, dz],
-                    [-dx, dy, -dz],
-                    [dx, dy, -dz],
-                    [-dx, dy, dz],
-                    [dx, dy, dz],
-                ],
-                dtype=f32,
-            )
-            * (0.5)
-        )
+        dXcorners = jnp.array(
+            [
+                [-dx, -dy, -dz],
+                [dx, -dy, -dz],
+                [dx, -dy, dz],
+                [-dx, -dy, dz],
+                [-dx, dy, -dz],
+                [dx, dy, -dz],
+                [-dx, dy, dz],
+                [dx, dy, dz],
+            ],
+            dtype=f32,
+        ) * (0.5)
 
         R_cell_corners = dXcorners + jnp.array([x[i], y[j], z[k]])
         phi_cell_corners = phi_interp_fn(R_cell_corners)

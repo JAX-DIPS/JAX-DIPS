@@ -93,7 +93,7 @@ def test_spinning_sphere(cfg: DictConfig):
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sqrt(x ** 2 + (y - 1.0) ** 2 + z ** 2) - 0.5
+        return jnp.sqrt(x**2 + (y - 1.0) ** 2 + z**2) - 0.5
 
     (
         init_fn,

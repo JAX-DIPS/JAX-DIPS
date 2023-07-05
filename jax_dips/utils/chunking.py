@@ -12,12 +12,12 @@ def get_device_memory_in_GB(device_id: int) -> float:
     reserved = torch.cuda.memory_reserved(device_id)
     allocated = torch.cuda.memory_allocated(device_id)
     free = reserved - allocated  # free inside reserved
-    return total / (1024 ** 3)
+    return total / (1024**3)
 
 
 def estimate_chunk_size(array: jnp.ndarray) -> int:
     if jnp.isclose(get_device_memory_in_GB(0), 48, atol=5):
-        return jnp.ceil(array.shape[0] // 2 ** 23)
+        return jnp.ceil(array.shape[0] // 2**23)
 
 
 def pad_along_axis(array: jnp.ndarray, axis_length: int, axis: int = 0, *args, **kwargs) -> jnp.ndarray:

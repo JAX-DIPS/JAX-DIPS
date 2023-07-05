@@ -63,7 +63,7 @@ def canonicalize_force(energy_or_force_fn: Union[EnergyFn, ForceFn]) -> ForceFn:
 
 def volume(dimension: int, box: Box) -> float:
     if jnp.isscalar(box) or not box.ndim:
-        return box ** dimension
+        return box**dimension
     elif box.ndim == 1:
         return jnp.prod(box)
     elif box.ndim == 2:

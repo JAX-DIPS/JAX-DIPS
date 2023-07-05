@@ -238,9 +238,9 @@ class TrainData:
     def alternate_res_sequentially(self, num_epochs, epoch, train_dx, train_dy, train_dz):
         self.alt_res = False
         zoom_lvl = epoch // (num_epochs // 4)
-        train_dx = self.gstate.dx * 0.5 ** zoom_lvl
-        train_dy = self.gstate.dy * 0.5 ** zoom_lvl
-        train_dz = self.gstate.dz * 0.5 ** zoom_lvl
+        train_dx = self.gstate.dx * 0.5**zoom_lvl
+        train_dy = self.gstate.dy * 0.5**zoom_lvl
+        train_dz = self.gstate.dz * 0.5**zoom_lvl
         return train_dx, train_dy, train_dz
 
     def plot_slice(self, base_points):
@@ -324,7 +324,7 @@ class TrainData:
 
         Lx = float(self.LL.max())  # xmax - xmin
         xmin = -Lx / 2.0
-        nx = init_res * 2 ** upsamples
+        nx = init_res * 2**upsamples
         dx = Lx / nx
 
         binary_voxelgrid = kaolin.ops.conversions.sdf_to_voxelgrids(

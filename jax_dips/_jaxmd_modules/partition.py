@@ -77,11 +77,11 @@ def _cell_dimensions(spatial_dimension: int, box_size: Box, minimum_cell_size: f
                     raise ValueError(("Box must be at least 3x the size of the grid spacing in each " "dimension."))
             cell_count = reduce(mul, flat_cells_per_side, 1)
         elif box_size.ndim == 0:
-            cell_count = cells_per_side ** spatial_dimension
+            cell_count = cells_per_side**spatial_dimension
         else:
             raise ValueError("Box must either be a scalar or a vector.")
     else:
-        cell_count = cells_per_side ** spatial_dimension
+        cell_count = cells_per_side**spatial_dimension
 
     return box_size, cell_size, cells_per_side, int(cell_count)
 
@@ -116,7 +116,7 @@ def _unflatten_cell_buffer(arr: Array, cells_per_side: Array, dim: int) -> Array
 
 def _compute_hash_constants(spatial_dimension: int, cells_per_side: Array) -> Array:
     if cells_per_side.size == 1:
-        return np.array([[cells_per_side ** d for d in range(spatial_dimension)]], dtype=np.int64)
+        return np.array([[cells_per_side**d for d in range(spatial_dimension)]], dtype=np.int64)
     elif cells_per_side.size == spatial_dimension:
         one = np.array([[1]], dtype=np.int32)
         cells_per_side = np.concatenate((one, cells_per_side[:, :-1]), axis=1)
@@ -218,7 +218,7 @@ def cell_list(
             # NOTE(schsam): Do we want to check this in compute_fn as well?
             raise ValueError("Cell list spatial dimension must be 2 or 3. Found {}".format(dim))
 
-        neighborhood_tile_count = 3 ** dim
+        neighborhood_tile_count = 3**dim
 
         _, cell_size, cells_per_side, cell_count = _cell_dimensions(dim, box_size, minimum_cell_size)
 
@@ -239,7 +239,7 @@ def cell_list(
         # more compute since often we will do a mask for species that will include
         # an occupancy test. It seems easier to design around this empty_data_value
         # for now and revisit the issue if it comes up later.
-        empty_kwarg_value = 10 ** 5
+        empty_kwarg_value = 10**5
         cell_kwargs = {}
         for k, v in kwargs.items():
             if not util.is_array(v):
@@ -429,7 +429,7 @@ def neighbor_list(
     box_size = f32(box_size)
 
     cutoff = r_cutoff + dr_threshold
-    cutoff_sq = cutoff ** 2
+    cutoff_sq = cutoff**2
     threshold_sq = (dr_threshold / f32(2)) ** 2
     metric_sq = _displacement_or_metric_to_metric_sq(displacement_or_metric)
 

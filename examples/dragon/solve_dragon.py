@@ -27,9 +27,10 @@ rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
+import logging
 import time
 from functools import partial
-import logging
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
@@ -46,11 +47,11 @@ from jax.config import config
 config.update("jax_enable_x64", False)
 
 from examples.dragon.coefficients import (
-    f_m_fn,
-    f_p_fn,
-    dirichlet_bc_fn,
     alpha_fn,
     beta_fn,
+    dirichlet_bc_fn,
+    f_m_fn,
+    f_p_fn,
     initial_value_fn,
     k_m_fn,
     k_p_fn,
@@ -60,11 +61,11 @@ from examples.dragon.coefficients import (
     nonlinear_operator_p,
 )
 from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips.solvers.poisson import trainer
-from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable
-from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips.domain import interpolate, mesh
 from jax_dips.geometry import level_set
+from jax_dips.solvers.optimizers import get_optimizer
+from jax_dips.solvers.poisson import trainer
+from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable
 from jax_dips.utils import io
 
 

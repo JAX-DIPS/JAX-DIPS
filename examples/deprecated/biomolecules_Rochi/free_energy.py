@@ -30,7 +30,7 @@ def get_free_energy(gstate, phi, psi, psi_hat, atom_xyz_rad_chg):
     sfe_3 = sfe_component_1 * 2.0
 
     # ---- Second term in the equation
-    KbTnl3 = K_B * T * n_tilde * l_tilde ** 3
+    KbTnl3 = K_B * T * n_tilde * l_tilde**3
 
     diag = 0.0  # jnp.sqrt(gstate.dx**2 + gstate.dy**2 + gstate.dz**2)
     mask_p = 0.5 * (jnp.sign(phi - diag) + 1)
@@ -43,7 +43,10 @@ def get_free_energy(gstate, phi, psi, psi_hat, atom_xyz_rad_chg):
         get_vertices_of_cell_intersection_with_interface_at_point,
         is_cell_crossed_by_interface,
     ) = geometric_integrations_per_point.get_vertices_of_cell_intersection_with_interface(phi_interp_fn)
-    (_, integrate_in_negative_domain_at_point,) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
+    (
+        _,
+        integrate_in_negative_domain_at_point,
+    ) = geometric_integrations_per_point.integrate_over_gamma_and_omega_m(
         get_vertices_of_cell_intersection_with_interface_at_point,
         is_cell_crossed_by_interface,
         integral_interp_fn,

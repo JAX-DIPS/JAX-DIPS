@@ -117,7 +117,7 @@ def square_distance(dR: Array) -> Array:
     Returns:
       Matrix of squared distances; ndarray(shape=[...]).
     """
-    return jnp.sum(dR ** 2, axis=-1)
+    return jnp.sum(dR**2, axis=-1)
 
 
 def distance(dR: Array) -> Array:

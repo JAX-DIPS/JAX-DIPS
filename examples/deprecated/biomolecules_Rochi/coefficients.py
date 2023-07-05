@@ -184,7 +184,7 @@ def get_jump_conditions(atom_xyz_rad_chg, psi_fn_uns, phi_fn_uns, dx, dy, dz):
             xc, yc, zc, sigma, chg = xyzsc
             dst = jnp.sqrt((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
             dst = jnp.clip(dst, a_min=0.01 * sigma)
-            tmp_psi = chg * jnp.array([xc - x, yc - y, zc - z]) / dst ** 3
+            tmp_psi = chg * jnp.array([xc - x, yc - y, zc - z]) / dst**3
             grad_psi += jnp.nan_to_num(tmp_psi)
             return (grad_psi,), None
 

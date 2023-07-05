@@ -24,6 +24,7 @@ import signal
 import time
 from functools import partial
 from typing import Callable, Tuple, TypeVar
+
 import numpy as onp
 
 logger = logging.getLogger(__name__)
@@ -355,10 +356,12 @@ class Trainer:
             _type_: _description_
         """
 
-        from jax.sharding import PositionalSharding, Mesh, PartitionSpec as P
         from jax.experimental import mesh_utils
         from jax.experimental.maps import xmap
         from jax.experimental.shard_map import shard_map
+        from jax.sharding import Mesh
+        from jax.sharding import PartitionSpec as P
+        from jax.sharding import PositionalSharding
 
         n_devices = jax.local_device_count()
         devices = mesh_utils.create_device_mesh((n_devices,))

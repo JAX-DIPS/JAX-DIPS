@@ -32,9 +32,9 @@ from jax import random, vmap
 from jax.config import config
 
 from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable
 from jax_dips.domain import interpolate, mesh
 from jax_dips.geometry import level_set
+from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable
 from jax_dips.utils import io
 
 COMPILE_BACKEND = "gpu"

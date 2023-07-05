@@ -98,7 +98,7 @@ def get_rgba(V, alpha=1):
     Vz = V[:, 2]
     colors = []
     for vx, vy, vz in zip(Vx, Vy, Vz):
-        norm = (vx ** 2 + vy ** 2 + vz ** 2) ** 0.5
+        norm = (vx**2 + vy**2 + vz**2) ** 0.5
         col = (onp.array([vx / norm, vy / norm, vz / norm, alpha]) * 255).astype(onp.uint8)
         colors.append(col)
     return colors
