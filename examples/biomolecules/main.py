@@ -14,8 +14,6 @@
   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THE PRODUCT, EVEN
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ======================== END OF LICENSE NOTICE ========================
-  Primary Author: mistani
-
 
 This example is based on https://www.sciencedirect.com/science/article/pii/S0021999117306861
 

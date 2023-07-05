@@ -1,0 +1,14 @@
+name: poisson
+Nx_tr: 32
+Ny_tr: 32
+Nz_tr: 32
+num_epochs: 1000
+batch_size: 131072
+algorithm: 0
+switching_interval: 3
+lvl_set_fn: null
+multi_gpu: False
+currDir: ${hydra:runtime.cwd}
+checkpoint_dir: ${hydra:runtime.cwd}/checkpoints
+checkpoint_interval: 2
+loss_plot_name: solver_loss

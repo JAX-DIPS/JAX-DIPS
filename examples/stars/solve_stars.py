@@ -19,9 +19,23 @@
 """
 
 import os
+
+os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
+
 import sys
+
+currDir = os.path.dirname(os.path.realpath(__file__))
+rootDir = os.path.abspath(os.path.join(currDir, ".."))
+if rootDir not in sys.path:  # add parent dir to paths
+    sys.path.append(rootDir)
+
 import time
 from functools import partial
+import logging
+import hydra
+from omegaconf import DictConfig, OmegaConf
+
+logger = logging.getLogger(__name__)
 
 import jax
 import jax.profiler
@@ -30,33 +44,39 @@ from jax import numpy as jnp
 from jax import random, vmap
 from jax.config import config
 
-from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips.elliptic import poisson_solver_scalable
-from jax_dips.geometry import level_set, mesh
-from jax_dips.utils import io
-
-COMPILE_BACKEND = "gpu"
-custom_jit = partial(jit, backend=COMPILE_BACKEND)
-
-currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, ".."))
-if rootDir not in sys.path:  # add parent dir to paths
-    sys.path.append(rootDir)
-
 config.update("jax_enable_x64", False)
 
+from jax_dips._jaxmd_modules.util import f32, i32
+from jax_dips.solvers.poisson import trainer
+from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable
+from jax_dips.solvers.optimizers import get_optimizer
+from jax_dips.domain import interpolate, mesh
+from jax_dips.geometry import level_set
+from jax_dips.utils import io
 
-# os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
-os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform"
-# os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '0.01'
 
+@hydra.main(config_path="conf", config_name="stars", version_base="1.1")
+def solve_poisson_over_stars(cfg: DictConfig):
+    logger.info("Starting the stars training")
+    logger.info(OmegaConf.to_yaml(cfg))
 
-def poisson_solver_with_jump_complex():
-    ALGORITHM = 0  # 0: regression normal derivatives, 1: neural network normal derivatives
-    SWITCHING_INTERVAL = 3
-    Nx_tr = Ny_tr = Nz_tr = 128
-    multi_gpu = False
-    num_epochs = 50
+    stars_name = cfg.experiment.stars.name
+    ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
+    SWITCHING_INTERVAL = cfg.solver.switching_interval  # 0: no switching, 1: 10
+    multi_gpu = cfg.solver.multi_gpu
+    num_epochs = cfg.solver.num_epochs
+    checkpoint_interval = cfg.experiment.logging.checkpoint_interval
+    log_dir = cfg.experiment.logging.log_dir
+    Nx_tr = cfg.solver.Nx_tr
+    Ny_tr = cfg.solver.Ny_tr
+    Nz_tr = cfg.solver.Nz_tr
+
+    optimizer = get_optimizer(
+        optimizer_name=cfg.solver.optim.optimizer_name,
+        scheduler_name=cfg.solver.sched.scheduler_name,
+        learning_rate=cfg.solver.optim.learning_rate,
+        decay_rate=cfg.solver.sched.decay_rate,
+    )
 
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
@@ -108,7 +128,7 @@ def poisson_solver_with_jump_complex():
 
     stars = jnp.concatenate((positions, angles), axis=1)
 
-    @custom_jit
+    @jit
     def unperturbed_phi_fn(r):
         """
         Level-set function for the interface
@@ -152,13 +172,13 @@ def poisson_solver_with_jump_complex():
 
     phi_fn = level_set.perturb_level_set_fn(unperturbed_phi_fn)
 
-    @custom_jit
+    @jit
     def dirichlet_bc_fn(r):
         return 0.0
 
-    @custom_jit
+    @jit
     def mu_m_fn(r):
-        """
+        r"""
         Diffusion coefficient function in $\Omega^-$
         """
         x = r[0]
@@ -166,9 +186,9 @@ def poisson_solver_with_jump_complex():
         z = r[2]
         return 1.0
 
-    @custom_jit
+    @jit
     def mu_p_fn(r):
-        """
+        r"""
         Diffusion coefficient function in $\Omega^+$
         """
         x = r[0]
@@ -176,42 +196,50 @@ def poisson_solver_with_jump_complex():
         z = r[2]
         return 80.0
 
-    @custom_jit
+    @jit
     def alpha_fn(r):
         """
         Jump in solution at interface
         """
         return 0.0
 
-    @custom_jit
+    @jit
     def beta_fn(r):
         """
         Jump in flux at interface
         """
         return 0.0
 
-    @custom_jit
+    @jit
     def k_m_fn(r):
-        """
+        r"""
         Linear term function in $\Omega^-$
         """
         return 0.0
 
-    @custom_jit
+    @jit
     def k_p_fn(r):
-        """
+        r"""
         Linear term function in $\Omega^+$
         """
         return 0.0
 
-    @custom_jit
+    @jit
+    def nonlinear_operator_m(u):
+        return 0.0
+
+    @jit
+    def nonlinear_operator_p(u):
+        return 0.0
+
+    @jit
     def initial_value_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
         return 0.0
 
-    @custom_jit
+    @jit
     def f_m_fn(r):
         x = r[0]
         y = r[1]
@@ -231,7 +259,7 @@ def poisson_solver_with_jump_complex():
 
         return fm
 
-    @custom_jit
+    @jit
     def f_p_fn(r):
         x = r[0]
         y = r[1]
@@ -252,46 +280,82 @@ def poisson_solver_with_jump_complex():
         )
         return f_p
 
-    init_fn, solve_fn = poisson_solver_scalable.setup(
-        initial_value_fn,
-        dirichlet_bc_fn,
-        phi_fn,
-        mu_m_fn,
-        mu_p_fn,
-        k_m_fn,
-        k_p_fn,
-        f_m_fn,
-        f_p_fn,
-        alpha_fn,
-        beta_fn,
-    )
-    sim_state = init_fn(R)
+    if cfg.solver.version == 0:
+        init_fn, solve_fn = poisson_solver_scalable.setup(
+            initial_value_fn,
+            dirichlet_bc_fn,
+            phi_fn,
+            mu_m_fn,
+            mu_p_fn,
+            k_m_fn,
+            k_p_fn,
+            f_m_fn,
+            f_p_fn,
+            alpha_fn,
+            beta_fn,
+        )
+        sim_state = init_fn(R)
+        t0 = time.time()
+        sim_state, epoch_store, loss_epochs = solve_fn(
+            gstate,
+            eval_gstate,
+            sim_state,
+            algorithm=ALGORITHM,
+            switching_interval=SWITCHING_INTERVAL,
+            Nx_tr=Nx_tr,
+            Ny_tr=Ny_tr,
+            Nz_tr=Nz_tr,
+            num_epochs=num_epochs,
+            multi_gpu=multi_gpu,
+        )
+        # sim_state.solution.block_until_ready()
+        t1 = time.time()
 
-    t1 = time.time()
+    elif cfg.solver.version == 2:
+        init_fn = trainer.setup(
+            initial_value_fn,
+            dirichlet_bc_fn,
+            phi_fn,
+            mu_m_fn,
+            mu_p_fn,
+            k_m_fn,
+            k_p_fn,
+            f_m_fn,
+            f_p_fn,
+            alpha_fn,
+            beta_fn,
+            nonlinear_operator_m,
+            nonlinear_operator_p,
+        )
+        sim_state, solve_fn = init_fn(
+            gstate=gstate,
+            eval_gstate=eval_gstate,
+            algorithm=ALGORITHM,
+            switching_interval=SWITCHING_INTERVAL,
+            Nx_tr=Nx_tr,
+            Ny_tr=Ny_tr,
+            Nz_tr=Nz_tr,
+            num_epochs=num_epochs,
+            multi_gpu=multi_gpu,
+            checkpoint_interval=checkpoint_interval,
+            results_dir=log_dir,
+            loss_plot_name=stars_name,
+            optimizer=optimizer,
+            restart=cfg.solver.restart_from_checkpoint,
+            print_rate=cfg.solver.print_rate,
+        )
+        t0 = time.time()
+        sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+        t1 = time.time()
 
-    sim_state, epoch_store, loss_epochs = solve_fn(
-        gstate,
-        eval_gstate,
-        sim_state,
-        algorithm=ALGORITHM,
-        switching_interval=SWITCHING_INTERVAL,
-        Nx_tr=Nx_tr,
-        Ny_tr=Ny_tr,
-        Nz_tr=Nz_tr,
-        num_epochs=num_epochs,
-        multi_gpu=multi_gpu,
-    )
-    # sim_state.solution.block_until_ready()
-
-    t2 = time.time()
-
-    print(f"solve took {(t2 - t1)} seconds")
-    jax.profiler.save_device_memory_profile("memory_poisson_solver_scalable.prof")
+    logger.info(f"solve took {(t1 - t0)} seconds")
+    # jax.profiler.save_device_memory_profile("memory_poisson_solver_stars.prof")
 
     eval_phi = vmap(phi_fn)(eval_gstate.R)
     log = {"phi": eval_phi, "U": sim_state.solution}
-    io.write_vtk_manual(eval_gstate, log, filename="results/starbox")
+    save_name = log_dir + "/" + f"{stars_name}"
+    io.write_vtk_manual(eval_gstate, log, filename=save_name)
 
 
 if __name__ == "__main__":
-    poisson_solver_with_jump_complex()
+    solve_poisson_over_stars()

@@ -32,8 +32,9 @@ from jax import random, vmap
 from jax.config import config
 
 from jax_dips._jaxmd_modules.util import f32, i32
-from jax_dips.elliptic import poisson_solver_scalable
-from jax_dips.geometry import interpolate, level_set, mesh
+from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable
+from jax_dips.domain import interpolate, mesh
+from jax_dips.geometry import level_set
 from jax_dips.utils import io
 
 COMPILE_BACKEND = "gpu"
@@ -150,7 +151,7 @@ def poisson_solver_with_jump_complex():
         y = r[1]
         z = r[2]
         yx3 = (y - x) / 3.0
-        return (16.0 * yx3 ** 5 - 20.0 * yx3 ** 3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
+        return (16.0 * yx3**5 - 20.0 * yx3**3 + 5.0 * yx3) * jnp.log(x + y + 3) * jnp.cos(z)
 
     @custom_jit
     def dirichlet_bc_fn(r):
@@ -162,7 +163,7 @@ def poisson_solver_with_jump_complex():
 
     @custom_jit
     def mu_m_fn(r):
-        """
+        r"""
         Diffusion coefficient function in $\Omega^-$
         """
         x = r[0]
@@ -172,7 +173,7 @@ def poisson_solver_with_jump_complex():
 
     @custom_jit
     def mu_p_fn(r):
-        """
+        r"""
         Diffusion coefficient function in $\Omega^+$
         """
         x = r[0]
