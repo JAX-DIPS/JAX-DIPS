@@ -6,7 +6,7 @@ _here = pathlib.Path(__file__).resolve().parent
 
 name = "jax-dips"
 
-version = '0.0.1'
+version = "0.0.2"
 
 author = "Pouria Mistani & Samira Pakravan"
 
@@ -37,7 +37,7 @@ classifiers = [
 
 python_requires = "~=3.8"
 
-install_requires = ["jax>=0.3.14", "dm-haiku>=0.0.9", "optax>=0.1.4", "pyevtk"]
+install_requires = ["jax>=0.4.12", "dm-haiku>=0.0.9", "optax>=0.1.4", "pyevtk"]
 
 setuptools.setup(
     name=name,
