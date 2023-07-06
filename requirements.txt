@@ -1,9 +1,40 @@
-https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.3.14+cuda11.cudnn82-cp38-none-manylinux2014_x86_64.whl
-jax[cuda11_cudnn82] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-dm-haiku
-optax
-# torch --extra-index-url https://download.pytorch.org/whl/cu114
+# https://storage.googleapis.com/jax-releases/cuda12/jaxlib-0.4.7+cuda12.cudnn88-cp38-cp38-manylinux2014_x86_64.whl
+https://storage.googleapis.com/jax-releases/cuda12/jaxlib-0.4.12+cuda12.cudnn89-cp38-cp38-manylinux2014_x86_64.whl
+jax[cuda12_local] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+
+dm-haiku==0.0.9
+flax==0.6.10
+optax==0.1.5
+jaxopt
+cython==0.29.20
+pillow
+pandas
 pytest
 matplotlib
 meshio[all]
 gdown
+# usd-core
+warp-lang==0.9.0
+
+pyexr
+trimesh>=3.0
+scipy
+scikit-image
+six==1.12.0
+moviepy
+opencv-python
+plyfile
+polyscope
+mesh2sdf
+
+hydra-core==1.3.2
+hydra_colorlog
+
+black==23.3.0
+flake8==6.0.0
+isort==5.12.0
+pre-commit==3.3.2
+
+biopython==1.79
+biopandas==0.4.1
+rdkit-pypi==2022.3.5

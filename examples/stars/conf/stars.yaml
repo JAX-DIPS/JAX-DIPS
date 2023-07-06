@@ -1,0 +1,39 @@
+expname: stars-app
+
+defaults:
+  - base_hydra_config
+  - solver: poisson
+  - _self_
+
+solver:
+  Nx_tr: 128  # grid for training
+  Ny_tr: 128  # grid for training
+  Nz_tr: 128  # grid for training
+  num_epochs: 50 # number of epochs to train
+  print_rate: 1 # frequency of printing epochs and loss during training
+  restart_from_checkpoint: false # whether to restart from an existing checkpoint
+  algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
+  switching_interval: 3  # domain switching interval
+  version: 0  # 0: verbose/slow, 2: refactored
+  multi_gpu: False
+  num_gpus_ddp: 1
+  optim:
+    optimizer_name: "custom" # options are "custom", "adam", "rmsprop"
+    learning_rate: 1e-2
+  sched:
+    scheduler_name: "exponential" # options are "exponential", "polynomial"
+    decay_rate: 0.96
+  data_manager:
+    refine: false
+    refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function
+    refine_lod: false # if true will add extra points by Octree using Kaolin
+
+experiment:
+  stars:
+    enable: True
+    name: stars
+
+  logging:
+    checkpoint_interval: 10
+    log_dir: ${hydra:runtime.output_dir}
+

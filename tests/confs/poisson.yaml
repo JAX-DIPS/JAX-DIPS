@@ -1,0 +1,50 @@
+expname: poisson-tests-app
+
+defaults:
+  - base_hydra_config
+  - _self_
+
+
+# customization follows
+gridstates:
+  Nx: 128  # grid for level-set
+  Ny: 128  # grid for level-set
+  Nz: 128  # grid for level-set
+  Nx_eval: 32  # grid for evaluation/visualization
+  Ny_eval: 32  # grid for evaluation/visualization
+  Nz_eval: 32  # grid for evaluation/visualization
+
+solver:
+  Nx_tr: 32  # grid for training
+  Ny_tr: 32  # grid for training
+  Nz_tr: 32  # grid for training
+  num_epochs: 1000 # number of epochs to train
+  print_rate: 10 # frequency of printing epochs and loss during training
+  restart_from_checkpoint: false # whether to restart from an existing checkpoint
+  algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
+  switching_interval: 3  # domain switching interval
+  multi_gpu: false
+  num_gpus_ddp: 2
+  optim:
+    optimizer_name: "custom" # options are "custom", "adam", "rmsprop"
+    learning_rate: 1e-2
+  sched:
+    scheduler_name: "exponential" # options are "exponential", "polynomial"
+    decay_rate: 0.96
+  data_manager:
+    refine: false
+    refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function
+    refine_lod: false # if true will add extra points by Octree using Kaolin
+
+experiment:
+  results_path: "" # name of folder inside ${hydra:run.dir}
+  sphere: true # sphere interface with jump conditions
+  star: true # star interface with jump conditions
+  no_jump: true # no interface and no jump conditions
+
+  logging:
+    checkpoint_interval: 500
+    log_dir: ${hydra:runtime.output_dir}
+    currDir: ${hydra:runtime.cwd}
+    checkpoint_dir: ${hydra:runtime.cwd}/checkpoints
+

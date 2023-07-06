@@ -1,0 +1,14 @@
+{
+    "recommendations": [
+        "jprestidge.theme-material-theme",
+        "visualstudioexptteam.vscodeintellicode",
+        "tabnine.tabnine-vscode",
+        "ms-python.python",
+        "benjamin-simmonds.pythoncpp-debug",
+        "ms-python.flake8",
+        "ms-python.black-formatter",
+        "ms-vscode.sublime-keybindings",
+        "eamodio.gitlens",
+        "grapecity.gc-excelviewer"
+    ]
+}

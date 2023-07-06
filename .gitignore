@@ -1,4 +1,5 @@
 results/
+.env
 
 .viminfo
 
@@ -33,10 +34,16 @@ workspace.code-workspace
 .gnupg
 .local
 checkpoints/
-.vscode/
 .keras
 examples/dragon/results/*.pvsm
 examples/lucy/lucy.ply
 examples/dragon/dragon.vti
 examples/dragon/dragonian_full.csv
 tstex_modules
+*.ply
+*.obj
+.vimrc
+.wget-hsts
+third_party/
+.notebook
+.dotnet
