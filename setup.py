@@ -41,8 +41,11 @@ python_requires = "~=3.8"
 with open("requirements.txt", "r") as f:
     requirements = f.read().splitlines()
 requirements.append("pyevtk")
+
 requirements.pop(0)
 requirements.pop(0)
+requirements.insert(0, "jax")
+requirements.insert(1, 'jaxlib ; extra == "cuda12_local"')
 
 
 setuptools.setup(
