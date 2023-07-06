@@ -25,27 +25,40 @@ Do `pytest tests/test_*.py` of each of the available tests from the parent direc
 - `test_reinitialization`: starting from a sphere level-set function with -1 inside sphere and +1 outside, we repeatedly perform Sussman reinitialization until the signed-distance property of the level-set is achieved. Center of the box should have level-set value equal to radius of the sphere, and corner of the box should be at a pre-specified distance to pass.
 - `test_geometric_integrations`: integrating surface area of a sphere along with its volume. Small differences with associated theoretical values are expected to pass.
 - `test_poisson`: tests for both the pointwise and the grid-based Poisson solvers over a star and a sphere interfaces. Note that in the current implementation the grid-based solver does not support batching and is therefore faster. Fixing this issue will be done in the future versions.
-# Pre-requisites
 
-## Nvidia Driver
-
-```
-apt install $(nvidia-detector)
-```
-
-## Docker Engine
-
-Please refer https://docs.docker.com/engine/install/ubuntu/
-
-## nvidia-docker2
-
-Please refer https://nvidia.github.io/nvidia-docker/ to setup apt repo
-
-apt-get install nvidia-docker2
+# Installation
+To install the latest released version from PyPI do ```pip install jax-dips```.
 
 
 # Development & Usage Environment
 
+## 1. Virtual Environment
+Create a virtual environment by running the following command
+```
+./create_virtualenv.sh
+```
+and the ```env_jax_dips``` virtual environment will be created. Then you can launch into this environment by 
+```source env_jax_dips/bin/activate```. After you are done, ```deactivate```.
+
+## 2. Docker
+
+### Prerequisites
+First you will need to install the nvidia driver and docker engines:
+- Nvidia Driver
+  ```
+  apt install $(nvidia-detector)
+  ```
+
+- Docker Engine
+  Please refer https://docs.docker.com/engine/install/ubuntu/
+
+- nvidia-docker2
+  Please refer https://nvidia.github.io/nvidia-docker/ to setup apt repo
+  ```
+  apt-get install nvidia-docker2
+  ```
+
+### Instructions
 Docker images provide an isolated and consistent runtime environment, ensuring that the application behaves the same regardless of the host system. We recommend using the docker image provided here as it is fully loaded with libraries for datacenter scale simulatiopns and optimized for NVIDIA GPUs. For a full list of the supported software and specific versions that come packaged with this container image see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
 
 
@@ -63,14 +76,14 @@ WANDB_API_KEY=NotSpecified                         # (optional) your API key to 
 JUPYTER_PORT=8888                                  # (optional) port to connect to jupyter server
 ```
 
-## Pull development container
+#### Pull development container
 Currently the latest docker image available on Docker Hub is available at `docker.io/pourion/jax_dips`. Instead of building the container, you can only pull the latest docker image by running 
 
 ```
 ./launch.sh pull
 ```
 which pulls from docker hub; i.e., equivalent to ```$ docker pull pourion/jax_dips:latest```.
-## Build development container
+#### Build development container
 Alternatively you can build the container by running the following command
 ```
 ./launch.sh build
@@ -78,7 +91,7 @@ Alternatively you can build the container by running the following command
 In case you want to add additional libraries to your container this is the recommended way.
 
 
-## Start developement container
+#### Start developement container
 This will create a container and places the user in the container with source code mounted. 
 
 ```
@@ -95,7 +108,7 @@ You can always attach your teminal to the running `jax_dips` container by
 ./launch.sh attach
 ```
 
-### Development in VS Code 
+#### Development in VS Code 
 Once the container is created and is running on your machine, user can attach to this container from VS code; i.e., you need to install Microsoft's `Dev Containers` extension in your VS Code, then `Ctrl+Shift+P` and choose `Dev Containers: Attach to Running Container...`, then choose the `jax_dips` container from the list of running containers on your machine.
 
 ## Cite JAX-DIPS

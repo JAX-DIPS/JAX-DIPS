@@ -52,3 +52,4 @@ third_party/
 dist
 build
 jax_dips.egg-info
+env_jax_dips
