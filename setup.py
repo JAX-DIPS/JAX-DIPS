@@ -6,7 +6,7 @@ _here = pathlib.Path(__file__).resolve().parent
 
 name = "jax-dips"
 
-version = "0.2.0"
+version = "0.2.1"
 
 author = "Pouria Mistani & Samira Pakravan"
 
