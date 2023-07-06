@@ -47,3 +47,8 @@ tstex_modules
 third_party/
 .notebook
 .dotnet
+
+# release to PyPI
+dist
+build
+jax_dips.egg-info

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jax-dips"
-version = "0.0.2"
+version = "0.2.0"
 authors = [
     { name = "Pouria Mistani", email = "p.a.mistani@gmail.com" },
     { name = "Samira Pakravan", email = "pakravans90@gmail.com" },
