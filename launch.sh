@@ -68,9 +68,9 @@ REGISTRY=${REGISTRY:=NotSpecified}
 REGISTRY_ACCESS_TOKEN=${REGISTRY_ACCESS_TOKEN:=NotSpecified}
 WANDB_API_KEY=${WANDB_API_KEY:=NotSpecified}
 JUPYTER_PORT=${JUPYTER_PORT:=8888}
-DATA_PATH=${DATA_PATH:=/tmp}
+DATA_PATH=${DATA_PATH:=/data}
 DATA_MOUNT_PATH=${DATA_MOUNT_PATH:=/data}
-RESULT_MOUNT_PATH=${RESULT_MOUNT_PATH:=/tmp}
+RESULT_MOUNT_PATH=${RESULT_MOUNT_PATH:=/results}
 RESULT_PATH=${RESULT_PATH:=/results/}
 ###############################################################################
 #

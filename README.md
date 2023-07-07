@@ -27,7 +27,7 @@ Do `pytest tests/test_*.py` of each of the available tests from the parent direc
 - `test_poisson`: tests for both the pointwise and the grid-based Poisson solvers over a star and a sphere interfaces. Note that in the current implementation the grid-based solver does not support batching and is therefore faster. Fixing this issue will be done in the future versions.
 
 # Installation
-To install the latest released version from PyPI do ```pip install jax-dips```.
+To install the latest released version from PyPI do ```pip install jax-dips```. If you want to create a dedicated virtual environment for jax-dips you could use ```python3 -m venv <my-virtual-env>``` and then activate it by ```source <my-virtual-env>/bin/activate```. Then you can install jax-dips inside this environment to make sure it doesn't interfere with your existing library installations.
 
 
 # Development & Usage Environment
