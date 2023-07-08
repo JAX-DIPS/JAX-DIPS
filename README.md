@@ -27,10 +27,13 @@ Do `pytest tests/test_*.py` of each of the available tests from the parent direc
 - `test_poisson`: tests for both the pointwise and the grid-based Poisson solvers over a star and a sphere interfaces. Note that in the current implementation the grid-based solver does not support batching and is therefore faster. Fixing this issue will be done in the future versions.
 
 # Installation
-To install the latest released version from PyPI do ```pip install jax-dips```. If you want to create a dedicated virtual environment for jax-dips you could use ```python3 -m venv <my-virtual-env>``` and then activate it by ```source <my-virtual-env>/bin/activate```. Then you can install jax-dips inside this environment to make sure it doesn't interfere with your existing library installations.
+To install the latest released version from PyPI do ```pip install jax-dips```. If you want to create a dedicated virtual environment for jax-dips you could use ```python3 -m venv <my-virtual-env>``` and then activate it by ```source <my-virtual-env>/bin/activate```. Then you can install jax-dips inside this environment to make sure it doesn't interfere with your existing library installations. Note `jax-dips` will install jax on your machine, therefore it is recommended to use a virtual environment.
 
 
-# Development & Usage Environment
+# Development & Usage
+
+## 0. Hardware Requirements
+The default hardware requirements considered below is on NVIDIA GPU with CUDA version `>=12.*` and CUDA driver version `>=530`. However, if you are using a different CUDA version you should replace the python wheel address on the first line of `requirements.txt` with your desired `wheel` from https://storage.googleapis.com/jax-releases/jax_cuda_releases.html. If you are using a different hardware (AMD GPU, TPU, etc.) you can also modify the `requirements.txt` accordingly or build from source (modify `Dockerfile`) based on the instructions at https://jax.readthedocs.io/en/latest/developer.html#building-from-source. If you are facing issues with installation please don't to raise an issue at https://github.com/JAX-DIPS/JAX-DIPS/issues and we will add support for your special hardware.
 
 ## 1. Virtual Environment
 Create a virtual environment by running the following command
@@ -41,13 +44,15 @@ and the ```env_jax_dips``` virtual environment will be created. Then you can lau
 ```source env_jax_dips/bin/activate```. After you are done, ```deactivate```.
 
 ## 2. Docker
-
+Docker images provide an isolated and consistent runtime environment, ensuring that the application behaves the same regardless of the host system. We recommend using the docker image provided here as it is fully loaded with libraries for datacenter scale simulatiopns and optimized for NVIDIA GPUs. For a full list of the supported software and specific versions that come packaged with this container image see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html. 
 ### Prerequisites
 First you will need to install the nvidia driver and docker engines:
 - Nvidia Driver
   ```
   apt install $(nvidia-detector)
   ```
+
+  Or use `Synaptic` package manager to install `nvidia-driver-535`.
 
 - Docker Engine
   Please refer https://docs.docker.com/engine/install/ubuntu/
@@ -58,10 +63,7 @@ First you will need to install the nvidia driver and docker engines:
   apt-get install nvidia-docker2
   ```
 
-### Instructions
-Docker images provide an isolated and consistent runtime environment, ensuring that the application behaves the same regardless of the host system. We recommend using the docker image provided here as it is fully loaded with libraries for datacenter scale simulatiopns and optimized for NVIDIA GPUs. For a full list of the supported software and specific versions that come packaged with this container image see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
-
-
+### Container Settings
 To personalize your development environment you need to set up a `.env` file that contains
 ```
 IMAGE_NAME=docker.io/pourion/jax_dips:latest       # default docker image available for download! Change this if you want to build new docker images and push to your preferred docker registry

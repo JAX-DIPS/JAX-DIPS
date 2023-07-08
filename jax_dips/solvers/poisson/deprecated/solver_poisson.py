@@ -24,7 +24,7 @@ from functools import partial
 
 import haiku as hk
 import jax
-import jaxopt
+# import jaxopt
 import optax
 from jax import config, grad, jit
 from jax import numpy as jnp

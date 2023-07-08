@@ -23,7 +23,7 @@ from typing import Callable
 
 import haiku as hk
 import jax
-import jaxopt
+# import jaxopt
 import optax
 from jax import grad, jit
 from jax import numpy as jnp
