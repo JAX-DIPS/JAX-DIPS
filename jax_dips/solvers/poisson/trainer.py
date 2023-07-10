@@ -80,7 +80,8 @@ class Trainer:
 
     def __init__(
         self,
-        gstate: GridState,
+        lvl_gstate: GridState,
+        tr_gstate: GridState,
         eval_gstate: GridState,
         sim_state: PoissonSimState,
         sim_state_fn: PoissonSimStateFn,
@@ -118,12 +119,12 @@ class Trainer:
         self.print_rate = print_rate
         #########################################################################
         self.TD = data_management.TrainData(
-            gstate.xmin(),
-            gstate.xmax(),
-            gstate.ymin(),
-            gstate.ymax(),
-            gstate.zmin(),
-            gstate.zmax(),
+            tr_gstate.xmin(),
+            tr_gstate.xmax(),
+            tr_gstate.ymin(),
+            tr_gstate.ymax(),
+            tr_gstate.zmin(),
+            tr_gstate.zmax(),
             Nx_tr,
             Ny_tr,
             Nz_tr,
@@ -149,7 +150,8 @@ class Trainer:
         #########################################################################
 
         self.model = nbm.Bootstrap(
-            gstate,
+            lvl_gstate,
+            tr_gstate,
             sim_state,
             sim_state_fn,
             optimizer,
@@ -612,8 +614,9 @@ def setup(
     )
 
     def init_fn(
-        gstate: GridState,
-        eval_gstate: GridState,
+        lvl_gstate: GridState = None,
+        tr_gstate: GridState = None,
+        eval_gstate: GridState = None,
         Nx_tr: int = 32,
         Ny_tr: int = 32,
         Nz_tr: int = 32,
@@ -645,7 +648,8 @@ def setup(
 
         def solve_fn(sim_state: PoissonSimState) -> PoissonSimState:
             trainer = Trainer(
-                gstate,
+                lvl_gstate,
+                tr_gstate,
                 eval_gstate,
                 sim_state,
                 sim_state_fn,

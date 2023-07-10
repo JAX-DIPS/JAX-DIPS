@@ -65,6 +65,7 @@ from examples.benchmark_LPBE.coefficients import (
 )
 from examples.benchmark_LPBE.geometry import get_initial_level_set_fn
 from examples.benchmark_LPBE.load_pqr import base
+from examples.benchmark_LPBE.inn.inn_data_sampler import INNSphereData
 from jax_dips._jaxmd_modules.util import f32
 from jax_dips.domain import mesh
 from jax_dips.geometry import level_set
@@ -89,9 +90,9 @@ def biomolecule_solvation_energy(
     Nx_tr = cfg.solver.Nx_tr  # grid for training
     Ny_tr = cfg.solver.Ny_tr  # grid for training
     Nz_tr = cfg.solver.Nz_tr  # grid for training
-    Nx = cfg.gridstates.Nx  # grid for level-set
-    Ny = cfg.gridstates.Ny  # grid for level-set
-    Nz = cfg.gridstates.Nz  # grid for level-set
+    Nx_lvl = cfg.gridstates.Nx  # grid for level-set
+    Ny_lvl = cfg.gridstates.Ny  # grid for level-set
+    Nz_lvl = cfg.gridstates.Nz  # grid for level-set
     Nx_eval = cfg.gridstates.Nx_eval  # grid for evaluation/visualization
     Ny_eval = cfg.gridstates.Ny_eval  # grid for evaluation/visualization
     Nz_eval = cfg.gridstates.Nz_eval  # grid for evaluation/visualization
@@ -143,14 +144,43 @@ def biomolecule_solvation_energy(
     xmax = ymax = zmax = 2.5  # max((atom_locations.max(), atom_sigmas.max())) * 3
     init_mesh_fn, coord_at = mesh.construct(3)
 
-    # --------- Grid nodes for trainer
-    from examples.benchmark_LPBE.inn.inn_data_sampler import INNSphereData
+    # --------- Grid nodes for level set
+    xc = jnp.linspace(xmin, xmax, Nx_lvl, dtype=f32)
+    yc = jnp.linspace(ymin, ymax, Ny_lvl, dtype=f32)
+    zc = jnp.linspace(zmin, zmax, Nz_lvl, dtype=f32)
+    gstate_lvl = init_mesh_fn(xc, yc, zc)
 
-    inn = INNSphereData()  # TODO: this makes points in torch, should append and pass on to init_mesh
-    xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
-    yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
-    zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
-    gstate = init_mesh_fn(xc, yc, zc)
+    # --------- Grid nodes for trainer (discretization), using INN
+    inn = INNSphereData(
+        sigma=atom_sigmas[0],  # sphere radius
+        L=atom_locations[0],  # sphere center coord
+        box=[xmin, xmax, ymin, ymax, zmin, zmax],  # box dimensions
+        device="cuda",
+        train_out=2000,  # points outside/positive domain
+        train_inner=100,  # points inside/negative domain
+        train_boundary=1000,  # points on the boundary
+        train_gamma=200,  # points on interface
+    )
+    xc = inn.x
+    yc = inn.y
+    zc = inn.z
+    dx = (xmax - xmin) / Nx_tr
+    dy = (ymax - ymin) / Ny_tr
+    dz = (zmax - zmin) / Nz_tr
+    gstate_tr = mesh.init_gstate_3d_manually(
+        xc,
+        yc,
+        zc,
+        dx,
+        dy,
+        dz,
+        inn.R_xmin,
+        inn.R_xmax,
+        inn.R_ymin,
+        inn.R_ymax,
+        inn.R_zmin,
+        inn.R_zmax,
+    )
 
     # ----------  Evaluation Mesh for Visualization
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
@@ -166,7 +196,7 @@ def biomolecule_solvation_energy(
 
     g_fn, g_vec_fn, grad_g_fn, grad_g_vec_fn = get_g_dg_fns(atom_xyz_rad_chg)
 
-    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, g_fn, phi_fn, gstate.dx, gstate.dy, gstate.dz)
+    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, g_fn, phi_fn, gstate_tr.dx, gstate_tr.dy, gstate_tr.dz)
 
     ###########################################################
     if False:
@@ -194,11 +224,11 @@ def biomolecule_solvation_energy(
             alpha_fn,
             beta_fn,
         )
-        sim_state = init_fn(gstate.R)
+        sim_state = init_fn(gstate_tr.R)
         checkpoint_dir = os.path.join(log_dir, "checkpoints")
         t0 = time.time()
         sim_state, epoch_store, loss_epochs = solve_fn(
-            gstate,
+            gstate_tr,
             eval_gstate,
             sim_state,
             algorithm=ALGORITHM,
@@ -231,7 +261,7 @@ def biomolecule_solvation_energy(
             nonlinear_operator_p,
         )
         sim_state, solve_fn = init_fn(
-            gstate=gstate,
+            gstate=gstate_tr,
             eval_gstate=eval_gstate,
             algorithm=ALGORITHM,
             switching_interval=SWITCHING_INTERVAL,
@@ -266,7 +296,8 @@ def biomolecule_solvation_energy(
             nonlinear_operator_p,
         )
         sim_state, solve_fn = init_fn(
-            gstate=gstate,
+            lvl_gstate=gstate_lvl,
+            tr_gstate=gstate_tr,
             eval_gstate=eval_gstate,
             algorithm=ALGORITHM,
             switching_interval=SWITCHING_INTERVAL,

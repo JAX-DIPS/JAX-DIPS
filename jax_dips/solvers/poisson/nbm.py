@@ -48,7 +48,8 @@ class Bootstrap(Discretization):
 
     def __init__(
         self,
-        gstate: GridState,
+        lvl_gstate: GridState,
+        tr_gstate: GridState,
         sim_state: PoissonSimState,
         sim_state_fn: PoissonSimStateFn,
         optimizer: Callable,
@@ -59,13 +60,14 @@ class Bootstrap(Discretization):
         algorithm = 0: use regression to evaluate u^\pm; algorithm = 1: use neural network to evaluate u^\pm
         """
         super().__init__(
-            gstate,
+            lvl_gstate,
             sim_state,
             sim_state_fn,
             precondition,
             algorithm,
         )
         self.optimizer = optimizer
+        self.tr_gstate = tr_gstate
 
         """ initialize postprocessing methods """
         self.compute_normal_gradient_solution_mp_on_interface = (
@@ -143,12 +145,12 @@ class Bootstrap(Discretization):
         lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
-        # du_xmax = (self.evaluate_solution_fn(params, self.gstate.R_xmax_boundary) - self.dir_bc_fn(self.gstate.R_xmax_boundary)[...,jnp.newaxis])
-        # du_xmin = (self.evaluate_solution_fn(params, self.gstate.R_xmin_boundary) - self.dir_bc_fn(self.gstate.R_xmin_boundary)[...,jnp.newaxis])
-        # du_ymax = (self.evaluate_solution_fn(params, self.gstate.R_ymax_boundary) - self.dir_bc_fn(self.gstate.R_ymax_boundary)[...,jnp.newaxis])
-        # du_ymin = (self.evaluate_solution_fn(params, self.gstate.R_ymin_boundary) - self.dir_bc_fn(self.gstate.R_ymin_boundary)[...,jnp.newaxis])
-        # du_zmax = (self.evaluate_solution_fn(params, self.gstate.R_zmax_boundary) - self.dir_bc_fn(self.gstate.R_zmax_boundary)[...,jnp.newaxis])
-        # du_zmin = (self.evaluate_solution_fn(params, self.gstate.R_zmin_boundary) - self.dir_bc_fn(self.gstate.R_zmin_boundary)[...,jnp.newaxis])
+        # du_xmax = (self.evaluate_solution_fn(params, self.tr_gstate.R_xmax_boundary) - self.dir_bc_fn(self.tr_gstate.R_xmax_boundary)[...,jnp.newaxis])
+        # du_xmin = (self.evaluate_solution_fn(params, self.tr_gstate.R_xmin_boundary) - self.dir_bc_fn(self.tr_gstate.R_xmin_boundary)[...,jnp.newaxis])
+        # du_ymax = (self.evaluate_solution_fn(params, self.tr_gstate.R_ymax_boundary) - self.dir_bc_fn(self.tr_gstate.R_ymax_boundary)[...,jnp.newaxis])
+        # du_ymin = (self.evaluate_solution_fn(params, self.tr_gstate.R_ymin_boundary) - self.dir_bc_fn(self.tr_gstate.R_ymin_boundary)[...,jnp.newaxis])
+        # du_zmax = (self.evaluate_solution_fn(params, self.tr_gstate.R_zmax_boundary) - self.dir_bc_fn(self.tr_gstate.R_zmax_boundary)[...,jnp.newaxis])
+        # du_zmin = (self.evaluate_solution_fn(params, self.tr_gstate.R_zmin_boundary) - self.dir_bc_fn(self.tr_gstate.R_zmin_boundary)[...,jnp.newaxis])
         # tot_loss += 0.01 * (jnp.mean(jnp.square(du_xmax)) + jnp.mean(jnp.square(du_xmin)) + jnp.mean(jnp.square(du_ymax)) + jnp.mean(jnp.square(du_ymin)) + jnp.mean(jnp.square(du_zmax)) + jnp.mean(jnp.square(du_zmin)))
         return tot_loss
 

@@ -60,31 +60,36 @@ class Data(object):
         rand0 = torch.rand(n).view(-1, 1).to(self.device) * (xmax - xmin) + xmin
         rand1 = torch.rand(n).view(-1, 1).to(self.device) * (ymax - ymin) + ymin
         b = torch.ones_like(rand0).to(self.device) * zmin
-        P = torch.cat((rand0, rand1, b), dim=1)
+        self.P_zmin = torch.cat((rand0, rand1, b), dim=1)
 
         rand0 = torch.rand(n).view(-1, 1).to(self.device) * (xmax - xmin) + xmin
         rand1 = torch.rand(n).view(-1, 1).to(self.device) * (ymax - ymin) + ymin
         b = torch.ones_like(rand0).to(self.device) * zmax
-        P = torch.cat((P, torch.cat((rand0, rand1, b), dim=1)), dim=0)
+        self.P_zmax = torch.cat((rand0, rand1, b), dim=1)
+        # P = torch.cat((P, torch.cat((rand0, rand1, b), dim=1)), dim=0)
 
         rand0 = torch.rand(n).view(-1, 1).to(self.device) * (xmax - xmin) + xmin
         rand1 = torch.rand(n).view(-1, 1).to(self.device) * (zmax - zmin) + zmin
         b = torch.ones_like(rand0).to(self.device) * ymin
-        P = torch.cat((P, torch.cat((rand0, b, rand1), dim=1)), dim=0)
+        self.P_ymin = torch.cat((rand0, b, rand1), dim=1)
+        # P = torch.cat((P, torch.cat((rand0, b, rand1), dim=1)), dim=0)
 
         rand0 = torch.rand(n).view(-1, 1).to(self.device) * (xmax - xmin) + xmin
         rand1 = torch.rand(n).view(-1, 1).to(self.device) * (zmax - zmin) + zmin
         b = torch.ones_like(rand0).to(self.device) * ymax
-        P = torch.cat((P, torch.cat((rand0, b, rand1), dim=1)), dim=0)
+        self.P_ymax = torch.cat((rand0, b, rand1), dim=1)
+        # P = torch.cat((P, torch.cat((rand0, b, rand1), dim=1)), dim=0)
 
         rand0 = torch.rand(n).view(-1, 1).to(self.device) * (ymax - ymin) + ymin
         rand1 = torch.rand(n).view(-1, 1).to(self.device) * (zmax - zmin) + zmin
         b = torch.ones_like(rand0).to(self.device) * xmin
-        P = torch.cat((P, torch.cat((b, rand0, rand1), dim=1)), dim=0)
+        self.P_xmin = torch.cat((b, rand0, rand1), dim=1)
+        # P = torch.cat((P, torch.cat((b, rand0, rand1), dim=1)), dim=0)
 
         rand0 = torch.rand(n).view(-1, 1).to(self.device) * (ymax - ymin) + ymin
         rand1 = torch.rand(n).view(-1, 1).to(self.device) * (zmax - zmin) + zmin
         b = torch.ones_like(rand0).to(self.device) * xmax
-        P = torch.cat((P, torch.cat((b, rand0, rand1), dim=1)), dim=0)
-
+        self.P_xmax = torch.cat((b, rand0, rand1), dim=1)
+        # P = torch.cat((P, torch.cat((b, rand0, rand1), dim=1)), dim=0)
+        P = torch.cat((self.P_zmin, self.P_zmax, self.P_ymin, self.P_ymax, self.P_xmin, self.P_xmax), dim=0)
         return P.to(self.device)

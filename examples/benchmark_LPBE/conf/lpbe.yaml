@@ -15,9 +15,9 @@ gridstates:
   Nz_eval: 256  # grid for evaluation/visualization
 
 solver:
-  Nx_tr: 64  # grid for training
-  Ny_tr: 64  # grid for training
-  Nz_tr: 64  # grid for training
+  Nx_tr: 32  # grid for training
+  Ny_tr: 32  # grid for training
+  Nz_tr: 32  # grid for training
   num_epochs: 1000 # number of epochs to train
   print_rate: 10 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint

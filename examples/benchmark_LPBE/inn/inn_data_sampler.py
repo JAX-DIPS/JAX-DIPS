@@ -1,9 +1,10 @@
+from jax_dips.utils.conversions import torch_to_jax
 from .inn_e4.GenerateData import Data
 from .inn_e4.Tool import data_transform
 
 import torch
 import numpy as np
-
+from jax import numpy as jnp
 
 alpha = 7.0465 * 1e3
 kbT = 0.592783
@@ -80,13 +81,35 @@ class INNSphereData:
         data = Data(r0=sigma, L=L, box=box, device=device)
         # outside region points
         out = data.SampleFromOut(train_out).T
-        self.x_out, self.y_out, self.z_out, self.input_out = data_transform(out)
+        x_out, y_out, z_out, input_out = data_transform(out)
+        self.x_out = jnp.squeeze(torch_to_jax(x_out))
+        self.y_out = jnp.squeeze(torch_to_jax(y_out))
+        self.z_out = jnp.squeeze(torch_to_jax(z_out))
         # inside region points
         inner = data.SampleFromInner(train_inner).T
-        self.x_in, self.y_in, self.z_in, self.input_in = data_transform(inner)
+        x_in, y_in, z_in, input_in = data_transform(inner)
+        self.x_in = jnp.squeeze(torch_to_jax(x_in))
+        self.y_in = jnp.squeeze(torch_to_jax(y_in))
+        self.z_in = jnp.squeeze(torch_to_jax(z_in))
         # interface points
         gamma = data.SampleFromGamma(train_gamma).T
-        self.x_gamma, self.y_gamma, self.z_gamma, self.input_in_b = data_transform(gamma)
+        x_gamma, y_gamma, z_gamma, input_in_b = data_transform(gamma)
+        self.x_gamma = jnp.squeeze(torch_to_jax(x_gamma))
+        self.y_gamma = jnp.squeeze(torch_to_jax(y_gamma))
+        self.z_gamma = jnp.squeeze(torch_to_jax(z_gamma))
         # box boundaries
-        self.input_boundary = data.SampleFromBoundary(train_boundary)
-        self.input_boundary_label = true_solution_net(self.input_boundary, sigma, "out", device)
+        input_boundary = data.SampleFromBoundary(train_boundary)
+        input_boundary_label = true_solution_net(input_boundary, sigma, "out", device)
+        self.input_boundary = jnp.squeeze(torch_to_jax(input_boundary))
+        self.input_boundary_label = jnp.squeeze(torch_to_jax(input_boundary_label))
+        self.R_xmin = jnp.squeeze(torch_to_jax(data.P_xmin))
+        self.R_xmax = jnp.squeeze(torch_to_jax(data.P_xmax))
+        self.R_ymin = jnp.squeeze(torch_to_jax(data.P_ymin))
+        self.R_ymax = jnp.squeeze(torch_to_jax(data.P_ymax))
+        self.R_zmin = jnp.squeeze(torch_to_jax(data.P_zmin))
+        self.R_zmax = jnp.squeeze(torch_to_jax(data.P_zmax))
+
+        # aggregated coordinates
+        self.x = jnp.concatenate((self.x_in, self.x_gamma, self.x_out, self.input_boundary[:, 0]))
+        self.y = jnp.concatenate((self.y_in, self.y_gamma, self.y_out, self.input_boundary[:, 1]))
+        self.z = jnp.concatenate((self.z_in, self.z_gamma, self.z_out, self.input_boundary[:, 2]))

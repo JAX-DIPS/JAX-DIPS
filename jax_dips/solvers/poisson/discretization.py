@@ -40,7 +40,7 @@ class Discretization:
 
     def __init__(
         self,
-        gstate: GridState,
+        lvl_gstate: GridState,
         sim_state: PoissonSimState,
         sim_state_fn: PoissonSimStateFn,
         precondition: int = 1,
@@ -51,18 +51,18 @@ class Discretization:
         algorithm = 1: use neural network to evaluate u^\pm
         """
         self.algorithm = algorithm
-        self.gstate = gstate
+        self.lvl_gstate = lvl_gstate
         self.sim_state_fn = sim_state_fn
         self.sim_state = sim_state
 
         """ Grid Info """
         # self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
-        self.xmin = gstate.xmin()
-        self.xmax = gstate.xmax()
-        self.ymin = gstate.ymin()
-        self.ymax = gstate.ymax()
-        self.zmin = gstate.zmin()
-        self.zmax = gstate.zmax()
+        self.xmin = lvl_gstate.xmin()
+        self.xmax = lvl_gstate.xmax()
+        self.ymin = lvl_gstate.ymin()
+        self.ymax = lvl_gstate.ymax()
+        self.zmin = lvl_gstate.zmin()
+        self.zmax = lvl_gstate.zmax()
 
         """ functions for the method """
         self.dir_bc_fn = self.sim_state_fn.dir_bc_fn
@@ -86,7 +86,7 @@ class Discretization:
         # x, y, z, phi_cube = interpolate.add_ghost_layer_3d(xo, yo, zo, self.phi_cube_)
         # x, y, z, self.phi_cube = interpolate.add_ghost_layer_3d(x, y, z, phi_cube)
         # self.phi_flat = self.phi_cube_.reshape(-1)
-        # self.phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(self.sim_state.phi, self.gstate)
+        # self.phi_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(self.sim_state.phi, self.lvl_gstate)
         self.phi_interp_fn = self.sim_state_fn.phi_fn
 
         """ Geometric operations per point """

@@ -187,16 +187,19 @@ class DatasetDict:
 
 
 class TrainData:
-    def __init__(self, xmin, xmax, ymin, ymax, zmin, zmax, Nx=64, Ny=64, Nz=64) -> None:
+    def __init__(self, xmin, xmax, ymin, ymax, zmin, zmax, Nx=64, Ny=64, Nz=64, gstate=None) -> None:
         """Training GSTATE"""
-        self.Nx = Nx
-        self.Ny = Ny
-        self.Nz = Nz
-        xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
-        yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
-        zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
-        init_mesh_fn, coord_at = mesh.construct(3)
-        self.gstate = init_mesh_fn(xc, yc, zc)
+        if gstate is None:
+            self.Nx = Nx
+            self.Ny = Ny
+            self.Nz = Nz
+            xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
+            yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
+            zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
+            init_mesh_fn, coord_at = mesh.construct(3)
+            self.gstate = init_mesh_fn(xc, yc, zc)
+        else:
+            self.gstate = gstate
 
         self.key = random.PRNGKey(0)
         Lx = self.gstate.xmax() - self.gstate.xmin()
