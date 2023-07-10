@@ -23,6 +23,7 @@ from typing import Callable
 
 import haiku as hk
 import jax
+
 # import jaxopt
 import optax
 from jax import grad, jit
@@ -33,6 +34,7 @@ from jax_dips.domain.mesh import GridState
 from jax_dips.nn.nn_solution_model import DoubleMLP
 from jax_dips.solvers.poisson.discretization import Discretization
 from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
+from jax_dips.utils.chunking import chunked_vmap
 
 
 class Bootstrap(Discretization):
@@ -102,6 +104,13 @@ class Bootstrap(Discretization):
         phi_flat = self.phi_interp_fn(R_flat)
         sol_fn = partial(self.forward.apply, params, None)
         pred_sol = vmap(sol_fn, (0, 0))(R_flat, phi_flat)
+
+        # pred_sol = chunked_vmap(
+        #     sol_fn,
+        #     num_chunks=2,
+        #     in_axes=(0, 0),
+        # )(R_flat, phi_flat)
+
         return pred_sol
 
     def solution_at_point_fn(self, params, r_point, phi_point):
@@ -187,9 +196,25 @@ class Bootstrap(Discretization):
     def compute_normal_gradient_solution_on_interface_neural_network(self, params, points, dx, dy, dz):
         phi_flat = self.phi_interp_fn(points)
         _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+
         grad_u = vmap(grad_u_at_point_fn, (0, 0))(points, phi_flat)
         normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(points, dx, dy, dz)
         grad_n_u = vmap(jnp.dot, (0, 0))(jnp.squeeze(normal_vecs), grad_u)
+        # grad_u = chunked_vmap(grad_u_at_point_fn, num_chunks=2, in_axes=(0, 0))(
+        #     points,
+        #     phi_flat,
+        # )
+        # normal_vecs = chunked_vmap(self.normal_point_fn, num_chunks=2, in_axes=(0, None, None, None))(
+        #     points,
+        #     dx,
+        #     dy,
+        #     dz,
+        # )
+        # grad_n_u = chunked_vmap(jnp.dot, num_chunks=2, in_axes=(0, 0))(
+        #     jnp.squeeze(normal_vecs),
+        #     grad_u,
+        # )
+
         return grad_n_u
 
     def compute_gradient_solution_neural_network(self, params, points):

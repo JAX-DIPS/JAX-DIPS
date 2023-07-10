@@ -39,19 +39,19 @@ class DoubleMLP(hk.Module):
         super().__init__(name=name)
 
         self.num_hidden_layers = 1
-        self.hidden_dim = 64
+        self.hidden_dim = 32
         self.activation_fn = jnp.sin
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
+        # Positional Encoding Constants
         d1 = 3  # dimension of input space; e.g., 3D space
-        self.d2 = 16  # dimension of lifted space
+        self.d2 = self.hidden_dim // 2  # dimension of lifted space
         key = random.PRNGKey(0)
-        cov = jnp.eye(d1)
+        stdev = 1.0  # standard deviation scale
+        cov = jnp.eye(d1) * stdev**2
         mean = jnp.zeros(d1)
-
         self.Bmat = random.multivariate_normal(key, mean, cov, shape=(self.d2,))
         self.twoPi = 2.0 * jnp.pi
-
         self.encoding_m = jnp.zeros(2 * self.d2)
         self.encoding_p = jnp.zeros(2 * self.d2)
 
@@ -60,9 +60,10 @@ class DoubleMLP(hk.Module):
         Driver function for evaluating neural networks in appropriate regions
         based on the value of the level set function at the point.
         """
-        return jnp.where(phi_r >= 0, self.nn_up_fn(r), self.nn_um_fn(r))
+        # return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
+        return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
 
-    def nn_up_fn(self, h):
+    def mlp_p_fn(self, h):
         """
         neural network function for solution in Omega plus
         input:
@@ -78,7 +79,7 @@ class DoubleMLP(hk.Module):
         h = hk.Linear(output_size=1)(h)
         return h
 
-    def nn_um_fn(self, h):
+    def mlp_m_fn(self, h):
         """
         neural network function for solution in Omega minus
         input:
@@ -93,6 +94,38 @@ class DoubleMLP(hk.Module):
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h
+
+    def resnet_p_fn(self, h):
+        # h = self.positional_encoding_p(h)
+        # start 1 resnet block
+        h_i = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
+        h_ = self.activation_fn(h_i)
+        h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
+        h_ = self.activation_fn(h_) + h_i
+        # end 1 resnet block
+        h_i = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
+        h_ = self.activation_fn(h_i)
+        h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
+        h_ = self.activation_fn(h_) + h_i
+        # end 2 resnet block
+        h_ = hk.Linear(output_size=1)(h_)
+        return h_
+
+    def resnet_m_fn(self, h):
+        # h = self.positional_encoding_m(h)
+        # start 1 resnet block
+        h_i = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
+        h_ = self.activation_fn(h_i)
+        h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
+        h_ = self.activation_fn(h_) + h_i
+        # end 1 resnet block
+        h_i = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
+        h_ = self.activation_fn(h_i)
+        h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
+        h_ = self.activation_fn(h_) + h_i
+        # end 2 resnet block
+        h_ = hk.Linear(output_size=1)(h_)
+        return h_
 
     def positional_encoding_p(self, h):
         """
@@ -122,4 +155,4 @@ class DoubleMLP(hk.Module):
 
     @staticmethod
     def __version__():
-        return "0.0.1"
+        return "0.3.0"

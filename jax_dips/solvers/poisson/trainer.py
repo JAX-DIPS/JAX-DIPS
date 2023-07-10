@@ -129,13 +129,19 @@ class Trainer:
             Nz_tr,
         )
         train_points = self.TD.gstate.R
-        # extra_points = self.TD.refine_normals(lvl_set_fn, max_iters=15)
-        # self.train_points = jnp.concatenate((train_points, extra_points))
 
-        # surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=3)
-        # self.train_points = jnp.concatenate((train_points, surface_points))
-
-        self.train_points = train_points
+        refine = False
+        refine_lod = False
+        refine_normals = False
+        if refine:
+            if refine_normals:
+                extra_points = self.TD.refine_normals(lvl_set_fn, max_iters=15)
+                self.train_points = jnp.concatenate((train_points, extra_points))
+            if refine_lod:
+                surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=3)
+                self.train_points = jnp.concatenate((train_points, surface_points))
+        else:
+            self.train_points = train_points
 
         self.train_dx = self.TD.gstate.dx
         self.train_dy = self.TD.gstate.dy
