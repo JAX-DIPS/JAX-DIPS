@@ -128,6 +128,7 @@ class Trainer:
             Nx_tr,
             Ny_tr,
             Nz_tr,
+            tr_gstate,
         )
         train_points = self.TD.gstate.R
 

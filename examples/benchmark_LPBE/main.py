@@ -90,9 +90,9 @@ def biomolecule_solvation_energy(
     Nx_tr = cfg.solver.Nx_tr  # grid for training
     Ny_tr = cfg.solver.Ny_tr  # grid for training
     Nz_tr = cfg.solver.Nz_tr  # grid for training
-    Nx_lvl = cfg.gridstates.Nx  # grid for level-set
-    Ny_lvl = cfg.gridstates.Ny  # grid for level-set
-    Nz_lvl = cfg.gridstates.Nz  # grid for level-set
+    Nx_lvl = cfg.gridstates.Nx_lvl  # grid for level-set
+    Ny_lvl = cfg.gridstates.Ny_lvl  # grid for level-set
+    Nz_lvl = cfg.gridstates.Nz_lvl  # grid for level-set
     Nx_eval = cfg.gridstates.Nx_eval  # grid for evaluation/visualization
     Ny_eval = cfg.gridstates.Ny_eval  # grid for evaluation/visualization
     Nz_eval = cfg.gridstates.Nz_eval  # grid for evaluation/visualization
@@ -196,7 +196,9 @@ def biomolecule_solvation_energy(
 
     g_fn, g_vec_fn, grad_g_fn, grad_g_vec_fn = get_g_dg_fns(atom_xyz_rad_chg)
 
-    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, g_fn, phi_fn, gstate_tr.dx, gstate_tr.dy, gstate_tr.dz)
+    alpha_fn, beta_fn = get_jump_conditions(
+        atom_xyz_rad_chg, g_fn, phi_fn, gstate_lvl.dx, gstate_lvl.dy, gstate_lvl.dz
+    )
 
     ###########################################################
     if False:
