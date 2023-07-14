@@ -83,6 +83,11 @@ class GridState(object):
     def zmax(self):
         return self.z.max()
 
+    def base_level(self):
+        Nx = len(self.R) ** (1.0 / 3.0)
+        base_level = int(np.log2(Nx))
+        return base_level
+
 
 def construct(dimension: int) -> Mesher:
     def init_fn_2d(x, y):

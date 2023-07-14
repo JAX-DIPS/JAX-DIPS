@@ -187,19 +187,18 @@ class DatasetDict:
 
 
 class TrainData:
-    def __init__(self, xmin, xmax, ymin, ymax, zmin, zmax, Nx=64, Ny=64, Nz=64, gstate=None) -> None:
+    def __init__(self, gstate) -> None:
         """Training GSTATE"""
-        if gstate is None:
-            self.Nx = Nx
-            self.Ny = Ny
-            self.Nz = Nz
-            xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
-            yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
-            zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
-            init_mesh_fn, coord_at = mesh.construct(3)
-            self.gstate = init_mesh_fn(xc, yc, zc)
-        else:
-            self.gstate = gstate
+        # if gstate is None:
+        #     self.Nx = Nx
+        #     self.Ny = Ny
+        #     self.Nz = Nz
+        #     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
+        #     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
+        #     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
+        #     init_mesh_fn, coord_at = mesh.construct(3)
+        #     self.gstate = init_mesh_fn(xc, yc, zc)
+        self.gstate = gstate
 
         self.key = random.PRNGKey(0)
         Lx = self.gstate.xmax() - self.gstate.xmin()
@@ -208,7 +207,7 @@ class TrainData:
         self.LL = jnp.array([[Lx, Ly, Lz]])
 
         self.alt_res = False
-        self.base_level = int(onp.log2(Nx))
+        self.base_level = gstate.base_level()
 
         self.boundary_points = jnp.concatenate(
             (
@@ -246,27 +245,27 @@ class TrainData:
         train_dz = self.gstate.dz * 0.5**zoom_lvl
         return train_dx, train_dy, train_dz
 
-    def plot_slice(self, base_points):
-        import matplotlib
+    # def plot_slice(self, base_points):
+    #     import matplotlib
 
-        matplotlib.use("Agg")
-        import os
+    #     matplotlib.use("Agg")
+    #     import os
 
-        import matplotlib.pyplot as plt
+    #     import matplotlib.pyplot as plt
 
-        points = base_points.reshape((self.Nx, self.Ny, self.Nz, 3))
-        currDir = os.path.dirname(os.path.realpath(__file__))
-        rootDir = os.path.abspath(os.path.join(currDir, ".."))
-        fig, ax = plt.subplots(figsize=(8, 8))
-        ax.scatter(
-            points[:, :, self.Nz // 2, 0],
-            points[:, :, self.Nz // 2, 1],
-            points[:, :, self.Nz // 2, 2],
-            color="k",
-        )
-        filename = os.path.join(rootDir, "tests/grid.png")
-        plt.savefig(filename)
-        plt.close()
+    #     points = base_points.reshape((self.Nx, self.Ny, self.Nz, 3))
+    #     currDir = os.path.dirname(os.path.realpath(__file__))
+    #     rootDir = os.path.abspath(os.path.join(currDir, ".."))
+    #     fig, ax = plt.subplots(figsize=(8, 8))
+    #     ax.scatter(
+    #         points[:, :, self.Nz // 2, 0],
+    #         points[:, :, self.Nz // 2, 1],
+    #         points[:, :, self.Nz // 2, 2],
+    #         color="k",
+    #     )
+    #     filename = os.path.join(rootDir, "tests/grid.png")
+    #     plt.savefig(filename)
+    #     plt.close()
 
     def refine_normals(self, phi_fn_uns, max_iters=20):
         from jax import jit, vmap

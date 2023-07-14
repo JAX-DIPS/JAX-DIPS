@@ -180,6 +180,17 @@ def get_g_dg_fns(atom_xyz_rad_chg, EPS=1e-6):
 
 
 def get_jump_conditions(atom_xyz_rad_chg, g_fn_uns, phi_fn_uns, dx, dy, dz):
+    """_summary_
+
+    Args:
+        atom_xyz_rad_chg (_type_): atomic coordinates and properties
+        g_fn_uns (_type_): kernel for the jump conditions given in LPBE
+        phi_fn_uns (_type_): level set function
+        dx (_type_): for computing normal derivatives of the level set
+        dy (_type_): for computing normal derivatives of the level set
+        dz (_type_): for computing normal derivatives of the level set
+    """
+
     def g_fn(r):
         return g_fn_uns(jnp.squeeze(r))
 

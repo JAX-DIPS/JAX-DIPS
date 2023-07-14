@@ -87,9 +87,6 @@ class Trainer:
         sim_state_fn: PoissonSimStateFn,
         algorithm: int = 0,
         switching_interval: int = 3,
-        Nx_tr: int = 32,
-        Ny_tr: int = 32,
-        Nz_tr: int = 32,
         lvl_set_fn: Callable[..., Array] = None,
         num_epochs: int = 1000,
         multi_gpu: bool = False,
@@ -113,23 +110,9 @@ class Trainer:
         self.checkpoint_interval = checkpoint_interval
         self.results_dir = results_dir
         self.loss_plot_name = loss_plot_name
-        self.Nx_tr = Nx_tr
-        self.Ny_tr = Ny_tr
-        self.Nz_tr = Nz_tr
         self.print_rate = print_rate
         #########################################################################
-        self.TD = data_management.TrainData(
-            tr_gstate.xmin(),
-            tr_gstate.xmax(),
-            tr_gstate.ymin(),
-            tr_gstate.ymax(),
-            tr_gstate.zmin(),
-            tr_gstate.zmax(),
-            Nx_tr,
-            Ny_tr,
-            Nz_tr,
-            tr_gstate,
-        )
+        self.TD = data_management.TrainData(tr_gstate)
         train_points = self.TD.gstate.R
 
         refine = False
@@ -243,7 +226,7 @@ class Trainer:
             "params": self.params,
             "epoch": self.epoch_store[-1] + 1,
             "batch_size": self.batch_size,
-            "resolution": f"{self.Nx_tr}, {self.Ny_tr}, {self.Nz_tr}",
+            "resolution": f"{self.train_dx}, {self.train_dy}, {self.train_dz}",
         }
         self.save_checkpoint(self.checkpoint_dir, state)
 
@@ -532,7 +515,7 @@ class Trainer:
                     "params": params,
                     "epoch": epoch + 1,
                     "batch_size": self.batch_size,
-                    "resolution": f"{self.Nx_tr}, {self.Ny_tr}, {self.Nz_tr}",
+                    "resolution": f"{self.train_dx}, {self.train_dy}, {self.train_dz}",
                 }
                 self.save_checkpoint(self.checkpoint_dir, state)
         params = jax.device_get(jax.tree_map(lambda x: x[0], params))
@@ -618,9 +601,6 @@ def setup(
         lvl_gstate: GridState = None,
         tr_gstate: GridState = None,
         eval_gstate: GridState = None,
-        Nx_tr: int = 32,
-        Ny_tr: int = 32,
-        Nz_tr: int = 32,
         num_epochs: int = 1000,
         batch_size: int = 131072,
         algorithm: int = 0,
@@ -656,9 +636,6 @@ def setup(
                 sim_state_fn,
                 algorithm,
                 switching_interval=switching_interval,
-                Nx_tr=Nx_tr,
-                Ny_tr=Ny_tr,
-                Nz_tr=Nz_tr,
                 lvl_set_fn=lvl_set_fn,
                 num_epochs=num_epochs,
                 multi_gpu=multi_gpu,

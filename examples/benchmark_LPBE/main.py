@@ -144,13 +144,13 @@ def biomolecule_solvation_energy(
     xmax = ymax = zmax = 2.5  # max((atom_locations.max(), atom_sigmas.max())) * 3
     init_mesh_fn, coord_at = mesh.construct(3)
 
-    # --------- Grid nodes for level set
+    # --------- GSTATE for level set
     xc = jnp.linspace(xmin, xmax, Nx_lvl, dtype=f32)
     yc = jnp.linspace(ymin, ymax, Ny_lvl, dtype=f32)
     zc = jnp.linspace(zmin, zmax, Nz_lvl, dtype=f32)
     gstate_lvl = init_mesh_fn(xc, yc, zc)
 
-    # --------- Grid nodes for trainer (discretization), using INN
+    # --------- GSTATE for trainer (discretization), using INN
     inn = INNSphereData(
         sigma=atom_sigmas[0],  # sphere radius
         L=atom_locations[0],  # sphere center coord
@@ -182,7 +182,7 @@ def biomolecule_solvation_energy(
         inn.R_zmax,
     )
 
-    # ----------  Evaluation Mesh for Visualization
+    # ----------  GSTATE Evaluation & Visualization
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
     eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
     ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
@@ -210,114 +210,39 @@ def biomolecule_solvation_energy(
         io.write_vtk_manual(eval_gstate, log, filename=log_dir + "/benchmark_lpbe")
         pdb.set_trace()
 
-    t0 = t1 = 0.0
-    if cfg.solver.version == 0:
-        # -- v1 old code
-        init_fn, solve_fn = poisson_solver_scalable.setup(
-            initial_value_fn,
-            dirichlet_bc_fn,
-            phi_fn,
-            mu_m_fn,
-            mu_p_fn,
-            k_m_fn,
-            k_p_fn,
-            f_m_fn,
-            f_p_fn,
-            alpha_fn,
-            beta_fn,
-        )
-        sim_state = init_fn(gstate_tr.R)
-        checkpoint_dir = os.path.join(log_dir, "checkpoints")
-        t0 = time.time()
-        sim_state, epoch_store, loss_epochs = solve_fn(
-            gstate_tr,
-            eval_gstate,
-            sim_state,
-            algorithm=ALGORITHM,
-            switching_interval=SWITCHING_INTERVAL,
-            Nx_tr=Nx_tr,
-            Ny_tr=Ny_tr,
-            Nz_tr=Nz_tr,
-            num_epochs=num_epochs,
-            multi_gpu=multi_gpu,
-            checkpoint_dir=checkpoint_dir,
-            checkpoint_interval=checkpoint_interval,
-        )
-        t1 = time.time()
-
-    elif cfg.solver.version == 1:
-        # -- v2 new code
-        init_fn = trainer_poisson.setup(
-            initial_value_fn,
-            dirichlet_bc_fn,
-            phi_fn,
-            mu_m_fn,
-            mu_p_fn,
-            k_m_fn,
-            k_p_fn,
-            f_m_fn,
-            f_p_fn,
-            alpha_fn,
-            beta_fn,
-            nonlinear_operator_m,
-            nonlinear_operator_p,
-        )
-        sim_state, solve_fn = init_fn(
-            gstate=gstate_tr,
-            eval_gstate=eval_gstate,
-            algorithm=ALGORITHM,
-            switching_interval=SWITCHING_INTERVAL,
-            Nx_tr=Nx_tr,
-            Ny_tr=Ny_tr,
-            Nz_tr=Nz_tr,
-            num_epochs=num_epochs,
-            multi_gpu=multi_gpu,
-            checkpoint_interval=checkpoint_interval,
-            currDir=log_dir,
-            loss_plot_name=molecule_name,
-            optimizer=optimizer,
-        )
-        t0 = time.time()
-        sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
-        t1 = time.time()
-
-    elif cfg.solver.version == 2:
-        init_fn = trainer.setup(
-            initial_value_fn,
-            dirichlet_bc_fn,
-            phi_fn,
-            mu_m_fn,
-            mu_p_fn,
-            k_m_fn,
-            k_p_fn,
-            f_m_fn,
-            f_p_fn,
-            alpha_fn,
-            beta_fn,
-            nonlinear_operator_m,
-            nonlinear_operator_p,
-        )
-        sim_state, solve_fn = init_fn(
-            lvl_gstate=gstate_lvl,
-            tr_gstate=gstate_tr,
-            eval_gstate=eval_gstate,
-            algorithm=ALGORITHM,
-            switching_interval=SWITCHING_INTERVAL,
-            Nx_tr=Nx_tr,
-            Ny_tr=Ny_tr,
-            Nz_tr=Nz_tr,
-            num_epochs=num_epochs,
-            multi_gpu=multi_gpu,
-            checkpoint_interval=checkpoint_interval,
-            results_dir=log_dir,
-            loss_plot_name=molecule_name,
-            optimizer=optimizer,
-            restart=cfg.solver.restart_from_checkpoint,
-            print_rate=cfg.solver.print_rate,
-        )
-        t0 = time.time()
-        sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
-        t1 = time.time()
+    init_fn = trainer.setup(
+        initial_value_fn,
+        dirichlet_bc_fn,
+        phi_fn,
+        mu_m_fn,
+        mu_p_fn,
+        k_m_fn,
+        k_p_fn,
+        f_m_fn,
+        f_p_fn,
+        alpha_fn,
+        beta_fn,
+        nonlinear_operator_m,
+        nonlinear_operator_p,
+    )
+    sim_state, solve_fn = init_fn(
+        lvl_gstate=gstate_lvl,
+        tr_gstate=gstate_tr,
+        eval_gstate=eval_gstate,
+        algorithm=ALGORITHM,
+        switching_interval=SWITCHING_INTERVAL,
+        num_epochs=num_epochs,
+        multi_gpu=multi_gpu,
+        checkpoint_interval=checkpoint_interval,
+        results_dir=log_dir,
+        loss_plot_name=molecule_name,
+        optimizer=optimizer,
+        restart=cfg.solver.restart_from_checkpoint,
+        print_rate=cfg.solver.print_rate,
+    )
+    t0 = time.time()
+    sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+    t1 = time.time()
 
     elapsed_time = t1 - t0
 
