@@ -38,9 +38,9 @@ class DoubleMLP(hk.Module):
     def __init__(self, name=None):
         super().__init__(name=name)
 
-        self.num_hidden_layers = 1
+        self.num_hidden_layers = 3
         self.hidden_dim = 32
-        self.activation_fn = jnp.tanh
+        self.activation_fn = jnp.sin
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
         # Positional Encoding Constants
@@ -60,8 +60,8 @@ class DoubleMLP(hk.Module):
         Driver function for evaluating neural networks in appropriate regions
         based on the value of the level set function at the point.
         """
-        # return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
-        return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
+        return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
+        # return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
 
     def mlp_p_fn(self, h):
         """
@@ -77,7 +77,7 @@ class DoubleMLP(hk.Module):
             h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
-        return h
+        return h + 7.0
 
     def mlp_m_fn(self, h):
         """
@@ -93,7 +93,7 @@ class DoubleMLP(hk.Module):
             h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
-        return h
+        return h - 250.0
 
     def resnet_p_fn(self, h):
         # h = self.positional_encoding_p(h)
@@ -107,7 +107,6 @@ class DoubleMLP(hk.Module):
         h_ = self.activation_fn(h_i)
         h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
         h_ = self.activation_fn(h_) + h_i
-        # end 2 resnet block
         h_ = hk.Linear(output_size=1)(h_)
         return h_
 

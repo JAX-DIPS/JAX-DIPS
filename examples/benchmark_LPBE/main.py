@@ -86,6 +86,7 @@ def biomolecule_solvation_energy(
     ###########################################################
 
     num_epochs = cfg.solver.num_epochs
+    batch_size = cfg.solver.batch_size
 
     Nx_tr = cfg.solver.Nx_tr  # grid for training
     Ny_tr = cfg.solver.Ny_tr  # grid for training
@@ -156,10 +157,10 @@ def biomolecule_solvation_energy(
         L=atom_locations[0],  # sphere center coord
         box=[xmin, xmax, ymin, ymax, zmin, zmax],  # box dimensions
         device="cuda",
-        train_out=2000,  # points outside/positive domain
-        train_inner=100,  # points inside/negative domain
-        train_boundary=1000,  # points on the boundary
-        train_gamma=200,  # points on interface
+        train_out=1000,  # points outside/positive domain; originally was 2000
+        train_inner=1000,  # points inside/negative domain; originally was 100
+        train_boundary=1000,  # points on the boundary; originally was 1000
+        train_gamma=1000,  # points on interface; originally was 200
     )
     xc = inn.x
     yc = inn.y
@@ -232,6 +233,7 @@ def biomolecule_solvation_energy(
         algorithm=ALGORITHM,
         switching_interval=SWITCHING_INTERVAL,
         num_epochs=num_epochs,
+        batch_size=batch_size,
         multi_gpu=multi_gpu,
         checkpoint_interval=checkpoint_interval,
         results_dir=log_dir,
