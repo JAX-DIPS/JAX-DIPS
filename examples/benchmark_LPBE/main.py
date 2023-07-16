@@ -152,36 +152,42 @@ def biomolecule_solvation_energy(
     gstate_lvl = init_mesh_fn(xc, yc, zc)
 
     # --------- GSTATE for trainer (discretization), using INN
-    inn = INNSphereData(
-        sigma=atom_sigmas[0],  # sphere radius
-        L=atom_locations[0],  # sphere center coord
-        box=[xmin, xmax, ymin, ymax, zmin, zmax],  # box dimensions
-        device="cuda",
-        train_out=1000,  # points outside/positive domain; originally was 2000
-        train_inner=1000,  # points inside/negative domain; originally was 100
-        train_boundary=1000,  # points on the boundary; originally was 1000
-        train_gamma=1000,  # points on interface; originally was 200
-    )
-    xc = inn.x
-    yc = inn.y
-    zc = inn.z
-    dx = (xmax - xmin) / Nx_tr
-    dy = (ymax - ymin) / Ny_tr
-    dz = (zmax - zmin) / Nz_tr
-    gstate_tr = mesh.init_gstate_3d_manually(
-        xc,
-        yc,
-        zc,
-        dx,
-        dy,
-        dz,
-        inn.R_xmin,
-        inn.R_xmax,
-        inn.R_ymin,
-        inn.R_ymax,
-        inn.R_zmin,
-        inn.R_zmax,
-    )
+    if cfg.solver.inn_grid:
+        inn = INNSphereData(
+            sigma=atom_sigmas[0],  # sphere radius
+            L=atom_locations[0],  # sphere center coord
+            box=[xmin, xmax, ymin, ymax, zmin, zmax],  # box dimensions
+            device="cuda",
+            train_out=1000,  # points outside/positive domain; originally was 2000
+            train_inner=1000,  # points inside/negative domain; originally was 100
+            train_boundary=1000,  # points on the boundary; originally was 1000
+            train_gamma=1000,  # points on interface; originally was 200
+        )
+        xc = inn.x
+        yc = inn.y
+        zc = inn.z
+        dx = (xmax - xmin) / Nx_tr
+        dy = (ymax - ymin) / Ny_tr
+        dz = (zmax - zmin) / Nz_tr
+        gstate_tr = mesh.init_gstate_3d_manually(
+            xc,
+            yc,
+            zc,
+            dx,
+            dy,
+            dz,
+            inn.R_xmin,
+            inn.R_xmax,
+            inn.R_ymin,
+            inn.R_ymax,
+            inn.R_zmin,
+            inn.R_zmax,
+        )
+    else:
+        xc = jnp.linspace(xmin, xmax, Nx_tr, dtype=f32)
+        yc = jnp.linspace(ymin, ymax, Ny_tr, dtype=f32)
+        zc = jnp.linspace(zmin, zmax, Nz_tr, dtype=f32)
+        gstate_tr = init_mesh_fn(xc, yc, zc)
 
     # ----------  GSTATE Evaluation & Visualization
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
@@ -198,8 +204,8 @@ def biomolecule_solvation_energy(
     g_fn, g_vec_fn, grad_g_fn, grad_g_vec_fn = get_g_dg_fns(atom_xyz_rad_chg)
 
     alpha_fn, beta_fn = get_jump_conditions(
-        atom_xyz_rad_chg, g_fn, phi_fn, gstate_lvl.dx, gstate_lvl.dy, gstate_lvl.dz
-    )
+        atom_xyz_rad_chg, g_fn, phi_fn, gstate_tr.dx, gstate_tr.dy, gstate_tr.dz
+    )  # note the dx/y/z for normal computation should match training cell size
 
     ###########################################################
     if False:

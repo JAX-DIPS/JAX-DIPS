@@ -7,29 +7,39 @@ defaults:
 
 # customization follows
 gridstates:
-  Nx_lvl: 8  # grid for level-set; not used in this example bc not free boundary
-  Ny_lvl: 8  # grid for level-set; not used with level set is given functionally
-  Nz_lvl: 8  # grid for level-set; not used with level set is given functionally
-  Nx_eval: 40  # grid for evaluation/visualization/validation
-  Ny_eval: 40  # grid for evaluation/visualization/validation
-  Nz_eval: 40  # grid for evaluation/visualization/validation
+  Nx_lvl: 128  # grid for level-set; not used in this example bc not free boundary
+  Ny_lvl: 128  # grid for level-set; not used with level set is given functionally
+  Nz_lvl: 128  # grid for level-set; not used with level set is given functionally
+  Nx_eval: 64  # grid for evaluation/visualization/validation
+  Ny_eval: 64  # grid for evaluation/visualization/validation
+  Nz_eval: 64  # grid for evaluation/visualization/validation
+
+model: # TODO: add this to the model
+  num_hidden_layers: 3
+  num_hidden_units: 32
+  resnet: false
+  activation: "sin"
+  wb_init_stddev: 1.0
+  wb_init_mean: 0.0
+  positional_enc: false
+  positional_enc_stddev: 1.0
 
 solver:
-  Nx_tr: 128  # grid for training voxel size: Lx/Nx
-  Ny_tr: 128  # grid for training voxel size: Ly/Ny
-  Nz_tr: 128  # grid for training voxel size: Lz/Nz
-  num_epochs: 25000 # number of epochs to train
-  batch_size: 10000 # batch size for trainer. 
+  inn_grid: true
+  Nx_tr: 64  # grid for training voxel size: Lx/Nx
+  Ny_tr: 64  # grid for training voxel size: Ly/Ny
+  Nz_tr: 64  # grid for training voxel size: Lz/Nz
+  num_epochs: 1000 # number of epochs to train
+  batch_size: 1000 # batch size for trainer. 
   print_rate: 10 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
   switching_interval: 3  # domain switching interval
-  version: 2  # 0: verbose/slow, 1: silent/fast, 2: refactored
   multi_gpu: false
   num_gpus_ddp: 1
   optim:
     optimizer_name: "custom" # options are "custom", "adam", "rmsprop"
-    learning_rate: 1e-3
+    learning_rate: 1e-2
   sched:
     scheduler_name: "exponential" # options are "exponential", "polynomial"
     decay_rate: 0.96

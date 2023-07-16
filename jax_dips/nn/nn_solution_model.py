@@ -19,9 +19,11 @@
 """
 
 import haiku as hk
+from jax import nn
 from jax import config
 from jax import numpy as jnp
 from jax import random
+from omegaconf import DictConfig, OmegaConf
 
 config.update("jax_debug_nans", False)
 
@@ -34,11 +36,12 @@ def layer_norm(x: jnp.ndarray, name: Optional[str] = None) -> jnp.ndarray:
     return hk.LayerNorm(axis=-1, create_scale=True, create_offset=True, name=name)(x)
 
 
+# def compose_model(cfg_model: DictConfig):
 class DoubleMLP(hk.Module):
     def __init__(self, name=None):
         super().__init__(name=name)
 
-        self.num_hidden_layers = 3
+        self.num_hidden_layers = 2
         self.hidden_dim = 32
         self.activation_fn = jnp.sin
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
@@ -73,11 +76,11 @@ class DoubleMLP(hk.Module):
         """
         # h = self.positional_encoding_p(h)
         for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
+            h = hk.Linear(output_size=self.hidden_dim)(h)  # , w_init=self.tr_normal_init
             h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
-        return h + 7.0
+        return h
 
     def mlp_m_fn(self, h):
         """
@@ -89,11 +92,11 @@ class DoubleMLP(hk.Module):
         """
         # h = self.positional_encoding_m(h)
         for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
+            h = hk.Linear(output_size=self.hidden_dim)(h)
             h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
-        return h - 250.0
+        return h
 
     def resnet_p_fn(self, h):
         # h = self.positional_encoding_p(h)
@@ -155,3 +158,6 @@ class DoubleMLP(hk.Module):
     @staticmethod
     def __version__():
         return "0.3.0"
+
+
+# return DoubleMLP
