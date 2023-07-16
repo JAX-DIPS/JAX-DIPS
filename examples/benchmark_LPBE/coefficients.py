@@ -42,7 +42,7 @@ def get_dirichlet_bc_fn(atom_xyz_rad_chg):
             (psi,) = carry
             xc, yc, zc, sigma, chg = xyzsc
             dst = jnp.sqrt((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-            dst = jnp.clip(dst, a_min=sigma * 0.01)
+            # dst = jnp.clip(dst, a_min=sigma * 0.01)
             tmp_psi = chg * jnp.exp((sigma - dst) * kappa) / (dst * (1 + kappa * sigma))
             psi += jnp.nan_to_num(tmp_psi)
             return (psi,), None
@@ -145,7 +145,7 @@ def get_g_dg_fns(atom_xyz_rad_chg, EPS=1e-6):
             (psi,) = carry
             xc, yc, zc, sigma, chg = xyzsc
             dst = jnp.sqrt((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-            dst = jnp.clip(dst, a_min=sigma * 0.01)
+            # dst = jnp.clip(dst, a_min=sigma * 0.01)
             tmp_psi = chg / dst
             psi += jnp.nan_to_num(tmp_psi)
             return (psi,), None
@@ -166,7 +166,7 @@ def get_g_dg_fns(atom_xyz_rad_chg, EPS=1e-6):
             (grad_psi,) = carry
             xc, yc, zc, sigma, chg = xyzsc
             dst = jnp.sqrt((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-            dst = jnp.clip(dst, a_min=0.01 * sigma)
+            # dst = jnp.clip(dst, a_min=0.01 * sigma)
             tmp_psi = chg * jnp.array([xc - x, yc - y, zc - z]) / dst**3
             grad_psi += jnp.nan_to_num(tmp_psi)
             return (grad_psi,), None
@@ -229,7 +229,7 @@ def get_jump_conditions(atom_xyz_rad_chg, g_fn_uns, phi_fn_uns, dx, dy, dz):
             (grad_psi,) = carry
             xc, yc, zc, sigma, chg = xyzsc
             dst = jnp.sqrt((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-            dst = jnp.clip(dst, a_min=0.01 * sigma)
+            # dst = jnp.clip(dst, a_min=0.01 * sigma)
             tmp_psi = -chg * jnp.array([xc - x, yc - y, zc - z]) / dst**3
             grad_psi += jnp.nan_to_num(tmp_psi)
             return (grad_psi,), None
@@ -317,7 +317,7 @@ def get_exact_sol_fns(single_atom_xyz_rad_chg):
         z = r[2]
         coeff = omega / (4.0 * PI * alpha_2)
         dst = jnp.sqrt((x - xc) ** 2 + (y - yc) ** 2 + (z - zc) ** 2)
-        dst = jnp.clip(dst, a_min=0.01 * sigma)
+        # dst = jnp.clip(dst, a_min=0.01 * sigma)
         val = jnp.exp(kappa * (sigma - dst)) / (dst * (1.0 + kappa * sigma))
         return coeff * val
 

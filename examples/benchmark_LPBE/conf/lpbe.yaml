@@ -29,8 +29,8 @@ solver:
   Nx_tr: 64  # grid for training voxel size: Lx/Nx
   Ny_tr: 64  # grid for training voxel size: Ly/Ny
   Nz_tr: 64  # grid for training voxel size: Lz/Nz
-  num_epochs: 1000 # number of epochs to train
-  batch_size: 1000 # batch size for trainer. 
+  num_epochs: 2000 # number of epochs to train
+  batch_size: 10000 # batch size for trainer. 
   print_rate: 10 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives

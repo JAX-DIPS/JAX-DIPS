@@ -41,9 +41,9 @@ class DoubleMLP(hk.Module):
     def __init__(self, name=None):
         super().__init__(name=name)
 
-        self.num_hidden_layers = 2
-        self.hidden_dim = 32
-        self.activation_fn = jnp.sin
+        self.num_hidden_layers = 1
+        self.hidden_dim = 8
+        self.activation_fn = nn.celu  # jnp.sin
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
         # Positional Encoding Constants
@@ -91,41 +91,58 @@ class DoubleMLP(hk.Module):
             one scalar value representing the solution u_m
         """
         # h = self.positional_encoding_m(h)
-        for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim)(h)
-            h = layer_norm(h)
-            h = self.activation_fn(h)
-        h = hk.Linear(output_size=1)(h)
+        # for _ in range(self.num_hidden_layers):
+        #     h = hk.Linear(output_size=self.hidden_dim)(h)
+        #     h = layer_norm(h)
+        #     h = self.activation_fn(h)
+        bias_init = hk.initializers.Constant(-272.0)
+        weight_init = hk.initializers.TruncatedNormal(stddev=0.0, mean=0.0)
+        h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
         return h
 
     def resnet_p_fn(self, h):
         # h = self.positional_encoding_p(h)
         # start 1 resnet block
-        h_i = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
-        h_ = self.activation_fn(h_i)
-        h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
-        h_ = self.activation_fn(h_) + h_i
+        hidden_units = 100
+        activation_fn = jnp.tanh
+        h_i = hk.Linear(output_size=hidden_units)(h)
+        h_ = activation_fn(h_i)
+        h_ = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_) + h_i
         # end 1 resnet block
-        h_i = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
-        h_ = self.activation_fn(h_i)
-        h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
-        h_ = self.activation_fn(h_) + h_i
+        h_i = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_i)
+        h_ = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_) + h_i
+        # end 2 resnet block
+        h_i = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_i)
+        h_ = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_) + h_i
+        # end 3 resnet block
         h_ = hk.Linear(output_size=1)(h_)
         return h_
 
     def resnet_m_fn(self, h):
         # h = self.positional_encoding_m(h)
         # start 1 resnet block
-        h_i = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h)
-        h_ = self.activation_fn(h_i)
-        h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
-        h_ = self.activation_fn(h_) + h_i
+        hidden_units = 40
+        activation_fn = jnp.tanh
+        h_i = hk.Linear(output_size=hidden_units)(h)
+        h_ = activation_fn(h_i)
+        h_ = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_) + h_i
         # end 1 resnet block
-        h_i = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
-        h_ = self.activation_fn(h_i)
-        h_ = hk.Linear(output_size=self.hidden_dim, with_bias=True, w_init=self.tr_normal_init)(h_)
-        h_ = self.activation_fn(h_) + h_i
+        h_i = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_i)
+        h_ = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_) + h_i
         # end 2 resnet block
+        h_i = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_i)
+        h_ = hk.Linear(output_size=hidden_units)(h_)
+        h_ = activation_fn(h_) + h_i
+        # end 3 resnet block
         h_ = hk.Linear(output_size=1)(h_)
         return h_
 
