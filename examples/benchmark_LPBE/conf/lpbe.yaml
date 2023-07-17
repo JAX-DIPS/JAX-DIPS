@@ -26,11 +26,20 @@ model: # TODO: add this to the model
 
 solver:
   inn_grid: true
-  Nx_tr: 64  # grid for training voxel size: Lx/Nx
-  Ny_tr: 64  # grid for training voxel size: Ly/Ny
-  Nz_tr: 64  # grid for training voxel size: Lz/Nz
-  num_epochs: 2000 # number of epochs to train
-  batch_size: 10000 # batch size for trainer. 
+  inn:
+    train_out: 2000 # number of grid points in the outer domain; originally 2000
+    train_inner: 100 # number of grid points in the inner domain; originally 100
+    train_boundary: 1000 # number of grid points on the boundary; originally 1000
+    train_gamma: 200 # number of grid points on the interface; originally 200
+    Nx_tr: 4096  # grid for training voxel size: Lx/Nx
+    Ny_tr: 4096  # grid for training voxel size: Ly/Ny
+    Nz_tr: 4096  # grid for training voxel size: Lz/Nz
+  uniform:
+    Nx_tr: 64  # grid for training voxel size: Lx/Nx
+    Ny_tr: 64  # grid for training voxel size: Ly/Ny
+    Nz_tr: 64  # grid for training voxel size: Lz/Nz
+  num_epochs: 25000 # number of epochs to train
+  batch_size: 3300 # batch size for trainer. 
   print_rate: 10 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
@@ -39,10 +48,10 @@ solver:
   num_gpus_ddp: 1
   optim:
     optimizer_name: "custom" # options are "custom", "adam", "rmsprop"
-    learning_rate: 1e-2
+    learning_rate: 1e-3
   sched:
     scheduler_name: "exponential" # options are "exponential", "polynomial"
-    decay_rate: 0.96
+    decay_rate: 0.9
   data_manager:
     refine: true
     refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function

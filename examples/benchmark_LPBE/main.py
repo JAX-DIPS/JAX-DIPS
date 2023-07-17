@@ -88,9 +88,6 @@ def biomolecule_solvation_energy(
     num_epochs = cfg.solver.num_epochs
     batch_size = cfg.solver.batch_size
 
-    Nx_tr = cfg.solver.Nx_tr  # grid for training
-    Ny_tr = cfg.solver.Ny_tr  # grid for training
-    Nz_tr = cfg.solver.Nz_tr  # grid for training
     Nx_lvl = cfg.gridstates.Nx_lvl  # grid for level-set
     Ny_lvl = cfg.gridstates.Ny_lvl  # grid for level-set
     Nz_lvl = cfg.gridstates.Nz_lvl  # grid for level-set
@@ -153,22 +150,23 @@ def biomolecule_solvation_energy(
 
     # --------- GSTATE for trainer (discretization), using INN
     if cfg.solver.inn_grid:
+        logger.info("using INN grid")
         inn = INNSphereData(
             sigma=atom_sigmas[0],  # sphere radius
             L=atom_locations[0],  # sphere center coord
             box=[xmin, xmax, ymin, ymax, zmin, zmax],  # box dimensions
             device="cuda",
-            train_out=1000,  # points outside/positive domain; originally was 2000
-            train_inner=1000,  # points inside/negative domain; originally was 100
-            train_boundary=1000,  # points on the boundary; originally was 1000
-            train_gamma=1000,  # points on interface; originally was 200
+            train_out=cfg.solver.inn.train_out,
+            train_inner=cfg.solver.inn.train_inner,
+            train_boundary=cfg.solver.inn.train_boundary,
+            train_gamma=cfg.solver.inn.train_gamma,
         )
         xc = inn.x
         yc = inn.y
         zc = inn.z
-        dx = (xmax - xmin) / Nx_tr
-        dy = (ymax - ymin) / Ny_tr
-        dz = (zmax - zmin) / Nz_tr
+        dx = (xmax - xmin) / cfg.solver.inn.Nx_tr
+        dy = (ymax - ymin) / cfg.solver.inn.Ny_tr
+        dz = (zmax - zmin) / cfg.solver.inn.Nz_tr
         gstate_tr = mesh.init_gstate_3d_manually(
             xc,
             yc,
@@ -184,9 +182,13 @@ def biomolecule_solvation_energy(
             inn.R_zmax,
         )
     else:
-        xc = jnp.linspace(xmin, xmax, Nx_tr, dtype=f32)
-        yc = jnp.linspace(ymin, ymax, Ny_tr, dtype=f32)
-        zc = jnp.linspace(zmin, zmax, Nz_tr, dtype=f32)
+        logger.info("using uniform grid")
+        dx = (xmax - xmin) / cfg.solver.uniform.Nx_tr
+        dy = (ymax - ymin) / cfg.solver.uniform.Ny_tr
+        dz = (zmax - zmin) / cfg.solver.uniform.Nz_tr
+        xc = jnp.linspace(xmin, xmax, cfg.solver.uniform.Nx_tr, dtype=f32)
+        yc = jnp.linspace(ymin, ymax, cfg.solver.uniform.Ny_tr, dtype=f32)
+        zc = jnp.linspace(zmin, zmax, cfg.solver.uniform.Nz_tr, dtype=f32)
         gstate_tr = init_mesh_fn(xc, yc, zc)
 
     # ----------  GSTATE Evaluation & Visualization
@@ -272,9 +274,9 @@ def biomolecule_solvation_energy(
     L_2 = jnp.mean(jnp.square(error))
 
     # L_infty
-    L_inf = jnp.max(jnp.abs(sim_sol - exact_sol))
-    # rela L_2
-    L2_rel_loss = jnp.sqrt(((sim_sol - exact_sol) ** 2).sum() / (exact_sol**2).sum())
+    L_inf = jnp.max(jnp.abs(error))
+    # relative L_2
+    L2_rel_loss = jnp.sqrt((error**2).sum() / (exact_sol**2).sum())
     logger.info(f"Accuracy measurements = L_inf : {L_inf} \t Rel. L_2 : {L2_rel_loss}")
 
     # visualization
@@ -300,8 +302,7 @@ def biomolecule_solvation_energy(
     save_name = log_dir + "/" + molecule_name
     io.write_vtk_manual(eval_gstate, log, filename=save_name)
 
-    train_grid_size = (xmax - xmin) / Nx_tr
-    logger.info(f"Molecule = {file_name} \t training grid spacing (h_g) = {train_grid_size}")
+    logger.info(f"Molecule = {file_name} \t training grid spacing (h_g) = {dx}")
     logger.info(f"Solver init() + solve() elapsed time = {elapsed_time} (sec)")
     logger.info("done!")
 
