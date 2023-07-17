@@ -144,7 +144,7 @@ class Bootstrap(Discretization):
         r"""Loss function of the neural network."""
         lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
-        tot_loss = jnp.mean(optax.huber_loss(lhs, rhs))
+        tot_loss = jnp.mean(optax.log_cosh(lhs, rhs))
         # du_xmax = (self.evaluate_solution_fn(params, self.tr_gstate.R_xmax_boundary) - self.dir_bc_fn(self.tr_gstate.R_xmax_boundary)[...,jnp.newaxis])
         # du_xmin = (self.evaluate_solution_fn(params, self.tr_gstate.R_xmin_boundary) - self.dir_bc_fn(self.tr_gstate.R_xmin_boundary)[...,jnp.newaxis])
         # du_ymax = (self.evaluate_solution_fn(params, self.tr_gstate.R_ymax_boundary) - self.dir_bc_fn(self.tr_gstate.R_ymax_boundary)[...,jnp.newaxis])

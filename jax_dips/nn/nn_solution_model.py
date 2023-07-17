@@ -43,7 +43,7 @@ class DoubleMLP(hk.Module):
 
         self.num_hidden_layers = 1
         self.hidden_dim = 16
-        self.activation_fn = nn.celu  # jnp.sin
+        self.activation_fn = nn.celu
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
         # Positional Encoding Constants
@@ -75,6 +75,9 @@ class DoubleMLP(hk.Module):
             one scalar value representing the solution u_p
         """
         # h = self.positional_encoding_p(h)
+
+        h = jnp.linalg.norm(h)[jnp.newaxis]
+
         for _ in range(self.num_hidden_layers):
             h = hk.Linear(output_size=self.hidden_dim)(h)  # , w_init=self.tr_normal_init
             h = layer_norm(h)
@@ -95,8 +98,14 @@ class DoubleMLP(hk.Module):
         #     h = hk.Linear(output_size=self.hidden_dim)(h)
         #     h = layer_norm(h)
         #     h = self.activation_fn(h)
-        bias_init = hk.initializers.Constant(-272.0)
-        weight_init = hk.initializers.TruncatedNormal(stddev=0.0, mean=0.0)
+
+        h = jnp.linalg.norm(h)[jnp.newaxis]
+
+        # bias_init = hk.initializers.Constant(-273.0)
+        # weight_init = hk.initializers.TruncatedNormal(stddev=0.0, mean=0.0)
+        # h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
+        bias_init = hk.initializers.Constant(0.0)
+        weight_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
         h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
         return h
 

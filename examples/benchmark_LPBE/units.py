@@ -12,4 +12,4 @@ beta_1 = 0.0
 kappa = (8.4869 * Is / alpha_2) ** 0.5  # this is dimensionless
 beta_2 = alpha_2 * kappa**2
 
-omega = 7.0465e3
+omega = 1.0  # originally was 7.0465e3, now solution is per omega. Absolute errors in solution should be multiplied by 7.0465e3 at the end.
