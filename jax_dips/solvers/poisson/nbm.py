@@ -54,6 +54,7 @@ class Bootstrap(Discretization):
         sim_state_fn: PoissonSimStateFn,
         optimizer: Callable,
         algorithm: int = 0,
+        mgrad_over_pgrad_scalefactor: float = 2.0,
         precondition: int = 1,
     ) -> None:
         r"""
@@ -68,6 +69,7 @@ class Bootstrap(Discretization):
         )
         self.optimizer = optimizer
         self.tr_gstate = tr_gstate
+        self.mgrad_over_pgrad_scalefactor = mgrad_over_pgrad_scalefactor
 
         """ initialize postprocessing methods """
         self.compute_normal_gradient_solution_mp_on_interface = (
@@ -79,12 +81,41 @@ class Bootstrap(Discretization):
         )
         self.compute_gradient_solution = self.compute_gradient_solution_neural_network
 
+    @staticmethod
+    def split_mp_networks_keys(params):
+        """Split keys for negative and positive networks
+        Expects the layer names include patterns _m_fn and _p_fn for -/+ networks respectively
+
+        Args:
+            params [dict]: parameters dictionary of the model with both positive/negative networks
+
+        Returns:
+            (mnet_keys, list[str]), (pnet_keys list[str]): pair of lists for key strings of -/+ networks
+        """
+        import re
+
+        def find_keys_with_pattern(keys, pattern):
+            matched_keys = []
+            for key in keys:
+                if re.search(pattern, key):
+                    matched_keys.append(key)
+            return matched_keys
+
+        keys = params.keys()
+        m_pattern = r"_m_fn"
+        mnet_keys = find_keys_with_pattern(keys, m_pattern)
+        p_pattern = r"_p_fn"
+        pnet_keys = find_keys_with_pattern(keys, p_pattern)
+        return mnet_keys, pnet_keys
+        # mnet, pnet = hk.data_structures.partition(lambda m, n, p: m != "double_mlp/~resnet_m_fn/linear", params)
+
     @partial(jit, static_argnums=0)
     def init(self, seed=42):
         r"""This function initializes the neural network with random parameters."""
         rng = random.PRNGKey(seed)
         params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)
         opt_state = self.optimizer.init(params)
+        self.mnet_keys, self.pnet_keys = self.split_mp_networks_keys(params)  # split keys for each domain
         return opt_state, params
 
     @staticmethod
@@ -155,11 +186,38 @@ class Bootstrap(Discretization):
         return tot_loss
 
     @partial(jit, static_argnums=(0))
-    def update(self, opt_state, params, points, dx, dy, dz):
+    def _update(self, opt_state, params, points, dx, dy, dz):
         r"""One step of single-GPU optimization on the neural network model."""
         loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
+        return opt_state, params, loss
+
+    @partial(jit, static_argnums=(0))
+    def update(self, opt_state, params, points, dx, dy, dz):
+        r"""One step of single-GPU optimization on the neural network model.
+        Update function must perform update rule on -/+ domains and networks independently
+        """
+
+        def _loss(params_trainable, params_untrainable, points, dx, dy, dz):
+            params = hk.data_structures.merge(params_trainable, params_untrainable)
+            loss = self.loss(params, points, dx, dy, dz)
+            return loss
+
+        # split parameters
+        m_params, p_params = hk.data_structures.partition(lambda m, n, p: m not in self.pnet_keys, params)
+        # -- first get gradients of negative network
+        m_loss, m_grads = value_and_grad(_loss)(m_params, p_params, points, dx, dy, dz)
+        # -- second get gradients of positive network
+        p_loss, p_grads = value_and_grad(_loss)(p_params, m_params, points, dx, dy, dz)
+        # --- Choose region to optimize by zeroing the other region
+        m_grads = jax.tree_map(lambda x: x * self.mgrad_over_pgrad_scalefactor, m_grads)
+        # -- append the grads into m_grads dictionary
+        m_grads.update(p_grads)
+        updates, opt_state = self.optimizer.update(m_grads, opt_state, params)  # -- get optimizer updates
+        params = optax.apply_updates(params, updates)  # -- apply updates on params
+        # -- collect losses
+        loss = m_loss + p_loss
         return opt_state, params, loss
 
     # def update_lbfgs(self, params, points, dx, dy, dz, maxiter=10):

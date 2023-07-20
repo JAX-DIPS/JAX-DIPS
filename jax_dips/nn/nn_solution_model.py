@@ -63,8 +63,8 @@ class DoubleMLP(hk.Module):
         Driver function for evaluating neural networks in appropriate regions
         based on the value of the level set function at the point.
         """
-        return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
-        # return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
+        # return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
+        return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
 
     def mlp_p_fn(self, h):
         """
@@ -94,16 +94,17 @@ class DoubleMLP(hk.Module):
             one scalar value representing the solution u_m
         """
         # h = self.positional_encoding_m(h)
-        # for _ in range(self.num_hidden_layers):
-        #     h = hk.Linear(output_size=self.hidden_dim)(h)
-        #     h = layer_norm(h)
-        #     h = self.activation_fn(h)
-
         h = jnp.linalg.norm(h)[jnp.newaxis]
+
+        for _ in range(self.num_hidden_layers):
+            h = hk.Linear(output_size=self.hidden_dim)(h)
+            h = layer_norm(h)
+            h = self.activation_fn(h)
 
         # bias_init = hk.initializers.Constant(-273.0)
         # weight_init = hk.initializers.TruncatedNormal(stddev=0.0, mean=0.0)
         # h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
+
         bias_init = hk.initializers.Constant(0.0)
         weight_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
         h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
@@ -112,46 +113,26 @@ class DoubleMLP(hk.Module):
     def resnet_p_fn(self, h):
         # h = self.positional_encoding_p(h)
         # start 1 resnet block
-        hidden_units = 100
+        hidden_units = 16
         activation_fn = jnp.tanh
         h_i = hk.Linear(output_size=hidden_units)(h)
         h_ = activation_fn(h_i)
         h_ = hk.Linear(output_size=hidden_units)(h_)
         h_ = activation_fn(h_) + h_i
         # end 1 resnet block
-        h_i = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_i)
-        h_ = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_) + h_i
-        # end 2 resnet block
-        h_i = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_i)
-        h_ = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_) + h_i
-        # end 3 resnet block
         h_ = hk.Linear(output_size=1)(h_)
         return h_
 
     def resnet_m_fn(self, h):
         # h = self.positional_encoding_m(h)
         # start 1 resnet block
-        hidden_units = 40
+        hidden_units = 16
         activation_fn = jnp.tanh
         h_i = hk.Linear(output_size=hidden_units)(h)
         h_ = activation_fn(h_i)
         h_ = hk.Linear(output_size=hidden_units)(h_)
         h_ = activation_fn(h_) + h_i
         # end 1 resnet block
-        h_i = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_i)
-        h_ = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_) + h_i
-        # end 2 resnet block
-        h_i = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_i)
-        h_ = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_) + h_i
-        # end 3 resnet block
         h_ = hk.Linear(output_size=1)(h_)
         return h_
 

@@ -38,12 +38,12 @@ solver:
     Nx_tr: 64  # grid for training voxel size: Lx/Nx
     Ny_tr: 64  # grid for training voxel size: Ly/Ny
     Nz_tr: 64  # grid for training voxel size: Lz/Nz
-  num_epochs: 25000 # number of epochs to train
+  num_epochs: 20000 # number of epochs to train
   batch_size: 3300 # batch size for trainer. 
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
-  switching_interval: 3  # domain switching interval
+  mgrad_over_pgrad_scalefactor: 2.0  # domain switching interval
   multi_gpu: false
   num_gpus_ddp: 1
   optim:

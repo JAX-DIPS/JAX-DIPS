@@ -35,14 +35,13 @@ from omegaconf import DictConfig, OmegaConf
 
 logger = logging.getLogger(__name__)
 import glob
-import multiprocessing as mp
 import pdb
 import time
 
 import numpy as onp
 from jax.config import config
 
-config.update("jax_enable_x64", True)
+config.update("jax_enable_x64", False)
 config.update("jax_debug_nans", False)
 from jax import numpy as jnp
 from jax import profiler, vmap
@@ -103,7 +102,7 @@ def biomolecule_solvation_energy(
     )
 
     ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
-    SWITCHING_INTERVAL = cfg.solver.switching_interval  # 0: no switching, 1: 10
+    mgrad_over_pgrad_scalefactor = cfg.solver.mgrad_over_pgrad_scalefactor  # 0: no switching, 1: 10
     multi_gpu = cfg.solver.multi_gpu
     checkpoint_interval = cfg.experiment.logging.checkpoint_interval
     log_dir = cfg.experiment.logging.log_dir
@@ -239,7 +238,7 @@ def biomolecule_solvation_energy(
         tr_gstate=gstate_tr,
         eval_gstate=eval_gstate,
         algorithm=ALGORITHM,
-        switching_interval=SWITCHING_INTERVAL,
+        mgrad_over_pgrad_scalefactor=mgrad_over_pgrad_scalefactor,
         num_epochs=num_epochs,
         batch_size=batch_size,
         multi_gpu=multi_gpu,

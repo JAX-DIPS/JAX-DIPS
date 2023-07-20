@@ -35,6 +35,7 @@ from jax import jit
 from jax import numpy as jnp
 from jax import pmap, random, vmap
 from optax._src.base import GradientTransformation
+import haiku as hk
 
 from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips.data import data_management
@@ -86,7 +87,7 @@ class Trainer:
         sim_state: PoissonSimState,
         sim_state_fn: PoissonSimStateFn,
         algorithm: int = 0,
-        switching_interval: int = 3,
+        mgrad_over_pgrad_scalefactor: int = 3,
         lvl_set_fn: Callable[..., Array] = None,
         num_epochs: int = 1000,
         multi_gpu: bool = False,
@@ -111,26 +112,21 @@ class Trainer:
         self.results_dir = results_dir
         self.loss_plot_name = loss_plot_name
         self.print_rate = print_rate
+        self.mgrad_over_pgrad_scalefactor = mgrad_over_pgrad_scalefactor
         #########################################################################
-        self.TD = data_management.TrainData(tr_gstate)
-        train_points = self.TD.gstate.R
-
-        refine = False
-        refine_lod = False
-        refine_normals = False
-        if refine:
-            if refine_normals:
-                extra_points = self.TD.refine_normals(lvl_set_fn, max_iters=15)
-                self.train_points = jnp.concatenate((train_points, extra_points))
-            if refine_lod:
-                surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=3)
-                self.train_points = jnp.concatenate((train_points, surface_points))
-        else:
-            self.train_points = train_points
-
+        self.TD = data_management.TrainData(
+            tr_gstate,
+            lvl_set_fn,
+            refine=False,
+            refine_lod=False,
+            refine_normals=False,
+        )
+        self.train_points = self.TD.train_points
         self.train_dx = self.TD.gstate.dx
         self.train_dy = self.TD.gstate.dy
         self.train_dz = self.TD.gstate.dz
+        # phis_at_points = vmap(lvl_set_fn)(self.train_points)
+        # train_points_m, train_points_p = self.TD.split_train_points_by_region(phis_at_points, self.train_points)
         #########################################################################
 
         self.model = nbm.Bootstrap(
@@ -140,7 +136,9 @@ class Trainer:
             sim_state_fn,
             optimizer,
             algorithm,
+            mgrad_over_pgrad_scalefactor,
         )
+
         #########################################################################
         if restart:
             state = self.fetch_checkpoint(self.checkpoint_dir)
@@ -157,6 +155,8 @@ class Trainer:
             state = None
             self.opt_state, self.params = self.model.init()
             print_architecture(self.params)
+
+        # self.mnet_keys, self.pnet_keys = self.split_mp_networks_keys(self.params)  # split keys for each domain
 
         self.epoch_start = 0
 
@@ -604,7 +604,7 @@ def setup(
         num_epochs: int = 1000,
         batch_size: int = 131072,
         algorithm: int = 0,
-        switching_interval: int = 3,
+        mgrad_over_pgrad_scalefactor: int = 3,
         multi_gpu: bool = False,
         checkpoint_interval: int = 1000,
         checkpoint_dir: str = "./checkpoints",
@@ -635,7 +635,7 @@ def setup(
                 sim_state,
                 sim_state_fn,
                 algorithm,
-                switching_interval=switching_interval,
+                mgrad_over_pgrad_scalefactor=mgrad_over_pgrad_scalefactor,
                 lvl_set_fn=lvl_set_fn,
                 num_epochs=num_epochs,
                 multi_gpu=multi_gpu,
