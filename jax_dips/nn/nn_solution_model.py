@@ -63,8 +63,8 @@ class DoubleMLP(hk.Module):
         Driver function for evaluating neural networks in appropriate regions
         based on the value of the level set function at the point.
         """
-        # return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
-        return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
+        return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
+        # return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
 
     def mlp_p_fn(self, h):
         """

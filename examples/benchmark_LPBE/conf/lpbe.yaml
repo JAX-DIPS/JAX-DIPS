@@ -43,7 +43,7 @@ solver:
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
-  mgrad_over_pgrad_scalefactor: 2.0  # domain switching interval
+  mgrad_over_pgrad_scalefactor: 10.0  # a scaling factor to amplify minus gradients
   multi_gpu: false
   num_gpus_ddp: 1
   optim:
