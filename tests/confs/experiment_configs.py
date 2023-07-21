@@ -56,7 +56,7 @@ def sphere():
 
     @jit
     def mu_m_fn(r):
-        """
+        r"""
         Diffusion coefficient function in $\Omega^-$
         """
         x = r[0]
@@ -66,7 +66,7 @@ def sphere():
 
     @jit
     def mu_p_fn(r):
-        """
+        r"""
         Diffusion coefficient function in $\Omega^+$
         """
         x = r[0]
@@ -83,7 +83,7 @@ def sphere():
 
     @jit
     def beta_fn(r):
-        """
+        r"""
         Jump in flux at interface
         """
         normal_fn = grad(phi_fn)
@@ -97,14 +97,14 @@ def sphere():
 
     @jit
     def k_m_fn(r):
-        """
+        r"""
         Linear term function in $\Omega^-$
         """
         return 0.0
 
     @jit
     def k_p_fn(r):
-        """
+        r"""
         Linear term function in $\Omega^+$
         """
         return 0.0

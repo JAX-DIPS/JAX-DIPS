@@ -41,9 +41,9 @@ class DoubleMLP(hk.Module):
     def __init__(self, name=None):
         super().__init__(name=name)
 
-        self.num_hidden_layers = 1
-        self.hidden_dim = 16
-        self.activation_fn = nn.celu
+        self.num_hidden_layers = 2
+        self.hidden_dim = 10
+        self.activation_fn = jnp.sin
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
         # Positional Encoding Constants
@@ -76,11 +76,11 @@ class DoubleMLP(hk.Module):
         """
         # h = self.positional_encoding_p(h)
 
-        h = jnp.linalg.norm(h)[jnp.newaxis]
+        # h = jnp.linalg.norm(h)[jnp.newaxis]
 
         for _ in range(self.num_hidden_layers):
             h = hk.Linear(output_size=self.hidden_dim)(h)  # , w_init=self.tr_normal_init
-            h = layer_norm(h)
+            # h = layer_norm(h)
             h = self.activation_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h
@@ -94,20 +94,21 @@ class DoubleMLP(hk.Module):
             one scalar value representing the solution u_m
         """
         # h = self.positional_encoding_m(h)
-        h = jnp.linalg.norm(h)[jnp.newaxis]
+        # h = jnp.linalg.norm(h)[jnp.newaxis]
 
         for _ in range(self.num_hidden_layers):
             h = hk.Linear(output_size=self.hidden_dim)(h)
-            h = layer_norm(h)
+            # h = layer_norm(h)
             h = self.activation_fn(h)
 
         # bias_init = hk.initializers.Constant(-273.0)
         # weight_init = hk.initializers.TruncatedNormal(stddev=0.0, mean=0.0)
         # h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
 
-        bias_init = hk.initializers.Constant(0.0)
-        weight_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
-        h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
+        # bias_init = hk.initializers.Constant(0.0)
+        # weight_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
+        # h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
+        h = hk.Linear(output_size=1)(h)
         return h
 
     def resnet_p_fn(self, h):
