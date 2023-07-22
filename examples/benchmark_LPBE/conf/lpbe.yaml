@@ -31,9 +31,9 @@ solver:
     train_inner: 100 # number of grid points in the inner domain; originally 100
     train_boundary: 1000 # number of grid points on the boundary; originally 1000
     train_gamma: 200 # number of grid points on the interface; originally 200
-    Nx_tr: 4096  # grid for training voxel size: Lx/Nx
-    Ny_tr: 4096  # grid for training voxel size: Ly/Ny
-    Nz_tr: 4096  # grid for training voxel size: Lz/Nz
+    Nx_tr: 2048  # grid for training voxel size: Lx/Nx
+    Ny_tr: 2048  # grid for training voxel size: Ly/Ny
+    Nz_tr: 2048  # grid for training voxel size: Lz/Nz
   uniform:
     Nx_tr: 64  # grid for training voxel size: Lx/Nx
     Ny_tr: 64  # grid for training voxel size: Ly/Ny

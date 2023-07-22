@@ -41,9 +41,12 @@ class DoubleMLP(hk.Module):
     def __init__(self, name=None):
         super().__init__(name=name)
 
-        self.num_hidden_layers = 2
+        self.num_hidden_layers = 5
+        self.num_res_blocks = 2
+        
         self.hidden_dim = 10
-        self.activation_fn = jnp.sin
+        self.activation_fn = jnp.sin # nn.celu, jnp.sin
+        
         self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
         # Positional Encoding Constants
@@ -113,29 +116,27 @@ class DoubleMLP(hk.Module):
 
     def resnet_p_fn(self, h):
         # h = self.positional_encoding_p(h)
-        # start 1 resnet block
-        hidden_units = 16
-        activation_fn = jnp.tanh
-        h_i = hk.Linear(output_size=hidden_units)(h)
-        h_ = activation_fn(h_i)
-        h_ = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_) + h_i
-        # end 1 resnet block
-        h_ = hk.Linear(output_size=1)(h_)
-        return h_
+        for _ in range(self.num_res_blocks):
+            # start 1 resnet block
+            h_i = hk.Linear(output_size=self.hidden_dim)(h)
+            h_ = self.activation_fn(h_i)
+            h_ = hk.Linear(output_size=self.hidden_dim)(h_)
+            h = self.activation_fn(h_) + h_i
+            # end 1 resnet block
+        h = hk.Linear(output_size=1)(h)
+        return h
 
     def resnet_m_fn(self, h):
         # h = self.positional_encoding_m(h)
-        # start 1 resnet block
-        hidden_units = 16
-        activation_fn = jnp.tanh
-        h_i = hk.Linear(output_size=hidden_units)(h)
-        h_ = activation_fn(h_i)
-        h_ = hk.Linear(output_size=hidden_units)(h_)
-        h_ = activation_fn(h_) + h_i
-        # end 1 resnet block
-        h_ = hk.Linear(output_size=1)(h_)
-        return h_
+        for _ in range(self.num_res_blocks):
+            # start 1 resnet block
+            h_i = hk.Linear(output_size=self.hidden_dim)(h)
+            h_ = self.activation_fn(h_i)
+            h_ = hk.Linear(output_size=self.hidden_dim)(h_)
+            h = self.activation_fn(h_) + h_i
+            # end 1 resnet block
+        h = hk.Linear(output_size=1)(h)
+        return h
 
     def positional_encoding_p(self, h):
         """

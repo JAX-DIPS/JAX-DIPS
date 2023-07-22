@@ -10,16 +10,16 @@ gridstates:
   Nx_lvl: 128  # grid for level-set
   Ny_lvl: 128  # grid for level-set
   Nz_lvl: 128  # grid for level-set
-  Nx_eval: 32  # grid for evaluation/visualization
-  Ny_eval: 32  # grid for evaluation/visualization
-  Nz_eval: 32  # grid for evaluation/visualization
+  Nx_eval: ${solver.Nx_tr}  # grid for evaluation/visualization
+  Ny_eval: ${solver.Ny_tr}  # grid for evaluation/visualization
+  Nz_eval: ${solver.Nz_tr}  # grid for evaluation/visualization
 
 solver:
-  Nx_tr: 8  # grid for training
-  Ny_tr: 8  # grid for training
-  Nz_tr: 8  # grid for training
+  Nx_tr: 64  # grid for training
+  Ny_tr: 64  # grid for training
+  Nz_tr: 64  # grid for training
   num_epochs: 10000 # number of epochs to train
-  batch_size: 512
+  batch_size: 262144
   print_rate: 500 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
@@ -27,7 +27,7 @@ solver:
   num_gpus_ddp: 2
   optim:
     optimizer_name: "adam" # options are "custom", "adam", "rmsprop"
-    learning_rate: 1e-2
+    learning_rate: 1e-3
   sched:
     scheduler_name: "exponential" # options are "exponential", "polynomial"
     decay_rate: 0.96
