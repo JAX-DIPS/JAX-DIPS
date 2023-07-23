@@ -425,14 +425,14 @@ def no_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sin(y) * jnp.cos(x)
+        return jnp.sin(y) * jnp.cos(x) * jnp.cos(z)
 
     @jit
     def exact_sol_p_fn(r):
         x = r[0]
         y = r[1]
         z = r[2]
-        return jnp.sin(y) * jnp.cos(x)
+        return jnp.sin(y) * jnp.cos(x) * jnp.cos(z)
 
     @jit
     def dirichlet_bc_fn(r):
@@ -535,7 +535,7 @@ def no_jump():
         x = r[0]
         y = r[1]
         z = r[2]
-        return 2.0 * jnp.sin(y) * jnp.cos(x)
+        return 3.0 * jnp.sin(y) * jnp.cos(x) * jnp.cos(z)
 
     return (
         initial_value_fn,

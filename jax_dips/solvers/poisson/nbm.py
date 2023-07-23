@@ -186,7 +186,7 @@ class Bootstrap(Discretization):
         return tot_loss
 
     @partial(jit, static_argnums=(0))
-    def _update(self, opt_state, params, points, dx, dy, dz):
+    def update(self, opt_state, params, points, dx, dy, dz):
         r"""One step of single-GPU optimization on the neural network model."""
         loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
@@ -194,7 +194,7 @@ class Bootstrap(Discretization):
         return opt_state, params, loss
 
     @partial(jit, static_argnums=(0))
-    def update(self, opt_state, params, points, dx, dy, dz):
+    def _update(self, opt_state, params, points, dx, dy, dz):
         r"""One step of single-GPU optimization on the neural network model.
         Update function must perform update rule on -/+ domains and networks independently
         """

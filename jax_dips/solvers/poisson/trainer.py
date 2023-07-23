@@ -98,6 +98,7 @@ class Trainer:
         loss_plot_name: str = "solver_loss",
         optimizer: GradientTransformation = optax.adam(1e-2),
         restart: bool = False,
+        restart_checkpoint_dir: str = "./checkpoints",
         print_rate: int = 1,
     ) -> None:
         #########################################################################
@@ -113,6 +114,7 @@ class Trainer:
         self.loss_plot_name = loss_plot_name
         self.print_rate = print_rate
         self.mgrad_over_pgrad_scalefactor = mgrad_over_pgrad_scalefactor
+        self.restart_checkpoint_dir = restart_checkpoint_dir
         #########################################################################
         self.TD = data_management.TrainData(
             tr_gstate,
@@ -141,7 +143,7 @@ class Trainer:
 
         #########################################################################
         if restart:
-            state = self.fetch_checkpoint(self.checkpoint_dir)
+            state = self.fetch_checkpoint(self.restart_checkpoint_dir)
             self.opt_state = state["opt_state"]
             self.params = state["params"]
             self.epoch_start = state["epoch"]
@@ -275,11 +277,13 @@ class Trainer:
                 train_dz,
                 batched_training_data,
             ) = carry
-            # train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz) #TODO: automate this
+            # train_dx, train_dy, train_dz = self.TD.alternate_res(
+            #     epoch, train_dx, train_dy, train_dz
+            # )  # TODO: automate this
             # train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(
             #     self.num_epochs, epoch, train_dx, train_dy, train_dz
             # )
-            batched_training_data = random.permutation(key, batched_training_data, axis=1)
+            # batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
             (
                 opt_state,
@@ -612,6 +616,7 @@ def setup(
         loss_plot_name: str = "solver_loss",
         optimizer: GradientTransformation = optax.adam(1e-2),
         restart: bool = False,
+        restart_checkpoint_dir: str = "./checkpoints",
         print_rate: int = 1,
     ) -> Tuple[PoissonSimState, SolveFn]:
         R = eval_gstate.R
@@ -646,6 +651,7 @@ def setup(
                 loss_plot_name=loss_plot_name,
                 optimizer=optimizer,
                 restart=restart,
+                restart_checkpoint_dir=restart_checkpoint_dir,
                 print_rate=print_rate,
             )
             (

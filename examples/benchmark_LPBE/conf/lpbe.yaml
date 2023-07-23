@@ -10,9 +10,9 @@ gridstates:
   Nx_lvl: 128  # grid for level-set; not used in this example bc not free boundary
   Ny_lvl: 128  # grid for level-set; not used with level set is given functionally
   Nz_lvl: 128  # grid for level-set; not used with level set is given functionally
-  Nx_eval: 64  # grid for evaluation/visualization/validation
-  Ny_eval: 64  # grid for evaluation/visualization/validation
-  Nz_eval: 64  # grid for evaluation/visualization/validation
+  Nx_eval: 256  # grid for evaluation/visualization/validation
+  Ny_eval: 256  # grid for evaluation/visualization/validation
+  Nz_eval: 256  # grid for evaluation/visualization/validation
 
 model: # TODO: add this to the model
   num_hidden_layers: 3
@@ -35,10 +35,10 @@ solver:
     Ny_tr: 2048  # grid for training voxel size: Ly/Ny
     Nz_tr: 2048  # grid for training voxel size: Lz/Nz
   uniform:
-    Nx_tr: 64  # grid for training voxel size: Lx/Nx
-    Ny_tr: 64  # grid for training voxel size: Ly/Ny
-    Nz_tr: 64  # grid for training voxel size: Lz/Nz
-  num_epochs: 10000 # number of epochs to train
+    Nx_tr: 32  # grid for training voxel size: Lx/Nx
+    Ny_tr: 32  # grid for training voxel size: Ly/Ny
+    Nz_tr: 32  # grid for training voxel size: Lz/Nz
+  num_epochs: 40000 # number of epochs to train
   batch_size: 3300 # batch size for trainer. 
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint

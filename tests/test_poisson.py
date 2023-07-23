@@ -40,6 +40,7 @@ from jax_dips.domain import mesh
 from jax_dips.geometry import level_set
 from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips.solvers.poisson import trainer
+from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable
 from jax_dips.utils import io
 from tests.confs.experiment_configs import no_jump, sphere, star
 
@@ -151,44 +152,86 @@ def poisson_solve(
         evaluate_exact_solution_fn,
     ) = exp_fn()
 
-    init_fn = trainer.setup(
-        initial_value_fn,
-        dirichlet_bc_fn,
-        phi_fn,
-        mu_m_fn,
-        mu_p_fn,
-        k_m_fn,
-        k_p_fn,
-        f_m_fn,
-        f_p_fn,
-        alpha_fn,
-        beta_fn,
+    # ----------- Set up optimizer
+    optimizer = get_optimizer(
+        optimizer_name=cfg.solver.optim.optimizer_name,
+        scheduler_name=cfg.solver.sched.scheduler_name,
+        learning_rate=cfg.solver.optim.learning_rate,
+        decay_rate=cfg.solver.sched.decay_rate,
+        max_norm=1.0,
     )
-    optimizer = get_optimizer(optimizer_name=cfg.solver.optim.optimizer_name,
-                              scheduler_name=cfg.solver.sched.scheduler_name,
-                              learning_rate=cfg.solver.optim.learning_rate,
-                              decay_rate=cfg.solver.sched.decay_rate,
-                              max_norm=1.0,
-    )
-    sim_state, solve_fn = init_fn(
-        lvl_gstate=gstate_lvl,
-        tr_gstate=gstate_tr,
-        eval_gstate=eval_gstate,
-        algorithm=algorithm,
-        num_epochs=num_epochs,
-        multi_gpu=multi_gpu,
-        batch_size=batch_size,
-        checkpoint_interval=checkpoint_interval,
-        checkpoint_dir=checkpoint_dir,
-        results_dir=results_path,
-        loss_plot_name=test_name,
-        optimizer=optimizer,
-        restart=cfg.solver.restart_from_checkpoint,
-        print_rate=cfg.solver.print_rate,
-    )
-    t1 = time.time()
-    sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
-    t2 = time.time()
+
+    # --------- Set up first version solver
+    if False:
+        init_fn, solve_fn = poisson_solver_scalable.setup(
+            initial_value_fn,
+            dirichlet_bc_fn,
+            phi_fn,
+            mu_m_fn,
+            mu_p_fn,
+            k_m_fn,
+            k_p_fn,
+            f_m_fn,
+            f_p_fn,
+            alpha_fn,
+            beta_fn,
+        )
+        sim_state = init_fn(gstate_tr.R)
+        t1 = time.time()
+        sim_state, epoch_store, loss_epochs = solve_fn(
+            gstate=gstate_tr,
+            eval_gstate=eval_gstate,
+            sim_state=sim_state,
+            algorithm=0,
+            switching_interval=3,
+            Nx_tr=cfg.solver.Nx_tr,
+            Ny_tr=cfg.solver.Ny_tr,
+            Nz_tr=cfg.solver.Nz_tr,
+            num_epochs=num_epochs,
+            multi_gpu=multi_gpu,
+            batch_size=batch_size,
+            checkpoint_dir=checkpoint_dir,
+            checkpoint_interval=checkpoint_interval,
+            currDir=results_path,
+            print_rate=cfg.solver.print_rate,
+        )
+        t2 = time.time()
+    else:
+        # --------- Set up second version solver
+        init_fn = trainer.setup(
+            initial_value_fn,
+            dirichlet_bc_fn,
+            phi_fn,
+            mu_m_fn,
+            mu_p_fn,
+            k_m_fn,
+            k_p_fn,
+            f_m_fn,
+            f_p_fn,
+            alpha_fn,
+            beta_fn,
+        )
+
+        sim_state, solve_fn = init_fn(
+            lvl_gstate=gstate_lvl,
+            tr_gstate=gstate_tr,
+            eval_gstate=eval_gstate,
+            algorithm=algorithm,
+            num_epochs=num_epochs,
+            multi_gpu=multi_gpu,
+            batch_size=batch_size,
+            checkpoint_interval=checkpoint_interval,
+            checkpoint_dir=checkpoint_dir,
+            results_dir=results_path,
+            loss_plot_name=test_name,
+            optimizer=optimizer,
+            restart=cfg.solver.restart_from_checkpoint,
+            restart_checkpoint_dir=cfg.solver.restart_checkpoint_dir,
+            print_rate=cfg.solver.print_rate,
+        )
+        t1 = time.time()
+        sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+        t2 = time.time()
 
     logger.info(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile(f"{results_path}/memory_poisson_test_{test_name}.prof")
