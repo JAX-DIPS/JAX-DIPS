@@ -53,7 +53,13 @@ class DoubleMLP(hk.Module):
         self.tr_normal_init_p = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
         # resnet
-        self.num_res_blocks = 2  # for resnet only
+        self.num_res_blocks_m = 3  # for resnet only
+        self.hidden_resnet_dim_m = 40
+        self.activation_resnet_m_fn = nn.tanh
+
+        self.num_res_blocks_p = 3  # for resnet only
+        self.hidden_resnet_dim_p = 80
+        self.activation_resnet_p_fn = nn.tanh
 
         # Positional Encoding Constants
         d1 = 3  # dimension of input space; e.g., 3D space
@@ -72,8 +78,8 @@ class DoubleMLP(hk.Module):
         Driver function for evaluating neural networks in appropriate regions
         based on the value of the level set function at the point.
         """
-        return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
-        # return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
+        # return jnp.where(phi_r >= 0, self.mlp_p_fn(r), self.mlp_m_fn(r))
+        return jnp.where(phi_r >= 0, self.resnet_p_fn(r), self.resnet_m_fn(r))
 
     def mlp_p_fn(self, h):
         """
@@ -84,7 +90,6 @@ class DoubleMLP(hk.Module):
             one scalar value representing the solution u_p
         """
         # h = self.positional_encoding_p(h)
-
         # h = jnp.linalg.norm(h)[jnp.newaxis]
         for _ in range(self.num_hidden_layers_p):
             h = hk.Linear(output_size=self.hidden_dim_p, w_init=self.tr_normal_init_p)(h)
@@ -107,38 +112,35 @@ class DoubleMLP(hk.Module):
             h = hk.Linear(output_size=self.hidden_dim_m, w_init=self.tr_normal_init_m)(h)
             # h = layer_norm(h)
             h = self.activation_m_fn(h)
-
         # bias_init = hk.initializers.Constant(-273.0)
         # weight_init = hk.initializers.TruncatedNormal(stddev=10.0, mean=0.0)
         # h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
-
         # bias_init = hk.initializers.Constant(0.0)
         # weight_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
         # h = hk.Linear(output_size=1, w_init=weight_init, b_init=bias_init)(h)
-
         h = hk.Linear(output_size=1)(h)
         return h
 
     def resnet_p_fn(self, h):
         # h = self.positional_encoding_p(h)
-        for _ in range(self.num_res_blocks):
+        for _ in range(self.num_res_blocks_p):
             # start 1 resnet block
-            h_i = hk.Linear(output_size=self.hidden_dim)(h)
-            h_ = self.activation_p_fn(h_i)
-            h_ = hk.Linear(output_size=self.hidden_dim)(h_)
-            h = self.activation_p_fn(h_) + h_i
+            h_i = hk.Linear(output_size=self.hidden_resnet_dim_p)(h)
+            h_ = self.activation_resnet_p_fn(h_i)
+            h_ = hk.Linear(output_size=self.hidden_resnet_dim_p)(h_)
+            h = self.activation_resnet_p_fn(h_) + h_i
             # end 1 resnet block
         h = hk.Linear(output_size=1)(h)
         return h
 
     def resnet_m_fn(self, h):
         # h = self.positional_encoding_m(h)
-        for _ in range(self.num_res_blocks):
+        for _ in range(self.num_res_blocks_m):
             # start 1 resnet block
-            h_i = hk.Linear(output_size=self.hidden_dim)(h)
-            h_ = self.activation_m_fn(h_i)
-            h_ = hk.Linear(output_size=self.hidden_dim)(h_)
-            h = self.activation_m_fn(h_) + h_i
+            h_i = hk.Linear(output_size=self.hidden_resnet_dim_m)(h)
+            h_ = self.activation_resnet_m_fn(h_i)
+            h_ = hk.Linear(output_size=self.hidden_resnet_dim_m)(h_)
+            h = self.activation_resnet_m_fn(h_) + h_i
             # end 1 resnet block
         h = hk.Linear(output_size=1)(h)
         return h
@@ -172,6 +174,3 @@ class DoubleMLP(hk.Module):
     @staticmethod
     def __version__():
         return "0.3.0"
-
-
-# return DoubleMLP
