@@ -247,6 +247,7 @@ def biomolecule_solvation_energy(
         loss_plot_name=molecule_name,
         optimizer=optimizer,
         restart=cfg.solver.restart_from_checkpoint,
+        restart_checkpoint_dir=cfg.solver.restart_checkpoint_dir,
         print_rate=cfg.solver.print_rate,
     )
     t0 = time.time()
@@ -270,13 +271,13 @@ def biomolecule_solvation_energy(
     # postprocessing
     error = exact_sol - sim_sol
     L_inf = jnp.max(jnp.abs(error))
-    L_2 = jnp.mean(jnp.square(error))
-
-    # L_infty
-    L_inf = jnp.max(jnp.abs(error))
-    # relative L_2
+    L_2 = jnp.sum(jnp.square(error))
     L2_rel_loss = jnp.sqrt((error**2).sum() / (exact_sol**2).sum())
-    logger.info(f"Accuracy measurements = L_inf : {L_inf} \t Rel. L_2 : {L2_rel_loss}")
+    rms_err = jnp.square(error).mean() ** 0.5
+
+    logger.info(
+        f"Accuracy: \n L_inf : {L_inf} \n \n L_2 : {L_2} \n Rel. L_2 : {L2_rel_loss} \n RMSD error : {rms_err}"
+    )
 
     # visualization
 

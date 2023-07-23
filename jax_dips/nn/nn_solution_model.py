@@ -41,16 +41,23 @@ class DoubleMLP(hk.Module):
     def __init__(self, name=None):
         super().__init__(name=name)
 
-        self.num_res_blocks = 2  # for resnet only
-        self.num_hidden_layers = 2  # for mlp only
-        self.hidden_dim = 10  # number of neurons per layer
-        self.activation_fn = nn.celu  # nn.celu, jnp.sin, jnp.tanh, nn.swish, ...
+        # mlp
+        self.num_hidden_layers_m = 1  # for mlp only
+        self.hidden_dim_m = 1  # number of neurons per layer
+        self.activation_m_fn = nn.tanh  # nn.celu, jnp.sin, jnp.tanh, nn.swish, ...
+        self.tr_normal_init_m = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
-        self.tr_normal_init = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
+        self.num_hidden_layers_p = 2  # for mlp only
+        self.hidden_dim_p = 10  # number of neurons per layer
+        self.activation_p_fn = nn.celu  # nn.celu, jnp.sin, jnp.tanh, nn.swish, ...
+        self.tr_normal_init_p = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
+
+        # resnet
+        self.num_res_blocks = 2  # for resnet only
 
         # Positional Encoding Constants
         d1 = 3  # dimension of input space; e.g., 3D space
-        self.d2 = self.hidden_dim // 2  # dimension of lifted space
+        self.d2 = self.hidden_dim_p // 2  # dimension of lifted space
         key = random.PRNGKey(0)
         stdev = 1.0  # standard deviation scale
         cov = jnp.eye(d1) * stdev**2
@@ -79,10 +86,10 @@ class DoubleMLP(hk.Module):
         # h = self.positional_encoding_p(h)
 
         # h = jnp.linalg.norm(h)[jnp.newaxis]
-        for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim)(h)  # , w_init=self.tr_normal_init
+        for _ in range(self.num_hidden_layers_p):
+            h = hk.Linear(output_size=self.hidden_dim_p, w_init=self.tr_normal_init_p)(h)
             # h = layer_norm(h)
-            h = self.activation_fn(h)
+            h = self.activation_p_fn(h)
         h = hk.Linear(output_size=1)(h)
         return h
 
@@ -96,10 +103,10 @@ class DoubleMLP(hk.Module):
         """
         # h = self.positional_encoding_m(h)
         # h = jnp.linalg.norm(h)[jnp.newaxis]
-        for _ in range(self.num_hidden_layers):
-            h = hk.Linear(output_size=self.hidden_dim)(h)
+        for _ in range(self.num_hidden_layers_m):
+            h = hk.Linear(output_size=self.hidden_dim_m, w_init=self.tr_normal_init_m)(h)
             # h = layer_norm(h)
-            h = self.activation_fn(h)
+            h = self.activation_m_fn(h)
 
         # bias_init = hk.initializers.Constant(-273.0)
         # weight_init = hk.initializers.TruncatedNormal(stddev=10.0, mean=0.0)
@@ -117,9 +124,9 @@ class DoubleMLP(hk.Module):
         for _ in range(self.num_res_blocks):
             # start 1 resnet block
             h_i = hk.Linear(output_size=self.hidden_dim)(h)
-            h_ = self.activation_fn(h_i)
+            h_ = self.activation_p_fn(h_i)
             h_ = hk.Linear(output_size=self.hidden_dim)(h_)
-            h = self.activation_fn(h_) + h_i
+            h = self.activation_p_fn(h_) + h_i
             # end 1 resnet block
         h = hk.Linear(output_size=1)(h)
         return h
@@ -129,9 +136,9 @@ class DoubleMLP(hk.Module):
         for _ in range(self.num_res_blocks):
             # start 1 resnet block
             h_i = hk.Linear(output_size=self.hidden_dim)(h)
-            h_ = self.activation_fn(h_i)
+            h_ = self.activation_m_fn(h_i)
             h_ = hk.Linear(output_size=self.hidden_dim)(h_)
-            h = self.activation_fn(h_) + h_i
+            h = self.activation_m_fn(h_) + h_i
             # end 1 resnet block
         h = hk.Linear(output_size=1)(h)
         return h

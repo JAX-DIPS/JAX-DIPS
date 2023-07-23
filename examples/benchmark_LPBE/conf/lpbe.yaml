@@ -25,7 +25,7 @@ model: # TODO: add this to the model
   positional_enc_stddev: 1.0
 
 solver:
-  inn_grid: true
+  inn_grid: false
   inn:
     train_out: 2000 # number of grid points in the outer domain; originally 2000
     train_inner: 100 # number of grid points in the inner domain; originally 100
@@ -38,10 +38,11 @@ solver:
     Nx_tr: 32  # grid for training voxel size: Lx/Nx
     Ny_tr: 32  # grid for training voxel size: Ly/Ny
     Nz_tr: 32  # grid for training voxel size: Lz/Nz
-  num_epochs: 40000 # number of epochs to train
+  num_epochs: 50000 # number of epochs to train
   batch_size: 3300 # batch size for trainer. 
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
+  restart_checkpoint_dir: /workspace/results/benchmark-lpbe-app-inn-1:1-2:10-Ngamma1000-epoch50k/checkpoints
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
   mgrad_over_pgrad_scalefactor: 1.0  # a scaling factor to amplify minus gradients
   multi_gpu: false
