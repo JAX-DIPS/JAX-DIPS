@@ -516,3 +516,225 @@ class Discretization:
         # is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
         u_mp = jnp.where(is_interface == 0, interface_point(point), bulk_point(is_interface, u_ijk))
         return u_mp
+
+    # ------------------- traditional
+    def compute_Ax_and_b_discrete_fn(self, eval_gstate, u, point, dx, dy, dz):
+        """
+        WARNING: Assumes lvl_gstate == tr_gstate and structured mesh
+
+        This function calculates  A @ u for a given vector of unknowns u.
+        This evaluates the rhs in Au^k=b given estimate u^k.
+        The purpose would be to define an optimization problem with:
+
+        min || A u^k - b ||^2
+
+        using autodiff we can compute gradients w.r.t u^k values, and optimize for the solution field.
+
+        * PROCEDURE:
+            first compute u = B:u + r for each node
+            then use the actual cell geometries (face areas and mu coeffs) to
+            compute the rhs of the linear system given currently passed-in u vector
+            for solution estimate.
+
+        """
+        u_interp_fn = interpolate.nonoscillatory_quadratic_interpolation(u, eval_gstate)
+        u_mp_at_point = partial(self.get_u_mp_by_regression_at_point_discrete_fn, u_interp_fn, dx, dy, dz)
+
+        def is_box_boundary_point(point):
+            """
+            Check if current node is on the boundary of box
+            """
+            x, y, z = point
+            boundary = jnp.where(abs(x - self.xmin) < 1e-6 * dx, 0, 1) * jnp.where(
+                abs(x - self.xmax) < 1e-6 * dx, 0, 1
+            )
+            boundary *= jnp.where(abs(y - self.ymin) < 1e-6 * dy, 0, 1) * jnp.where(
+                abs(y - self.ymax) < 1e-6 * dy, 0, 1
+            )
+            boundary *= jnp.where(abs(z - self.zmin) < 1e-6 * dz, 0, 1) * jnp.where(
+                abs(z - self.zmax) < 1e-6 * dz, 0, 1
+            )
+            return jnp.where(boundary == 0, True, False)
+
+        def evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz):
+            # --- LHS
+            coeffs_ = self.compute_face_centroids_values_plus_minus_at_point(point, dx, dy, dz)
+            coeffs = coeffs_[:12]
+
+            vols = coeffs_[12:14]
+            V_m_ijk = vols[0]
+            V_p_ijk = vols[1]
+            Vol_cell_nominal = dx * dy * dz
+
+            def get_lhs_at_interior_point(point):
+                point_ijk = point
+                point_imjk = jnp.array([point[0] - dx, point[1], point[2]], dtype=f32)
+                point_ipjk = jnp.array([point[0] + dx, point[1], point[2]], dtype=f32)
+                point_ijmk = jnp.array([point[0], point[1] - dy, point[2]], dtype=f32)
+                point_ijpk = jnp.array([point[0], point[1] + dy, point[2]], dtype=f32)
+                point_ijkm = jnp.array([point[0], point[1], point[2] - dz], dtype=f32)
+                point_ijkp = jnp.array([point[0], point[1], point[2] + dz], dtype=f32)
+
+                k_m_ijk = self.k_m_interp_fn(point[jnp.newaxis])
+                k_p_ijk = self.k_p_interp_fn(point[jnp.newaxis])
+
+                u_m_ijk, u_p_ijk = u_mp_at_point(point_ijk)
+                u_m_imjk, u_p_imjk = u_mp_at_point(point_imjk)
+                u_m_ipjk, u_p_ipjk = u_mp_at_point(point_ipjk)
+                u_m_ijmk, u_p_ijmk = u_mp_at_point(point_ijmk)
+                u_m_ijpk, u_p_ijpk = u_mp_at_point(point_ijpk)
+                u_m_ijkm, u_p_ijkm = u_mp_at_point(point_ijkm)
+                u_m_ijkp, u_p_ijkp = u_mp_at_point(point_ijkp)
+
+                lhs = k_m_ijk * V_m_ijk * u_m_ijk
+                lhs += k_p_ijk * V_p_ijk * u_p_ijk
+
+                lhs += self.nonlinear_op_m(u_m_ijk) * V_m_ijk + self.nonlinear_op_p(u_p_ijk) * V_p_ijk
+
+                lhs += (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10]) * u_m_ijk + (
+                    coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11]
+                ) * u_p_ijk
+                lhs += -1.0 * coeffs[0] * u_m_imjk - coeffs[1] * u_p_imjk
+                lhs += -1.0 * coeffs[2] * u_m_ipjk - coeffs[3] * u_p_ipjk
+                lhs += -1.0 * coeffs[4] * u_m_ijmk - coeffs[5] * u_p_ijmk
+                lhs += -1.0 * coeffs[6] * u_m_ijpk - coeffs[7] * u_p_ijpk
+                lhs += -1.0 * coeffs[8] * u_m_ijkm - coeffs[9] * u_p_ijkm
+                lhs += -1.0 * coeffs[10] * u_m_ijkp - coeffs[11] * u_p_ijkp
+
+                diag_coeff = (
+                    k_p_ijk * V_p_ijk
+                    + k_m_ijk * V_m_ijk
+                    + (coeffs[0] + coeffs[2] + coeffs[4] + coeffs[6] + coeffs[8] + coeffs[10])
+                    + (coeffs[1] + coeffs[3] + coeffs[5] + coeffs[7] + coeffs[9] + coeffs[11])
+                )
+                return jnp.array([lhs.reshape(), diag_coeff.reshape()])
+
+            def get_lhs_on_box_boundary(point):
+                phi_boundary = self.phi_interp_fn(point[jnp.newaxis])
+                u_boundary = u_interp_fn(point[jnp.newaxis]).squeeze()
+                lhs = u_boundary * Vol_cell_nominal
+                return jnp.array([lhs, Vol_cell_nominal])
+
+            lhs_diagcoeff = jnp.where(
+                is_box_boundary_point(point),
+                get_lhs_on_box_boundary(point),
+                get_lhs_at_interior_point(point),
+            )
+            lhs, diagcoeff = jnp.split(lhs_diagcoeff, [1], 0)
+
+            # --- RHS
+            def get_rhs_at_interior_point(point):
+                rhs = (
+                    self.f_m_interp_fn(point[jnp.newaxis]) * V_m_ijk + self.f_p_interp_fn(point[jnp.newaxis]) * V_p_ijk
+                )
+                rhs += self.beta_integrate_over_interface_at_point(point, dx, dy, dz)
+                return rhs
+
+            def get_rhs_on_box_boundary(point):
+                return self.dir_bc_fn(point[jnp.newaxis]).reshape() * Vol_cell_nominal
+
+            rhs = jnp.where(
+                is_box_boundary_point(point),
+                get_rhs_on_box_boundary(point),
+                get_rhs_at_interior_point(point),
+            )
+            lhs_over_diag = jnp.nan_to_num(lhs / diagcoeff)
+            rhs_over_diag = jnp.nan_to_num(rhs / diagcoeff)
+            return jnp.array([lhs_over_diag, rhs_over_diag])
+
+        lhs_rhs = evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz)
+        return lhs_rhs
+
+    def get_u_mp_by_regression_at_point_discrete_fn(self, u_interp_fn, dx, dy, dz, point):
+        """
+        This function evaluates pairs of u^+ and u^- at each grid point
+        in the domain, given the neural network models.
+
+        BIAS SLOW:
+            This function evaluates
+                u_m = B_m : u + r_m
+            and
+                u_p = B_p : u + r_p
+        """
+        delta_ijk = self.phi_interp_fn(point[jnp.newaxis])
+        Xijk = self.get_Xijk(dx, dy, dz)
+        u_ijk = u_interp_fn(point[jnp.newaxis]).squeeze()
+        curr_vertices = jnp.add(point, Xijk)
+        u_cube_ijk = u_interp_fn(curr_vertices)
+
+        (
+            normal_ijk,
+            gamma_m_ijk,
+            gamma_m_ijk_pqm,
+            gamma_p_ijk,
+            gamma_p_ijk_pqm,
+            zeta_m_ijk,
+            zeta_m_ijk_pqm,
+            zeta_p_ijk,
+            zeta_p_ijk_pqm,
+        ) = self.get_regression_coeffs_at_point(point, dx, dy, dz)
+
+        def bulk_point(is_interface_, u_ijk_):
+            return jnp.array(
+                [
+                    jnp.where(is_interface_ == -1, u_ijk_, 0.0),
+                    jnp.where(is_interface_ == 1, u_ijk_, 0.0),
+                ]
+            )
+
+        def interface_point(point):
+            def mu_minus_bigger_fn(point):
+                def extrapolate_u_m_from_negative_domain(r_ijk):
+                    r_m_proj = r_ijk[jnp.newaxis] - delta_ijk * normal_ijk
+                    u_m = -1.0 * jnp.dot(gamma_m_ijk_pqm, u_cube_ijk)
+                    u_m += (1.0 - gamma_m_ijk + gamma_m_ijk_pqm[:, 13]) * u_ijk
+                    u_m += (
+                        -1.0
+                        * (1.0 - gamma_m_ijk)
+                        * (self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_over_mu_p_interp_fn(r_m_proj))
+                    )
+                    return u_m.reshape()
+
+                def extrapolate_u_p_from_positive_domain(r_ijk):
+                    r_p_proj = r_ijk[jnp.newaxis] - delta_ijk * normal_ijk[0]
+                    u_p = -1.0 * jnp.dot(zeta_m_ijk_pqm, u_cube_ijk)
+                    u_p += (1.0 - zeta_m_ijk + zeta_m_ijk_pqm[:, 13]) * u_ijk
+                    u_p += self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_over_mu_p_interp_fn(r_p_proj)
+                    return u_p.reshape()
+
+                u_m = jnp.where(delta_ijk > 0, extrapolate_u_m_from_negative_domain(point), u_ijk)[0]
+                u_p = jnp.where(delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain(point))[0]
+                return jnp.array([u_m, u_p])
+
+            def mu_plus_bigger_fn(point):
+                def extrapolate_u_m_from_negative_domain_(r_ijk):
+                    r_m_proj = r_ijk[jnp.newaxis] - delta_ijk * normal_ijk
+                    u_m = -1.0 * jnp.dot(zeta_p_ijk_pqm, u_cube_ijk)
+                    u_m += (1.0 - zeta_p_ijk + zeta_p_ijk_pqm[:, 13]) * u_ijk
+                    u_m += (-1.0) * (
+                        self.alpha_interp_fn(r_m_proj) + delta_ijk * self.beta_over_mu_m_interp_fn(r_m_proj)
+                    )
+                    return u_m.reshape()
+
+                def extrapolate_u_p_from_positive_domain_(r_ijk):
+                    r_p_proj = r_ijk[jnp.newaxis] - delta_ijk * normal_ijk
+                    u_p = -1.0 * jnp.dot(gamma_p_ijk_pqm, u_cube_ijk)
+                    u_p += (1.0 - gamma_p_ijk + gamma_p_ijk_pqm[:, 13]) * u_ijk
+                    u_p += (1.0 - gamma_p_ijk) * (
+                        self.alpha_interp_fn(r_p_proj) + delta_ijk * self.beta_over_mu_m_interp_fn(r_p_proj)
+                    )
+                    return u_p.reshape()
+
+                u_m = jnp.where(delta_ijk > 0, extrapolate_u_m_from_negative_domain_(point), u_ijk)[0]
+                u_p = jnp.where(delta_ijk > 0, u_ijk, extrapolate_u_p_from_positive_domain_(point))[0]
+                return jnp.array([u_m, u_p])
+
+            mu_m_ijk = self.mu_m_interp_fn(point[jnp.newaxis])
+            mu_p_ijk = self.mu_p_interp_fn(point[jnp.newaxis])
+            return jnp.where(mu_m_ijk > mu_p_ijk, mu_minus_bigger_fn(point), mu_plus_bigger_fn(point))
+
+        # 0: crossed by interface, -1: in Omega^-, +1: in Omega^+
+        is_interface = self.is_cell_crossed_by_interface(point, dx, dy, dz)
+        # is_interface = jnp.where( delta_ijk*delta_ijk <= self.bandwidth_squared,  0, jnp.sign(delta_ijk))
+        u_mp = jnp.where(is_interface == 0, interface_point(point), bulk_point(is_interface, u_ijk))
+        return u_mp

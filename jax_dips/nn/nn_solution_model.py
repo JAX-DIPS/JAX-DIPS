@@ -44,12 +44,12 @@ class DoubleMLP(hk.Module):
         # mlp
         self.num_hidden_layers_m = 1  # for mlp only
         self.hidden_dim_m = 1  # number of neurons per layer
-        self.activation_m_fn = nn.tanh  # nn.celu, jnp.sin, jnp.tanh, nn.swish, ...
+        self.activation_m_fn = jnp.tanh  # nn.celu, jnp.sin, jnp.tanh, nn.swish, ...
         self.tr_normal_init_m = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
         self.num_hidden_layers_p = 2  # for mlp only
         self.hidden_dim_p = 10  # number of neurons per layer
-        self.activation_p_fn = nn.celu  # nn.celu, jnp.sin, jnp.tanh, nn.swish, ...
+        self.activation_p_fn = jnp.tanh  # nn.celu, jnp.sin, jnp.tanh, nn.swish, ...
         self.tr_normal_init_p = hk.initializers.TruncatedNormal(stddev=0.1, mean=0.0)
 
         # resnet

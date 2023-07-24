@@ -283,10 +283,23 @@ class Trainer(Discretization):
         batched_training_data = self.DD.get_batched_data()
         num_batches = batched_training_data.shape[0]
 
-        lbfgsb = jaxopt.ScipyMinimize(method="l-bfgs-b", fun=self.loss, tol=1e-12, maxiter=self.num_epochs)
+        # 1.
+        solver = jaxopt.ScipyMinimize(
+            method="l-bfgs-b",
+            fun=self.loss,
+            tol=1e-15,
+            maxiter=self.num_epochs,
+            implicit_diff_solve=True,
+        )
+        # solver = jaxopt.GradientDescent(fun=self.loss, maxiter=self.num_epochs, implicit_diff=True)
+        # 2. Scipy Least Squares
+        # solver = jaxopt.ScipyLeastSquares(
+        #     method="trf",
+        #     fun=self.loss,
+        # )  # trf, dogbox, lm
 
         start_time = time.time()
-        solver_1_sol = lbfgsb.run(
+        solver_sol = solver.run(
             self.params,
             points=batched_training_data[0],
             dx=self.train_dx,
@@ -296,8 +309,22 @@ class Trainer(Discretization):
         end_time = time.time()
         logger.info(f"solve took {end_time - start_time} (sec)")
 
-        self.params = solver_1_sol.params
-        self.opt_state = solver_1_sol.state
+        # 3
+        # solver = jaxopt.ScipyRootFinding(
+        #     method="krylov",
+        #     optimality_fun=self.residual_vector,
+        #     tol=1e-15,
+        # )
+        # u_res = jnp.zeros(self.eval_gstate.R.shape[0])
+        # start_time = time.time()
+        # solver_sol = solver.run(
+        #     init_params=u_res,
+        # )
+        # end_time = time.time()
+        # logger.info(f"solve took {end_time - start_time} (sec)")
+
+        self.params = solver_sol.params
+        self.opt_state = solver_sol.state
         state = {
             "opt_state": self.opt_state,
             "params": self.params,
@@ -755,6 +782,22 @@ class Trainer(Discretization):
 
         mask_p = sign_p_fn(phi_points)
         return mask_p
+
+    @partial(jit, static_argnums=(0))
+    def residual_vector_params(self, params, points, dx, dy, dz):
+        r"""Loss function of the neural network."""
+        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        return lhs - rhs
+
+    @partial(jit, static_argnums=(0))
+    def residual_vector(self, u_vec):
+        """u_vec, points and eval_gstate and outputs have same shapes on grids"""
+        lhs_rhs = vmap(self.compute_Ax_and_b_discrete_fn, (None, None, 0, None, None, None))(
+            self.eval_gstate, u_vec, self.eval_gstate.R, self.eval_gstate.dx, self.eval_gstate.dy, self.eval_gstate.dz
+        )
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        return lhs - rhs
 
     @partial(jit, static_argnums=(0))
     def loss(self, params, points, dx, dy, dz):
