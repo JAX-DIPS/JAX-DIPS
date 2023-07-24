@@ -1,6 +1,6 @@
 from functools import partial
 
-import kaolin
+# import kaolin
 import numpy as onp
 import torch
 from jax import jit

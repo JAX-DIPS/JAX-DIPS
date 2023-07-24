@@ -48,11 +48,11 @@ solver:
   multi_gpu: false
   num_gpus_ddp: 1
   optim:
-    optimizer_name: "custom" # options are "custom", "adam", "rmsprop"
+    optimizer_name: "lbfgs" # options are "custom", "adam", "rmsprop"
     learning_rate: 1e-5
-  sched:
-    scheduler_name: "exponential" # options are "exponential", "polynomial"
-    decay_rate: 0.9
+    sched:
+      scheduler_name: "exponential" # options are "exponential", "polynomial"
+      decay_rate: 0.9
   data_manager:
     refine: true
     refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function

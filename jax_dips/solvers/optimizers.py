@@ -3,6 +3,10 @@ import logging
 import optax
 from optax._src.base import GradientTransformation
 
+import jaxopt
+from jaxopt import LBFGS, LevenbergMarquardt
+from jaxopt.loss import huber_loss
+
 logger = logging.getLogger(__name__)
 
 
@@ -56,6 +60,7 @@ def get_optimizer(
     learning_rate: float = 1e-2,
     decay_rate: float = 0.96,
     max_norm: float = 1.0,
+    loss_fn: object = None,
     **kwargs,
 ) -> GradientTransformation:
     if optimizer_name == "custom":
@@ -82,6 +87,20 @@ def get_optimizer(
             **kwargs,
         )
 
+    # elif optimizer_name == "lbfgs":
+    #     logger.info("Using jaxopt.LBFGS optimizer")
+    #     lbfgs = LBFGS_adapter(loss_fn)
+    #     return lbfgs
+
     else:
         logger.error("Unknown optimizer: {}".format(optimizer_name))
         raise ValueError("Unknown optimizer: {}".format(optimizer_name))
+
+
+# class LBFGS_adapter(LBFGS):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+
+#     def init(self, params, *args, **kwargs):
+#         params, opt_state = self.init_state(params, *args, **kwargs)
+#         return opt_state

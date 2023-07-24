@@ -66,7 +66,56 @@ def test_data_net(device, args):
     return test_out, label_out, test_inner, label_inner
 
 
-class INNSphereData:
+class INNSingleSphereData:
+    def __init__(
+        self,
+        sigma=1.0,  # sphere radius
+        L=[0, 0, 0],  # sphere center coord
+        box=[-2.5, 2.5, -2.5, 2.5, -2.5, 2.5],  # box dimensions
+        device="cuda",
+        train_out=2000,  # points outside/positive domain
+        train_inner=100,  # points inside/negative domain
+        train_boundary=1000,  # points on the boundary
+        train_gamma=200,  # points on interface
+    ):
+        data = Data(r0=sigma, L=L, box=box, device=device)
+        # outside region points
+        out = data.SampleFromOut(train_out).T
+        x_out, y_out, z_out, input_out = data_transform(out)
+        self.x_out = jnp.squeeze(torch_to_jax(x_out))
+        self.y_out = jnp.squeeze(torch_to_jax(y_out))
+        self.z_out = jnp.squeeze(torch_to_jax(z_out))
+        # inside region points
+        inner = data.SampleFromInner(train_inner).T
+        x_in, y_in, z_in, input_in = data_transform(inner)
+        self.x_in = jnp.squeeze(torch_to_jax(x_in))
+        self.y_in = jnp.squeeze(torch_to_jax(y_in))
+        self.z_in = jnp.squeeze(torch_to_jax(z_in))
+        # interface points
+        gamma = data.SampleFromGamma(train_gamma).T
+        x_gamma, y_gamma, z_gamma, input_in_b = data_transform(gamma)
+        self.x_gamma = jnp.squeeze(torch_to_jax(x_gamma))
+        self.y_gamma = jnp.squeeze(torch_to_jax(y_gamma))
+        self.z_gamma = jnp.squeeze(torch_to_jax(z_gamma))
+        # box boundaries
+        input_boundary = data.SampleFromBoundary(train_boundary)
+        input_boundary_label = true_solution_net(input_boundary, sigma, "out", device)
+        self.input_boundary = jnp.squeeze(torch_to_jax(input_boundary))
+        self.input_boundary_label = jnp.squeeze(torch_to_jax(input_boundary_label))
+        self.R_xmin = jnp.squeeze(torch_to_jax(data.P_xmin))
+        self.R_xmax = jnp.squeeze(torch_to_jax(data.P_xmax))
+        self.R_ymin = jnp.squeeze(torch_to_jax(data.P_ymin))
+        self.R_ymax = jnp.squeeze(torch_to_jax(data.P_ymax))
+        self.R_zmin = jnp.squeeze(torch_to_jax(data.P_zmin))
+        self.R_zmax = jnp.squeeze(torch_to_jax(data.P_zmax))
+
+        # aggregated coordinates
+        self.x = jnp.concatenate((self.x_in, self.x_gamma, self.x_out, self.input_boundary[:, 0]))
+        self.y = jnp.concatenate((self.y_in, self.y_gamma, self.y_out, self.input_boundary[:, 1]))
+        self.z = jnp.concatenate((self.z_in, self.z_gamma, self.z_out, self.input_boundary[:, 2]))
+
+
+class INNDoubleSphereData:
     def __init__(
         self,
         sigma=1.0,  # sphere radius

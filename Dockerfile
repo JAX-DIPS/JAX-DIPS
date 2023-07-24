@@ -27,15 +27,15 @@ ENV PYTHONPATH="/opt/PyEVTK"
 
 
 
-ENV KAOLIN_INSTALL_EXPERIMENTAL=1
-ENV IGNORE_TORCH_VER=0
-# ENV TORCH_CUDA_ARCH_LIST="7.0 7.5"
-ENV CUB_HOME=/usr/local/cuda-*/include/
-RUN cd /opt \
-    && git clone --recursive https://github.com/NVIDIAGameWorks/kaolin \
-    && cd kaolin \
-    && git checkout v0.11.0 \
-    && python3 setup.py develop
+# ENV KAOLIN_INSTALL_EXPERIMENTAL=1
+# ENV IGNORE_TORCH_VER=0
+# # ENV TORCH_CUDA_ARCH_LIST="7.0 7.5"
+# ENV CUB_HOME=/usr/local/cuda-*/include/
+# RUN cd /opt \
+#     && git clone --recursive https://github.com/NVIDIAGameWorks/kaolin \
+#     && cd kaolin \
+#     && git checkout v0.11.0 \
+#     && python3 setup.py develop
 
 
 RUN cd /opt \

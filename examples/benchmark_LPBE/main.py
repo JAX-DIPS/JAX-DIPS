@@ -64,18 +64,21 @@ from examples.benchmark_LPBE.coefficients import (
 )
 from examples.benchmark_LPBE.geometry import get_initial_level_set_fn
 from examples.benchmark_LPBE.load_pqr import base
-from examples.benchmark_LPBE.inn.inn_data_sampler import INNSphereData
+from examples.benchmark_LPBE.inn.inn_data_sampler import INNSingleSphereData, INNDoubleSphereData
 from jax_dips._jaxmd_modules.util import f32
 from jax_dips.domain import mesh
 from jax_dips.geometry import level_set
-from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips.solvers.poisson import trainer
 from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable, trainer_poisson
 from jax_dips.utils import io
 
 
 def biomolecule_solvation_energy(
-    cfg: DictConfig, file_name: str = "pdb:1ajj.pqr", molecule_pqr_address: str = "pqr_input_mols", gpu_id: str = ""
+    cfg: DictConfig,
+    file_name: str = "pdb:1ajj.pqr",
+    molecule_pqr_address: str = "pqr_input_mols",
+    gpu_id: str = "",
+    exp: str = "single",
 ) -> None:
     if gpu_id == "":
         pass
@@ -94,13 +97,7 @@ def biomolecule_solvation_energy(
     Ny_eval = cfg.gridstates.Ny_eval  # grid for evaluation/visualization
     Nz_eval = cfg.gridstates.Nz_eval  # grid for evaluation/visualization
 
-    optimizer = get_optimizer(
-        optimizer_name=cfg.solver.optim.optimizer_name,
-        scheduler_name=cfg.solver.sched.scheduler_name,
-        learning_rate=cfg.solver.optim.learning_rate,
-        decay_rate=cfg.solver.sched.decay_rate,
-    )
-
+    optim_cfg = dict(cfg.solver.optim)
     ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
     mgrad_over_pgrad_scalefactor = cfg.solver.mgrad_over_pgrad_scalefactor  # 0: no switching, 1: 10
     multi_gpu = cfg.solver.multi_gpu
@@ -149,17 +146,30 @@ def biomolecule_solvation_energy(
 
     # --------- GSTATE for trainer (discretization), using INN
     if cfg.solver.inn_grid:
-        logger.info("using INN grid")
-        inn = INNSphereData(
-            sigma=atom_sigmas[0],  # sphere radius
-            L=atom_locations[0],  # sphere center coord
-            box=[xmin, xmax, ymin, ymax, zmin, zmax],  # box dimensions
-            device="cuda",
-            train_out=cfg.solver.inn.train_out,
-            train_inner=cfg.solver.inn.train_inner,
-            train_boundary=cfg.solver.inn.train_boundary,
-            train_gamma=cfg.solver.inn.train_gamma,
-        )
+        if exp == "single":
+            logger.info("using INN grid for single sphere (example 4 of INN paper)")
+            inn = INNSingleSphereData(
+                sigma=atom_sigmas[0],  # sphere radius
+                L=atom_locations[0],  # sphere center coord
+                box=[xmin, xmax, ymin, ymax, zmin, zmax],  # box dimensions
+                device="cuda",
+                train_out=cfg.solver.inn.train_out,
+                train_inner=cfg.solver.inn.train_inner,
+                train_boundary=cfg.solver.inn.train_boundary,
+                train_gamma=cfg.solver.inn.train_gamma,
+            )
+        elif exp == "double":
+            logger.info("using INN grid for double spheres (example 5 of INN paper)")
+            inn = INNDoubleSphereData(
+                sigma=atom_sigmas[0],  # sphere radius
+                L=atom_locations[0],  # sphere center coord
+                box=[xmin, xmax, ymin, ymax, zmin, zmax],  # box dimensions
+                device="cuda",
+                train_out=cfg.solver.inn.train_out,
+                train_inner=cfg.solver.inn.train_inner,
+                train_boundary=cfg.solver.inn.train_boundary,
+                train_gamma=cfg.solver.inn.train_gamma,
+            )
         xc = inn.x
         yc = inn.y
         zc = inn.z
@@ -245,7 +255,7 @@ def biomolecule_solvation_energy(
         checkpoint_interval=checkpoint_interval,
         results_dir=log_dir,
         loss_plot_name=molecule_name,
-        optimizer=optimizer,
+        optimizer_dict=optim_cfg,
         restart=cfg.solver.restart_from_checkpoint,
         restart_checkpoint_dir=cfg.solver.restart_checkpoint_dir,
         print_rate=cfg.solver.print_rate,
@@ -318,6 +328,7 @@ def main(cfg: DictConfig):
             cfg=cfg,
             file_name=cfg.experiment.sphere.protein_name,
             molecule_pqr_address=cfg.experiment.sphere.protein_path,
+            exp="single",
         )
 
     if cfg.experiment.double_sphere.enable:
@@ -326,6 +337,7 @@ def main(cfg: DictConfig):
             cfg=cfg,
             file_name=cfg.experiment.double_sphere.protein_name,
             molecule_pqr_address=cfg.experiment.double_sphere.protein_path,
+            exp="double",
         )
 
     if cfg.experiment.molecule.enable:
@@ -335,6 +347,7 @@ def main(cfg: DictConfig):
             cfg=cfg,
             file_name=cfg.experiment.molecule.protein_name,
             molecule_pqr_address=cfg.experiment.molecule.protein_path,
+            exp="molecule",
         )
 
 
