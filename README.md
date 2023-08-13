@@ -20,8 +20,54 @@ The Poisson solver provides an interface to pass in functions defining different
 
 
 ```python
-from jax_dips.solvers.poisson import trainer
+from jax import numpy as jnp
 
+from jax_dips._jaxmd_modules.util import f32
+from jax_dips.domain import mesh
+from jax_dips.solvers.poisson import trainer
+from jax_dips.utils import io
+
+init_mesh_fn, coord_at = mesh.construct(3)
+
+# --------- Grid nodes for training
+xc = jnp.linspace(xmin, xmax, Nx_tr, dtype=f32)
+yc = jnp.linspace(ymin, ymax, Ny_tr, dtype=f32)
+zc = jnp.linspace(zmin, zmax, Nz_tr, dtype=f32)
+gstate_tr = init_mesh_fn(xc, yc, zc)
+
+# --------- Grid nodes for level set representation
+xc = jnp.linspace(xmin, xmax, Nx_lvl, dtype=f32)
+yc = jnp.linspace(ymin, ymax, Ny_lvl, dtype=f32)
+zc = jnp.linspace(zmin, zmax, Nz_lvl, dtype=f32)
+gstate_lvl = init_mesh_fn(xc, yc, zc)
+
+# ---------- Grid points for visualization
+exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
+eyc = jnp.linspace(ymin, ymax, Ny_eval, dtype=f32)
+ezc = jnp.linspace(zmin, zmax, Nz_eval, dtype=f32)
+eval_gstate = init_mesh_fn(exc, eyc, ezc)
+
+# ---------- Define the neural network surrogate architecture and optimizer
+optimizer_dict: dict = {
+    "optimizer_name": "custom",
+    "learning_rate": 1e-3,
+    "sched": {"scheduler_name": "exponential", "decay_rate": 0.9},
+}
+
+model_dict: dict = {
+    "name": None,
+    "model_type": "mlp",
+    "mlp": {
+        "hidden_layers_m": 1,
+        "hidden_dim_m": 1,
+        "activation_m": "jnp.tanh",
+        "hidden_layers_p": 2,
+        "hidden_dim_p": 10,
+        "activation_p": "jnp.tanh",
+    },
+}
+
+# ---------- Define, instantiate, then train/solve the poisson problem
 init_fn = trainer.setup(
     initial_value_fn,
     dirichlet_bc_fn,
@@ -50,6 +96,17 @@ sim_state, solve_fn = init_fn(
     model_dict=model_dict,
 )
 sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+
+# ---------- Save results in vtk file
+eval_phi = vmap(phi_fn)(eval_gstate.R)
+
+log = {
+    "phi": eval_phi,
+    "u": sim_state.solution,
+}
+save_name = log_dir + "/" + molecule_name
+io.write_vtk_manual(eval_gstate, log, filename=save_name)
+
 ```
 # Library Structure
 
