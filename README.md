@@ -1,7 +1,15 @@
 <h1 align='center'>JAX-DIPS</h1>
 <h2 align='center'>JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D.</h2>
 
-JAX-DIPS implements the [neural bootstrapping method (NBM)](https://arxiv.org/abs/2210.14312) (see citations below) for training compact neural network surrogate models using finite discretization methods for handling spatial gradients and automatic differentiation for training neural network parameters. Use of FD for the PDE residuals limits automatic differentiation to ONLY first-order which significantly reduces the computational/memory costs associated to higher order AD w.r.t model inputs (as in PINNs). Moreover, use of carefully designed numerical discretization methods for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network optimizer of the mathematical symmetries (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods around training points. These extra mathematical constraints improve regularity and accuracy of the learned surrogate models.
+JAX-DIPS implements the [neural bootstrapping method (NBM)](https://arxiv.org/abs/2210.14312) (see citations below) to train compact neural network surrogate models by leveraging efficient finite discretization methods for treatment of spatial gradients as well as automatic differentiation for training neural network parameters. 
+
+- Compact models: contrary to other training methods, we show complex solutions can be learned by shallow and compact neural networks with 1000x less trainable parameters when using finite discretization residuals for training the networks.
+
+- Performance: Use of FD for computing the PDE residuals limits automatic differentiation to ONLY first-order AD, which significantly reduces the computational/memory costs associated to evaluating loss of higher order PDEs (as in PINNs). We achieve 10x speedup compared to backpropagation-based solvers.
+
+- Accuracy: Moreover, use of carefully designed numerical discretization schemes (for example see [Gibou, Fedkiw, and Osher 2018](https://www.sciencedirect.com/science/article/abs/pii/S0021999117307441)) for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network about the mathematical symmetries and constraints (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods/voxels centered at training points. These extra mathematical constraints improve regularity and accuracy of the learned neural surrogate models for PDEs in three spatial dimensions.
+
+- Cross pollination of applied mathematics and machine learning: JAX-DIPS makes it possible to leverage advanced preconditioners developed in the high performance scientific computing commynity to codition traditional finite discretization methods for faster and more accurate training of neural network models.
 
 
 ## Quick Example
