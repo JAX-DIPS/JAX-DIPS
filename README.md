@@ -1,8 +1,48 @@
-# JAX-DIPS
-JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D.
+<h1 align='center'>JAX-DIPS</h1>
+<h2 align='center'>JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D.</h2>
 
-JAX-DIPS implements the neural bootstrapping method (NBM) (see citations below) for training compact neural network surrogate models using finite discretization methods for handling spatial gradients and automatic differentiation for training neural network parameters. Use of FD for the PDE residuals limits automatic differentiation to ONLY first-order which significantly reduces the computational/memory costs associated to higher order AD w.r.t model inputs (as in PINNs). Moreover, use of carefully designed numerical discretization methods for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network optimizer of the mathematical symmetries (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods around training points. These extra mathematical constraints improve regularity and accuracy of the learned surrogate models.
+JAX-DIPS implements the [neural bootstrapping method (NBM)](https://arxiv.org/abs/2210.14312) (see citations below) for training compact neural network surrogate models using finite discretization methods for handling spatial gradients and automatic differentiation for training neural network parameters. Use of FD for the PDE residuals limits automatic differentiation to ONLY first-order which significantly reduces the computational/memory costs associated to higher order AD w.r.t model inputs (as in PINNs). Moreover, use of carefully designed numerical discretization methods for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network optimizer of the mathematical symmetries (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods around training points. These extra mathematical constraints improve regularity and accuracy of the learned surrogate models.
 
+
+## Quick Example
+The Poisson solver provides an interface to pass in functions defining different terms of the interfacial PDE given in the form 
+<p float="center">
+  <img src="assets/interfacial-pde.png" width="400" />
+</p>
+
+
+```python
+from jax_dips.solvers.poisson import trainer
+
+init_fn = trainer.setup(
+    initial_value_fn,
+    dirichlet_bc_fn,
+    phi_fn,
+    mu_m_fn,
+    mu_p_fn,
+    k_m_fn,
+    k_p_fn,
+    f_m_fn,
+    f_p_fn,
+    alpha_fn,
+    beta_fn,
+    nonlinear_operator_m,
+    nonlinear_operator_p,
+)
+sim_state, solve_fn = init_fn(
+    lvl_gstate=gstate_lvl,
+    tr_gstate=gstate_tr,
+    eval_gstate=eval_gstate,
+    num_epochs=num_epochs,
+    batch_size=batch_size,
+    multi_gpu=multi_gpu,
+    checkpoint_interval=checkpoint_interval,
+    results_dir=log_dir,
+    optimizer_dict=optim_dict,
+    model_dict=model_dict,
+)
+sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+```
 # Library Structure
 
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/JAX-DIPS.png)
@@ -58,6 +98,8 @@ solver:
 Currently, choosing `lbfgs` prompts the `jaxopt` package with implicit differentiation.
 
 Note: in the current version we support data-parallel training using `optax`.
+
+
 
 # Testing
 Do `pytest tests/test_*.py` of each of the available tests from the parent directory:
