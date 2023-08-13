@@ -24,7 +24,8 @@ from functools import partial
 
 import haiku as hk
 import jax
-import jaxopt
+
+# import jaxopt
 import optax
 from jax import config, grad, jit
 from jax import numpy as jnp
@@ -38,7 +39,7 @@ from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.domain import interpolate
 from jax_dips.domain.mesh import GridState
 from jax_dips.geometry import geometric_integrations_per_point
-from jax_dips.nn.nn_solution_model import DoubleMLP
+from jax_dips.nn.configure import get_model
 from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
 
 
@@ -65,6 +66,7 @@ class PoissonTrainer:
         self.sim_state_fn = sim_state_fn
         self.sim_state = sim_state
         self.algorithm = algorithm
+        self.forward = get_model()
 
         """ Grid Info """
         # self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
@@ -332,20 +334,20 @@ class PoissonTrainer:
             zeta_p_ijk_pqm,
         )
 
-    @staticmethod
-    @hk.transform
-    def forward(x, phi_x):
-        """
-        Forward pass of the neural network.
+    # @staticmethod
+    # @hk.transform
+    # def forward(x, phi_x):
+    #     """
+    #     Forward pass of the neural network.
 
-        Args:
-            x: input data
+    #     Args:
+    #         x: input data
 
-        Returns:
-            output of the neural network
-        """
-        model = DoubleMLP()
-        return model(x, phi_x)
+    #     Returns:
+    #         output of the neural network
+    #     """
+    #     model = DoubleMLP()
+    #     return model(x, phi_x)
 
     @partial(jit, static_argnums=0)
     def init(self, seed=42):

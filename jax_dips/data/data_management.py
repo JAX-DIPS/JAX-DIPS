@@ -1,6 +1,6 @@
 from functools import partial
 
-import kaolin
+# import kaolin
 import numpy as onp
 import torch
 from jax import jit
@@ -187,26 +187,34 @@ class DatasetDict:
 
 
 class TrainData:
-    def __init__(self, xmin, xmax, ymin, ymax, zmin, zmax, Nx=64, Ny=64, Nz=64) -> None:
+    def __init__(
+        self,
+        gstate,
+        lvl_set_fn,
+        refine=False,
+        refine_lod=False,
+        refine_normals=False,
+    ) -> None:
         """Training GSTATE"""
-        self.Nx = Nx
-        self.Ny = Ny
-        self.Nz = Nz
-        xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
-        yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
-        zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
-        init_mesh_fn, coord_at = mesh.construct(3)
-        self.gstate = init_mesh_fn(xc, yc, zc)
-
+        # if gstate is None:
+        #     self.Nx = Nx
+        #     self.Ny = Ny
+        #     self.Nz = Nz
+        #     xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
+        #     yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
+        #     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
+        #     init_mesh_fn, coord_at = mesh.construct(3)
+        #     self.gstate = init_mesh_fn(xc, yc, zc)
+        self.gstate = gstate
+        self.train_points = self.gstate.R
+        self.lvl_set_fn = lvl_set_fn
         self.key = random.PRNGKey(0)
         Lx = self.gstate.xmax() - self.gstate.xmin()
         Ly = self.gstate.ymax() - self.gstate.ymin()
         Lz = self.gstate.zmax() - self.gstate.zmin()
         self.LL = jnp.array([[Lx, Ly, Lz]])
-
         self.alt_res = False
-        self.base_level = int(onp.log2(Nx))
-
+        self.base_level = gstate.base_level()
         self.boundary_points = jnp.concatenate(
             (
                 self.gstate.R_xmin_boundary,
@@ -217,6 +225,36 @@ class TrainData:
                 self.gstate.R_zmax_boundary,
             )
         )
+        if refine:
+            self.refine(refine_lod=refine_lod, refine_normals=refine_normals)
+
+    def refine(self, refine_lod=False, refine_normals=False):
+        if refine_normals:
+            extra_points = self.refine_normals(self.lvl_set_fn, max_iters=15)
+            self.train_points = jnp.concatenate((self.train_points, extra_points))
+        if refine_lod:
+            surface_points = self.refine_LOD(self.lvl_set_fn, init_res=32, upsamples=3)
+            self.train_points = jnp.concatenate((self.train_points, surface_points))
+
+    # @partial(jit, static_argnums=(0))
+    # @staticmethod
+    # def split_train_points_by_region(phis, train_points):
+    #     @jit
+    #     def sign_p_fn(a):
+    #         # returns 1 only if a>0, otherwise is 0
+    #         sgn = jnp.sign(a)
+    #         return jnp.floor(0.5 * sgn + 0.75)
+
+    #     def split_array_based_on_mask(array_to_split, split_mask):
+    #         split_indices_p = jnp.where(split_mask == 1)[0]
+    #         split_indices_m = jnp.where(split_mask == 0)[0]
+    #         split_arrays_p = jnp.split(array_to_split, split_indices_p)
+    #         split_arrays_m = jnp.split(array_to_split, split_indices_m)
+    #         return split_arrays_m, split_arrays_p
+
+    #     mask_p = sign_p_fn(phis)
+    #     train_points_m, train_points_p = split_array_based_on_mask(train_points, mask_p)
+    #     return train_points_m, train_points_p
 
     @partial(jit, static_argnums=(0))
     def move_train_points(self, points, dx, dy, dz):
@@ -243,27 +281,27 @@ class TrainData:
         train_dz = self.gstate.dz * 0.5**zoom_lvl
         return train_dx, train_dy, train_dz
 
-    def plot_slice(self, base_points):
-        import matplotlib
+    # def plot_slice(self, base_points):
+    #     import matplotlib
 
-        matplotlib.use("Agg")
-        import os
+    #     matplotlib.use("Agg")
+    #     import os
 
-        import matplotlib.pyplot as plt
+    #     import matplotlib.pyplot as plt
 
-        points = base_points.reshape((self.Nx, self.Ny, self.Nz, 3))
-        currDir = os.path.dirname(os.path.realpath(__file__))
-        rootDir = os.path.abspath(os.path.join(currDir, ".."))
-        fig, ax = plt.subplots(figsize=(8, 8))
-        ax.scatter(
-            points[:, :, self.Nz // 2, 0],
-            points[:, :, self.Nz // 2, 1],
-            points[:, :, self.Nz // 2, 2],
-            color="k",
-        )
-        filename = os.path.join(rootDir, "tests/grid.png")
-        plt.savefig(filename)
-        plt.close()
+    #     points = base_points.reshape((self.Nx, self.Ny, self.Nz, 3))
+    #     currDir = os.path.dirname(os.path.realpath(__file__))
+    #     rootDir = os.path.abspath(os.path.join(currDir, ".."))
+    #     fig, ax = plt.subplots(figsize=(8, 8))
+    #     ax.scatter(
+    #         points[:, :, self.Nz // 2, 0],
+    #         points[:, :, self.Nz // 2, 1],
+    #         points[:, :, self.Nz // 2, 2],
+    #         color="k",
+    #     )
+    #     filename = os.path.join(rootDir, "tests/grid.png")
+    #     plt.savefig(filename)
+    #     plt.close()
 
     def refine_normals(self, phi_fn_uns, max_iters=20):
         from jax import jit, vmap

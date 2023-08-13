@@ -31,18 +31,22 @@ logger = logging.getLogger(__name__)
 
 import jax
 import optax
-from jax import jit
+from jax import jit, value_and_grad, grad
 from jax import numpy as jnp
 from jax import pmap, random, vmap
 from optax._src.base import GradientTransformation
+import jaxopt
+import haiku as hk
 
 from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips.data import data_management
 from jax_dips.domain.mesh import GridState
-from jax_dips.solvers.poisson import nbm
 from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
 from jax_dips.utils.inspect import print_architecture, progress_bar
 from jax_dips.utils.visualization import plot_loss_epochs
+from jax_dips.solvers.optimizers import get_optimizer
+from jax_dips.nn.configure import get_model
+from jax_dips.solvers.poisson.discretization import Discretization
 
 Array = util.Array
 i32 = util.i32
@@ -71,7 +75,7 @@ def signalHandler(signal_num, frame):
 signal.signal(signal.SIGINT, signalHandler)
 
 
-class Trainer:
+class Trainer(Discretization):
     """Trainer class for Poisson solvers. Performs all operations for multi/single GPU training.
 
     Uses loss residuals to train the neural network model. This class relies on the NBM oracle (nbm.py) to
@@ -80,15 +84,13 @@ class Trainer:
 
     def __init__(
         self,
-        gstate: GridState,
+        lvl_gstate: GridState,
+        tr_gstate: GridState,
         eval_gstate: GridState,
         sim_state: PoissonSimState,
         sim_state_fn: PoissonSimStateFn,
         algorithm: int = 0,
-        switching_interval: int = 3,
-        Nx_tr: int = 32,
-        Ny_tr: int = 32,
-        Nz_tr: int = 32,
+        mgrad_over_pgrad_scalefactor: int = 1,
         lvl_set_fn: Callable[..., Array] = None,
         num_epochs: int = 1000,
         multi_gpu: bool = False,
@@ -97,10 +99,42 @@ class Trainer:
         checkpoint_interval: int = 2,
         results_dir: str = "./",
         loss_plot_name: str = "solver_loss",
-        optimizer: GradientTransformation = optax.adam(1e-2),
+        optimizer_dict: dict = {
+            "optimizer_name": "custom",
+            "learning_rate": 1e-3,
+            "sched": {"scheduler_name": "exponential", "decay_rate": 0.9},
+        },
         restart: bool = False,
+        restart_checkpoint_dir: str = "./checkpoints",
         print_rate: int = 1,
+        model_dict: dict = {
+            "name": None,
+            "model_type": "mlp",
+            "mlp": {
+                "hidden_layers_m": 1,
+                "hidden_dim_m": 1,
+                "activation_m": "jnp.tanh",
+                "hidden_layers_p": 2,
+                "hidden_dim_p": 10,
+                "activation_p": "jnp.tanh",
+            },
+            "resnet": {
+                "res_blocks_m": 3,
+                "res_dim_m": 40,
+                "activation_m": "nn.tanh",
+                "res_blocks_p": 3,
+                "res_dim_p": 80,
+                "activation_p": "nn.tanh",
+            },
+        },
     ) -> None:
+        super().__init__(
+            lvl_gstate,
+            sim_state,
+            sim_state_fn,
+            precondition=1,
+            algorithm=algorithm,
+        )
         #########################################################################
         global stop_training
         self.key = random.PRNGKey(758493)
@@ -112,46 +146,42 @@ class Trainer:
         self.checkpoint_interval = checkpoint_interval
         self.results_dir = results_dir
         self.loss_plot_name = loss_plot_name
-        self.Nx_tr = Nx_tr
-        self.Ny_tr = Ny_tr
-        self.Nz_tr = Nz_tr
         self.print_rate = print_rate
+        self.mgrad_over_pgrad_scalefactor = mgrad_over_pgrad_scalefactor
+        self.restart_checkpoint_dir = restart_checkpoint_dir
         #########################################################################
         self.TD = data_management.TrainData(
-            gstate.xmin(),
-            gstate.xmax(),
-            gstate.ymin(),
-            gstate.ymax(),
-            gstate.zmin(),
-            gstate.zmax(),
-            Nx_tr,
-            Ny_tr,
-            Nz_tr,
+            tr_gstate,
+            lvl_set_fn,
+            refine=False,
+            refine_lod=False,
+            refine_normals=False,
         )
-        train_points = self.TD.gstate.R
-        # extra_points = self.TD.refine_normals(lvl_set_fn, max_iters=15)
-        # self.train_points = jnp.concatenate((train_points, extra_points))
-
-        # surface_points = self.TD.refine_LOD(lvl_set_fn, init_res=32, upsamples=3)
-        # self.train_points = jnp.concatenate((train_points, surface_points))
-
-        self.train_points = train_points
-
+        self.train_points = self.TD.train_points
         self.train_dx = self.TD.gstate.dx
         self.train_dy = self.TD.gstate.dy
         self.train_dz = self.TD.gstate.dz
+        # phis_at_points = vmap(lvl_set_fn)(self.train_points)
+        # train_points_m, train_points_p = self.TD.split_train_points_by_region(phis_at_points, self.train_points)
+        #########################################################################
+        self.forward = get_model(model_dict)
         #########################################################################
 
-        self.model = nbm.Bootstrap(
-            gstate,
-            sim_state,
-            sim_state_fn,
-            optimizer,
-            algorithm,
-        )
-        #########################################################################
+        if optimizer_dict["optimizer_name"] != "lbfgs":
+            self.optimizer = get_optimizer(
+                optimizer_name=optimizer_dict["optimizer_name"],
+                scheduler_name=optimizer_dict["sched"]["scheduler_name"],
+                learning_rate=optimizer_dict["learning_rate"],
+                decay_rate=optimizer_dict["sched"]["decay_rate"],
+                loss_fn=self.loss,
+            )
+            self.solve = self.solve_optax
+        else:
+            self.optimizer = jaxopt.LBFGS(fun=self.loss, value_and_grad=True, maxiter=500, tol=1e-3)
+            self.solve = self.solve_jaxopt
+
         if restart:
-            state = self.fetch_checkpoint(self.checkpoint_dir)
+            state = self.fetch_checkpoint(self.restart_checkpoint_dir)
             self.opt_state = state["opt_state"]
             self.params = state["params"]
             self.epoch_start = state["epoch"]
@@ -162,17 +192,82 @@ class Trainer:
                 batch_size {self.batch_size}, resolution {self.resolution}."
             )
         else:
-            state = None
-            self.opt_state, self.params = self.model.init()
-            print_architecture(self.params)
+            rng = random.PRNGKey(42)
+            self.params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)
+            if optimizer_dict["optimizer_name"] != "lbfgs":
+                self.opt_state = self.init_optax()
+        print_architecture(self.params)
+
+        #########################################################################
+        # self.mnet_keys, self.pnet_keys = self.split_mp_networks_keys(self.params)  # split keys for each domain
 
         self.epoch_start = 0
-
         self.loss_epochs = jnp.zeros(self.num_epochs - self.epoch_start)
         self.epoch_store = onp.arange(self.epoch_start, self.num_epochs)
         #########################################################################
+        """ initialize postprocessing methods """
+        self.compute_normal_gradient_solution_mp_on_interface = (
+            self.compute_normal_gradient_solution_mp_on_interface_neural_network
+        )
+        self.compute_gradient_solution_mp = self.compute_gradient_solution_mp_neural_network
+        self.compute_normal_gradient_solution_on_interface = (
+            self.compute_normal_gradient_solution_on_interface_neural_network
+        )
+        self.compute_gradient_solution = self.compute_gradient_solution_neural_network
+        #########################################################################
 
-    def fetch_checkpoint(self, checkpoint_dir):
+    @partial(jit, static_argnums=0)
+    def init_optax(self):
+        r"""This function initializes the neural network with random parameters."""
+        opt_state = self.optimizer.init(params=self.params)
+        self.mnet_keys, self.pnet_keys = self.split_mp_networks_keys(self.params)  # split keys for each domain
+        return opt_state
+
+    # @staticmethod
+    # @hk.transform
+    # def forward(x, phi_x):
+    #     r"""Forward pass of the neural network.
+
+    #     Args:
+    #         x: input data
+
+    #     Returns:
+    #         output of the neural network
+    #     """
+    #     model = DoubleMLP()
+    #     return model(x, phi_x)
+
+    @staticmethod
+    def split_mp_networks_keys(params):
+        """Split keys for negative and positive networks
+        Expects the layer names include patterns _m_fn and _p_fn for -/+ networks respectively
+
+        Args:
+            params [dict]: parameters dictionary of the model with both positive/negative networks
+
+        Returns:
+            (mnet_keys, list[str]), (pnet_keys list[str]): pair of lists for key strings of -/+ networks
+        """
+        import re
+
+        def find_keys_with_pattern(keys, pattern):
+            matched_keys = []
+            for key in keys:
+                if re.search(pattern, key):
+                    matched_keys.append(key)
+            return matched_keys
+
+        keys = params.keys()
+        m_pattern = r"_m_fn"
+        mnet_keys = find_keys_with_pattern(keys, m_pattern)
+        p_pattern = r"_p_fn"
+        pnet_keys = find_keys_with_pattern(keys, p_pattern)
+        return mnet_keys, pnet_keys
+        # mnet, pnet = hk.data_structures.partition(lambda m, n, p: m != "double_mlp/~resnet_m_fn/linear", params)
+
+    #########################################################################
+    @staticmethod
+    def fetch_checkpoint(checkpoint_dir):
         if checkpoint_dir is None or not os.path.exists(checkpoint_dir):
             return None
         else:
@@ -185,7 +280,8 @@ class Trainer:
                 state = pickle.load(f)
             return state
 
-    def save_checkpoint(self, checkpoint_dir, state):
+    @staticmethod
+    def save_checkpoint(checkpoint_dir, state):
         if checkpoint_dir is None:
             logger.info("No checkpoint dir. specified. Skipping checkpoint.")
             return
@@ -197,8 +293,93 @@ class Trainer:
             pickle.dump(state, f)
         return checkpoint
 
+    # -------------
+    def solve_jaxopt(self):
+        """jaxopt based optimizers
+        TODO: right now assumes only 1 batch
+        """
+        self.DD = data_management.DatasetDict(
+            batch_size=self.batch_size,
+            x_data=self.train_points,
+        )
+        batched_training_data = self.DD.get_batched_data()
+        num_batches = batched_training_data.shape[0]
+
+        # 1.
+        solver = jaxopt.ScipyMinimize(
+            method="l-bfgs-b",
+            fun=self.loss,
+            tol=1e-15,
+            maxiter=self.num_epochs,
+            implicit_diff_solve=True,
+        )
+        # solver = jaxopt.GradientDescent(fun=self.loss, maxiter=self.num_epochs, implicit_diff=True)
+        # 2. Scipy Least Squares
+        # solver = jaxopt.ScipyLeastSquares(
+        #     method="trf",
+        #     fun=self.loss,
+        # )  # trf, dogbox, lm
+
+        start_time = time.time()
+        solver_sol = solver.run(
+            self.params,
+            points=batched_training_data[0],
+            dx=self.train_dx,
+            dy=self.train_dy,
+            dz=self.train_dz,
+        )
+        end_time = time.time()
+        logger.info(f"solve took {end_time - start_time} (sec)")
+
+        # 3
+        # solver = jaxopt.ScipyRootFinding(
+        #     method="krylov",
+        #     optimality_fun=self.residual_vector,
+        #     tol=1e-15,
+        # )
+        # u_res = jnp.zeros(self.eval_gstate.R.shape[0])
+        # start_time = time.time()
+        # solver_sol = solver.run(
+        #     init_params=u_res,
+        # )
+        # end_time = time.time()
+        # logger.info(f"solve took {end_time - start_time} (sec)")
+
+        self.params = solver_sol.params
+        self.opt_state = solver_sol.state
+        state = {
+            "opt_state": self.opt_state,
+            "params": self.params,
+            "epoch": self.epoch_store[-1] + 1,
+            "batch_size": self.batch_size,
+            "resolution": f"{self.train_dx}, {self.train_dy}, {self.train_dz}",
+        }
+        self.save_checkpoint(self.checkpoint_dir, state)
+
+        (
+            final_solution,
+            grad_u,
+            grad_u_normal_to_interface,
+        ) = self.evaluate_solution_and_gradients(self.params, self.eval_gstate)
+        return (
+            final_solution,
+            grad_u,
+            grad_u_normal_to_interface,
+            self.epoch_store,
+            self.loss_epochs,
+        )
+        # opt_state = self.optimizer.init_state(
+        #     init_params=self.params,
+        #     points=jnp.array([[0.0, 0.0, 0.0]]),
+        #     dx=self.train_dx,
+        #     dy=self.train_dy,
+        #     dz=self.train_dz,
+        # )
+
+        # self.optimizer.update()
+
     # -----------------------
-    def solve(self):
+    def solve_optax(self):
         start_time = time.time()
         if self.multi_gpu:
             n_devices = jax.local_device_count()
@@ -234,7 +415,7 @@ class Trainer:
             "params": self.params,
             "epoch": self.epoch_store[-1] + 1,
             "batch_size": self.batch_size,
-            "resolution": f"{self.Nx_tr}, {self.Ny_tr}, {self.Nz_tr}",
+            "resolution": f"{self.train_dx}, {self.train_dy}, {self.train_dz}",
         }
         self.save_checkpoint(self.checkpoint_dir, state)
 
@@ -263,7 +444,7 @@ class Trainer:
     @partial(jit, static_argnums=(0))
     def single_GPU_train(self, opt_state, params, batched_training_data):
         # batched_training_data = self.DD.get_batched_data()
-        update_fn = self.model.update
+        update_fn = self.update
         num_batches = batched_training_data.shape[0]
 
         def learn_one_batch(carry, data_batch):
@@ -283,11 +464,13 @@ class Trainer:
                 train_dz,
                 batched_training_data,
             ) = carry
-            # train_dx, train_dy, train_dz = self.TD.alternate_res(epoch, train_dx, train_dy, train_dz) #TODO: automate this
-            train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(
-                self.num_epochs, epoch, train_dx, train_dy, train_dz
-            )
-            batched_training_data = random.permutation(key, batched_training_data, axis=1)
+            # train_dx, train_dy, train_dz = self.TD.alternate_res(
+            #     epoch, train_dx, train_dy, train_dz
+            # )  # TODO: automate this
+            # train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(
+            #     self.num_epochs, epoch, train_dx, train_dy, train_dz
+            # )
+            # batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
             (
                 opt_state,
@@ -374,7 +557,7 @@ class Trainer:
         num_batches = batched_training_data.shape[1]
 
         # -----
-        update_fn = self.model.update_multi_gpu
+        update_fn = self.update_multi_gpu
 
         def learn_one_batch(carry, data_batch):
             opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
@@ -488,7 +671,7 @@ class Trainer:
         )
         batched_training_data = DD.get_batched_data()
         update_fn = pmap(
-            self.model.update_multi_gpu,
+            self.update_multi_gpu,
             in_axes=(0, 0, 0, 0, 0, 0),
             axis_name="devices",
         )
@@ -523,27 +706,196 @@ class Trainer:
                     "params": params,
                     "epoch": epoch + 1,
                     "batch_size": self.batch_size,
-                    "resolution": f"{self.Nx_tr}, {self.Ny_tr}, {self.Nz_tr}",
+                    "resolution": f"{self.train_dx}, {self.train_dy}, {self.train_dz}",
                 }
                 self.save_checkpoint(self.checkpoint_dir, state)
         params = jax.device_get(jax.tree_map(lambda x: x[0], params))
         return opt_state, params, epoch_store, loss_epochs
 
     # -----------------------
+
+    @partial(jit, static_argnums=(0))
+    def update(self, opt_state, params, points, dx, dy, dz):
+        r"""One step of single-GPU optimization on the neural network model."""
+        loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
+        updates, opt_state = self.optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
+        return opt_state, params, loss
+
+    @partial(jit, static_argnums=(0))
+    def __update(self, opt_state, params, points, dx, dy, dz):
+        r"""One step of single-GPU optimization on the neural network model.
+        Update function must perform update rule on -/+ domains and networks independently
+        """
+
+        def _loss(params_trainable, params_untrainable, points, dx, dy, dz):
+            params = hk.data_structures.merge(params_trainable, params_untrainable)
+            loss = self.loss(params, points, dx, dy, dz)
+            return loss
+
+        # split parameters
+        m_params, p_params = hk.data_structures.partition(lambda m, n, p: m not in self.pnet_keys, params)
+        # -- first get gradients of negative network
+        m_loss, m_grads = value_and_grad(_loss)(m_params, p_params, points, dx, dy, dz)
+        # -- second get gradients of positive network
+        p_loss, p_grads = value_and_grad(_loss)(p_params, m_params, points, dx, dy, dz)
+        # --- Choose region to optimize by zeroing the other region
+        m_grads = jax.tree_map(lambda x: x * self.mgrad_over_pgrad_scalefactor, m_grads)
+        # -- append the grads into m_grads dictionary
+        m_grads.update(p_grads)
+        updates, opt_state = self.optimizer.update(m_grads, opt_state, params)  # -- get optimizer updates
+        params = optax.apply_updates(params, updates)  # -- apply updates on params
+        # -- collect losses
+        loss = m_loss + p_loss
+        return opt_state, params, loss
+
+    # def update_lbfgs(self, params, points, dx, dy, dz, maxiter=10):
+    #     solver = jaxopt.LBFGS(fun=self.loss, maxiter=maxiter)
+    #     params, opt_state = solver.run(params, points=points, dx=dx, dy=dy, dz=dz)
+    #     return opt_state, params
+
+    # @partial(jit, static_argnums=(0))
+    def update_multi_gpu(self, opt_state, params, points, dx, dy, dz):
+        r"""One step of multi-GPU optimization on the neural network model."""
+        loss, grads = value_and_grad(self.loss)(params, points, dx, dy, dz)
+
+        """ Muli-GPU """
+        grads = jax.lax.psum(grads, axis_name="devices")
+        loss = jax.lax.psum(loss, axis_name="devices")
+
+        updates, opt_state = self.optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
+        return opt_state, params, loss
+
+    @partial(jit, static_argnums=(0))
+    def evaluate_solution_fn(self, params, R_flat):
+        phi_flat = self.phi_interp_fn(R_flat)
+        sol_fn = partial(self.forward.apply, params, None)
+        pred_sol = vmap(sol_fn, (0, 0))(R_flat, phi_flat)
+
+        # pred_sol = chunked_vmap(
+        #     sol_fn,
+        #     num_chunks=2,
+        #     in_axes=(0, 0),
+        # )(R_flat, phi_flat)
+
+        return pred_sol
+
+    def solution_at_point_fn(self, params, r_point, phi_point):
+        sol_fn = partial(self.forward.apply, params, None)
+        return sol_fn(r_point, phi_point).reshape()
+
+    def get_sol_grad_sol_fn(self, params):
+        u_at_point_fn = partial(self.solution_at_point_fn, params)
+        grad_u_at_point_fn = grad(u_at_point_fn)
+        return u_at_point_fn, grad_u_at_point_fn
+
+    def get_mask_plus(self, points):
+        """
+        For a set of points, returns 1 if in external region
+        returns 0 if inside the geometry.
+        """
+        phi_points = self.phi_interp_fn(points)
+
+        def sign_p_fn(a):
+            # returns 1 only if a>0, otherwise is 0
+            sgn = jnp.sign(a)
+            return jnp.floor(0.5 * sgn + 0.75)
+
+        mask_p = sign_p_fn(phi_points)
+        return mask_p
+
+    @partial(jit, static_argnums=(0))
+    def residual_vector_params(self, params, points, dx, dy, dz):
+        r"""Loss function of the neural network."""
+        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        return lhs - rhs
+
+    @partial(jit, static_argnums=(0))
+    def residual_vector(self, u_vec):
+        """u_vec, points and eval_gstate and outputs have same shapes on grids"""
+        lhs_rhs = vmap(self.compute_Ax_and_b_discrete_fn, (None, None, 0, None, None, None))(
+            self.eval_gstate, u_vec, self.eval_gstate.R, self.eval_gstate.dx, self.eval_gstate.dy, self.eval_gstate.dz
+        )
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        return lhs - rhs
+
+    @partial(jit, static_argnums=(0))
+    def loss(self, params, points, dx, dy, dz):
+        r"""Loss function of the neural network."""
+        lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)
+        lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
+        tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
+        # du_xmax = (self.evaluate_solution_fn(params, self.tr_gstate.R_xmax_boundary) - self.dir_bc_fn(self.tr_gstate.R_xmax_boundary)[...,jnp.newaxis])
+        # du_xmin = (self.evaluate_solution_fn(params, self.tr_gstate.R_xmin_boundary) - self.dir_bc_fn(self.tr_gstate.R_xmin_boundary)[...,jnp.newaxis])
+        # du_ymax = (self.evaluate_solution_fn(params, self.tr_gstate.R_ymax_boundary) - self.dir_bc_fn(self.tr_gstate.R_ymax_boundary)[...,jnp.newaxis])
+        # du_ymin = (self.evaluate_solution_fn(params, self.tr_gstate.R_ymin_boundary) - self.dir_bc_fn(self.tr_gstate.R_ymin_boundary)[...,jnp.newaxis])
+        # du_zmax = (self.evaluate_solution_fn(params, self.tr_gstate.R_zmax_boundary) - self.dir_bc_fn(self.tr_gstate.R_zmax_boundary)[...,jnp.newaxis])
+        # du_zmin = (self.evaluate_solution_fn(params, self.tr_gstate.R_zmin_boundary) - self.dir_bc_fn(self.tr_gstate.R_zmin_boundary)[...,jnp.newaxis])
+        # tot_loss += 0.01 * (jnp.mean(jnp.square(du_xmax)) + jnp.mean(jnp.square(du_xmin)) + jnp.mean(jnp.square(du_ymax)) + jnp.mean(jnp.square(du_ymin)) + jnp.mean(jnp.square(du_zmax)) + jnp.mean(jnp.square(du_zmin)))
+        return tot_loss
+
+    def compute_normal_gradient_solution_mp_on_interface_neural_network(self, params, points, dx, dy, dz):
+        _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+        grad_u_p = vmap(grad_u_at_point_fn, (0, None))(points, 1)
+        grad_u_m = vmap(grad_u_at_point_fn, (0, None))(points, -1)
+        normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(points, dx, dy, dz)
+        grad_n_u_m = vmap(jnp.dot, (0, 0))(jnp.squeeze(normal_vecs), grad_u_m)
+        grad_n_u_p = vmap(jnp.dot, (0, 0))(jnp.squeeze(normal_vecs), grad_u_p)
+        return grad_n_u_m, grad_n_u_p
+
+    def compute_gradient_solution_mp_neural_network(self, params, points):
+        _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+        grad_u_p = vmap(grad_u_at_point_fn, (0, None))(points, 1)
+        grad_u_m = vmap(grad_u_at_point_fn, (0, None))(points, -1)
+        return grad_u_m, grad_u_p
+
+    def compute_normal_gradient_solution_on_interface_neural_network(self, params, points, dx, dy, dz):
+        phi_flat = self.phi_interp_fn(points)
+        _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+
+        grad_u = vmap(grad_u_at_point_fn, (0, 0))(points, phi_flat)
+        normal_vecs = vmap(self.normal_point_fn, (0, None, None, None))(points, dx, dy, dz)
+        grad_n_u = vmap(jnp.dot, (0, 0))(jnp.squeeze(normal_vecs), grad_u)
+        # grad_u = chunked_vmap(grad_u_at_point_fn, num_chunks=2, in_axes=(0, 0))(
+        #     points,
+        #     phi_flat,
+        # )
+        # normal_vecs = chunked_vmap(self.normal_point_fn, num_chunks=2, in_axes=(0, None, None, None))(
+        #     points,
+        #     dx,
+        #     dy,
+        #     dz,
+        # )
+        # grad_n_u = chunked_vmap(jnp.dot, num_chunks=2, in_axes=(0, 0))(
+        #     jnp.squeeze(normal_vecs),
+        #     grad_u,
+        # )
+
+        return grad_n_u
+
+    def compute_gradient_solution_neural_network(self, params, points):
+        phi_flat = self.phi_interp_fn(points)
+        _, grad_u_at_point_fn = self.get_sol_grad_sol_fn(params)
+        grad_u = vmap(grad_u_at_point_fn, (0, 0))(points, phi_flat)
+        return grad_u
+
+    # -------------------------------
     @partial(jit, static_argnums=(0))
     def evaluate_solution_and_gradients(self, params, eval_gstate):
-        final_solution = self.model.evaluate_solution_fn(
+        final_solution = self.evaluate_solution_fn(
             params,
             eval_gstate.R,
         ).reshape(-1)
-        grad_u_normal_to_interface = self.model.compute_normal_gradient_solution_on_interface(
+        grad_u_normal_to_interface = self.compute_normal_gradient_solution_on_interface(
             params,
             eval_gstate.R,
             eval_gstate.dx,
             eval_gstate.dy,
             eval_gstate.dz,
         )
-        grad_u = self.model.compute_gradient_solution(
+        grad_u = self.compute_gradient_solution(
             params,
             eval_gstate.R,
         )
@@ -606,22 +958,45 @@ def setup(
     )
 
     def init_fn(
-        gstate: GridState,
-        eval_gstate: GridState,
-        Nx_tr: int = 32,
-        Ny_tr: int = 32,
-        Nz_tr: int = 32,
+        lvl_gstate: GridState = None,
+        tr_gstate: GridState = None,
+        eval_gstate: GridState = None,
         num_epochs: int = 1000,
         batch_size: int = 131072,
         algorithm: int = 0,
-        switching_interval: int = 3,
+        mgrad_over_pgrad_scalefactor: int = 1,
         multi_gpu: bool = False,
         checkpoint_interval: int = 1000,
         checkpoint_dir: str = "./checkpoints",
         results_dir: str = "./",
         loss_plot_name: str = "solver_loss",
-        optimizer: GradientTransformation = optax.adam(1e-2),
+        optimizer_dict: dict = {
+            "optimizer_name": "custom",
+            "learning_rate": 1e-3,
+            "sched": {"scheduler_name": "exponential", "decay_rate": 0.9},
+        },
+        model_dict: dict = {
+            "name": None,
+            "model_type": "mlp",
+            "mlp": {
+                "hidden_layers_m": 1,
+                "hidden_dim_m": 1,
+                "activation_m": "jnp.tanh",
+                "hidden_layers_p": 2,
+                "hidden_dim_p": 10,
+                "activation_p": "jnp.tanh",
+            },
+            "resnet": {
+                "res_blocks_m": 3,
+                "res_dim_m": 40,
+                "activation_m": "nn.tanh",
+                "res_blocks_p": 3,
+                "res_dim_p": 80,
+                "activation_p": "nn.tanh",
+            },
+        },
         restart: bool = False,
+        restart_checkpoint_dir: str = "./checkpoints",
         print_rate: int = 1,
     ) -> Tuple[PoissonSimState, SolveFn]:
         R = eval_gstate.R
@@ -639,15 +1014,13 @@ def setup(
 
         def solve_fn(sim_state: PoissonSimState) -> PoissonSimState:
             trainer = Trainer(
-                gstate,
+                lvl_gstate,
+                tr_gstate,
                 eval_gstate,
                 sim_state,
                 sim_state_fn,
                 algorithm,
-                switching_interval=switching_interval,
-                Nx_tr=Nx_tr,
-                Ny_tr=Ny_tr,
-                Nz_tr=Nz_tr,
+                mgrad_over_pgrad_scalefactor=mgrad_over_pgrad_scalefactor,
                 lvl_set_fn=lvl_set_fn,
                 num_epochs=num_epochs,
                 multi_gpu=multi_gpu,
@@ -656,9 +1029,11 @@ def setup(
                 checkpoint_interval=checkpoint_interval,
                 results_dir=results_dir,
                 loss_plot_name=loss_plot_name,
-                optimizer=optimizer,
+                optimizer_dict=optimizer_dict,
                 restart=restart,
+                restart_checkpoint_dir=restart_checkpoint_dir,
                 print_rate=print_rate,
+                model_dict=model_dict,
             )
             (
                 final_solution,

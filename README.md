@@ -1,7 +1,10 @@
 # JAX-DIPS
 JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D.
 
-JAX-DIPS implements the neural bootstrapping method (NBM):
+JAX-DIPS implements the neural bootstrapping method (NBM) (see citations below) for training compact neural network surrogate models using finite discretization methods for handling spatial gradients and automatic differentiation for training neural network parameters. Use of FD for the PDE residuals limits automatic differentiation to ONLY first-order which significantly reduces the computational/memory costs associated to higher order AD w.r.t model inputs (as in PINNs). Moreover, use of carefully designed numerical discretization methods for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network optimizer of the mathematical symmetries (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods around training points. These extra mathematical constraints improve regularity and accuracy of the learned surrogate models.
+
+# Library Structure
+
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/JAX-DIPS.png)
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/jax_dips_design.png)
 
@@ -19,6 +22,43 @@ Streamlines of solution gradients (left), and jump in solution (right) calculate
 
 <!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/gradient_U.png) -->
 
+
+## Models
+Models are stored at `jax_dips.nn` module and provided to the Poisson solver through the `get_model(**model_dict)` API defined in `jax_dips.nn.configure` module. When adding a new model you should only add it to this API. The model parameters (i.e., `model_dict`) should be provided to the `jax_dips.solvers.poisson.trainer` module, and is usually defined in the yaml configuration file for hydra similar to:
+```
+model:
+  model_type : "mlp"
+  mlp:
+    hidden_layers_m: 1
+    hidden_dim_m: 3
+    activation_m: "jnp.tanh"
+    hidden_layers_p: 2
+    hidden_dim_p: 10
+    activation_p: "jnp.tanh"
+  resnet:
+    res_blocks_m : 3
+    res_dim_m : 40
+    activation_m : "nn.tanh"
+    res_blocks_p : 3
+    res_dim_p : 80
+    activation_p : "nn.tanh"
+```
+
+## Optimizers
+Explicit and implicit auto-differentiation is provided through the `jaxopt` and `optax` packages (`optax` is configured from `jax_dips.solvers.optimizers` module; currently calls to `jaxopt` are configured directly by the `jax_dips.solvers.poisson.trainer` module). In the yaml file this can be configured by
+```
+solver: 
+  optim:
+      optimizer_name: "custom" # options are "custom", "adam", "rmsprop", "lbfgs"
+      learning_rate: 1e-3
+      sched:  # learning rate scheduler 
+        scheduler_name: "exponential" # options are "exponential", "polynomial"
+        decay_rate: 0.9
+```
+Currently, choosing `lbfgs` prompts the `jaxopt` package with implicit differentiation.
+
+Note: in the current version we support data-parallel training using `optax`.
+
 # Testing
 Do `pytest tests/test_*.py` of each of the available tests from the parent directory:
 - `test_advection`: a sphere is rotated 360 degrees around the box to replicate initial configuration. The L2 error in level-set function should be less than 1e-4 to pass. The advection is performed using semi-Lagrangian scheme with Sussman reinitialization.
@@ -27,10 +67,13 @@ Do `pytest tests/test_*.py` of each of the available tests from the parent direc
 - `test_poisson`: tests for both the pointwise and the grid-based Poisson solvers over a star and a sphere interfaces. Note that in the current implementation the grid-based solver does not support batching and is therefore faster. Fixing this issue will be done in the future versions.
 
 # Installation
-To install the latest released version from PyPI do ```pip install jax-dips```. If you want to create a dedicated virtual environment for jax-dips you could use ```python3 -m venv <my-virtual-env>``` and then activate it by ```source <my-virtual-env>/bin/activate```. Then you can install jax-dips inside this environment to make sure it doesn't interfere with your existing library installations.
+To install the latest released version from PyPI do ```pip install jax-dips```. If you want to create a dedicated virtual environment for jax-dips you could use ```python3 -m venv <my-virtual-env>``` and then activate it by ```source <my-virtual-env>/bin/activate```. Then you can install jax-dips inside this environment to make sure it doesn't interfere with your existing library installations. Note `jax-dips` will install jax on your machine, therefore it is recommended to use a virtual environment.
 
 
-# Development & Usage Environment
+# Development & Usage
+
+## 0. Hardware Requirements
+The default hardware requirements considered below is on NVIDIA GPU with CUDA version `>=12.*` and CUDA driver version `>=530`. However, if you are using a different CUDA version you should replace the python wheel address on the first line of `requirements.txt` with your desired `wheel` from https://storage.googleapis.com/jax-releases/jax_cuda_releases.html. If you are using a different hardware (AMD GPU, TPU, etc.) you can also modify the `requirements.txt` accordingly or build from source (modify `Dockerfile`) based on the instructions at https://jax.readthedocs.io/en/latest/developer.html#building-from-source. If you are facing issues with installation please don't to raise an issue at https://github.com/JAX-DIPS/JAX-DIPS/issues and we will add support for your special hardware.
 
 ## 1. Virtual Environment
 Create a virtual environment by running the following command
@@ -41,13 +84,15 @@ and the ```env_jax_dips``` virtual environment will be created. Then you can lau
 ```source env_jax_dips/bin/activate```. After you are done, ```deactivate```.
 
 ## 2. Docker
-
+Docker images provide an isolated and consistent runtime environment, ensuring that the application behaves the same regardless of the host system. We recommend using the docker image provided here as it is fully loaded with libraries for datacenter scale simulatiopns and optimized for NVIDIA GPUs. For a full list of the supported software and specific versions that come packaged with this container image see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html. 
 ### Prerequisites
 First you will need to install the nvidia driver and docker engines:
 - Nvidia Driver
   ```
   apt install $(nvidia-detector)
   ```
+
+  Or use `Synaptic` package manager to install `nvidia-driver-535`.
 
 - Docker Engine
   Please refer https://docs.docker.com/engine/install/ubuntu/
@@ -58,10 +103,7 @@ First you will need to install the nvidia driver and docker engines:
   apt-get install nvidia-docker2
   ```
 
-### Instructions
-Docker images provide an isolated and consistent runtime environment, ensuring that the application behaves the same regardless of the host system. We recommend using the docker image provided here as it is fully loaded with libraries for datacenter scale simulatiopns and optimized for NVIDIA GPUs. For a full list of the supported software and specific versions that come packaged with this container image see the Frameworks Support Matrix https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
-
-
+### Container Settings
 To personalize your development environment you need to set up a `.env` file that contains
 ```
 IMAGE_NAME=docker.io/pourion/jax_dips:latest       # default docker image available for download! Change this if you want to build new docker images and push to your preferred docker registry

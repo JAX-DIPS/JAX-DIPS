@@ -40,6 +40,7 @@ from jax_dips.domain import mesh
 from jax_dips.geometry import level_set
 from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips.solvers.poisson import trainer
+from jax_dips.solvers.poisson.deprecated import poisson_solver_scalable
 from jax_dips.utils import io
 from tests.confs.experiment_configs import no_jump, sphere, star
 
@@ -99,30 +100,30 @@ def poisson_solve(
     checkpoint_interval = cfg.experiment.logging.checkpoint_interval
 
     algorithm = cfg.solver.algorithm
-    switching_interval = cfg.solver.switching_interval
     multi_gpu = cfg.solver.multi_gpu
     num_epochs = cfg.solver.num_epochs
+    batch_size = cfg.solver.batch_size
 
     dim = i32(3)
     xmin = ymin = zmin = f32(-1.0)
     xmax = ymax = zmax = f32(1.0)
     init_mesh_fn, coord_at = mesh.construct(dim)
 
-    Nx_tr = cfg.solver.Nx_tr
-    Ny_tr = cfg.solver.Nx_tr
-    Nz_tr = cfg.solver.Nx_tr
-    batch_size = min(64 * 64 * 32, Nx_tr * Ny_tr * Nz_tr)
+    # --------- Grid nodes for training
+
+    xc = jnp.linspace(xmin, xmax, cfg.solver.Nx_tr, dtype=f32)
+    yc = jnp.linspace(ymin, ymax, cfg.solver.Ny_tr, dtype=f32)
+    zc = jnp.linspace(zmin, zmax, cfg.solver.Nz_tr, dtype=f32)
+    gstate_tr = init_mesh_fn(xc, yc, zc)
 
     # --------- Grid nodes for level set
-    Nx = cfg.gridstates.Nx
-    Ny = cfg.gridstates.Ny
-    Nz = cfg.gridstates.Nz
-    xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
-    yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
-    zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
-    dx = xc[1] - xc[0]
-    gstate = init_mesh_fn(xc, yc, zc)
-    R = gstate.R
+    Nx_lvl = cfg.gridstates.Nx_lvl
+    Ny_lvl = cfg.gridstates.Ny_lvl
+    Nz_lvl = cfg.gridstates.Nz_lvl
+    xc = jnp.linspace(xmin, xmax, Nx_lvl, dtype=f32)
+    yc = jnp.linspace(ymin, ymax, Ny_lvl, dtype=f32)
+    zc = jnp.linspace(zmin, zmax, Nz_lvl, dtype=f32)
+    gstate_lvl = init_mesh_fn(xc, yc, zc)
 
     # ----------  Evaluation Mesh for Visualization
     Nx_eval = cfg.gridstates.Nx_eval
@@ -151,41 +152,86 @@ def poisson_solve(
         evaluate_exact_solution_fn,
     ) = exp_fn()
 
-    init_fn = trainer.setup(
-        initial_value_fn,
-        dirichlet_bc_fn,
-        phi_fn,
-        mu_m_fn,
-        mu_p_fn,
-        k_m_fn,
-        k_p_fn,
-        f_m_fn,
-        f_p_fn,
-        alpha_fn,
-        beta_fn,
+    # ----------- Set up optimizer
+    optimizer = get_optimizer(
+        optimizer_name=cfg.solver.optim.optimizer_name,
+        scheduler_name=cfg.solver.sched.scheduler_name,
+        learning_rate=cfg.solver.optim.learning_rate,
+        decay_rate=cfg.solver.sched.decay_rate,
+        max_norm=1.0,
     )
-    sim_state, solve_fn = init_fn(
-        gstate=gstate,
-        eval_gstate=eval_gstate,
-        algorithm=algorithm,
-        switching_interval=switching_interval,
-        Nx_tr=Nx_tr,
-        Ny_tr=Ny_tr,
-        Nz_tr=Nz_tr,
-        num_epochs=num_epochs,
-        multi_gpu=multi_gpu,
-        batch_size=batch_size,
-        checkpoint_interval=checkpoint_interval,
-        checkpoint_dir=checkpoint_dir,
-        results_dir=results_path,
-        loss_plot_name=test_name,
-        optimizer=get_optimizer(),
-        restart=cfg.solver.restart_from_checkpoint,
-        print_rate=cfg.solver.print_rate,
-    )
-    t1 = time.time()
-    sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
-    t2 = time.time()
+
+    # --------- Set up first version solver
+    if False:
+        init_fn, solve_fn = poisson_solver_scalable.setup(
+            initial_value_fn,
+            dirichlet_bc_fn,
+            phi_fn,
+            mu_m_fn,
+            mu_p_fn,
+            k_m_fn,
+            k_p_fn,
+            f_m_fn,
+            f_p_fn,
+            alpha_fn,
+            beta_fn,
+        )
+        sim_state = init_fn(gstate_tr.R)
+        t1 = time.time()
+        sim_state, epoch_store, loss_epochs = solve_fn(
+            gstate=gstate_tr,
+            eval_gstate=eval_gstate,
+            sim_state=sim_state,
+            algorithm=0,
+            switching_interval=3,
+            Nx_tr=cfg.solver.Nx_tr,
+            Ny_tr=cfg.solver.Ny_tr,
+            Nz_tr=cfg.solver.Nz_tr,
+            num_epochs=num_epochs,
+            multi_gpu=multi_gpu,
+            batch_size=batch_size,
+            checkpoint_dir=checkpoint_dir,
+            checkpoint_interval=checkpoint_interval,
+            currDir=results_path,
+            print_rate=cfg.solver.print_rate,
+        )
+        t2 = time.time()
+    else:
+        # --------- Set up second version solver
+        init_fn = trainer.setup(
+            initial_value_fn,
+            dirichlet_bc_fn,
+            phi_fn,
+            mu_m_fn,
+            mu_p_fn,
+            k_m_fn,
+            k_p_fn,
+            f_m_fn,
+            f_p_fn,
+            alpha_fn,
+            beta_fn,
+        )
+
+        sim_state, solve_fn = init_fn(
+            lvl_gstate=gstate_lvl,
+            tr_gstate=gstate_tr,
+            eval_gstate=eval_gstate,
+            algorithm=algorithm,
+            num_epochs=num_epochs,
+            multi_gpu=multi_gpu,
+            batch_size=batch_size,
+            checkpoint_interval=checkpoint_interval,
+            checkpoint_dir=checkpoint_dir,
+            results_dir=results_path,
+            loss_plot_name=test_name,
+            optimizer=optimizer,
+            restart=cfg.solver.restart_from_checkpoint,
+            restart_checkpoint_dir=cfg.solver.restart_checkpoint_dir,
+            print_rate=cfg.solver.print_rate,
+        )
+        t1 = time.time()
+        sim_state, epoch_store, loss_epochs = solve_fn(sim_state=sim_state)
+        t2 = time.time()
 
     logger.info(f"solve took {(t2 - t1)} seconds")
     jax.profiler.save_device_memory_profile(f"{results_path}/memory_poisson_test_{test_name}.prof")
@@ -227,12 +273,14 @@ def poisson_solve(
     # }
     # io.write_vtk_manual(gstate, log)
 
-    L_inf_err = abs(sim_state.solution - exact_sol).max()
     rms_err = jnp.square(sim_state.solution - exact_sol).mean() ** 0.5
+    L_inf_err = abs(sim_state.solution - exact_sol).max()
+    L2_err = jnp.sqrt(((sim_state.solution - exact_sol) ** 2).sum())
+    L2_rel_loss = jnp.sqrt(((sim_state.solution - exact_sol) ** 2).sum() / (exact_sol**2).sum())
 
-    logger.info("Solution error computed everywhere in the domain:\n")
-    logger.info(f"\t L_inf error \t=\t {L_inf_err}")
-    logger.info(f"\t RMSD error \t=\t {rms_err}\n")
+    logger.info(
+        f"Accuracy: \n L_inf : {L_inf_err} \n \n L_2 : {L2_err} \n Rel. L_2 : {L2_rel_loss} \n RMSD error : {rms_err}"
+    )
     logger.info(f"Experiment {test_name} completed! \n")
 
     """

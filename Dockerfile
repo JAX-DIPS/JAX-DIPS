@@ -1,7 +1,7 @@
 # FROM nvcr.io/nvidia/tensorflow:22.05-tf2-py3
 # FROM nvcr.io/nvidia/pytorch:22.04-py3
 # for contents see https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
-FROM nvcr.io/nvidia/pytorch:23.04-py3
+FROM nvcr.io/nvidia/pytorch:23.05-py3
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC
 RUN apt update && \
@@ -27,15 +27,15 @@ ENV PYTHONPATH="/opt/PyEVTK"
 
 
 
-ENV KAOLIN_INSTALL_EXPERIMENTAL=1
-ENV IGNORE_TORCH_VER=0
-# ENV TORCH_CUDA_ARCH_LIST="7.0 7.5"
-ENV CUB_HOME=/usr/local/cuda-*/include/
-RUN cd /opt \
-    && git clone --recursive https://github.com/NVIDIAGameWorks/kaolin \
-    && cd kaolin \
-    && git checkout v0.11.0 \
-    && python3 setup.py develop
+# ENV KAOLIN_INSTALL_EXPERIMENTAL=1
+# ENV IGNORE_TORCH_VER=0
+# # ENV TORCH_CUDA_ARCH_LIST="7.0 7.5"
+# ENV CUB_HOME=/usr/local/cuda-*/include/
+# RUN cd /opt \
+#     && git clone --recursive https://github.com/NVIDIAGameWorks/kaolin \
+#     && cd kaolin \
+#     && git checkout v0.11.0 \
+#     && python3 setup.py develop
 
 
 RUN cd /opt \

@@ -18,6 +18,7 @@
 
 """
 """ To run on CPUs uncomment the following XLA flag with your choice of num CPUs """
+import logging
 import os
 import pickle
 import signal
@@ -26,7 +27,8 @@ import jax
 from jax import config, grad, jit
 from jax import numpy as jnp
 from jax import pmap, random, value_and_grad, vmap
-from tqdm.auto import tqdm
+
+# from tqdm.auto import tqdm
 
 from jax_dips.data import data_management
 from jax_dips.geometry import geometric_integrations_per_point
@@ -38,7 +40,7 @@ import optax
 
 from jax_dips._jaxmd_modules.util import f32, i32
 from jax_dips.domain import interpolate
-from jax_dips.nn.nn_solution_model import DoubleMLP
+from jax_dips.nn.configure import get_model
 from jax_dips.utils.inspect import print_architecture
 
 matplotlib.use("Agg")
@@ -49,13 +51,14 @@ import matplotlib.pyplot as plt
 import numpy as onp
 
 stop_training = False
+logger = logging.getLogger(__name__)
 
 
 def signalHandler(signal_num, frame):
     global stop_training
     stop_training = True
-    print("Signal:", signal_num, " Frame: ", frame)
-    print("Training will stop after the completion of current epoch")
+    logger.info("Signal:", signal_num, " Frame: ", frame)
+    logger.info("Training will stop after the completion of current epoch")
 
 
 signal.signal(signal.SIGINT, signalHandler)
@@ -76,6 +79,7 @@ class PDETrainer:
         self.sim_state_fn = sim_state_fn
         self.sim_state = sim_state
         self.algorithm = algorithm
+        self.forward = get_model()
 
         """ Grid Info """
         # self.bandwidth_squared = (2.0 * self.dx)*(2.0 * self.dx)
@@ -189,21 +193,21 @@ class PDETrainer:
             if checkpoints == []:
                 return None
             checkpoint = os.path.join(checkpoint_dir, max(checkpoints))
-            print(f"Loading checkpoint {checkpoint}")
+            logger.info(f"Loading checkpoint {checkpoint}")
             with open(checkpoint, "rb") as f:
                 state = pickle.load(f)
             return state
 
     def save_checkpoint(self, checkpoint_dir, state):
         if checkpoint_dir is None:
-            print("No checkpoint dir. specified. Skipping checkpoint.")
+            logger.info("No checkpoint dir. specified. Skipping checkpoint.")
             return
 
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
         checkpoint = os.path.join(checkpoint_dir, "checkpoint_" + str(state["epoch"]))
-        print(f"Saving checkpoint {checkpoint}")
+        logger.info(f"Saving checkpoint {checkpoint}")
         with open(checkpoint, "wb") as f:
             pickle.dump(state, f)
         return checkpoint
@@ -341,20 +345,20 @@ class PDETrainer:
             zeta_p_ijk_pqm,
         )
 
-    @staticmethod
-    @hk.transform
-    def forward(x, phi_x):
-        """
-        Forward pass of the neural network.
+    # @staticmethod
+    # @hk.transform
+    # def forward(x, phi_x):
+    #     """
+    #     Forward pass of the neural network.
 
-        Args:
-            x: input data
+    #     Args:
+    #         x: input data
 
-        Returns:
-            output of the neural network
-        """
-        model = DoubleMLP()
-        return model(x, phi_x)
+    #     Returns:
+    #         output of the neural network
+    #     """
+    #     model = DoubleMLP()
+    #     return model(x, phi_x)
 
     @partial(jit, static_argnums=0)
     def init(self, seed=42):
@@ -777,6 +781,7 @@ def poisson_solver(
     batch_size=131072,
     checkpoint_dir="./checkpoints",
     checkpoint_interval=2,
+    print_rate=100,
     currDir="./",
 ):
     global stop_training
@@ -798,15 +803,8 @@ def poisson_solver(
     """ Training Parameters """
 
     TD = data_management.TrainData(
-        gstate.xmin(),
-        gstate.xmax(),
-        gstate.ymin(),
-        gstate.ymax(),
-        gstate.zmin(),
-        gstate.zmax(),
-        Nx_tr,
-        Ny_tr,
-        Nz_tr,
+        gstate,
+        sim_state_fn.phi_fn,
     )
     train_points = TD.gstate.R
     train_dx = TD.gstate.dx
@@ -825,7 +823,9 @@ def poisson_solver(
         epoch_start = state["epoch"]
         batch_size = state["batch_size"]
         resolution = state["resolution"]
-        print(f"Resuming training from epoch {epoch_start} with batch_size {batch_size}, resolution {resolution}.")
+        logger.info(
+            f"Resuming training from epoch {epoch_start} with batch_size {batch_size}, resolution {resolution}."
+        )
 
     loss_epochs = []
     epoch_store = []
@@ -861,7 +861,7 @@ def poisson_solver(
         return (opt_state, params, loss_epoch, train_dx, train_dy, train_dz), None
 
     key = random.PRNGKey(758493)
-    for epoch in tqdm(range(epoch_start, num_epochs)):
+    for epoch in range(epoch_start, num_epochs):
         if stop_training:
             break
 
@@ -896,9 +896,10 @@ def poisson_solver(
             )
 
         loss_epoch /= num_batches
-        print(
-            f"Epoch # {epoch} loss is {jnp.mean(loss_epoch)}. Exit training: {stop_training}"
-        )  # mean is to support multi-gpu as well.
+        if (epoch) % print_rate == 0:
+            logger.info(
+                f"Epoch # {epoch} loss is {jnp.mean(loss_epoch)}. Exit training: {stop_training}"
+            )  # mean is to support multi-gpu as well.
         loss_epochs.append(loss_epoch)
         epoch_store.append(epoch)
 
@@ -924,7 +925,7 @@ def poisson_solver(
     #    if multi_gpu: x = jax.tree_map(split, x)
     #    opt_state, params, loss_epoch = update_fn(opt_state, params, x, train_dx, train_dy, train_dz)
 
-    # print(f"epoch # {epoch} loss is {loss_epoch}")
+    # logger.info(f"epoch # {epoch} loss is {loss_epoch}")
     # loss_epochs.append(loss_epoch)
     # epoch_store.append(epoch)
 
@@ -948,7 +949,7 @@ def poisson_solver(
     #     (opt_state, params, loss_epoch, eval_gstate), _ = jax.lax.scan(learn_whole_batched, (opt_state, params, eval_gstate), batch_store)
     #     loss_epochs.append(loss_epoch)
     #     epoch_store.append(epoch)
-    #     print(f"epoch # {epoch} loss is {loss_epoch}")
+    #     logger.info(f"epoch # {epoch} loss is {loss_epoch}")
 
     # def learn_whole(carry, epoch):
     #     opt_state, params, loss_epochs = carry
@@ -960,7 +961,7 @@ def poisson_solver(
     # (opt_state, params, loss_epochs), _ = jax.lax.scan(learn_whole, (opt_state, params, loss_epochs), epoch_store)
 
     end_time = time.time()
-    print(f"solve took {end_time - start_time} (sec)")
+    logger.info(f"solve took {end_time - start_time} (sec)")
 
     fig, ax = plt.subplots(figsize=(8, 8))
 

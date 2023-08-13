@@ -117,6 +117,7 @@ def setup(
         batch_size=131072,
         checkpoint_dir="./checkpoints",
         checkpoint_interval=2,
+        print_rate: int = 100,
         currDir="./",
     ):
         (
@@ -140,6 +141,7 @@ def setup(
             batch_size=batch_size,
             checkpoint_dir=checkpoint_dir,
             checkpoint_interval=checkpoint_interval,
+            print_rate=print_rate,
             currDir=currDir,
         )
         return (

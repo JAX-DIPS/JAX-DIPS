@@ -2,7 +2,6 @@
     "recommendations": [
         "jprestidge.theme-material-theme",
         "visualstudioexptteam.vscodeintellicode",
-        "tabnine.tabnine-vscode",
         "ms-python.python",
         "benjamin-simmonds.pythoncpp-debug",
         "ms-python.flake8",

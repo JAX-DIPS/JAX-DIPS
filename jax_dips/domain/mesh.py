@@ -66,22 +66,27 @@ class GridState(object):
         return self.x.shape + self.y.shape + self.z.shape
 
     def xmin(self):
-        return self.x[0]
+        return self.x.min()
 
     def xmax(self):
-        return self.x[-1]
+        return self.x.max()
 
     def ymin(self):
-        return self.y[0]
+        return self.y.min()
 
     def ymax(self):
-        return self.y[-1]
+        return self.y.max()
 
     def zmin(self):
-        return self.z[0]
+        return self.z.min()
 
     def zmax(self):
-        return self.z[-1]
+        return self.z.max()
+
+    def base_level(self):
+        Nx = len(self.R) ** (1.0 / 3.0)
+        base_level = int(np.log2(Nx))
+        return base_level
 
 
 def construct(dimension: int) -> Mesher:
@@ -169,3 +174,35 @@ def construct(dimension: int) -> Mesher:
         point_fn = point2d_at
 
     return init_fn, point_fn
+
+
+def init_gstate_3d_manually(
+    x,
+    y,
+    z,
+    dx,
+    dy,
+    dz,
+    R_xmin_boundary,
+    R_xmax_boundary,
+    R_ymin_boundary,
+    R_ymax_boundary,
+    R_zmin_boundary,
+    R_zmax_boundary,
+):
+    R = np.column_stack((x, y, z))
+    return GridState(
+        x,
+        y,
+        z,
+        R,
+        dx,
+        dy,
+        dz,
+        R_xmin_boundary,
+        R_xmax_boundary,
+        R_ymin_boundary,
+        R_ymax_boundary,
+        R_zmin_boundary,
+        R_zmax_boundary,
+    )

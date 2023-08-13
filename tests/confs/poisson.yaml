@@ -7,30 +7,31 @@ defaults:
 
 # customization follows
 gridstates:
-  Nx: 128  # grid for level-set
-  Ny: 128  # grid for level-set
-  Nz: 128  # grid for level-set
-  Nx_eval: 32  # grid for evaluation/visualization
-  Ny_eval: 32  # grid for evaluation/visualization
-  Nz_eval: 32  # grid for evaluation/visualization
+  Nx_lvl: 128  # grid for level-set
+  Ny_lvl: 128  # grid for level-set
+  Nz_lvl: 128  # grid for level-set
+  Nx_eval: 256  # grid for evaluation/visualization
+  Ny_eval: 256  # grid for evaluation/visualization
+  Nz_eval: 256  # grid for evaluation/visualization
 
 solver:
-  Nx_tr: 32  # grid for training
-  Ny_tr: 32  # grid for training
-  Nz_tr: 32  # grid for training
-  num_epochs: 1000 # number of epochs to train
-  print_rate: 10 # frequency of printing epochs and loss during training
+  Nx_tr: 64  # grid for training
+  Ny_tr: 64  # grid for training
+  Nz_tr: 64  # grid for training
+  num_epochs: 5000 # number of epochs to train
+  batch_size: 262144
+  print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
+  restart_checkpoint_dir: /workspace/results/poisson-tests-app-2023-07-22-20-17-41/no_jump/checkpoints/
   algorithm: 0  # 0: regression normal derivatives, 1: neural network normal derivatives
-  switching_interval: 3  # domain switching interval
   multi_gpu: false
   num_gpus_ddp: 2
   optim:
     optimizer_name: "custom" # options are "custom", "adam", "rmsprop"
-    learning_rate: 1e-2
+    learning_rate: 1e-3
   sched:
     scheduler_name: "exponential" # options are "exponential", "polynomial"
-    decay_rate: 0.96
+    decay_rate: 0.975
   data_manager:
     refine: false
     refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function
@@ -38,12 +39,12 @@ solver:
 
 experiment:
   results_path: "" # name of folder inside ${hydra:run.dir}
-  sphere: true # sphere interface with jump conditions
-  star: true # star interface with jump conditions
+  sphere: false # sphere interface with jump conditions
+  star: false # star interface with jump conditions
   no_jump: true # no interface and no jump conditions
 
   logging:
-    checkpoint_interval: 500
+    checkpoint_interval: 5000
     log_dir: ${hydra:runtime.output_dir}
     currDir: ${hydra:runtime.cwd}
     checkpoint_dir: ${hydra:runtime.cwd}/checkpoints
