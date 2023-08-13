@@ -1,7 +1,10 @@
 # JAX-DIPS
 JAX implementation of a differentiable PDE solver with jump conditions across irregular interfaces in 3D.
 
-JAX-DIPS implements the neural bootstrapping method (NBM):
+JAX-DIPS implements the neural bootstrapping method (NBM) (see citations below) for training compact neural network surrogate models using finite discretization methods for handling spatial gradients and automatic differentiation for training neural network parameters. Use of FD for the PDE residuals limits automatic differentiation to ONLY first-order which significantly reduces the computational/memory costs associated to higher order AD w.r.t model inputs (as in PINNs). Moreover, use of carefully designed numerical discretization methods for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network optimizer of the mathematical symmetries (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods around training points. These extra mathematical constraints improve regularity and accuracy of the learned surrogate models.
+
+# Library Structure
+
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/JAX-DIPS.png)
 ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/jax_dips_design.png)
 
@@ -19,7 +22,7 @@ Streamlines of solution gradients (left), and jump in solution (right) calculate
 
 <!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/gradient_U.png) -->
 
-# Library Structure
+
 ## Models
 Models are stored at `jax_dips.nn` module and provided to the Poisson solver through the `get_model(**model_dict)` API defined in `jax_dips.nn.configure` module. When adding a new model you should only add it to this API. The model parameters (i.e., `model_dict`) should be provided to the `jax_dips.solvers.poisson.trainer` module, and is usually defined in the yaml configuration file for hydra similar to:
 ```
