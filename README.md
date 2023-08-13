@@ -19,6 +19,43 @@ Streamlines of solution gradients (left), and jump in solution (right) calculate
 
 <!-- ![me](https://github.com/JAX-DIPS/JAX-DIPS/blob/main/assets/gradient_U.png) -->
 
+# Library Structure
+## Models
+Models are stored at `jax_dips.nn` module and provided to the Poisson solver through the `get_model(**model_dict)` API defined in `jax_dips.nn.configure` module. When adding a new model you should only add it to this API. The model parameters (i.e., `model_dict`) should be provided to the `jax_dips.solvers.poisson.trainer` module, and is usually defined in the yaml configuration file for hydra similar to:
+```
+model:
+  model_type : "mlp"
+  mlp:
+    hidden_layers_m: 1
+    hidden_dim_m: 3
+    activation_m: "jnp.tanh"
+    hidden_layers_p: 2
+    hidden_dim_p: 10
+    activation_p: "jnp.tanh"
+  resnet:
+    res_blocks_m : 3
+    res_dim_m : 40
+    activation_m : "nn.tanh"
+    res_blocks_p : 3
+    res_dim_p : 80
+    activation_p : "nn.tanh"
+```
+
+## Optimizers
+Explicit and implicit auto-differentiation is provided through the `jaxopt` and `optax` packages (`optax` is configured from `jax_dips.solvers.optimizers` module; currently calls to `jaxopt` are configured directly by the `jax_dips.solvers.poisson.trainer` module). In the yaml file this can be configured by
+```
+solver: 
+  optim:
+      optimizer_name: "custom" # options are "custom", "adam", "rmsprop", "lbfgs"
+      learning_rate: 1e-3
+      sched:  # learning rate scheduler 
+        scheduler_name: "exponential" # options are "exponential", "polynomial"
+        decay_rate: 0.9
+```
+Currently, choosing `lbfgs` prompts the `jaxopt` package with implicit differentiation.
+
+Note: in the current version we support data-parallel training using `optax`.
+
 # Testing
 Do `pytest tests/test_*.py` of each of the available tests from the parent directory:
 - `test_advection`: a sphere is rotated 360 degrees around the box to replicate initial configuration. The L2 error in level-set function should be less than 1e-4 to pass. The advection is performed using semi-Lagrangian scheme with Sussman reinitialization.
