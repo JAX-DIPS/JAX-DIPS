@@ -97,7 +97,9 @@ def biomolecule_solvation_energy(
     Ny_eval = cfg.gridstates.Ny_eval  # grid for evaluation/visualization
     Nz_eval = cfg.gridstates.Nz_eval  # grid for evaluation/visualization
 
-    optim_cfg = dict(cfg.solver.optim)
+    optim_dict = dict(cfg.solver.optim)
+    model_dict = dict(cfg.model)
+
     ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
     mgrad_over_pgrad_scalefactor = cfg.solver.mgrad_over_pgrad_scalefactor  # 0: no switching, 1: 10
     multi_gpu = cfg.solver.multi_gpu
@@ -255,7 +257,8 @@ def biomolecule_solvation_energy(
         checkpoint_interval=checkpoint_interval,
         results_dir=log_dir,
         loss_plot_name=molecule_name,
-        optimizer_dict=optim_cfg,
+        optimizer_dict=optim_dict,
+        model_dict=model_dict,
         restart=cfg.solver.restart_from_checkpoint,
         restart_checkpoint_dir=cfg.solver.restart_checkpoint_dir,
         print_rate=cfg.solver.print_rate,

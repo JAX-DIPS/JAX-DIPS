@@ -33,7 +33,6 @@ from jax import random, value_and_grad, vmap
 
 from jax_dips.domain.mesh import GridState
 
-# from jax_dips.nn.nn_solution_model import DoubleMLP
 from jax_dips.solvers.poisson.discretization import Discretization
 from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateFn
 from jax_dips.utils.chunking import chunked_vmap

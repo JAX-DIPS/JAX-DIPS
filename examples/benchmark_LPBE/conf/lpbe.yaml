@@ -14,15 +14,22 @@ gridstates:
   Ny_eval: 256  # grid for evaluation/visualization/validation
   Nz_eval: 256  # grid for evaluation/visualization/validation
 
-model: # TODO: add this to the model
-  num_hidden_layers: 3
-  num_hidden_units: 32
-  resnet: false
-  activation: "sin"
-  wb_init_stddev: 1.0
-  wb_init_mean: 0.0
-  positional_enc: false
-  positional_enc_stddev: 1.0
+model:
+  model_type : "mlp"
+  mlp:
+    hidden_layers_m: 1
+    hidden_dim_m: 3
+    activation_m: "jnp.tanh"
+    hidden_layers_p: 2
+    hidden_dim_p: 10
+    activation_p: "jnp.tanh"
+  resnet:
+    res_blocks_m : 3
+    res_dim_m : 40
+    activation_m : "nn.tanh"
+    res_blocks_p : 3
+    res_dim_p : 80
+    activation_p : "nn.tanh"
 
 solver:
   inn_grid: true
@@ -38,7 +45,7 @@ solver:
     Nx_tr: 32  # grid for training voxel size: Lx/Nx
     Ny_tr: 32  # grid for training voxel size: Ly/Ny
     Nz_tr: 32  # grid for training voxel size: Lz/Nz
-  num_epochs: 50000 # number of epochs to train
+  num_epochs: 1000 # number of epochs to train
   batch_size: 3300 # batch size for trainer. 
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint

@@ -45,7 +45,7 @@ from jax_dips.solvers.simulation_states import PoissonSimState, PoissonSimStateF
 from jax_dips.utils.inspect import print_architecture, progress_bar
 from jax_dips.utils.visualization import plot_loss_epochs
 from jax_dips.solvers.optimizers import get_optimizer
-from jax_dips.nn.nn_solution_model import DoubleMLP
+from jax_dips.nn.configure import get_model
 from jax_dips.solvers.poisson.discretization import Discretization
 
 Array = util.Array
@@ -107,6 +107,26 @@ class Trainer(Discretization):
         restart: bool = False,
         restart_checkpoint_dir: str = "./checkpoints",
         print_rate: int = 1,
+        model_dict: dict = {
+            "name": None,
+            "model_type": "mlp",
+            "mlp": {
+                "hidden_layers_m": 1,
+                "hidden_dim_m": 1,
+                "activation_m": "jnp.tanh",
+                "hidden_layers_p": 2,
+                "hidden_dim_p": 10,
+                "activation_p": "jnp.tanh",
+            },
+            "resnet": {
+                "res_blocks_m": 3,
+                "res_dim_m": 40,
+                "activation_m": "nn.tanh",
+                "res_blocks_p": 3,
+                "res_dim_p": 80,
+                "activation_p": "nn.tanh",
+            },
+        },
     ) -> None:
         super().__init__(
             lvl_gstate,
@@ -143,6 +163,8 @@ class Trainer(Discretization):
         self.train_dz = self.TD.gstate.dz
         # phis_at_points = vmap(lvl_set_fn)(self.train_points)
         # train_points_m, train_points_p = self.TD.split_train_points_by_region(phis_at_points, self.train_points)
+        #########################################################################
+        self.forward = get_model(model_dict)
         #########################################################################
 
         if optimizer_dict["optimizer_name"] != "lbfgs":
@@ -201,19 +223,19 @@ class Trainer(Discretization):
         self.mnet_keys, self.pnet_keys = self.split_mp_networks_keys(self.params)  # split keys for each domain
         return opt_state
 
-    @staticmethod
-    @hk.transform
-    def forward(x, phi_x):
-        r"""Forward pass of the neural network.
+    # @staticmethod
+    # @hk.transform
+    # def forward(x, phi_x):
+    #     r"""Forward pass of the neural network.
 
-        Args:
-            x: input data
+    #     Args:
+    #         x: input data
 
-        Returns:
-            output of the neural network
-        """
-        model = DoubleMLP()
-        return model(x, phi_x)
+    #     Returns:
+    #         output of the neural network
+    #     """
+    #     model = DoubleMLP()
+    #     return model(x, phi_x)
 
     @staticmethod
     def split_mp_networks_keys(params):
@@ -953,6 +975,26 @@ def setup(
             "learning_rate": 1e-3,
             "sched": {"scheduler_name": "exponential", "decay_rate": 0.9},
         },
+        model_dict: dict = {
+            "name": None,
+            "model_type": "mlp",
+            "mlp": {
+                "hidden_layers_m": 1,
+                "hidden_dim_m": 1,
+                "activation_m": "jnp.tanh",
+                "hidden_layers_p": 2,
+                "hidden_dim_p": 10,
+                "activation_p": "jnp.tanh",
+            },
+            "resnet": {
+                "res_blocks_m": 3,
+                "res_dim_m": 40,
+                "activation_m": "nn.tanh",
+                "res_blocks_p": 3,
+                "res_dim_p": 80,
+                "activation_p": "nn.tanh",
+            },
+        },
         restart: bool = False,
         restart_checkpoint_dir: str = "./checkpoints",
         print_rate: int = 1,
@@ -991,6 +1033,7 @@ def setup(
                 restart=restart,
                 restart_checkpoint_dir=restart_checkpoint_dir,
                 print_rate=print_rate,
+                model_dict=model_dict,
             )
             (
                 final_solution,
