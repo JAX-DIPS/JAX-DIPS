@@ -9,7 +9,7 @@ JAX-DIPS implements the [neural bootstrapping method (NBM)](https://arxiv.org/ab
 
 - Accuracy: Moreover, use of carefully designed numerical discretization schemes (for example see [Gibou, Fedkiw, and Osher 2018](https://www.sciencedirect.com/science/article/abs/pii/S0021999117307441)) for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network about the mathematical symmetries and constraints (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods/voxels centered at training points. These extra mathematical constraints improve regularity and accuracy of the learned neural surrogate models for PDEs in three spatial dimensions.
 
-- Cross pollination of applied mathematics and machine learning: JAX-DIPS makes it possible to leverage advanced preconditioners developed in the high performance scientific computing commynity to codition traditional finite discretization methods for faster and more accurate training of neural network models.
+- Cross pollination of applied mathematics and machine learning: JAX-DIPS makes it possible to leverage advanced preconditioners (for example see algebraic multigrid (amg) preconditioner in [hypre](https://github.com/hypre-space/hypre)) developed in the high performance scientific computing community for faster and more accurate training of neural network models.
 
 
 ## Quick Example
