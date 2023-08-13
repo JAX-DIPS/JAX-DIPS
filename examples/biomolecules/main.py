@@ -85,26 +85,24 @@ def biomolecule_solvation_energy(
     ###########################################################
 
     num_epochs = cfg.solver.num_epochs
+    batch_size = cfg.solver.batch_size
 
     Nx_tr = cfg.solver.Nx_tr  # grid for training
     Ny_tr = cfg.solver.Ny_tr  # grid for training
     Nz_tr = cfg.solver.Nz_tr  # grid for training
-    Nx = cfg.gridstates.Nx  # grid for level-set
-    Ny = cfg.gridstates.Ny  # grid for level-set
-    Nz = cfg.gridstates.Nz  # grid for level-set
+    Nx_lvl = cfg.gridstates.Nx_lvl  # grid for level-set
+    Ny_lvl = cfg.gridstates.Ny_lvl  # grid for level-set
+    Nz_lvl = cfg.gridstates.Nz_lvl  # grid for level-set
     Nx_eval = cfg.gridstates.Nx_eval  # grid for evaluation/visualization
     Ny_eval = cfg.gridstates.Ny_eval  # grid for evaluation/visualization
     Nz_eval = cfg.gridstates.Nz_eval  # grid for evaluation/visualization
 
-    optimizer = get_optimizer(
-        optimizer_name=cfg.solver.optim.optimizer_name,
-        scheduler_name=cfg.solver.sched.scheduler_name,
-        learning_rate=cfg.solver.optim.learning_rate,
-        decay_rate=cfg.solver.sched.decay_rate,
-    )
+    optim_dict = dict(cfg.solver.optim)
+    model_dict = dict(cfg.model)
 
     ALGORITHM = cfg.solver.algorithm  # 0: regression normal derivatives, 1: neural network normal derivatives
     SWITCHING_INTERVAL = cfg.solver.switching_interval  # 0: no switching, 1: 10
+    mgrad_over_pgrad_scalefactor = cfg.solver.mgrad_over_pgrad_scalefactor  # 0: no switching, 1: 10
     multi_gpu = cfg.solver.multi_gpu
     checkpoint_interval = cfg.experiment.logging.checkpoint_interval
     log_dir = cfg.experiment.logging.log_dir
@@ -142,12 +140,20 @@ def biomolecule_solvation_energy(
     xmin = ymin = zmin = min((atom_locations.min(), (-atom_sigmas).min())) * 3  # length unit is l_tilde units
     xmax = ymax = zmax = max((atom_locations.max(), atom_sigmas.max())) * 3
     init_mesh_fn, coord_at = mesh.construct(3)
+    # --------- Grid nodes for trainer
+    dx = (xmax - xmin) / Nx_tr
+    dy = (ymax - ymin) / Ny_tr
+    dz = (zmax - zmin) / Nz_tr
+    xc = jnp.linspace(xmin, xmax, Nx_tr, dtype=f32)
+    yc = jnp.linspace(ymin, ymax, Ny_tr, dtype=f32)
+    zc = jnp.linspace(zmin, zmax, Nz_tr, dtype=f32)
+    gstate_tr = init_mesh_fn(xc, yc, zc)
 
     # --------- Grid nodes for level set
-    xc = jnp.linspace(xmin, xmax, Nx, dtype=f32)
-    yc = jnp.linspace(ymin, ymax, Ny, dtype=f32)
-    zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
-    gstate = init_mesh_fn(xc, yc, zc)
+    xc = jnp.linspace(xmin, xmax, Nx_lvl, dtype=f32)
+    yc = jnp.linspace(ymin, ymax, Ny_lvl, dtype=f32)
+    zc = jnp.linspace(zmin, zmax, Nz_lvl, dtype=f32)
+    gstate_lvl = init_mesh_fn(xc, yc, zc)
 
     # ----------  Evaluation Mesh for Visualization
     exc = jnp.linspace(xmin, xmax, Nx_eval, dtype=f32)
@@ -163,7 +169,9 @@ def biomolecule_solvation_energy(
 
     psi_star_fn, psi_star_vec_fn, grad_psi_star_fn, grad_psi_star_vec_fn = get_psi_star(atom_xyz_rad_chg)
 
-    alpha_fn, beta_fn = get_jump_conditions(atom_xyz_rad_chg, psi_star_fn, phi_fn, gstate.dx, gstate.dy, gstate.dz)
+    alpha_fn, beta_fn = get_jump_conditions(
+        atom_xyz_rad_chg, psi_star_fn, phi_fn, gstate_tr.dx, gstate_tr.dy, gstate_tr.dz
+    )
 
     ###########################################################
     if False:
@@ -177,7 +185,7 @@ def biomolecule_solvation_energy(
 
     t0 = t1 = 0.0
     if cfg.solver.version == 0:
-        # -- v1 old code
+        logger.warning("this solver was deprecated")
         init_fn, solve_fn = poisson_solver_scalable.setup(
             initial_value_fn,
             dirichlet_bc_fn,
@@ -191,11 +199,11 @@ def biomolecule_solvation_energy(
             alpha_fn,
             beta_fn,
         )
-        sim_state = init_fn(gstate.R)
+        sim_state = init_fn(gstate_lvl.R)
         checkpoint_dir = os.path.join(log_dir, "checkpoints")
         t0 = time.time()
         sim_state, epoch_store, loss_epochs = solve_fn(
-            gstate,
+            gstate_lvl,
             eval_gstate,
             sim_state,
             algorithm=ALGORITHM,
@@ -211,7 +219,13 @@ def biomolecule_solvation_energy(
         t1 = time.time()
 
     elif cfg.solver.version == 1:
-        # -- v2 new code
+        logger.warning("this solver was deprecated")
+        optimizer = get_optimizer(
+            optimizer_name=cfg.solver.optim.optimizer_name,
+            scheduler_name=cfg.solver.optim.sched.scheduler_name,
+            learning_rate=cfg.solver.optim.learning_rate,
+            decay_rate=cfg.solver.optim.sched.decay_rate,
+        )
         init_fn = trainer_poisson.setup(
             initial_value_fn,
             dirichlet_bc_fn,
@@ -228,7 +242,7 @@ def biomolecule_solvation_energy(
             nonlinear_operator_p,
         )
         sim_state, solve_fn = init_fn(
-            gstate=gstate,
+            gstate=gstate_lvl,
             eval_gstate=eval_gstate,
             algorithm=ALGORITHM,
             switching_interval=SWITCHING_INTERVAL,
@@ -263,20 +277,21 @@ def biomolecule_solvation_energy(
             nonlinear_operator_p,
         )
         sim_state, solve_fn = init_fn(
-            gstate=gstate,
+            lvl_gstate=gstate_lvl,
+            tr_gstate=gstate_tr,
             eval_gstate=eval_gstate,
             algorithm=ALGORITHM,
-            switching_interval=SWITCHING_INTERVAL,
-            Nx_tr=Nx_tr,
-            Ny_tr=Ny_tr,
-            Nz_tr=Nz_tr,
+            mgrad_over_pgrad_scalefactor=mgrad_over_pgrad_scalefactor,
             num_epochs=num_epochs,
+            batch_size=batch_size,
             multi_gpu=multi_gpu,
             checkpoint_interval=checkpoint_interval,
             results_dir=log_dir,
             loss_plot_name=molecule_name,
-            optimizer=optimizer,
+            optimizer_dict=optim_dict,
+            model_dict=model_dict,
             restart=cfg.solver.restart_from_checkpoint,
+            restart_checkpoint_dir=cfg.solver.restart_checkpoint_dir,
             print_rate=cfg.solver.print_rate,
         )
         t0 = time.time()
