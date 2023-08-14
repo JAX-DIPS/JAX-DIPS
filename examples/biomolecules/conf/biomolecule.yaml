@@ -8,9 +8,9 @@ defaults:
 
 # customization follows
 gridstates:
-  Nx_lvl: 128  # grid for level-set; not used in this example bc not free boundary
-  Ny_lvl: 128  # grid for level-set; not used with level set is given functionally
-  Nz_lvl: 128  # grid for level-set; not used with level set is given functionally
+  Nx_lvl: 256  # grid for level-set; not used in this example bc not free boundary
+  Ny_lvl: 256  # grid for level-set; not used with level set is given functionally
+  Nz_lvl: 256  # grid for level-set; not used with level set is given functionally
   Nx_eval: 256  # grid for evaluation/visualization/validation
   Ny_eval: 256  # grid for evaluation/visualization/validation
   Nz_eval: 256  # grid for evaluation/visualization/validation
@@ -38,7 +38,8 @@ solver:
   Nx_tr: 16  # grid for training
   Ny_tr: 16  # grid for training
   Nz_tr: 16  # grid for training
-  num_epochs: 1000 # number of epochs to train
+  num_epochs: 10 # number of epochs to train
+  batch_size: 4096
   print_rate: 10 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   restart_checkpoint_dir: /workspace/results/biomolecule-app/checkpoints
@@ -61,13 +62,13 @@ solver:
 
 experiment:
   kirkwood:
-    enable: false
+    enable: true
     protein_name: case_0.pqr
     protein_path: inputs/kirkwood_test
 
   single_protein:
-    enable: true
-    protein_name: keytruda.pqr_ignore  # pdb:1ajj.pqr
+    enable: false
+    protein_name: pdb:1ajj.pqr  # keytruda.pqr_ignore
     protein_path: inputs/pqr_input_mols
   
   multi_proteins:

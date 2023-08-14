@@ -180,7 +180,7 @@ def biomolecule_solvation_energy(
         eval_phi = vmap(phi_fn)(eval_gstate.R)
         chg_density = vmap(f_m_fn)(eval_gstate.R)
         log = {"phi": eval_phi, "Ustar": psi_star, "rho": chg_density}
-        io.write_vtk_manual(eval_gstate, log, filename=log_dir + "/biomolecules")
+        io.write_vtk_manual(eval_gstate, log, filename=log_dir + "/" + molecule_name)
         pdb.set_trace()
 
     t0 = t1 = 0.0

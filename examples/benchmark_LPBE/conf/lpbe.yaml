@@ -61,9 +61,13 @@ solver:
       scheduler_name: "exponential" # options are "exponential", "polynomial"
       decay_rate: 0.9
   data_manager:
-    refine: true
+    refine: false
     refine_normals: false # if true will add extra points by moving grid points iteratively along minus normal of level-set function
-    refine_lod: true # if true will add extra points by Octree using Kaolin
+    refine_lod: false # if true will add extra points by Octree using Kaolin
+  # multigrid_cycling:
+  #   v_cycle_period: 4
+  #   rest_at_level: 50
+
 
 experiment:
   sphere:

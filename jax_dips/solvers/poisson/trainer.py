@@ -156,6 +156,8 @@ class Trainer(Discretization):
             refine=False,
             refine_lod=False,
             refine_normals=False,
+            v_cycle_period=2,
+            rest_at_level=100,
         )
         self.train_points = self.TD.train_points
         self.train_dx = self.TD.gstate.dx
@@ -446,8 +448,13 @@ class Trainer(Discretization):
         # batched_training_data = self.DD.get_batched_data()
         update_fn = self.update
         num_batches = batched_training_data.shape[0]
+        # cycle_level = 0
 
         def learn_one_batch(carry, data_batch):
+            # opt_state, params, loss_epoch, train_dx, train_dy, train_dz, cycle_level = carry
+            # opt_state, params, loss_epoch_ = update_fn(
+            #     opt_state, params, data_batch, train_dx, train_dy, train_dz, cycle_level
+            # )
             opt_state, params, loss_epoch, train_dx, train_dy, train_dz = carry
             opt_state, params, loss_epoch_ = update_fn(opt_state, params, data_batch, train_dx, train_dy, train_dz)
             loss_epoch += loss_epoch_
@@ -464,9 +471,13 @@ class Trainer(Discretization):
                 train_dz,
                 batched_training_data,
             ) = carry
-            # train_dx, train_dy, train_dz = self.TD.alternate_res(
-            #     epoch, train_dx, train_dy, train_dz
-            # )  # TODO: automate this
+            # train_dx, train_dy, train_dz, cycle_level = self.TD.v_cycle_alternate_res(
+            #     epoch,
+            #     train_dx,
+            #     train_dy,
+            #     train_dz,
+            #     cycle_level,
+            # )
             # train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(
             #     self.num_epochs, epoch, train_dx, train_dy, train_dz
             # )
@@ -822,11 +833,18 @@ class Trainer(Discretization):
         return lhs - rhs
 
     @partial(jit, static_argnums=(0))
-    def loss(self, params, points, dx, dy, dz):
+    def loss(self, params, points, dx, dy, dz):  # , cycle_level):
         r"""Loss function of the neural network."""
+        # one_period = jnp.power(2, 3 * cycle_level)
+        # # one_period = jnp.where(one_period < len(points), one_period, 1) # TODO: do we need this?
+        # divisible_indices = jnp.arange(len(points)) % one_period == 0
+
         lhs_rhs = vmap(self.compute_Ax_and_b_fn, (None, 0, None, None, None))(params, points, dx, dy, dz)
         lhs, rhs = jnp.split(lhs_rhs, [1], axis=1)
         tot_loss = jnp.mean(optax.l2_loss(lhs, rhs))
+        # residuals = optax.l2_loss(lhs, rhs)
+        # tot_loss = jnp.mean(residuals.squeeze(), where=divisible_indices)
+
         # du_xmax = (self.evaluate_solution_fn(params, self.tr_gstate.R_xmax_boundary) - self.dir_bc_fn(self.tr_gstate.R_xmax_boundary)[...,jnp.newaxis])
         # du_xmin = (self.evaluate_solution_fn(params, self.tr_gstate.R_xmin_boundary) - self.dir_bc_fn(self.tr_gstate.R_xmin_boundary)[...,jnp.newaxis])
         # du_ymax = (self.evaluate_solution_fn(params, self.tr_gstate.R_ymax_boundary) - self.dir_bc_fn(self.tr_gstate.R_ymax_boundary)[...,jnp.newaxis])

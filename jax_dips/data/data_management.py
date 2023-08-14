@@ -194,8 +194,25 @@ class TrainData:
         refine=False,
         refine_lod=False,
         refine_normals=False,
+        v_cycle_period: int = 4,
+        rest_at_level: int = 10,
     ) -> None:
-        """Training GSTATE"""
+        """Training GSTATE
+
+        grid
+        level
+            |           rest
+          2 |           ----            ----
+          1 |       ----    ----    ----    ----
+          0 |   ----            ----            ----
+            |   <-------------->
+            |        period
+            -------------------------------------------> epochs
+
+        v_cycle_period: multiples of rest_at_level epochs for each V cycle
+        rest_at_level: number of epochs in each level
+
+        """
         # if gstate is None:
         #     self.Nx = Nx
         #     self.Ny = Ny
@@ -205,6 +222,8 @@ class TrainData:
         #     zc = jnp.linspace(zmin, zmax, Nz, dtype=f32)
         #     init_mesh_fn, coord_at = mesh.construct(3)
         #     self.gstate = init_mesh_fn(xc, yc, zc)
+        self.v_cycle_period = v_cycle_period
+        self.rest_at_level = rest_at_level
         self.gstate = gstate
         self.train_points = self.gstate.R
         self.lvl_set_fn = lvl_set_fn
@@ -265,12 +284,37 @@ class TrainData:
         return new_points
 
     @partial(jit, static_argnums=(0))
-    def alternate_res(self, epoch, train_dx, train_dy, train_dz):
-        self.alt_res = True
-        train_dx = jnp.where(epoch % 4 == 0, self.gstate.dx, train_dx * 0.50)
-        train_dy = jnp.where(epoch % 4 == 0, self.gstate.dy, train_dy * 0.50)
-        train_dz = jnp.where(epoch % 4 == 0, self.gstate.dz, train_dz * 0.50)
-        return train_dx, train_dy, train_dz
+    def v_cycle_alternate_res(self, epoch, train_dx, train_dy, train_dz, cycle_level):
+        """when cycle_level is 0 we are at finest grid, then coarsens to v_cycle_period level and back
+
+        grid
+        level
+            |           rest
+          2 |           ----            ----
+          1 |       ----    ----    ----    ----
+          0 |   ----            ----            ----
+            |   <-------------->
+            |        period
+            -------------------------------------------> epochs
+
+        v_cycle_period: multiples of rest_at_level epochs for each V cycle
+        rest_at_level: number of epochs in each level
+
+        """
+        self.alt_res = False
+
+        i = epoch // self.rest_at_level
+        ic = i % self.v_cycle_period
+        cycle_level = jnp.min(jnp.array([ic, self.v_cycle_period - ic]))
+        coeff = 2**cycle_level
+        train_dx = self.gstate.dx * coeff
+        train_dy = self.gstate.dy * coeff
+        train_dz = self.gstate.dz * coeff
+        # cycle_level = jnp.where(epoch % self.v_cycle_period == 0, 0, cycle_level + 1)
+        # train_dx = jnp.where(epoch % self.v_cycle_period == 0, self.gstate.dx, train_dx * coeff)
+        # train_dy = jnp.where(epoch % self.v_cycle_period == 0, self.gstate.dy, train_dy * coeff)
+        # train_dz = jnp.where(epoch % self.v_cycle_period == 0, self.gstate.dz, train_dz * coeff)
+        return train_dx, train_dy, train_dz, cycle_level
 
     @partial(jit, static_argnums=(0))
     def alternate_res_sequentially(self, num_epochs, epoch, train_dx, train_dy, train_dz):
