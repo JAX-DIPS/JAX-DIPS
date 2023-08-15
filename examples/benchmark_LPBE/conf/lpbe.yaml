@@ -15,7 +15,7 @@ gridstates:
   Nz_eval: 256  # grid for evaluation/visualization/validation
 
 model:
-  model_type : "mlp"
+  model_type : "discrete"
   mlp:
     hidden_layers_m: 1
     hidden_dim_m: 3
@@ -30,9 +30,20 @@ model:
     res_blocks_p : 3
     res_dim_p : 80
     activation_p : "nn.tanh"
+  discrete:
+    interpolant: "trilinear" # "trilinear" or "quadratic"
+    Nx: 32
+    Ny: 32
+    Nz: 32
+    xmin: 0.0
+    xmax: 0.0
+    ymin: 0.0
+    ymax: 0.0
+    zmin: 0.0
+    zmax: 0.0
 
 solver:
-  inn_grid: true
+  inn_grid: false
   inn:
     train_out: 2000 # number of grid points in the outer domain; originally 2000
     train_inner: 100 # number of grid points in the inner domain; originally 100
@@ -45,8 +56,8 @@ solver:
     Nx_tr: 32  # grid for training voxel size: Lx/Nx
     Ny_tr: 32  # grid for training voxel size: Ly/Ny
     Nz_tr: 32  # grid for training voxel size: Lz/Nz
-  num_epochs: 1000 # number of epochs to train
-  batch_size: 3300 # batch size for trainer. 
+  num_epochs: 10000 # number of epochs to train
+  batch_size: 10000 # batch size for trainer. 
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   restart_checkpoint_dir: /workspace/results/benchmark-lpbe-app-inn-1:1-2:10-Ngamma1000-epoch50k/checkpoints

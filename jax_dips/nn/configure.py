@@ -21,12 +21,24 @@
 import haiku as hk
 
 from jax_dips.nn.MLP import DoubleMLP
+from jax_dips.nn.discrete import discrete
 
 
-def get_model(model_dict):
-    @hk.transform
-    def forward(x, phi_x):
-        model = DoubleMLP(**model_dict)
-        return model(x, phi_x)
+def get_model(model_dict, model_type: str = "mlp"):
+    if model_type == "mlp" or model_type == "resnet":
 
-    return forward
+        @hk.transform
+        def forward(x, phi_x):
+            model = DoubleMLP(**model_dict)
+            return model(x, phi_x)
+
+        return forward
+
+    elif model_type == "discrete":
+
+        @hk.transform
+        def forward(x, phi_x):
+            model = discrete(**model_dict)
+            return model(x, phi_x)
+
+        return forward

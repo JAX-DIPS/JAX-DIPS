@@ -166,7 +166,15 @@ class Trainer(Discretization):
         # phis_at_points = vmap(lvl_set_fn)(self.train_points)
         # train_points_m, train_points_p = self.TD.split_train_points_by_region(phis_at_points, self.train_points)
         #########################################################################
-        self.forward = get_model(model_dict)
+        if model_dict["model_type"] == "discrete":
+            model_dict["discrete"]["xmin"] = float(self.TD.gstate.xmin())
+            model_dict["discrete"]["xmax"] = float(self.TD.gstate.xmax())
+            model_dict["discrete"]["ymin"] = float(self.TD.gstate.ymin())
+            model_dict["discrete"]["ymax"] = float(self.TD.gstate.ymax())
+            model_dict["discrete"]["zmin"] = float(self.TD.gstate.zmin())
+            model_dict["discrete"]["zmax"] = float(self.TD.gstate.zmax())
+
+        self.forward = get_model(model_dict, model_type=model_dict["model_type"])
         #########################################################################
 
         if optimizer_dict["optimizer_name"] != "lbfgs":

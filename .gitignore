@@ -55,3 +55,4 @@ jax_dips.egg-info
 env_jax_dips
 outputs/
 .hypothesis
+*.npy

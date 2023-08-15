@@ -9,6 +9,8 @@ equinox
 diffrax
 numba
 jaxopt
+jax-md
+svox
 cython==0.29.20
 pillow
 pandas
