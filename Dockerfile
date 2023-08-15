@@ -43,6 +43,12 @@ RUN cd /opt \
     && cd tinyobjloader \
     && python -m pip install .
 
+ENV TCNN_CUDA_ARCHITECTURES="86"
+RUN cd /opt \
+    && git clone --recursive https://github.com/nvlabs/tiny-cuda-nn \
+    && cd tiny-cuda-nn/bindings/torch \
+    && python setup.py install
+
 # RUN mkdir -p /workspace/third_party \
 #     && cd /workspace/third_party \
 #     && git clone https://github.com/nv-tlabs/nglod.git \

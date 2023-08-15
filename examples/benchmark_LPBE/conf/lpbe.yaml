@@ -15,7 +15,7 @@ gridstates:
   Nz_eval: 256  # grid for evaluation/visualization/validation
 
 model:
-  model_type : "discrete"
+  model_type : "trilinear"
   mlp:
     hidden_layers_m: 1
     hidden_dim_m: 3
@@ -31,7 +31,7 @@ model:
     res_dim_p : 80
     activation_p : "nn.tanh"
   discrete:
-    interpolant: "trilinear" # "trilinear" or "quadratic"
+    interpolant: "trilinear" # "single_trilinear" or "trilinear" or "quadratic"
     Nx: 32
     Ny: 32
     Nz: 32
@@ -41,6 +41,17 @@ model:
     ymax: 0.0
     zmin: 0.0
     zmax: 0.0
+  multiresolution_hash_network: # under construction ...
+    Nx: 32
+    Ny: 32
+    Nz: 32
+    xmin: 0.0
+    xmax: 0.0
+    ymin: 0.0
+    ymax: 0.0
+    zmin: 0.0
+    zmax: 0.0
+
 
 solver:
   inn_grid: false
@@ -66,8 +77,8 @@ solver:
   multi_gpu: false
   num_gpus_ddp: 1
   optim:
-    optimizer_name: "custom" # options are "custom", "adam", "rmsprop", "lbfgs"
-    learning_rate: 1e-3
+    optimizer_name: "rmsprop" # options are "custom", "adam", "rmsprop", "lbfgs"
+    learning_rate: 1e-2
     sched:
       scheduler_name: "exponential" # options are "exponential", "polynomial"
       decay_rate: 0.9
