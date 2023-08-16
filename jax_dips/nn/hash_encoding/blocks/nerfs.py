@@ -22,6 +22,45 @@ from jax_dips.nn.hash_encoding.blocks.common import (
 
 
 @empty_impl
+class HashEncMLP(nn.Module):
+    bound: float
+
+    position_encoder: Encoder
+
+    sol_mlp: nn.Module
+
+    sol_activation: Callable
+
+    @nn.compact
+    def __call__(
+        self,
+        xyz: jax.Array,
+    ) -> jax.Array | Tuple[jax.Array, jax.Array]:
+        """
+        Inputs:
+            xyz `[..., 3]`: coordinates in $\R^3$
+
+        Returns:
+            density `[..., 1]`: density (ray terminating probability) of each query points
+            rgb `[..., 3]`: predicted color for each query point
+        """
+        original_aux_shapes = xyz.shape[:-1]
+        n_samples = functools.reduce(int.__mul__, original_aux_shapes)
+        xyz = xyz.reshape(n_samples, 3)
+
+        # [n_samples, D_pos], `float32`
+        pos_enc, tv = self.position_encoder(xyz, self.bound)
+
+        x = self.sol_mlp(pos_enc)
+        # [n_samples, 1], [n_samples, density_MLP_out-1]
+        sol, _ = jnp.split(x, [1], axis=-1)
+
+        sol = self.sol_activation(sol)
+
+        return sol
+
+
+@empty_impl
 class NeRF(nn.Module):
     bound: float
 
@@ -217,9 +256,16 @@ class SkySphereBg(BackgroundModel):
         )
 
 
+@jax.jit
+def linear_act(x: jax.Array) -> jax.Array:
+    return x
+
+
 def make_activation(act: ActivationType):
     if act == "sigmoid":
         return nn.sigmoid
+    elif act == "linear":
+        return linear_act
     elif act == "exponential":
         return jnp.exp
     elif act == "truncated_exponential":
@@ -508,6 +554,59 @@ def make_test_cube(
         density_activation=lambda x: x,
         rgb_activation=lambda x: x,
     )
+
+
+def make_hash_encoding_network(
+    bound: float,
+    # encodings
+    pos_enc: PositionalEncodingType,
+    # total variation
+    tv_scale: float,
+    # encoding levels
+    pos_levels: int,
+    # layer widths
+    layer_widths: List[int],
+    # output dimensions
+    sol_out_dim: int,
+    # skip connections
+    sol_skip_in_layers: List[int],
+    # activations
+    sol_act: ActivationType,
+) -> HashEncMLP:
+    if pos_enc == "identity":
+        position_encoder = linear_act
+    elif pos_enc == "frequency":
+        raise NotImplementedError("Frequency encoding for NeRF is not tuned")
+        position_encoder = FrequencyEncoder(L=10)
+    elif "hashgrid" in pos_enc:
+        HGEncoder = HashGridEncoder
+        position_encoder = HGEncoder(
+            L=pos_levels,
+            T=2**19,
+            F=2,
+            N_min=2**4,
+            N_max=int(2**11 * bound),
+            tv_scale=tv_scale,
+            param_dtype=jnp.float32,
+        )
+    else:
+        raise mkValueError(
+            desc="positional encoding",
+            value=pos_enc,
+            type=PositionalEncodingType,
+        )
+    sol_mlp = CoordinateBasedMLP(Ds=layer_widths, out_dim=sol_out_dim, skip_in_layers=sol_skip_in_layers)
+
+    sol_activation = make_activation(sol_act)
+
+    model = HashEncMLP(
+        bound=bound,
+        position_encoder=position_encoder,
+        sol_mlp=sol_mlp,
+        sol_activation=sol_activation,
+    )
+
+    return model
 
 
 def main():

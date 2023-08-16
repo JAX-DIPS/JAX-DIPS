@@ -17,6 +17,7 @@ DirectionalEncodingType = Literal["identity", "sh"]
 EncodingType = Literal[PositionalEncodingType, DirectionalEncodingType]
 ActivationType = Literal[
     "exponential",
+    "linear",
     "relu",
     "sigmoid",
     "thresholded_exponential",
