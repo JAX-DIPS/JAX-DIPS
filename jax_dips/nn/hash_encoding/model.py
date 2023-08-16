@@ -19,24 +19,12 @@
 """
 
 import haiku as hk
-from jax import nn
 from jax import config
 from jax import numpy as jnp
-from jax import random
-
-from omegaconf import DictConfig, OmegaConf
 
 config.update("jax_debug_nans", False)
 
-from typing import Optional
-
-from jax_dips.nn.utils import trilinear_interpolation_per_point, nonoscillatory_quadratic_interpolation_per_point
 from jax_dips._jaxmd_modules.util import f32
-
-import tinycudann as tcnn
-
-# from https://github.com/pourion/neuralangelo/blob/main/projects/neuralangelo/utils/modules.py
-# also see https://github.com/pourion/jaxngp/tree/main
 
 
 class HashNetwork(hk.Module):
