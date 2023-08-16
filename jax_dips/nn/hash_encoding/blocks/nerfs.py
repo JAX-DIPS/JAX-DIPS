@@ -501,8 +501,8 @@ def make_test_cube(
     )
     return NeRF(
         bound=bound,
-        position_encoder=lambda x: x,
-        direction_encoder=lambda x: x,
+        position_encoder=position_encoder,
+        direction_encoder=direction_encoder,
         density_mlp=cube_density_fn,
         rgb_mlp=cube_rgb_fn,
         density_activation=lambda x: x,
@@ -518,22 +518,23 @@ def main():
     KEY, key = jran.split(KEY, 2)
 
     bound = 1.0
-    m = make_nerf_ngp(bound=bound)
 
     xyz = jnp.ones((100, 3))
     dir = jnp.ones((100, 3))
+    if False:
+        m = make_nerf_ngp(bound=bound)
+    else:
+        m = make_test_cube(
+            width=2,
+            bound=1.0,
+            density=32,
+        )
+
     params = m.init(key, xyz, dir)
     print(m.tabulate(key, xyz, dir))
 
-    m = make_test_cube(
-        width=2,
-        bound=1.0,
-        density=32,
-    )
-    # params = m.init(key, xyz, dir)
-    # print(m.tabulate(key, xyz, dir))
     density, rgb = m.apply(
-        {},
+        params,
         jnp.asarray([[0, 0, 0], [1, 1, 1], [1.1, 0, 0], [0.6, 0.9, -0.5], [0.99, 0.99, 0.99]]),
         jnp.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]]),
     )

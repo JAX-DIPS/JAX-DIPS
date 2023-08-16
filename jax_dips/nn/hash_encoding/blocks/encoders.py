@@ -111,12 +111,12 @@ class HashGridEncoder(Encoder):
 
             offsets.append(offsets[-1] + n_entries)
 
+        # paper:
+        #   We initialize the hash table entries using the uniform distribution U(−10^{−4}, 10^{−4})
+        #   to provide a small amount of randomness while encouraging initial predictions close
+        #   to zero.
         latents = self.param(
             "latent codes stored on grid vertices",
-            # paper:
-            #   We initialize the hash table entries using the uniform distribution U(−10^{−4}, 10^{−4})
-            #   to provide a small amount of randomness while encouraging initial predictions close
-            #   to zero.
             lambda key, shape, dtype: jran.uniform(key, shape, dtype, -1e-4, 1e-4),
             (offsets[-1], self.F),
             self.param_dtype,
