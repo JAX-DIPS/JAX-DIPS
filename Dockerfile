@@ -54,3 +54,12 @@ RUN cd /opt \
 #     && git clone https://github.com/nv-tlabs/nglod.git \
 #     && cd /workspace/third_party/nglod/sdf-net/lib/extensions \
 #     && bash build_ext.sh
+
+# RUN cd /opt \
+#     && sh <(curl -L https://nixos.org/nix/install) --daemon
+# ENV PATH /root/.nix-profile/bin:$PATH
+# ENV NIX_PATH /root/.nix-defexpr/channels:$NIX_PATH
+# RUN cd /opt \
+#     && git clone https://github.com/blurgyy/jaxngp.git \
+#     && cd /opt/jaxngp/deps/serde-helper \
+#     && nix-build flake.nix

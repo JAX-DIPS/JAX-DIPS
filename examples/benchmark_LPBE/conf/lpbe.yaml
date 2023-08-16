@@ -15,7 +15,7 @@ gridstates:
   Nz_eval: 256  # grid for evaluation/visualization/validation
 
 model:
-  model_type : "trilinear"
+  model_type : "multiresolution_hash_network"
   mlp:
     hidden_layers_m: 1
     hidden_dim_m: 3

@@ -56,3 +56,5 @@ env_jax_dips
 outputs/
 .hypothesis
 *.npy
+.lesshst
+.nix-profile

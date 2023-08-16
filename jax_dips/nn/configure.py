@@ -22,7 +22,7 @@ import haiku as hk
 
 from jax_dips.nn.MLP import DoubleMLP
 from jax_dips.nn.discrete import discrete
-from jax_dips.nn.hash_encoding_multilevel import HashNetwork
+from jax_dips.nn.hash_encoding.model import HashNetwork
 
 
 def get_model(model_dict, model_type: str = "mlp"):
