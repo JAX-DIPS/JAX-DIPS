@@ -20,8 +20,8 @@
 
 import haiku as hk
 
-from jax_dips.nn.MLP import DoubleMLP
-from jax_dips.nn.discrete import discrete
+from jax_dips.nn.mlp.MLP import DoubleMLP
+from jax_dips.nn.discrete.discrete import discrete
 from jax_dips.nn.hash_encoding.model import make_hash_network
 
 

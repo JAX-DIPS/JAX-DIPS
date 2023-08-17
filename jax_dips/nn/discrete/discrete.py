@@ -17,17 +17,16 @@
   Primary Author: mistani
 
 """
-from omegaconf import DictConfig, OmegaConf
 from typing import Optional
 
 import haiku as hk
-from jax import nn
-from jax import lax
 from jax import config
 from jax import numpy as jnp
-from jax import random
 
-from jax_dips.nn.utils import trilinear_interpolation_per_point, nonoscillatory_quadratic_interpolation_per_point
+from jax_dips.nn.discrete.utils import (
+    trilinear_interpolation_per_point,
+    nonoscillatory_quadratic_interpolation_per_point,
+)
 from jax_dips._jaxmd_modules.util import f32
 
 
