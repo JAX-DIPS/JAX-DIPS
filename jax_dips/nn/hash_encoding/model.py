@@ -18,10 +18,10 @@
 
 """
 from typing import Callable, Tuple, List
-import functools
+
 
 import flax.linen as nn
-import haiku as hk
+
 import jax
 from jax import config
 from jax import numpy as jnp
@@ -29,7 +29,7 @@ from jax import numpy as jnp
 config.update("jax_debug_nans", False)
 
 from jax_dips._jaxmd_modules.util import f32
-from jax_dips.nn.hash_encoding.blocks.encoders import (
+from jax_dips.nn.hash_encoding.blocks.encoders_flax import (
     Encoder,
     FrequencyEncoder,
     HashGridEncoder,
@@ -39,8 +39,9 @@ from jax_dips.nn.hash_encoding.blocks.common import (
     PositionalEncodingType,
     empty_impl,
     mkValueError,
+    conditional_decorator,
 )
-from jax_dips.nn.hash_encoding.blocks.nerfs import (
+from jax_dips.nn.hash_encoding.blocks.nerfs_flax import (
     make_activation,
     CoordinateBasedMLP,
     linear_act,
@@ -60,30 +61,28 @@ class HashMLP(nn.Module):
     @nn.compact
     def __call__(
         self,
-        xyz: jax.Array,
+        x: jax.Array,
+        phi_x: f32,
     ) -> jax.Array | Tuple[jax.Array, jax.Array]:
         """
         Inputs:
-            xyz `[..., 3]`: coordinates in $\R^3$
+            x `[..., 3]`: coordinates in $\R^3$
 
         Returns:
             density `[..., 1]`: density (ray terminating probability) of each query points
             rgb `[..., 3]`: predicted color for each query point
         """
-        original_aux_shapes = xyz.shape[:-1]
-        n_samples = functools.reduce(int.__mul__, original_aux_shapes)
-        xyz = xyz.reshape(n_samples, 3)
+        # original_aux_shapes = x.shape[:-1]
+        # n_samples = functools.reduce(int.__mul__, original_aux_shapes)
+        x = x[jnp.newaxis]  # .reshape(-1, 3)
 
         # [n_samples, D_pos], `float32`
-        pos_enc, tv = self.position_encoder(xyz, self.bound)
-
-        x = self.sol_mlp(pos_enc)
-        # [n_samples, 1], [n_samples, density_MLP_out-1]
-        sol, _ = jnp.split(x, [1], axis=-1)
-
+        pos_enc, tv = self.position_encoder(x, self.bound)
+        sol = self.sol_mlp(pos_enc)
         sol = self.sol_activation(sol)
 
-        return sol
+        sol_m, sol_p = jnp.split(sol, [1], axis=-1)
+        return jnp.where(phi_x >= 0, sol_p.squeeze(), sol_m.squeeze())
 
 
 def make_hash_network(
@@ -122,7 +121,7 @@ def make_hash_network(
             value=pos_enc,
             type=PositionalEncodingType,
         )
-    sol_mlp = CoordinateBasedMLP(Ds=layer_widths, out_dim=1, skip_in_layers=sol_skip_in_layers)
+    sol_mlp = CoordinateBasedMLP(Ds=layer_widths, out_dim=2, skip_in_layers=sol_skip_in_layers)
 
     sol_activation = make_activation(sol_act)
 
@@ -134,52 +133,3 @@ def make_hash_network(
     )
 
     return model
-
-
-class HashNetwork(hk.Module):
-    def __init__(
-        self,
-        name=None,
-        model_type: str = "multiresolution_hash_network",
-        hashnet: dict = {
-            "Nx": 32,
-            "Ny": 32,
-            "Nz": 32,
-            "xmin": -1.0,
-            "xmax": 1.0,
-            "ymin": -1.0,
-            "ymax": 1.0,
-            "zmin": -1.0,
-            "zmax": 1.0,
-        },
-        **kwargs,
-    ):
-        super().__init__(name=name)
-        bound = hashnet["xmax"] - hashnet["xmin"]
-        self.model_m = make_hash_network(bound)
-        self.model_p = make_hash_network(bound)
-
-        import jax.random as jran
-
-        KEY = jran.PRNGKey(0)
-        KEY, key = jran.split(KEY, 2)
-        xyz = jnp.ones((100, 3))
-        params = self.model_m.init(key, xyz)
-        print(self.model_m.tabulate(key, xyz))
-
-        sol = self.model_m.apply(
-            params,
-            jnp.asarray([[0, 0, 0], [1, 1, 1], [1.1, 0, 0], [0.6, 0.9, -0.5], [0.99, 0.99, 0.99]]),
-        )
-        print(sol)
-
-    def __call__(self, r, phi_r):
-        """
-        Driver function for evaluating neural networks in appropriate regions
-        based on the value of the level set function at the point.
-        """
-        return jnp.where(phi_r >= 0, self.model_p(r), self.model_m(r))
-
-    @staticmethod
-    def __version__():
-        return "0.3.0"

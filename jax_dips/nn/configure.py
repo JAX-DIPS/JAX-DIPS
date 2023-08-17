@@ -22,7 +22,7 @@ import haiku as hk
 
 from jax_dips.nn.MLP import DoubleMLP
 from jax_dips.nn.discrete import discrete
-from jax_dips.nn.hash_encoding.model import HashNetwork
+from jax_dips.nn.hash_encoding.model import make_hash_network
 
 
 def get_model(model_dict, model_type: str = "mlp"):
@@ -45,10 +45,5 @@ def get_model(model_dict, model_type: str = "mlp"):
         return forward
 
     elif model_type == "multiresolution_hash_network":
-
-        @hk.transform
-        def forward(x, phi_x):
-            model = HashNetwork(**model_dict)
-            return model(x, phi_x)
-
-        return forward
+        model = make_hash_network(**model_dict[model_type])
+        return model

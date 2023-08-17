@@ -203,10 +203,13 @@ class Trainer(Discretization):
             )
         else:
             rng = random.PRNGKey(42)
-            self.params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=0.1)
+            self.params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=f32(0.1))
             if optimizer_dict["optimizer_name"] != "lbfgs":
                 self.opt_state = self.init_optax()
-        print_architecture(self.params)
+        try:
+            logger.info(self.forward.tabulate(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=f32(0.1)))
+        except NotImplemented:
+            print_architecture(self.params)
 
         #########################################################################
         # self.mnet_keys, self.pnet_keys = self.split_mp_networks_keys(self.params)  # split keys for each domain
@@ -789,19 +792,16 @@ class Trainer(Discretization):
     @partial(jit, static_argnums=(0))
     def evaluate_solution_fn(self, params, R_flat):
         phi_flat = self.phi_interp_fn(R_flat)
-        sol_fn = partial(self.forward.apply, params, None)
+        # sol_fn = partial(self.forward.apply, params, None) TODO: HAIKU
+        sol_fn = partial(self.forward.apply, params)
         pred_sol = vmap(sol_fn, (0, 0))(R_flat, phi_flat)
-
-        # pred_sol = chunked_vmap(
-        #     sol_fn,
-        #     num_chunks=2,
-        #     in_axes=(0, 0),
-        # )(R_flat, phi_flat)
 
         return pred_sol
 
     def solution_at_point_fn(self, params, r_point, phi_point):
-        sol_fn = partial(self.forward.apply, params, None)
+        # TODO: below line is for HAIKU only, commented to try FLAX
+        # sol_fn = partial(self.forward.apply, params, None)  TODO: HAIKU
+        sol_fn = partial(self.forward.apply, params)
         return sol_fn(r_point, phi_point).reshape()
 
     def get_sol_grad_sol_fn(self, params):

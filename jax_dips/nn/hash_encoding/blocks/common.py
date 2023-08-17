@@ -77,3 +77,12 @@ def vmap_jaxfn_with(
         axis_size=axis_size,
         spmd_axis_name=spmd_axis_name,
     )
+
+
+def conditional_decorator(condition, decorator):
+    def decorator_wrapper(func):
+        if condition:
+            return decorator(func)
+        return func
+
+    return decorator_wrapper

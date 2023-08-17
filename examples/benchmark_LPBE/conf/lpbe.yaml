@@ -42,15 +42,13 @@ model:
     zmin: 0.0
     zmax: 0.0
   multiresolution_hash_network: # under construction ...
-    Nx: 32
-    Ny: 32
-    Nz: 32
-    xmin: 0.0
-    xmax: 0.0
-    ymin: 0.0
-    ymax: 0.0
-    zmin: 0.0
-    zmax: 0.0
+    bound: 1.0
+    pos_enc: "hashgrid"  # choices: "hashgrid" or "frequency" or "identity"
+    tv_scale: 0.0
+    pos_levels: 16
+    layer_widths: [64]
+    sol_skip_in_layers: []
+    sol_act: 'linear'
 
 
 solver:

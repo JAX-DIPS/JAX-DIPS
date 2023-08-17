@@ -1,12 +1,15 @@
 import functools
 from typing import Callable, List, Tuple
 
-import flax.linen as nn
+import haiku as hk
+from typing import Any as Dtype
+
 import jax
 from jax.nn.initializers import Initializer
+from jax import nn
 import jax.numpy as jnp
 
-from jax_dips.nn.hash_encoding.blocks.encoders import (
+from jax_dips.nn.hash_encoding.blocks.encoders_haiku import (
     Encoder,
     FrequencyEncoder,
     HashGridEncoder,
@@ -16,22 +19,29 @@ from jax_dips.nn.hash_encoding.blocks.common import (
     ActivationType,
     DirectionalEncodingType,
     PositionalEncodingType,
-    empty_impl,
     mkValueError,
 )
 
+import jax.random as jran
 
-@empty_impl
-class HashEncMLP(nn.Module):
-    bound: float
+KEY = jran.PRNGKey(0)
+KEY, key = jran.split(KEY, 2)
 
-    position_encoder: Encoder
 
-    sol_mlp: nn.Module
+class HashEncMLP(hk.Module):
+    def __init__(
+        self,
+        bound: float,
+        position_encoder: Encoder,
+        sol_mlp: hk.Module,
+        sol_activation: Callable,
+    ):
+        super().__init__()
+        self.bound = bound
+        self.position_encoder = position_encoder
+        self.sol_mlp = sol_mlp
+        self.sol_activation = sol_activation
 
-    sol_activation: Callable
-
-    @nn.compact
     def __call__(
         self,
         xyz: jax.Array,
@@ -60,20 +70,29 @@ class HashEncMLP(nn.Module):
         return sol
 
 
-@empty_impl
-class NeRF(nn.Module):
-    bound: float
+class NeRF(hk.Module):
+    def __init__(
+        self,
+        bound: float,
+        position_encoder: Encoder,
+        direction_encoder: Encoder,
+        density_mlp: hk.Module,
+        rgb_mlp: hk.Module,
+        density_activation: Callable,
+        rgb_activation: Callable,
+    ):
+        super().__init__()
+        self.bound = bound
 
-    position_encoder: Encoder
-    direction_encoder: Encoder
+        self.position_encoder = position_encoder
+        self.direction_encoder = direction_encoder
 
-    density_mlp: nn.Module
-    rgb_mlp: nn.Module
+        self.density_mlp = density_mlp
+        self.rgb_mlp = rgb_mlp
 
-    density_activation: Callable
-    rgb_activation: Callable
+        self.density_activation = density_activation
+        self.rgb_activation = rgb_activation
 
-    @nn.compact
     def __call__(
         self,
         xyz: jax.Array,
@@ -139,42 +158,48 @@ class NeRF(nn.Module):
         return jnp.concatenate([density, rgb], axis=-1).reshape(*original_aux_shapes, 4), tv
 
 
-class CoordinateBasedMLP(nn.Module):
+class CoordinateBasedMLP(hk.Module):
     "Coordinate-based MLP"
 
-    # hidden layer widths
-    Ds: List[int]
-    out_dim: int
-    skip_in_layers: List[int]
+    def __init__(
+        self,  # hidden layer widths
+        Ds: List[int],
+        out_dim: int,
+        skip_in_layers: List[int],
+        # as described in the paper
+        kernel_init: Initializer = nn.initializers.glorot_uniform(),
+    ):
+        super().__init__()
+        # hidden layer widths
+        self.Ds = Ds
+        self.out_dim = out_dim
+        self.skip_in_layers = skip_in_layers
+        # as described in the paper
+        self.kernel_init = kernel_init
 
-    # as described in the paper
-    kernel_init: Initializer = nn.initializers.glorot_uniform()
-
-    @nn.compact
     def __call__(self, x: jax.Array) -> jax.Array:
         in_x = x
         for i, d in enumerate(self.Ds):
             if i in self.skip_in_layers:
                 x = jnp.concatenate([in_x, x], axis=-1)
-            x = nn.Dense(
+            x = hk.Linear(
                 d,
-                use_bias=False,
-                kernel_init=self.kernel_init,
+                with_bias=False,
+                w_init=self.kernel_init,
             )(x)
             x = nn.relu(x)
-        x = nn.Dense(
+        x = hk.Linear(
             self.out_dim,
-            use_bias=False,
-            kernel_init=self.kernel_init,
+            with_bias=False,
+            w_init=self.kernel_init,
         )(x)
         return x
 
 
-class BackgroundModel(nn.Module):
+class BackgroundModel(hk.Module):
     ...
 
 
-@empty_impl
 class SkySphereBg(BackgroundModel):
     """
     A sphere that centers at the origin and encloses a bounded scene and provides all the background
@@ -184,21 +209,25 @@ class SkySphereBg(BackgroundModel):
     coordinate and predicts a color based on the intersection point and the viewing direction.
     """
 
-    # radius
-    r: float
+    def __init__(
+        self,
+        r: float,  # radius
+        position_encoder: Encoder,  # encoder for position
+        direction_encoder: Encoder,  # encoder for viewing direction
+        rgb_mlp: CoordinateBasedMLP,  # color predictor
+        activation: Callable,
+    ):
+        super().__init__()
+        # radius
+        self.r = r
+        # encoder for position
+        self.position_encoder = position_encoder
+        # encoder for viewing direction
+        self.direction_encoder = direction_encoder
+        # color predictor
+        self.rgb_mlp = rgb_mlp
+        self.activation = activation
 
-    # encoder for position
-    position_encoder: Encoder
-
-    # encoder for viewing direction
-    direction_encoder: Encoder
-
-    # color predictor
-    rgb_mlp: CoordinateBasedMLP
-
-    activation: Callable
-
-    @nn.compact
     def __call__(
         self,
         rays_o: jax.Array,
@@ -361,6 +390,19 @@ def make_pos_enc_dir(
         raise NotImplementedError("Frequency encoding for NeRF is not tuned")
         position_encoder = FrequencyEncoder(L=10)
     elif "hashgrid" in pos_enc:
+        # @hk.transform
+        # def position_encoder(x, y):
+        #     HGEncoder = HashGridEncoder(
+        #         L=pos_levels,
+        #         T=2**19,
+        #         F=2,
+        #         N_min=2**4,
+        #         N_max=int(2**11 * bound),
+        #         tv_scale=tv_scale,
+        #         param_dtype=jnp.float32,
+        #     )
+        #     return HGEncoder(x, y)
+
         HGEncoder = HashGridEncoder
         position_encoder = HGEncoder(
             L=pos_levels,
@@ -382,6 +424,11 @@ def make_pos_enc_dir(
         direction_encoder = lambda x: x
     elif dir_enc == "sh":
         direction_encoder = SphericalHarmonicsEncoder(L=dir_levels)
+        # @hk.transform
+        # def direction_encoder(x, y):
+        #     direction_encoder_ = SphericalHarmonicsEncoder(L=dir_levels)
+        #     return direction_encoder_(x, y)
+
     else:
         raise mkValueError(
             desc="directional encoding",
@@ -545,7 +592,22 @@ def make_test_cube(
     position_encoder, direction_encoder = make_pos_enc_dir(
         bound=bound, pos_enc=pos_enc, dir_enc=dir_enc, tv_scale=tv_scale, pos_levels=pos_levels, dir_levels=dir_levels
     )
-    return NeRF(
+
+    # @hk.transform
+    # def nerf_forward(x, y):
+    #     nerf = NeRF(
+    #         bound=bound,
+    #         position_encoder=position_encoder,
+    #         direction_encoder=direction_encoder,
+    #         density_mlp=cube_density_fn,
+    #         rgb_mlp=cube_rgb_fn,
+    #         density_activation=lambda x: x,
+    #         rgb_activation=lambda x: x,
+    #     )
+    #     return nerf(x, y)
+
+    # return nerf_forward
+    nerf = NeRF(
         bound=bound,
         position_encoder=position_encoder,
         direction_encoder=direction_encoder,
@@ -554,6 +616,7 @@ def make_test_cube(
         density_activation=lambda x: x,
         rgb_activation=lambda x: x,
     )
+    return nerf
 
 
 def make_hash_encoding_network(
@@ -613,21 +676,27 @@ def main():
     import jax.numpy as jnp
     import jax.random as jran
 
+    bound = 1.0
     KEY = jran.PRNGKey(0)
     KEY, key = jran.split(KEY, 2)
-
-    bound = 1.0
-
     xyz = jnp.ones((100, 3))
     dir = jnp.ones((100, 3))
+
     if False:
         m = make_nerf_ngp(bound=bound)
+
     else:
-        m = make_test_cube(
-            width=2,
-            bound=1.0,
-            density=32,
-        )
+
+        @hk.transform
+        def nerf_forward(x, y):
+            m = make_test_cube(
+                width=2,
+                bound=1.0,
+                density=32,
+            )
+            return m(x, y)
+
+        m = nerf_forward
 
     params = m.init(key, xyz, dir)
     print(m.tabulate(key, xyz, dir))
