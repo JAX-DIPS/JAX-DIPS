@@ -174,7 +174,21 @@ class Trainer(Discretization):
             model_dict["discrete"]["zmin"] = float(self.TD.gstate.zmin())
             model_dict["discrete"]["zmax"] = float(self.TD.gstate.zmax())
 
-        self.forward = get_model(model_dict, model_type=model_dict["model_type"])
+        self.forward, self.framework = get_model(model_dict, model_type=model_dict["model_type"])
+
+        def load_params_haiku(params):
+            return partial(self.forward.apply, params, None)
+
+        def load_params_flax(params):
+            return partial(self.forward.apply, params)
+
+        if self.framework == "haiku":
+            self.load_params_fn = load_params_haiku
+        elif self.framework == "flax":
+            self.load_params_fn = load_params_flax
+        else:
+            raise NotImplementedError
+
         #########################################################################
 
         if optimizer_dict["optimizer_name"] != "lbfgs":
@@ -793,7 +807,8 @@ class Trainer(Discretization):
     def evaluate_solution_fn(self, params, R_flat):
         phi_flat = self.phi_interp_fn(R_flat)
         # sol_fn = partial(self.forward.apply, params, None) TODO: HAIKU
-        sol_fn = partial(self.forward.apply, params)
+        # sol_fn = partial(self.forward.apply, params) TODO: FLAX
+        sol_fn = self.load_params_fn(params=params)
         pred_sol = vmap(sol_fn, (0, 0))(R_flat, phi_flat)
 
         return pred_sol
@@ -801,7 +816,8 @@ class Trainer(Discretization):
     def solution_at_point_fn(self, params, r_point, phi_point):
         # TODO: below line is for HAIKU only, commented to try FLAX
         # sol_fn = partial(self.forward.apply, params, None)  TODO: HAIKU
-        sol_fn = partial(self.forward.apply, params)
+        # sol_fn = partial(self.forward.apply, params)  TODO: FLAX
+        sol_fn = self.load_params_fn(params=params)
         return sol_fn(r_point, phi_point).reshape()
 
     def get_sol_grad_sol_fn(self, params):

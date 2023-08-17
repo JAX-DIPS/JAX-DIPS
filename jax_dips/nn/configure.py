@@ -33,7 +33,7 @@ def get_model(model_dict, model_type: str = "mlp"):
             model = DoubleMLP(**model_dict)
             return model(x, phi_x)
 
-        return forward
+        return forward, "haiku"
 
     elif model_type == "discrete":
 
@@ -42,8 +42,9 @@ def get_model(model_dict, model_type: str = "mlp"):
             model = discrete(**model_dict)
             return model(x, phi_x)
 
-        return forward
+        return forward, "haiku"
 
     elif model_type == "multiresolution_hash_network":
+        """This is a FLAX model, so doesn't need to be transformed."""
         model = make_hash_network(**model_dict[model_type])
-        return model
+        return model, "flax"

@@ -41,14 +41,15 @@ model:
     ymax: 0.0
     zmin: 0.0
     zmax: 0.0
-  multiresolution_hash_network: # under construction ...
+  multiresolution_hash_network:
     bound: 1.0
-    pos_enc: "hashgrid"  # choices: "hashgrid" or "frequency" or "identity"
-    tv_scale: 0.0
-    pos_levels: 16
-    layer_widths: [64]
-    sol_skip_in_layers: []
-    sol_act: 'linear'
+    pos_enc: "hashgrid"  # choices: "hashgrid" or "frequency" or "identity" or "spherical_harmonics"
+    tv_scale: 0.0  # total variation
+    pos_levels: 16  # encoding levels
+    layer_widths: [64]  # layer widths, these are relu activated
+    sol_skip_in_layers: []  # skip connections
+    sol_act: 'linear'  # activations
+    highest_sh_order: 8  # if using spherical_harmonics this is the highest sh order for hashgrid features
 
 
 solver:

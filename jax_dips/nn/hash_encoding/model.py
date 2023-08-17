@@ -29,17 +29,17 @@ from jax import numpy as jnp
 config.update("jax_debug_nans", False)
 
 from jax_dips._jaxmd_modules.util import f32
-from jax_dips.nn.hash_encoding.blocks.encoders_flax import (
-    Encoder,
-    FrequencyEncoder,
-    HashGridEncoder,
-)
 from jax_dips.nn.hash_encoding.blocks.common import (
     ActivationType,
     PositionalEncodingType,
     empty_impl,
     mkValueError,
-    conditional_decorator,
+)
+from jax_dips.nn.hash_encoding.blocks.encoders_flax import (
+    Encoder,
+    FrequencyEncoder,
+    HashGridEncoder,
+    SphericalHarmonicsEncoder,
 )
 from jax_dips.nn.hash_encoding.blocks.nerfs_flax import (
     make_activation,
@@ -64,17 +64,17 @@ class HashMLP(nn.Module):
         x: jax.Array,
         phi_x: f32,
     ) -> jax.Array | Tuple[jax.Array, jax.Array]:
-        """
+        r"""
         Inputs:
-            x `[..., 3]`: coordinates in $\R^3$
+            x `[..., 3]`: coordinate in $\R^3$
+            phi_x `[..., 1]`: level-set value
 
         Returns:
-            density `[..., 1]`: density (ray terminating probability) of each query points
-            rgb `[..., 3]`: predicted color for each query point
+            solution `[..., 1]`: solution field of each query points
         """
         # original_aux_shapes = x.shape[:-1]
         # n_samples = functools.reduce(int.__mul__, original_aux_shapes)
-        x = x[jnp.newaxis]  # .reshape(-1, 3)
+        x = x[jnp.newaxis]
 
         # [n_samples, D_pos], `float32`
         pos_enc, tv = self.position_encoder(x, self.bound)
@@ -99,6 +99,8 @@ def make_hash_network(
     sol_skip_in_layers: List[int] = [],
     # activations
     sol_act: ActivationType = "linear",
+    # highest spherical harmonic encoding in hash grid featurizer
+    highest_sh_order: int = 8,
 ) -> HashMLP:
     if pos_enc == "identity":
         position_encoder = linear_act
@@ -115,6 +117,8 @@ def make_hash_network(
             tv_scale=tv_scale,
             param_dtype=jnp.float32,
         )
+    elif pos_enc == "spherical_harmonics":
+        position_encoder = SphericalHarmonicsEncoder(L=highest_sh_order)
     else:
         raise mkValueError(
             desc="positional encoding",
