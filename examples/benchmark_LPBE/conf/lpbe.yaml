@@ -50,14 +50,14 @@ model:
     T: 524288  # hashgrid: Maximum entries per level (hash table size) (2**14 to 2**24). 2**19 = 524288
     tv_scale: 0.0  # hashgrid: total variation
     pos_levels: 16  # hashgrid: encoding levels
-    layer_widths: [16, 16]  # MLP: layer widths, these are relu activated
+    layer_widths: [16, 4]  # MLP: layer widths, these are relu activated
     sol_skip_in_layers: []  # MLP: skip connections
     sol_act: 'linear'  # MLP: activations
-    highest_sh_order: 8  # spherical_harmonics: this is the highest sh order for hashgrid features
+    highest_sh_order: 2  # spherical_harmonics: this is the highest sh order for hashgrid features; max implemented is 8
 
 
 solver:
-  inn_grid: false
+  inn_grid: true
   inn:
     train_out: 2000 # number of grid points in the outer domain; originally 2000
     train_inner: 100 # number of grid points in the inner domain; originally 100
@@ -70,8 +70,8 @@ solver:
     Nx_tr: 32  # grid for training voxel size: Lx/Nx
     Ny_tr: 32  # grid for training voxel size: Ly/Ny
     Nz_tr: 32  # grid for training voxel size: Lz/Nz
-  num_epochs: 10000 # number of epochs to train
-  batch_size: 10000 # batch size for trainer. 
+  num_epochs: 20000 # number of epochs to train
+  batch_size: 3300 # batch size for trainer. 
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   restart_checkpoint_dir: /workspace/results/benchmark-lpbe-app-inn-1:1-2:10-Ngamma1000-epoch50k/checkpoints

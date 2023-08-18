@@ -158,7 +158,7 @@ class CoordinateBasedMLP(nn.Module):
                 x = jnp.concatenate([in_x, x], axis=-1)
             x = nn.Dense(
                 d,
-                use_bias=False,
+                use_bias=True,
                 kernel_init=self.kernel_init,
             )(x)
             x = nn.relu(x)
