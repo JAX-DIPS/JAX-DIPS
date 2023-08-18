@@ -503,9 +503,9 @@ class Trainer(Discretization):
             #     train_dz,
             #     cycle_level,
             # )
-            # train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(
-            #     self.num_epochs, epoch, train_dx, train_dy, train_dz
-            # )
+            train_dx, train_dy, train_dz = self.TD.alternate_res_sequentially(
+                self.num_epochs, epoch, train_dx, train_dy, train_dz
+            )
             # batched_training_data = random.permutation(key, batched_training_data, axis=1)
             loss_epoch = 0.0
             (

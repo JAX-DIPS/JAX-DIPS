@@ -56,6 +56,7 @@ class Data(object):
     def SampleFromBoundary(self, num):
         xmin, xmax, ymin, ymax, zmin, zmax = self.box
         n = int(num / 6)
+        assert num % 6 == 0
 
         rand0 = torch.rand(n).view(-1, 1).to(self.device) * (xmax - xmin) + xmin
         rand1 = torch.rand(n).view(-1, 1).to(self.device) * (ymax - ymin) + ymin

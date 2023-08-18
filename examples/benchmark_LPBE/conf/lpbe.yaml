@@ -59,19 +59,19 @@ model:
 solver:
   inn_grid: true
   inn:
-    train_out: 2000 # number of grid points in the outer domain; originally 2000
-    train_inner: 100 # number of grid points in the inner domain; originally 100
-    train_boundary: 1000 # number of grid points on the boundary; originally 1000
-    train_gamma: 200 # number of grid points on the interface; originally 200
-    Nx_tr: 2048  # grid for training voxel size: Lx/Nx
-    Ny_tr: 2048  # grid for training voxel size: Ly/Ny
-    Nz_tr: 2048  # grid for training voxel size: Lz/Nz
+    train_out: 1000 # number of grid points in the outer domain; originally 2000
+    train_inner: 1000 # number of grid points in the inner domain; originally 100
+    train_boundary: 996 # must be multiple of 6. number of grid points on the boundary; originally 1000
+    train_gamma: 1000 # number of grid points on the interface; originally 200
+    Nx_tr: 32  # grid for training voxel size: Lx/Nx
+    Ny_tr: 32  # grid for training voxel size: Ly/Ny
+    Nz_tr: 32  # grid for training voxel size: Lz/Nz
   uniform:
     Nx_tr: 32  # grid for training voxel size: Lx/Nx
     Ny_tr: 32  # grid for training voxel size: Ly/Ny
     Nz_tr: 32  # grid for training voxel size: Lz/Nz
   num_epochs: 20000 # number of epochs to train
-  batch_size: 3300 # batch size for trainer. 
+  batch_size: 3996 # batch size for trainer. 
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   restart_checkpoint_dir: /workspace/results/benchmark-lpbe-app-inn-1:1-2:10-Ngamma1000-epoch50k/checkpoints
