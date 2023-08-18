@@ -54,7 +54,9 @@ class HashMLP(nn.Module):
 
     position_encoder: Encoder
 
-    sol_mlp: nn.Module
+    sol_m: nn.Module
+
+    sol_p: nn.Module
 
     sol_activation: Callable
 
@@ -78,10 +80,15 @@ class HashMLP(nn.Module):
 
         # [n_samples, D_pos], `float32`
         pos_enc, tv = self.position_encoder(x, self.bound)
-        sol = self.sol_mlp(pos_enc)
-        sol = self.sol_activation(sol)
 
-        sol_m, sol_p = jnp.split(sol, [1], axis=-1)
+        # sol = self.sol_mlp(pos_enc)
+        # sol_m, sol_p = jnp.split(sol, [1], axis=-1)
+
+        sol_m = self.sol_m(pos_enc)
+        sol_p = self.sol_p(pos_enc)
+        sol_m = self.sol_activation(sol_m)
+        sol_p = self.sol_activation(sol_p)
+
         return jnp.where(phi_x >= 0, sol_p.squeeze(), sol_m.squeeze())
 
 
@@ -133,14 +140,27 @@ def make_hash_network(
             value=pos_enc,
             type=PositionalEncodingType,
         )
-    sol_mlp = CoordinateBasedMLP(Ds=layer_widths, out_dim=2, skip_in_layers=sol_skip_in_layers)
+    # sol_mlp = CoordinateBasedMLP(Ds=layer_widths, out_dim=2, skip_in_layers=sol_skip_in_layers)
+
+    # sol_activation = make_activation(sol_act)
+
+    # model = HashMLP(
+    #     bound=bound,
+    #     position_encoder=position_encoder,
+    #     sol_mlp=sol_mlp,
+    #     sol_activation=sol_activation,
+    # )
+
+    sol_m = CoordinateBasedMLP(Ds=layer_widths, out_dim=1, skip_in_layers=sol_skip_in_layers)
+    sol_p = CoordinateBasedMLP(Ds=layer_widths, out_dim=1, skip_in_layers=sol_skip_in_layers)
 
     sol_activation = make_activation(sol_act)
 
     model = HashMLP(
         bound=bound,
         position_encoder=position_encoder,
-        sol_mlp=sol_mlp,
+        sol_m=sol_m,
+        sol_p=sol_p,
         sol_activation=sol_activation,
     )
 
