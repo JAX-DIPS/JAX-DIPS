@@ -312,7 +312,7 @@ class SphericalHarmonicsEncoder(Encoder):
     # highest degree
     L: int
 
-    def __call__(self, dirs: jax.Array) -> jax.Array:
+    def __call__(self, dirs: jax.Array, bound: float = 0.0) -> jax.Array:
         """
         Adapted from <https://github.com/NVlabs/tiny-cuda-nn/blob/39df2387a684e4fe0cfa33542aebf5eab237716b/include/tiny-cuda-nn/encodings/spherical_harmonics.h#L52-L123>
 
@@ -330,16 +330,17 @@ class SphericalHarmonicsEncoder(Encoder):
         x6, y6, z6 = x4 * x2, y4 * y2, z4 * z2
 
         encodings = jnp.empty((*dirs.shape[:-1], self.L**2))
+        tv = 0.0
 
         encodings = encodings.at[..., 0].set(0.28209479177387814)  # 1/(2*sqrt(pi))
         if self.L <= 1:
-            return encodings
+            return encodings, tv
 
         encodings = encodings.at[..., 1].set(-0.48860251190291987 * y)  # -sqrt(3)*y/(2*sqrt(pi))
         encodings = encodings.at[..., 2].set(0.48860251190291987 * z)  # sqrt(3)*z/(2*sqrt(pi))
         encodings = encodings.at[..., 3].set(-0.48860251190291987 * x)  # -sqrt(3)*x/(2*sqrt(pi))
         if self.L <= 2:
-            return encodings
+            return encodings, tv
 
         encodings = encodings.at[..., 4].set(1.0925484305920792 * xy)  # sqrt(15)*xy/(2*sqrt(pi))
         encodings = encodings.at[..., 5].set(-1.0925484305920792 * yz)  # -sqrt(15)*yz/(2*sqrt(pi))
@@ -351,7 +352,7 @@ class SphericalHarmonicsEncoder(Encoder):
             0.54627421529603959 * x2 - 0.54627421529603959 * y2
         )  # sqrt(15)*(x2 - y2)/(4*sqrt(pi))
         if self.L <= 3:
-            return encodings
+            return encodings, tv
 
         encodings = encodings.at[..., 9].set(
             0.59004358992664352 * y * (-3.0 * x2 + y2)
@@ -371,7 +372,7 @@ class SphericalHarmonicsEncoder(Encoder):
             0.59004358992664352 * x * (-x2 + 3.0 * y2)
         )  # sqrt(70)*x*(-x2 + 3*y2)/(8*sqrt(pi))
         if self.L <= 4:
-            return encodings
+            return encodings, tv
 
         encodings = encodings.at[..., 16].set(
             2.5033429417967046 * xy * (x2 - y2)
@@ -401,7 +402,7 @@ class SphericalHarmonicsEncoder(Encoder):
             -3.7550144126950569 * x2 * y2 + 0.62583573544917614 * x4 + 0.62583573544917614 * y4
         )  # 3*sqrt(35)*(-6*x2*y2 + x4 + y4)/(16*sqrt(pi))
         if self.L <= 5:
-            return encodings
+            return encodings, tv
 
         encodings = encodings.at[..., 25].set(
             0.65638205684017015 * y * (10.0 * x2 * y2 - 5.0 * x4 - y4)
@@ -437,7 +438,7 @@ class SphericalHarmonicsEncoder(Encoder):
             0.65638205684017015 * x * (10.0 * x2 * y2 - x4 - 5.0 * y4)
         )  # 3*sqrt(154)*x*(10*x2*y2 - x4 - 5*y4)/(32*sqrt(pi))
         if self.L <= 6:
-            return encodings
+            return encodings, tv
 
         encodings = encodings.at[..., 36].set(
             1.3663682103838286 * xy * (-10.0 * x2 * y2 + 3.0 * x4 + 3.0 * y4)
@@ -482,7 +483,7 @@ class SphericalHarmonicsEncoder(Encoder):
             - 0.6831841051919143 * y6
         )  # sqrt(6006)*(15*x2*y4 - 15*x4*y2 + x6 - y6)/(64*sqrt(pi))
         if self.L <= 7:
-            return encodings
+            return encodings, tv
 
         encodings = encodings.at[..., 49].set(
             0.70716273252459627 * y * (-21.0 * x2 * y4 + 35.0 * x4 * y2 - 7.0 * x6 + y6)
@@ -530,7 +531,7 @@ class SphericalHarmonicsEncoder(Encoder):
             0.70716273252459627 * x * (-35.0 * x2 * y4 + 21.0 * x4 * y2 - x6 + 7.0 * y6)
         )  # 3*sqrt(715)*x*(-35*x2*y4 + 21*x4*y2 - x6 + 7*y6)/(64*sqrt(pi))
         if self.L <= 8:
-            return encodings
+            return encodings, tv
 
         raise NotImplementedError("Largest supported degree of spherical harmonics is 8, got {}".format(self.L))
 

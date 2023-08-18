@@ -111,7 +111,7 @@ def make_hash_network(
     T: int = 2**19,
 ) -> HashMLP:
     if pos_enc == "identity":
-        position_encoder = linear_act
+        position_encoder = lambda x, y: (x, y)
     elif pos_enc == "frequency":
         position_encoder = FrequencyEncoder(L=10)
     elif "hashgrid" in pos_enc:
