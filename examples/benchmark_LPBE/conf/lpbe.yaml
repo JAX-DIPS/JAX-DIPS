@@ -44,12 +44,16 @@ model:
   multiresolution_hash_network:
     bound: 1.0
     pos_enc: "hashgrid"  # choices: "hashgrid" or "frequency" or "identity" or "spherical_harmonics"
-    tv_scale: 0.0  # total variation
-    pos_levels: 16  # encoding levels
-    layer_widths: [64]  # layer widths, these are relu activated
-    sol_skip_in_layers: []  # skip connections
-    sol_act: 'linear'  # activations
-    highest_sh_order: 8  # if using spherical_harmonics this is the highest sh order for hashgrid features
+    N_min: 16  # hashgrid: Coarsest resolution (16)
+    N_max: 2048  # hashgrid:  Finest resolution (512 to 524288).
+    F: 2  # hashgrid: Number of feature dimensions per entry (2).
+    T: 524288  # hashgrid: Maximum entries per level (hash table size) (2**14 to 2**24). 2**19 = 524288
+    tv_scale: 0.0  # hashgrid: total variation
+    pos_levels: 16  # hashgrid: encoding levels
+    layer_widths: [64]  # MLP: layer widths, these are relu activated
+    sol_skip_in_layers: []  # MLP: skip connections
+    sol_act: 'linear'  # MLP: activations
+    highest_sh_order: 8  # spherical_harmonics: this is the highest sh order for hashgrid features
 
 
 solver:
@@ -76,7 +80,7 @@ solver:
   multi_gpu: false
   num_gpus_ddp: 1
   optim:
-    optimizer_name: "rmsprop" # options are "custom", "adam", "rmsprop", "lbfgs"
+    optimizer_name: "custom" # options are "custom", "adam", "rmsprop", "lbfgs"
     learning_rate: 1e-2
     sched:
       scheduler_name: "exponential" # options are "exponential", "polynomial"

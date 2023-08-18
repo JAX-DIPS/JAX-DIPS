@@ -101,6 +101,14 @@ def make_hash_network(
     sol_act: ActivationType = "linear",
     # highest spherical harmonic encoding in hash grid featurizer
     highest_sh_order: int = 8,
+    # Coarsest resolution (16)
+    N_min: int = 2**4,
+    # Finest resolution (512 to 524288).
+    N_max: int = 2**11,
+    # Number of feature dimensions per entry (2).
+    F: int = 2,
+    # Maximum entries per level (hash table size) (2**14 to 2**24).
+    T: int = 2**19,
 ) -> HashMLP:
     if pos_enc == "identity":
         position_encoder = linear_act
@@ -110,10 +118,10 @@ def make_hash_network(
         HGEncoder = HashGridEncoder
         position_encoder = HGEncoder(
             L=pos_levels,
-            T=2**19,
-            F=2,
-            N_min=2**4,
-            N_max=int(2**11 * bound),
+            T=T,
+            F=F,
+            N_min=N_min,
+            N_max=int(N_max * bound),
             tv_scale=tv_scale,
             param_dtype=jnp.float32,
         )
