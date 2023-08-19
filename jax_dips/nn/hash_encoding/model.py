@@ -46,7 +46,6 @@ from jax_dips.nn.hash_encoding.blocks.nerfs_flax import (
     CoordinateBasedMLP,
     linear_act,
 )
-from jax_dips.nn.preconditioner import Preconditioner
 
 
 @empty_impl
@@ -156,9 +155,6 @@ def make_hash_network(
     sol_p = CoordinateBasedMLP(Ds=layer_widths, out_dim=1, skip_in_layers=sol_skip_in_layers)
 
     sol_activation = make_activation(sol_act)
-
-    # precond = Preconditioner(Ds=[16], out_dim=1)
-    # precond_params = precond.init(rng, jnp.array([0.0] * 26))
 
     model = HashMLP(
         bound=bound,

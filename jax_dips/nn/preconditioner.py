@@ -12,7 +12,8 @@ class Preconditioner(nn.Module):
 
     # hidden layer widths
     Ds: List[int]
-    out_dim: int
+    out_dim: int = 1
+    scaling_coeff: float = 1.0
 
     # as described in the paper
     kernel_init: Initializer = nn.initializers.glorot_uniform()
@@ -31,4 +32,4 @@ class Preconditioner(nn.Module):
             use_bias=True,
             kernel_init=self.kernel_init,
         )(x)
-        return 1.0 + nn.sigmoid(x)
+        return 1.0 + nn.sigmoid(x) * self.scaling_coeff

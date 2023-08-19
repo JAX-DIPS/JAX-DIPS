@@ -230,6 +230,7 @@ class Trainer(Discretization):
                 self.precond = Preconditioner(
                     Ds=model_dict["preconditioner"]["layer_widths"],
                     out_dim=1,
+                    scaling_coeff=model_dict["preconditioner"]["scaling_coeff"],
                 )
                 self.precond_params = self.precond.init(
                     rng, jnp.array([0.0] * 26)

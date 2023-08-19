@@ -64,6 +64,7 @@ model:
   # currently only works with flax models in "multiresolution_hash_network"
     enable: true 
     layer_widths: [8, 4, 2]
+    scaling_coeff: 10.0
 
 solver:
   inn_grid: true
