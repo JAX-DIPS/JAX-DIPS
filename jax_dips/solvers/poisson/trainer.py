@@ -241,6 +241,8 @@ class Trainer(Discretization):
                 self.params["preconditioner"] = precond_params
                 self.params = flax.core.freeze(self.params)
                 precond_params = flax.core.freeze(precond_params)
+            else:
+                self.precond = lambda param, coeff: 1.0
 
             if optimizer_dict["optimizer_name"] != "lbfgs":
                 self.opt_state = self.init_optax()
