@@ -16,6 +16,7 @@ gridstates:
 
 model:
   model_type : "multiresolution_hash_network"
+
   mlp:
     hidden_layers_m: 1
     hidden_dim_m: 3
@@ -23,6 +24,7 @@ model:
     hidden_layers_p: 2
     hidden_dim_p: 10
     activation_p: "jnp.tanh"
+
   resnet:
     res_blocks_m : 3
     res_dim_m : 40
@@ -30,6 +32,7 @@ model:
     res_blocks_p : 3
     res_dim_p : 80
     activation_p : "nn.tanh"
+
   discrete:
     interpolant: "trilinear" # "single_trilinear" or "trilinear" or "quadratic"
     Nx: 32
@@ -41,6 +44,7 @@ model:
     ymax: 0.0
     zmin: 0.0
     zmax: 0.0
+
   multiresolution_hash_network:
     bound: 1.0
     pos_enc: "identity"  # choices: "hashgrid" or "frequency" or "identity" or "spherical_harmonics"
@@ -55,6 +59,11 @@ model:
     sol_act: 'linear'  # MLP: activations
     highest_sh_order: 2  # spherical_harmonics: this is the highest sh order for hashgrid features; max implemented is 8
 
+  preconditioner: 
+  # this learns a local preconditioning coefficient based on 26 compute cell properties (geometric+diffusion/reaction coeffs)
+  # currently only works with flax models in "multiresolution_hash_network"
+    enable: true 
+    layer_widths: [8, 4, 2]
 
 solver:
   inn_grid: true

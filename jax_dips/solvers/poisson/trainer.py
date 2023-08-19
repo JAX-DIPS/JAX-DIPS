@@ -37,6 +37,8 @@ from jax import pmap, random, vmap
 from optax._src.base import GradientTransformation
 import jaxopt
 import haiku as hk
+import flax
+import flax.linen as nn
 
 from jax_dips._jaxmd_modules import dataclasses, util
 from jax_dips.data import data_management
@@ -47,6 +49,7 @@ from jax_dips.utils.visualization import plot_loss_epochs
 from jax_dips.solvers.optimizers import get_optimizer
 from jax_dips.nn.configure import get_model
 from jax_dips.solvers.poisson.discretization import Discretization
+from jax_dips.nn.preconditioner import Preconditioner
 
 Array = util.Array
 i32 = util.i32
@@ -218,12 +221,28 @@ class Trainer(Discretization):
         else:
             rng = random.PRNGKey(42)
             self.params = self.forward.init(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=f32(0.1))
+            try:
+                logger.info(self.forward.tabulate(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=f32(0.1)))
+            except NotImplemented:
+                print_architecture(self.params)
+
+            if model_dict["preconditioner"]["enable"]:
+                self.precond = Preconditioner(
+                    Ds=model_dict["preconditioner"]["layer_widths"],
+                    out_dim=1,
+                )
+                self.precond_params = self.precond.init(
+                    rng, jnp.array([0.0] * 26)
+                )  # 26 is number of coeffs_ in discretization
+                logger.info(self.precond.tabulate(rng, jnp.array([0.0] * 26)))
+                self.params = flax.core.unfreeze(self.params)
+                precond_params = flax.core.unfreeze(self.precond_params)
+                self.params["preconditioner"] = precond_params
+                self.params = flax.core.freeze(self.params)
+                precond_params = flax.core.freeze(precond_params)
+
             if optimizer_dict["optimizer_name"] != "lbfgs":
                 self.opt_state = self.init_optax()
-        try:
-            logger.info(self.forward.tabulate(rng, x=jnp.array([0.0, 0.0, 0.0]), phi_x=f32(0.1)))
-        except NotImplemented:
-            print_architecture(self.params)
 
         #########################################################################
         # self.mnet_keys, self.pnet_keys = self.split_mp_networks_keys(self.params)  # split keys for each domain
@@ -812,6 +831,9 @@ class Trainer(Discretization):
         pred_sol = vmap(sol_fn, (0, 0))(R_flat, phi_flat)
 
         return pred_sol
+
+    def precond_fn(self, params, lhs_rhs):
+        return self.precond.apply(params["preconditioner"], lhs_rhs)
 
     def solution_at_point_fn(self, params, r_point, phi_point):
         # TODO: below line is for HAIKU only, commented to try FLAX

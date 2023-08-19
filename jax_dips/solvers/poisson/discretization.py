@@ -336,6 +336,7 @@ class Discretization:
             # --- LHS
             coeffs_ = self.compute_face_centroids_values_plus_minus_at_point(point, dx, dy, dz)
             coeffs = coeffs_[:12]
+            precond = self.precond_fn(params, coeffs_)  # TODO learning voxel-level preconditioner
 
             vols = coeffs_[12:14]
             V_m_ijk = vols[0]
@@ -414,8 +415,8 @@ class Discretization:
                 get_rhs_on_box_boundary(point),
                 get_rhs_at_interior_point(point),
             )
-            lhs_over_diag = jnp.nan_to_num(lhs / diagcoeff)
-            rhs_over_diag = jnp.nan_to_num(rhs / diagcoeff)
+            lhs_over_diag = jnp.nan_to_num(lhs / diagcoeff) * precond
+            rhs_over_diag = jnp.nan_to_num(rhs / diagcoeff) * precond
             return jnp.array([lhs_over_diag, rhs_over_diag])
 
         lhs_rhs = evaluate_discretization_lhs_rhs_at_point(point, dx, dy, dz)
