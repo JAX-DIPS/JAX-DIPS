@@ -161,7 +161,7 @@ class CoordinateBasedMLP(nn.Module):
                 use_bias=True,
                 kernel_init=self.kernel_init,
             )(x)
-            x = nn.relu(x)
+            x = nn.celu(x)
         x = nn.Dense(
             self.out_dim,
             use_bias=True,  # this was False for NeRF use case

@@ -54,7 +54,7 @@ model:
     T: 524288  # hashgrid: Maximum entries per level (hash table size) (2**14 to 2**24). 2**19 = 524288
     tv_scale: 0.0  # hashgrid: total variation
     pos_levels: 16  # hashgrid: encoding levels
-    layer_widths: [16, 4]  # MLP: layer widths, these are relu activated
+    layer_widths: [16]  # MLP: layer widths, these are relu activated
     sol_skip_in_layers: []  # MLP: skip connections
     sol_act: 'linear'  # MLP: activations
     highest_sh_order: 2  # spherical_harmonics: this is the highest sh order for hashgrid features; max implemented is 8
@@ -63,8 +63,8 @@ model:
   # this learns a local preconditioning coefficient based on 26 compute cell properties (geometric+diffusion/reaction coeffs)
   # currently only works with flax models in "multiresolution_hash_network"
     enable: true 
-    layer_widths: [8, 4, 2]
-    scaling_coeff: 10.0
+    layer_widths: [8, 4]
+    scaling_coeff: 1.0
 
 solver:
   inn_grid: true

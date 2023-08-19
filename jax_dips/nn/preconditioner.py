@@ -26,10 +26,10 @@ class Preconditioner(nn.Module):
                 use_bias=True,
                 kernel_init=self.kernel_init,
             )(x)
-            x = nn.relu(x)
+            x = jnp.tanh(x)
         x = nn.Dense(
             self.out_dim,
             use_bias=True,
             kernel_init=self.kernel_init,
         )(x)
-        return 1.0 + nn.sigmoid(x) * self.scaling_coeff
+        return 0.5 + self.scaling_coeff * nn.sigmoid(x)

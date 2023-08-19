@@ -49,7 +49,7 @@ from jax_dips.nn.hash_encoding.blocks.nerfs_flax import (
 
 
 @empty_impl
-class HashMLP(nn.Module):
+class SolutionMLP(nn.Module):
     bound: float
 
     position_encoder: Encoder
@@ -116,7 +116,7 @@ def make_hash_network(
     F: int = 2,
     # Maximum entries per level (hash table size) (2**14 to 2**24).
     T: int = 2**19,
-) -> HashMLP:
+) -> SolutionMLP:
     if pos_enc == "identity":
         position_encoder = lambda x, y: (x, y)
     elif pos_enc == "frequency":
@@ -144,7 +144,7 @@ def make_hash_network(
 
     # sol_activation = make_activation(sol_act)
 
-    # model = HashMLP(
+    # model = SolutionMLP(
     #     bound=bound,
     #     position_encoder=position_encoder,
     #     sol_mlp=sol_mlp,
@@ -156,7 +156,7 @@ def make_hash_network(
 
     sol_activation = make_activation(sol_act)
 
-    model = HashMLP(
+    model = SolutionMLP(
         bound=bound,
         position_encoder=position_encoder,
         sol_m=sol_m,
