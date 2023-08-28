@@ -20,9 +20,9 @@
 
 import haiku as hk
 
-from jax_dips.nn.MLP import DoubleMLP
-from jax_dips.nn.discrete import discrete
-from jax_dips.nn.hash_encoding_multilevel import HashNetwork
+from jax_dips.nn.mlp.MLP import DoubleMLP
+from jax_dips.nn.discrete.discrete import discrete
+from jax_dips.nn.hash_encoding.model import make_hash_network
 
 
 def get_model(model_dict, model_type: str = "mlp"):
@@ -33,7 +33,7 @@ def get_model(model_dict, model_type: str = "mlp"):
             model = DoubleMLP(**model_dict)
             return model(x, phi_x)
 
-        return forward
+        return forward, "haiku"
 
     elif model_type == "discrete":
 
@@ -42,13 +42,9 @@ def get_model(model_dict, model_type: str = "mlp"):
             model = discrete(**model_dict)
             return model(x, phi_x)
 
-        return forward
+        return forward, "haiku"
 
     elif model_type == "multiresolution_hash_network":
-
-        @hk.transform
-        def forward(x, phi_x):
-            model = HashNetwork(**model_dict)
-            return model(x, phi_x)
-
-        return forward
+        """This is a FLAX model, so doesn't need to be transformed."""
+        model = make_hash_network(**model_dict[model_type])
+        return model, "flax"

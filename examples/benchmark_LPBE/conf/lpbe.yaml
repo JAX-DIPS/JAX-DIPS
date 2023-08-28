@@ -15,7 +15,8 @@ gridstates:
   Nz_eval: 256  # grid for evaluation/visualization/validation
 
 model:
-  model_type : "trilinear"
+  model_type : "multiresolution_hash_network"
+
   mlp:
     hidden_layers_m: 1
     hidden_dim_m: 3
@@ -23,6 +24,7 @@ model:
     hidden_layers_p: 2
     hidden_dim_p: 10
     activation_p: "jnp.tanh"
+
   resnet:
     res_blocks_m : 3
     res_dim_m : 40
@@ -30,6 +32,7 @@ model:
     res_blocks_p : 3
     res_dim_p : 80
     activation_p : "nn.tanh"
+
   discrete:
     interpolant: "trilinear" # "single_trilinear" or "trilinear" or "quadratic"
     Nx: 32
@@ -41,34 +44,44 @@ model:
     ymax: 0.0
     zmin: 0.0
     zmax: 0.0
-  multiresolution_hash_network: # under construction ...
-    Nx: 32
-    Ny: 32
-    Nz: 32
-    xmin: 0.0
-    xmax: 0.0
-    ymin: 0.0
-    ymax: 0.0
-    zmin: 0.0
-    zmax: 0.0
 
+  multiresolution_hash_network:
+    bound: 1.0
+    pos_enc: "identity"  # choices: "hashgrid" or "frequency" or "identity" or "spherical_harmonics"
+    N_min: 16  # hashgrid: Coarsest resolution (16)
+    N_max: 2048  # hashgrid:  Finest resolution (512 to 524288).
+    F: 2  # hashgrid: Number of feature dimensions per entry (2).
+    T: 524288  # hashgrid: Maximum entries per level (hash table size) (2**14 to 2**24). 2**19 = 524288
+    tv_scale: 0.0  # hashgrid: total variation
+    pos_levels: 16  # hashgrid: encoding levels
+    layer_widths: [16]  # MLP: layer widths, these are relu activated
+    sol_skip_in_layers: []  # MLP: skip connections
+    sol_act: 'linear'  # MLP: activations
+    highest_sh_order: 2  # spherical_harmonics: this is the highest sh order for hashgrid features; max implemented is 8
+
+  preconditioner: 
+  # this learns a local preconditioning coefficient based on 26 compute cell properties (geometric+diffusion/reaction coeffs)
+  # currently only works with flax models in "multiresolution_hash_network"
+    enable: true 
+    layer_widths: [8, 4]
+    scaling_coeff: 1.0
 
 solver:
-  inn_grid: false
+  inn_grid: true
   inn:
-    train_out: 2000 # number of grid points in the outer domain; originally 2000
-    train_inner: 100 # number of grid points in the inner domain; originally 100
-    train_boundary: 1000 # number of grid points on the boundary; originally 1000
-    train_gamma: 200 # number of grid points on the interface; originally 200
-    Nx_tr: 2048  # grid for training voxel size: Lx/Nx
-    Ny_tr: 2048  # grid for training voxel size: Ly/Ny
-    Nz_tr: 2048  # grid for training voxel size: Lz/Nz
+    train_out: 1000 # number of grid points in the outer domain; originally 2000
+    train_inner: 1000 # number of grid points in the inner domain; originally 100
+    train_boundary: 996 # must be multiple of 6. number of grid points on the boundary; originally 1000
+    train_gamma: 1000 # number of grid points on the interface; originally 200
+    Nx_tr: 32  # grid for training voxel size: Lx/Nx
+    Ny_tr: 32  # grid for training voxel size: Ly/Ny
+    Nz_tr: 32  # grid for training voxel size: Lz/Nz
   uniform:
     Nx_tr: 32  # grid for training voxel size: Lx/Nx
     Ny_tr: 32  # grid for training voxel size: Ly/Ny
     Nz_tr: 32  # grid for training voxel size: Lz/Nz
-  num_epochs: 10000 # number of epochs to train
-  batch_size: 10000 # batch size for trainer. 
+  num_epochs: 20000 # number of epochs to train
+  batch_size: 3996 # batch size for trainer. 
   print_rate: 100 # frequency of printing epochs and loss during training
   restart_from_checkpoint: false # whether to restart from an existing checkpoint
   restart_checkpoint_dir: /workspace/results/benchmark-lpbe-app-inn-1:1-2:10-Ngamma1000-epoch50k/checkpoints
@@ -77,7 +90,7 @@ solver:
   multi_gpu: false
   num_gpus_ddp: 1
   optim:
-    optimizer_name: "rmsprop" # options are "custom", "adam", "rmsprop", "lbfgs"
+    optimizer_name: "custom" # options are "custom", "adam", "rmsprop", "lbfgs"
     learning_rate: 1e-2
     sched:
       scheduler_name: "exponential" # options are "exponential", "polynomial"
