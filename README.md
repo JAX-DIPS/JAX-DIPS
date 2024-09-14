@@ -7,7 +7,7 @@ JAX-DIPS implements the [neural bootstrapping method (NBM)](https://arxiv.org/ab
 
 - Performance: Use of FD for computing the PDE residuals limits automatic differentiation to ONLY first-order AD, which significantly reduces the computational/memory costs associated to evaluating loss of higher order PDEs (as in PINNs). We achieve 10x speedup compared to backpropagation-based solvers.
 
-- Accuracy: Moreover, use of carefully designed numerical discretization schemes (for example see [Gibou, Fedkiw, and Osher 2018](https://www.sciencedirect.com/science/article/abs/pii/S0021999117307441)) for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network about the mathematical symmetries and constraints (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods/voxels centered at training points. These extra mathematical constraints improve regularity and accuracy of the learned neural surrogate models for PDEs in three spatial dimensions.
+- Accuracy: Moreover, use of carefully designed numerical discretization schemes for treating spatial gradients at the presence of discontinuities and irregular interfaces informs the neural network about the mathematical symmetries and constraints (e.g., conservation laws enforced through finite volume discretizations) in local neighborhoods/voxels centered at training points. These extra mathematical constraints improve regularity and accuracy of the learned neural surrogate models for PDEs in three spatial dimensions.
 
 - Cross pollination of applied mathematics and machine learning: JAX-DIPS makes it possible to leverage advanced preconditioners (for example see algebraic multigrid - AMG - preconditioner in [hypre](https://github.com/hypre-space/hypre)) developed in the high performance scientific computing community for faster and more accurate training of neural network models.
 
@@ -289,7 +289,7 @@ If you use JAX-DIPS in your research please use the following citations:
 
 ## The Team
 
-JAX-DIPS was developed by [Pouria Mistani](http://www.pouriamistani.com) and [Samira Pakravan](https://samirapakravan.github.io/) and [Rajesh Ilango](https://www.linkedin.com/in/rajeshilango/) under the supervision of Prof. [Frederic Gibou](https://sites.me.ucsb.edu/~fgibou/) during 2019-2022 at [University of California Santa Barbara](https://me.ucsb.edu/). This project was partially funded by the [US Office of Naval Research](https://www.nre.navy.mil/).
+JAX-DIPS was developed and is maintained by [Pouria Mistani](http://www.pouriamistani.com) and [Samira Pakravan](https://samirapakravan.github.io/) and [Rajesh Ilango](https://www.linkedin.com/in/rajeshilango/).
 
 
 ## License
